@@ -6,7 +6,7 @@ the [changelog](CHANGELOG.md) and the per-package release notes.
 
 ## What carries a promise
 
-**In scope, versioned together, currently at 2.4.0:**
+**In scope, versioned together, currently at 2.5.0:**
 
 | Package | Why it is in |
 | --- | --- |
@@ -38,10 +38,12 @@ would be a promise about the parts least ready to make one.
 
 ### Reduce the drift between the contract and the themes
 
-`scripts/audit-contract-style-coverage.mjs` currently reports **76 off-contract classes** and **39
-contract classes no theme paints**, every one of them allowlisted. The allowlist may only shrink,
-and today it is not shrinking. Each entry needs a verdict: it belongs in the contract, it belongs to
-a theme, or it should be deleted.
+`scripts/audit-contract-style-coverage.mjs` currently reports **41 off-contract classes** and **46
+contract classes no theme paints**, every one of them allowlisted. The two halves have moved in
+opposite directions since this was written: off-contract fell from 76, and unpainted rose from 39 —
+so the allowlist is shrinking where a class was reclaimed and growing where the contract declared
+something no theme answers. Each entry needs a verdict: it belongs in the contract, it belongs to a
+theme, or it should be deleted.
 
 **Done when** the off-contract count has a stated target and is measurably below it.
 
