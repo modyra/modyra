@@ -14,6 +14,7 @@ or with no framework at all.
 
 [![CI](https://github.com/modyra/modyra/actions/workflows/ci.yml/badge.svg)](https://github.com/modyra/modyra/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
+[![npm downloads](https://img.shields.io/npm/dw/@modyra/core)](https://www.npmjs.com/package/@modyra/core)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
