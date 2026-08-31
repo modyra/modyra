@@ -43,6 +43,11 @@ export function readTap(tap) {
   const passed = new Set();
   const failed = new Set();
   const outside = new Set();
+  // What a failing battle said, kept beside its name. A name alone is unreadable from anywhere but
+  // the machine that produced it: a battle that fails only where the job runs cannot be reproduced
+  // by whoever reads the log, and a report that names the battle while withholding its words leaves
+  // them diagnosing by guessing at shapes. TAP puts it in the indented block after `not ok`.
+  const why = new Map();
   // The whole directive, reason included: a name keeping "# SKIP not in this environment" matches no
   // baseline entry, so a battle that closes while carrying one reads as a battle that vanished.
   const DIRECTIVE = /\s#\s*(TODO|SKIP)\b.*$/i;
@@ -51,7 +56,18 @@ export function readTap(tap) {
   // one of the harness's own tests. Neither is a defect this suite has measured, so neither is
   // baselined.
   const BATTLE_TITLE = /^\[S\d/;
+  let pending = null;
+  let block = null;
   for (const line of tap.split("\n")) {
+    // The YAML block belongs to the `not ok` above it, and ends at its `...`.
+    if (pending !== null) {
+      if (/^\s*---\s*$/.test(line)) { block = []; continue; }
+      if (block !== null && /^\s*\.\.\.\s*$/.test(line)) {
+        why.set(pending, block.join("\n"));
+        pending = null; block = null; continue;
+      }
+      if (block !== null) { block.push(line.replace(/^\s{0,4}/, "")); continue; }
+    }
     const ok = /^ok \d+ - (.+?)\s*$/.exec(line);
     if (ok) {
       const name = ok[1].replace(DIRECTIVE, "").trim();
@@ -62,12 +78,12 @@ export function readTap(tap) {
     if (!notOk) continue;
     // A todo that fails is a todo. A todo that passes is reported by the runner as `ok`.
     if (DIRECTIVE.test(line)) continue;
-    if (BATTLE_TITLE.test(notOk[1])) failed.add(notOk[1]);
+    if (BATTLE_TITLE.test(notOk[1])) { failed.add(notOk[1]); pending = notOk[1]; }
     else outside.add(notOk[1]);
   }
   // A name that appears both ways is a retry or a duplicate title; the failure is what matters.
   for (const name of failed) passed.delete(name);
-  return { passed, failed, outside };
+  return { passed, failed, outside, why };
 }
 
 /**
@@ -303,7 +319,14 @@ function main() {
   );
   for (const name of closed) console.log(`  CLOSED, update the baseline: ${name}`);
   for (const name of vanished) console.log(`  no longer in the suite under this name: ${name}`);
-  for (const name of regressions) console.log(`  REGRESSION: ${name}`);
+  for (const name of regressions) {
+    console.log(`  REGRESSION: ${name}`);
+    // Capped, because a battle that prints a page of state buries the next regression under it —
+    // and the cap says so rather than truncating in silence.
+    const said = (run.why?.get(name) ?? "").split("\n").filter((one) => one.trim() !== "");
+    for (const line of said.slice(0, 12)) console.log(`      ${line}`);
+    if (said.length > 12) console.log(`      … ${said.length - 12} more line(s), in the run's own output`);
+  }
 
   // A failure outside any battle is never baselined — the baseline forgives a defect this suite has
   // measured, and a file that does not finish is not that. But it is also the one failure the run's

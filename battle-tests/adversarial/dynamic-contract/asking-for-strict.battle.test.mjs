@@ -59,7 +59,13 @@ battle(
 
     // The control: the document has to be one the two modes actually treat differently, or every
     // row below would agree for a reason that has nothing to do with how the mode was asked for.
-    expectClaim(proper.ok === false && lenient.ok === true && lenient.kept === 1, {
+    //
+    // The difference is read from what survives, not from `ok`. `ok` answers *was anything lost*,
+    // and this document loses a constraint under either mode, so both refuse it — which is the
+    // parser being right and not the modes being the same. What the mode decides is whether the
+    // field carrying the misplaced constraint is kept: lenient keeps it, strict does not. Asserting
+    // `lenient.ok === true` here was asserting the display of a decision rather than the decision.
+    expectClaim(proper.ok === false && proper.kept === 0 && lenient.kept === 1, {
       claimIds: ["DYN-004"],
       what: "the document is not one strict and lenient disagree about, so the battle attacks nothing",
       detail: JSON.stringify({ proper, lenient }),
