@@ -36,3 +36,17 @@ export type { MdyPaintBeat } from "./paint-beat.js";
 export { selectTransitionFixtures } from "../select/fixtures/transitions.js";
 export type { MdySelectTransitionFixture } from "../select/fixtures/transitions.js";
 export { MDY_TESTING_VOCABULARIES, type MdyTestingVocabulary } from "./vocabularies.js";
+
+export {
+  MDY_NOT_READ,
+  reading,
+  readingOf,
+  readingText,
+  readPartAttribute,
+  unread,
+} from "./reading.js";
+// Only the union. Its two halves and the reason union are reachable through it — a consumer narrows
+// on `read` and switches on `reason` without naming either — so exporting them adds three words to
+// the surface that buy nothing a reader does not already have. `unread` still takes a reason, and a
+// literal is checked against the union at the call site.
+export type { MdyReading } from "./reading.js";

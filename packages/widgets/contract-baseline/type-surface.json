@@ -3620,6 +3620,9 @@
   "widgets:MdyPopupWidgetKind": [
     "(opaque)"
   ],
+  "widgets:MdyReading": [
+    "(opaque)"
+  ],
   "widgets:MdyRelationAttribute": [
     "\"aria-activedescendant\"",
     "\"aria-controls\"",
@@ -4981,6 +4984,27 @@
     "(3) minimum?: number",
     "-> returns: string"
   ],
+  "widgets:readPartAttribute": [
+    "(0) root: { querySelector(selector: string): { getAttribute(name: string): string | null; } | null; }",
+    "(1) part: { readonly name: string; readonly selector: string; }",
+    "(2) attribute: string",
+    "-> returns: MdyReading<string | null>"
+  ],
+  "widgets:reading": [
+    "(0) where: { readonly source: string; readonly at: string; readonly method: string; }",
+    "(1) collect: () => T | undefined",
+    "-> returns: MdyReading<T>"
+  ],
+  "widgets:readingOf": [
+    "(0) value: T",
+    "(1) where: { readonly source: string; readonly at: string; readonly method: string; }",
+    "-> returns: MdyReading<T>"
+  ],
+  "widgets:readingText": [
+    "(0) one: MdyReading<T>",
+    "(1) show?: (value: T) => string",
+    "-> returns: string"
+  ],
   "widgets:reconcileSelectValue": [
     "(0) state: MdySelectReconciliationState<TValue>",
     "(1) options: readonly MdySelectOption<TValue>[]",
@@ -5311,6 +5335,12 @@
   "widgets:undoIsOnOffer": [
     "(0) state: { readonly wayBack?: unknown; }",
     "-> returns: boolean"
+  ],
+  "widgets:unread": [
+    "(0) reason: MdyUnreadReason",
+    "(1) at: string",
+    "(2) detail?: string",
+    "-> returns: MdyValueUnread"
   ],
   "widgets:valueIsAbsent": [
     "(0) kind: MdyWidgetKind",
