@@ -338,6 +338,23 @@ class MdyDynamicFormParserTest {
     assertEquals("MDY_DYNAMIC_MISSING_OPTIONS", result.diagnostics().get(0).code());
   }
 
+  /**
+   * The two nested-collection fixtures, which this suite had never read.
+   *
+   * They were absent from the hand-written list rather than exempt: both parse clean here and in
+   * the Rust reader. A list of names is a coverage claim nobody re-counts, which is how two
+   * documents in a shared corpus stayed unread by two of its three readers.
+   */
+  @Test
+  void acceptsTheSharedNestedCollectionFixtures() throws IOException {
+    for (String name : new String[] {"keyed-rows.json", "positional-nesting.json"}) {
+      MdyDynamicFormParseResult result =
+          parser.parse(readV3Fixture(name), MdyDynamicFormParser.Mode.STRICT);
+      assertTrue(result.ok(), () -> name + " was refused: " + result.diagnostics());
+      assertEquals(3, result.version());
+    }
+  }
+
   @Test
   void acceptsSharedV3PlacementFixture() throws IOException {
     // The same document the TS and Rust parsers accept. A v3 envelope is what a layout placing a

@@ -338,6 +338,33 @@ fn a_collection_nests_without_a_limit() {
         .any(|d| d.code == "MDY_DYNAMIC_UNSAFE_NAME"));
 }
 
+/// The corpus documents this suite had never read.
+///
+/// Two nested-collection documents and one recursive checkout were absent from the hand-written
+/// list rather than exempt from it — all three parse clean, and always did. A list of names is a
+/// coverage claim nobody re-counts: it says thirteen and reads ten, and nothing notices, because
+/// the number it reports is the number it was given.
+#[test]
+fn accepts_the_corpus_documents_the_list_had_missed() {
+    for (name, json) in [
+        (
+            "v3/keyed-rows.json",
+            include_str!("../../../../spec/fixtures/dynamic-form/v3/keyed-rows.json"),
+        ),
+        (
+            "v3/positional-nesting.json",
+            include_str!("../../../../spec/fixtures/dynamic-form/v3/positional-nesting.json"),
+        ),
+        (
+            "v2/checkout-recursive.json",
+            include_str!("../../../../spec/fixtures/dynamic-form/v2/checkout-recursive.json"),
+        ),
+    ] {
+        let result = parse_v2(json, ValidationMode::Strict).unwrap();
+        assert!(result.valid, "{name} was refused: {:?}", result.diagnostics);
+    }
+}
+
 /// The shared corpus's v5 document, read by this SDK.
 ///
 /// One file, four readers: the schema audit holds it against `dynamic-form-v5.schema.json`, the
