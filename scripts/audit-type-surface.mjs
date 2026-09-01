@@ -526,8 +526,13 @@ for (const { pkg, file: entry } of ENTRIES) {
       // re-accepted without reading, which is how a diff stops being read at all.
       for (const one of node.declarationList.declarations) {
         if (!ts.isIdentifier(one.name) || !PUBLIC.has(one.name.text)) continue;
+        // **The type is a value to compare, not part of the member's name.** Written `const-> T` it
+        // carried no `": "`, so the whole string became the member key — and renaming a type *inside*
+        // the declaration made the old key vanish and a new one appear: one type change reported as a
+        // removal and an addition, of a key nobody can read, classified major twice. Written `const: T`
+        // it parses the way every other member does, so the same change reads as what it is.
         surface[`${pkg}:${one.name.text}`] = [
-          `const-> ${one.type ? one.type.getText(source) : "(inferred)"}`,
+          `const: ${one.type ? one.type.getText(source) : "(inferred)"}`,
         ];
       }
     } else if (exported && ts.isFunctionDeclaration(node) && node.name) {

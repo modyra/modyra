@@ -1,30 +1,30 @@
 {
   "angular:MDY_DATE_LOCALE": [
-    "const-> InjectionToken<MdyDateLocale>"
+    "const: InjectionToken<MdyDateLocale>"
   ],
   "angular:MDY_DECLARATIVE_REGISTRY": [
-    "const-> InjectionToken<MdyDeclarativeRegistry>"
+    "const: InjectionToken<MdyDeclarativeRegistry>"
   ],
   "angular:MDY_DEVTOOLS_HOTKEY": [
-    "const-> InjectionToken<string | null>"
+    "const: InjectionToken<string | null>"
   ],
   "angular:MDY_FLOATING_LABELS": [
-    "const-> InjectionToken<_modyra_angular.MdyFloatingLabelsDirective>"
+    "const: InjectionToken<_modyra_angular.MdyFloatingLabelsDirective>"
   ],
   "angular:MDY_FLOATING_LABELS_DEFAULT": [
-    "const-> InjectionToken<boolean>"
+    "const: InjectionToken<boolean>"
   ],
   "angular:MDY_FLOATING_LABELS_DENSITY_DEFAULT": [
-    "const-> InjectionToken<number>"
+    "const: InjectionToken<number>"
   ],
   "angular:MDY_FORM_ADAPTER": [
-    "const-> InjectionToken<MdyFormAdapter<Record<string, unknown>, Partial<Record<string, unknown>>>>"
+    "const: InjectionToken<MdyFormAdapter<Record<string, unknown>, Partial<Record<string, unknown>>>>"
   ],
   "angular:MDY_I18N_MESSAGES": [
-    "const-> InjectionToken<MdyI18nMessages>"
+    "const: InjectionToken<MdyI18nMessages>"
   ],
   "angular:MDY_INLINE_ERRORS": [
-    "const-> InjectionToken<boolean>"
+    "const: InjectionToken<boolean>"
   ],
   "angular:MdyA11yAnnouncer": [
     "announce(0) message: string,-> returns: void",
@@ -1233,76 +1233,76 @@
     "year: number"
   ],
   "core:MDY_ADAPTER_CONTRACT_VIOLATION": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_ASYNC_FEATURE_DISABLED": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_CROSS_RUNTIME_OBSERVATION": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_DRAFT_KEY_IN_USE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_DRAFT_NOT_RESTORED": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_DYNAMIC_DIAGNOSTICS": [
-    "const-> ReadonlyArray<{\n    readonly code: string;\n    readonly phrase: string;\n}>"
+    "const: ReadonlyArray<{\n    readonly code: string;\n    readonly phrase: string;\n}>"
   ],
   "core:MDY_DYNAMIC_FIELD_KINDS": [
-    "const-> readonly [\"text\", \"textarea\", \"email\", \"password\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"select\", \"radio\", \"multiselect\", \"segmented\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
+    "const: readonly [\"text\", \"textarea\", \"email\", \"password\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"select\", \"radio\", \"multiselect\", \"segmented\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
   ],
   "core:MDY_DYNAMIC_INVALID_FIELD": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_DYNAMIC_MEMBERS": [
-    "const-> Readonly<{\n    /**\n     * The envelope's own members, every version's together.\n     *\n     * A member a version predates is reported as a version finding rather than an unknown one — the\n     * document is written against a contract, and being told which contract has the member is the more\n     * useful sentence.\n     */\n    document: readonly string[];\n    field: readonly string[];\n    validators: readonly string[];\n    option: readonly string[];\n    rule: readonly string[];\n    validation: readonly string[];\n    layoutSection: readonly string[];\n    layoutColumns: readonly string[];\n    layoutSlot: readonly string[];\n}>"
+    "const: Readonly<{\n    /**\n     * The envelope's own members, every version's together.\n     *\n     * A member a version predates is reported as a version finding rather than an unknown one — the\n     * document is written against a contract, and being told which contract has the member is the more\n     * useful sentence.\n     */\n    document: readonly string[];\n    field: readonly string[];\n    validators: readonly string[];\n    option: readonly string[];\n    rule: readonly string[];\n    validation: readonly string[];\n    layoutSection: readonly string[];\n    layoutColumns: readonly string[];\n    layoutSlot: readonly string[];\n}>"
   ],
   "core:MDY_DYNAMIC_MEMBER_ARRIVALS": [
-    "const-> Readonly<Record<string, Readonly<Record<string, number>>>>"
+    "const: Readonly<Record<string, Readonly<Record<string, number>>>>"
   ],
   "core:MDY_EFFECTS_UNAVAILABLE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_EVERY_TIME": [
-    "const-> MdyTimeSteps"
+    "const: MdyTimeSteps"
   ],
   "core:MDY_FIELD_KINDS": [
-    "const-> readonly [\"text\", \"textarea\", \"email\", \"password\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"select\", \"radio\", \"multiselect\", \"segmented\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
+    "const: readonly [\"text\", \"textarea\", \"email\", \"password\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"select\", \"radio\", \"multiselect\", \"segmented\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
   ],
   "core:MDY_ID_DELIMITER": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_LAYOUT_MAX_DEPTH": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_MARKS_REQUIRED": [
-    "const-> unique symbol"
+    "const: unique symbol"
   ],
   "core:MDY_MAX_EXPRESSION_DEPTH": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_SCOPE_DESTROYED": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_SSR_SNAPSHOT_MISMATCH": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_UNSUPPORTED_ADAPTER_OPTION": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "core:MDY_VALIDATION_MESSAGES": [
-    "const-> Readonly<Record<string, MdyValidationMessages>>"
+    "const: Readonly<Record<string, MdyValidationMessages>>"
   ],
   "core:MDY_VALIDATION_MESSAGES_DEFAULT": [
-    "const-> MdyValidationMessages"
+    "const: MdyValidationMessages"
   ],
   "core:MDY_VALIDATOR_FACTS": [
-    "const-> unique symbol"
+    "const: unique symbol"
   ],
   "core:MDY_VALUE_CONTRACTS": [
-    "const-> Readonly<Record<MdyValueKind, MdyValueContract>>"
+    "const: Readonly<Record<MdyValueKind, MdyValueContract>>"
   ],
   "core:MdyActivationError": [
     "constructor(0) feature: string,-> returns: (inferred)",
@@ -2302,7 +2302,7 @@
     "update: void"
   ],
   "core:NO_CONSTRAINTS": [
-    "const-> MdyFieldConstraints"
+    "const: MdyFieldConstraints"
   ],
   "core:ParsedTime": [
     "hour: number",
@@ -2425,13 +2425,13 @@
     "-> returns: number"
   ],
   "core:completeRange": [
-    "const-> <T>(message?: string) => ValidatorFn<T>"
+    "const: <T>(message?: string) => ValidatorFn<T>"
   ],
   "core:compose": [
-    "const-> <T>(...validators: readonly ValidatorFn<T>[]) => ValidatorFn<T>"
+    "const: <T>(...validators: readonly ValidatorFn<T>[]) => ValidatorFn<T>"
   ],
   "core:composeFirst": [
-    "const-> <T>(...validators: readonly ValidatorFn<T>[]) => ValidatorFn<T>"
+    "const: <T>(...validators: readonly ValidatorFn<T>[]) => ValidatorFn<T>"
   ],
   "core:createConsoleDiagnostics": [
     "-> returns: MdyDiagnostics"
@@ -2449,7 +2449,7 @@
     "-> returns: MdyDiagnostics"
   ],
   "core:crossField": [
-    "const-> <TValue extends Record<string, unknown>>(paths: readonly string[], validate: (value: TValue) => string | readonly string[] | null, kind?: string) => MdyFormValidatorFn<TValue>"
+    "const: <TValue extends Record<string, unknown>>(paths: readonly string[], validate: (value: TValue) => string | readonly string[] | null, kind?: string) => MdyFormValidatorFn<TValue>"
   ],
   "core:daysInMonth": [
     "(0) year: number",
@@ -2483,10 +2483,10 @@
     "-> returns: boolean"
   ],
   "core:eachOneOf": [
-    "const-> (values: readonly unknown[], message?: string) => ValidatorFn<readonly unknown[] | null>"
+    "const: (values: readonly unknown[], message?: string) => ValidatorFn<readonly unknown[] | null>"
   ],
   "core:email": [
-    "const-> (message?: string) => ValidatorFn<string | null>"
+    "const: (message?: string) => ValidatorFn<string | null>"
   ],
   "core:evaluateExpression": [
     "(0) expr: MdyExpression",
@@ -2586,7 +2586,7 @@
     "-> returns: number"
   ],
   "core:integer": [
-    "const-> (message?: string) => ValidatorFn<number | null>"
+    "const: (message?: string) => ValidatorFn<number | null>"
   ],
   "core:isContextRef": [
     "(0) operand: MdyOperand",
@@ -2662,10 +2662,10 @@
     "-> returns: boolean"
   ],
   "core:max": [
-    "const-> (maximum: number, message?: string) => ValidatorFn<number | null>"
+    "const: (maximum: number, message?: string) => ValidatorFn<number | null>"
   ],
   "core:maxLength": [
-    "const-> (max: number, message?: string) => ValidatorFn<string | readonly unknown[] | null>"
+    "const: (max: number, message?: string) => ValidatorFn<string | readonly unknown[] | null>"
   ],
   "core:mdyEmptyValueFor": [
     "(0) field: MdyDynamicField",
@@ -2696,10 +2696,10 @@
     "-> returns: { readonly constraints: MdyFieldConstraints; readonly required: boolean; /** True when more than one distinct pattern was declared, so none is offered. */ readonly conflictingPatterns: boolean; }"
   ],
   "core:min": [
-    "const-> (minimum: number, message?: string) => ValidatorFn<number | null>"
+    "const: (minimum: number, message?: string) => ValidatorFn<number | null>"
   ],
   "core:minLength": [
-    "const-> (min: number, message?: string) => ValidatorFn<string | readonly unknown[] | null>"
+    "const: (min: number, message?: string) => ValidatorFn<string | readonly unknown[] | null>"
   ],
   "core:minuteToAngle": [
     "(0) minute: number",
@@ -2732,7 +2732,7 @@
     "-> returns: MdyReactivity"
   ],
   "core:oneOf": [
-    "const-> (values: readonly unknown[], message?: string) => ValidatorFn<unknown>"
+    "const: (values: readonly unknown[], message?: string) => ValidatorFn<unknown>"
   ],
   "core:orderDates": [
     "(0) a: CalendarDate | null",
@@ -2771,7 +2771,7 @@
     "-> returns: ParsedTime | null"
   ],
   "core:pattern": [
-    "const-> (regex: RegExp, message?: string) => ValidatorFn<string | null>"
+    "const: (regex: RegExp, message?: string) => ValidatorFn<string | null>"
   ],
   "core:pointerAngle": [
     "(0) rect: DOMRect",
@@ -2802,7 +2802,7 @@
     "-> returns: void"
   ],
   "core:required": [
-    "const-> <T>(message?: string) => ValidatorFn<T>"
+    "const: <T>(message?: string) => ValidatorFn<T>"
   ],
   "core:resetReactivityContractLedger": [
     "-> returns: void"
@@ -2845,7 +2845,7 @@
     "-> returns: MdyValidationMessages"
   ],
   "core:valueShape": [
-    "const-> <T>(kind: MdyValueKind, message?: string) => ValidatorFn<T>"
+    "const: <T>(kind: MdyValueKind, message?: string) => ValidatorFn<T>"
   ],
   "core:vanillaReactivity": [
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
@@ -2857,256 +2857,256 @@
     "-> returns: ValidatorFn<T>"
   ],
   "widgets:MDY_ANY_PRINTABLE_KEY": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_BACKDROP_ATTRIBUTE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_CALENDAR_ISSUE": [
-    "const-> {\n    /** The week starts on a day the locale does not start on. */\n    readonly weekStartsWrong: \"CALENDAR_WEEK_START_IGNORES_LOCALE\";\n}"
+    "const: {\n    /** The week starts on a day the locale does not start on. */\n    readonly weekStartsWrong: \"CALENDAR_WEEK_START_IGNORES_LOCALE\";\n}"
   ],
   "widgets:MDY_CALENDAR_VIEW_MODES": [
-    "const-> readonly [\"days\", \"months\", \"years\"]"
+    "const: readonly [\"days\", \"months\", \"years\"]"
   ],
   "widgets:MDY_CANONICAL_AFTER_ESCAPE": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_AT_REST": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_DISABLED": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_EMPTY": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, unknown>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, unknown>>>"
   ],
   "widgets:MDY_CANONICAL_FILLED": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, unknown>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, unknown>>>"
   ],
   "widgets:MDY_CANONICAL_FILLED_OBSERVATION": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_INVALID": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_OPEN": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>>"
   ],
   "widgets:MDY_CANONICAL_UI_CLASSES": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_CHIP_CLASSES": [
-    "const-> Readonly<{\n    /** The chip itself. Every chip carries this, whatever it is for. */\n    block: \"mdy-chip\";\n    /** An option in single-select mode: it reserves the room its tick will need. */\n    centered: \"mdy-chip--centered\";\n    /** An option that can be taken several times: a label between two step buttons. */\n    counter: \"mdy-chip--counter\";\n    /** A value already taken, shown on the control rather than offered in the list. */\n    value: \"mdy-chip--value\";\n    /** Taken. The state a theme paints; it applies in either mode. */\n    selected: \"mdy-chip--selected\";\n    /** Carries a control for taking the value off again, which changes the room the label has. */\n    removable: \"mdy-chip--removable\";\n    /** The tick. Drawn by the theme when a renderer supplies no icon of its own. */\n    check: \"mdy-chip__check\";\n    /** The chip's text. */\n    label: \"mdy-chip__label\";\n    /** How many times this option has been taken, in counter mode. */\n    count: \"mdy-chip__count\";\n    /** A step button — one down, one up. */\n    step: \"mdy-chip__btn\";\n    /** The control that takes a chosen value off, on the chip standing for it. */\n    remove: \"mdy-chip__remove\";\n    /**\n     * The controls that move a chosen value one place, on the chip standing for it.\n     *\n     * A pointer path that is **not** a drag. WCAG 2.5.7 asks for one independently of any keyboard\n     * path: somebody using a pointer who cannot hold and drag — a tremor, a head pointer, a switch —\n     * has no way to reorder otherwise, and a keyboard alternative does not discharge it. Drawn only\n     * where the field asked to be reorderable, so a set of filters gains no furniture.\n     */\n    move: \"mdy-chip__move\";\n    /** Wraps a chip a renderer did not draw itself, so a custom option still sits in the grid. */\n    wrapper: \"mdy-chip-wrapper\";\n}>"
+    "const: Readonly<{\n    /** The chip itself. Every chip carries this, whatever it is for. */\n    block: \"mdy-chip\";\n    /** An option in single-select mode: it reserves the room its tick will need. */\n    centered: \"mdy-chip--centered\";\n    /** An option that can be taken several times: a label between two step buttons. */\n    counter: \"mdy-chip--counter\";\n    /** A value already taken, shown on the control rather than offered in the list. */\n    value: \"mdy-chip--value\";\n    /** Taken. The state a theme paints; it applies in either mode. */\n    selected: \"mdy-chip--selected\";\n    /** Carries a control for taking the value off again, which changes the room the label has. */\n    removable: \"mdy-chip--removable\";\n    /** The tick. Drawn by the theme when a renderer supplies no icon of its own. */\n    check: \"mdy-chip__check\";\n    /** The chip's text. */\n    label: \"mdy-chip__label\";\n    /** How many times this option has been taken, in counter mode. */\n    count: \"mdy-chip__count\";\n    /** A step button — one down, one up. */\n    step: \"mdy-chip__btn\";\n    /** The control that takes a chosen value off, on the chip standing for it. */\n    remove: \"mdy-chip__remove\";\n    /**\n     * The controls that move a chosen value one place, on the chip standing for it.\n     *\n     * A pointer path that is **not** a drag. WCAG 2.5.7 asks for one independently of any keyboard\n     * path: somebody using a pointer who cannot hold and drag — a tremor, a head pointer, a switch —\n     * has no way to reorder otherwise, and a keyboard alternative does not discharge it. Drawn only\n     * where the field asked to be reorderable, so a set of filters gains no furniture.\n     */\n    move: \"mdy-chip__move\";\n    /** Wraps a chip a renderer did not draw itself, so a custom option still sits in the grid. */\n    wrapper: \"mdy-chip-wrapper\";\n}>"
   ],
   "widgets:MDY_CHIP_DRAG_THRESHOLD": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_COLOR_PRESETS": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_CONTRACT_VOCABULARIES": [
-    "const-> readonly MdyVocabulary[]"
+    "const: readonly MdyVocabulary[]"
   ],
   "widgets:MDY_CSS_PROPERTIES": [
-    "const-> Readonly<{\n    /**\n     * Written by `anchorOverlay`, read by `.mdy-overlay` in the foundation. The whole placement\n     * decision reaches the page through these eight and nothing else.\n     */\n    overlay: Readonly<{\n        top: \"--mdy-overlay-top\";\n        bottom: \"--mdy-overlay-bottom\";\n        left: \"--mdy-overlay-left\";\n        right: \"--mdy-overlay-right\";\n        /** Set only when the popup matches its anchor's width, as a select's list does. */\n        width: \"--mdy-overlay-width\";\n        /** Always set: it is what stops a content-sized popup running off the side of the screen. */\n        maxWidth: \"--mdy-overlay-max-width\";\n        /** Always set: the room on the side the popup was given, so a long list scrolls rather than\n         * overflowing the viewport. */\n        maxHeight: \"--mdy-overlay-max-height\";\n        /** `none` when anchored, a centring translate when the popup gave up on its anchor. */\n        transform: \"--mdy-overlay-transform\";\n    }>;\n    /** Written by `layoutNodeAttributes` on a columns row; the foundation divides the row by it. */\n    layout: Readonly<{\n        columnCount: \"--mdy-layout-column-count\";\n        /** Which track a column starts in, when a slot places itself rather than following row order. */\n        columnStart: \"--mdy-layout-column-start\";\n        /** Whether a column shows. Written as a `display` value so the cascade needs no extra selector. */\n        columnDisplay: \"--mdy-layout-column-display\";\n    }>;\n    /** Written per control, where a theme needs a number only the renderer knows. */\n    control: Readonly<{\n        /**\n         * How far along the slider's value sits, as a **unitless ratio in 0–1** — not a percentage.\n         *\n         * The stylesheet has to place the stop at `thumb/2 + ratio * (100% - thumb)`, because a range\n         * input's handle travels by its centre and never hangs off either end. That needs the ratio as\n         * a number it can multiply a length by, and `calc()` cannot divide by a percentage to recover\n         * one. A renderer cannot do the arithmetic itself either: the handle's size is a theme token,\n         * and a renderer that knew it would be drawing the theme.\n         */\n        sliderFill: \"--mdy-slider-fill\";\n        /** How many segments a segmented control has, so the group divides itself evenly. */\n        segmentCount: \"--mdy-segments-count\";\n        /**\n         * Which position a number occupies on the clock face, 0–11. The foundation rotates it into\n         * place; a renderer that positioned the numbers itself would be drawing a different dial.\n         *\n         * Un-namespaced, unlike everything else here — it predates this vocabulary and every theme reads\n         * it under this name. Renaming it is a change to the themes as much as to the renderers, and it\n         * is named here so that when it happens there is one place to change.\n         */\n        dialIndex: \"--index\";\n    }>;\n}>"
+    "const: Readonly<{\n    /**\n     * Written by `anchorOverlay`, read by `.mdy-overlay` in the foundation. The whole placement\n     * decision reaches the page through these eight and nothing else.\n     */\n    overlay: Readonly<{\n        top: \"--mdy-overlay-top\";\n        bottom: \"--mdy-overlay-bottom\";\n        left: \"--mdy-overlay-left\";\n        right: \"--mdy-overlay-right\";\n        /** Set only when the popup matches its anchor's width, as a select's list does. */\n        width: \"--mdy-overlay-width\";\n        /** Always set: it is what stops a content-sized popup running off the side of the screen. */\n        maxWidth: \"--mdy-overlay-max-width\";\n        /** Always set: the room on the side the popup was given, so a long list scrolls rather than\n         * overflowing the viewport. */\n        maxHeight: \"--mdy-overlay-max-height\";\n        /** `none` when anchored, a centring translate when the popup gave up on its anchor. */\n        transform: \"--mdy-overlay-transform\";\n    }>;\n    /** Written by `layoutNodeAttributes` on a columns row; the foundation divides the row by it. */\n    layout: Readonly<{\n        columnCount: \"--mdy-layout-column-count\";\n        /** Which track a column starts in, when a slot places itself rather than following row order. */\n        columnStart: \"--mdy-layout-column-start\";\n        /** Whether a column shows. Written as a `display` value so the cascade needs no extra selector. */\n        columnDisplay: \"--mdy-layout-column-display\";\n    }>;\n    /** Written per control, where a theme needs a number only the renderer knows. */\n    control: Readonly<{\n        /**\n         * How far along the slider's value sits, as a **unitless ratio in 0–1** — not a percentage.\n         *\n         * The stylesheet has to place the stop at `thumb/2 + ratio * (100% - thumb)`, because a range\n         * input's handle travels by its centre and never hangs off either end. That needs the ratio as\n         * a number it can multiply a length by, and `calc()` cannot divide by a percentage to recover\n         * one. A renderer cannot do the arithmetic itself either: the handle's size is a theme token,\n         * and a renderer that knew it would be drawing the theme.\n         */\n        sliderFill: \"--mdy-slider-fill\";\n        /** How many segments a segmented control has, so the group divides itself evenly. */\n        segmentCount: \"--mdy-segments-count\";\n        /**\n         * Which position a number occupies on the clock face, 0–11. The foundation rotates it into\n         * place; a renderer that positioned the numbers itself would be drawing a different dial.\n         *\n         * Un-namespaced, unlike everything else here — it predates this vocabulary and every theme reads\n         * it under this name. Renaming it is a change to the themes as much as to the renderers, and it\n         * is named here so that when it happens there is one place to change.\n         */\n        dialIndex: \"--index\";\n    }>;\n}>"
   ],
   "widgets:MDY_CSS_PROPERTY_NAMES": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_DISABLED_BLOCKS_TRANSITIONS": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_EMPTY": [
-    "const-> \"(empty)\""
+    "const: \"(empty)\""
   ],
   "widgets:MDY_FIELD_SHELL_CLASSES": [
-    "const-> Readonly<{\n    root: string;\n    label: string;\n    requiredMarker: string;\n    inputWrapper: string;\n    prefix: string;\n    control: string;\n    suffix: string;\n    inlineError: string;\n    supportingText: string;\n    errors: string;\n    errorItem: string;\n}>"
+    "const: Readonly<{\n    root: string;\n    label: string;\n    requiredMarker: string;\n    inputWrapper: string;\n    prefix: string;\n    control: string;\n    suffix: string;\n    inlineError: string;\n    supportingText: string;\n    errors: string;\n    errorItem: string;\n}>"
   ],
   "widgets:MDY_FIELD_SHELL_STRUCTURE": [
-    "const-> {\n    kind: string;\n    nodes: readonly MdyWidgetStructureNode<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">[];\n}"
+    "const: {\n    kind: string;\n    nodes: readonly MdyWidgetStructureNode<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">[];\n}"
   ],
   "widgets:MDY_FIELD_STATE_CLASSES": [
-    "const-> Readonly<{\n    /** Base the field root's state modifiers hang from. */\n    field: string;\n    /** States the field root reflects. */\n    fieldStates: readonly string[];\n    /** Base the wrapper holding the control, which is where a field shows it is unusable or wrong. */\n    control: string;\n    /** States that wrapper reflects. */\n    controlStates: readonly string[];\n    /** Base the label's own modifiers hang from. */\n    label: string;\n    /** States the label reflects: whether the field has a value, and whether it is failing. */\n    labelStates: readonly string[];\n    /** The root modifier an overlay widget carries while its popup is showing. */\n    rendererOpen: string;\n}>"
+    "const: Readonly<{\n    /** Base the field root's state modifiers hang from. */\n    field: string;\n    /** States the field root reflects. */\n    fieldStates: readonly string[];\n    /** Base the wrapper holding the control, which is where a field shows it is unusable or wrong. */\n    control: string;\n    /** States that wrapper reflects. */\n    controlStates: readonly string[];\n    /** Base the label's own modifiers hang from. */\n    label: string;\n    /** States the label reflects: whether the field has a value, and whether it is failing. */\n    labelStates: readonly string[];\n    /** The root modifier an overlay widget carries while its popup is showing. */\n    rendererOpen: string;\n}>"
   ],
   "widgets:MDY_FOCUS_WITHIN": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_FORM_SHELL_CLASSES": [
-    "const-> Readonly<{\n    formErrors: string;\n    formErrorItem: string;\n}>"
+    "const: Readonly<{\n    formErrors: string;\n    formErrorItem: string;\n}>"
   ],
   "widgets:MDY_FORM_SHELL_STRUCTURE": [
-    "const-> MdyWidgetStructure<MdyFormShellPart>"
+    "const: MdyWidgetStructure<MdyFormShellPart>"
   ],
   "widgets:MDY_I18N_DEFAULT_TAGS": [
-    "const-> Readonly<Record<MdyBuiltInLocale, string>>"
+    "const: Readonly<Record<MdyBuiltInLocale, string>>"
   ],
   "widgets:MDY_I18N_MESSAGES_DE": [
-    "const-> MdyI18nMessages"
+    "const: MdyI18nMessages"
   ],
   "widgets:MDY_I18N_MESSAGES_DEFAULT": [
-    "const-> MdyI18nMessages"
+    "const: MdyI18nMessages"
   ],
   "widgets:MDY_I18N_MESSAGES_ES": [
-    "const-> MdyI18nMessages"
+    "const: MdyI18nMessages"
   ],
   "widgets:MDY_I18N_MESSAGES_FR": [
-    "const-> MdyI18nMessages"
+    "const: MdyI18nMessages"
   ],
   "widgets:MDY_I18N_MESSAGES_IT": [
-    "const-> MdyI18nMessages"
+    "const: MdyI18nMessages"
   ],
   "widgets:MDY_I18N_PRESETS": [
-    "const-> Readonly<Record<MdyBuiltInLocale, MdyI18nMessages>>"
+    "const: Readonly<Record<MdyBuiltInLocale, MdyI18nMessages>>"
   ],
   "widgets:MDY_ICONS": [
-    "const-> Readonly<{\n    readonly CALENDAR: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<rect x=\\\"2\\\" y=\\\"4\\\" width=\\\"20\\\" height=\\\"18\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M8 2v4M16 2v4M2 10h20\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CLOCK: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v5l3.5 2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly ERROR: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v6M12 17h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly LOADER: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<path d=\\\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly KEYBOARD: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<rect x=\\\"2\\\" y=\\\"6\\\" width=\\\"20\\\" height=\\\"12\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M9 14h6M18 14h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SEARCH: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<circle cx=\\\"10.5\\\" cy=\\\"10.5\\\" r=\\\"5.5\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M14.4 14.4 19 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHECKMARK: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 13l4 4L19 7\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CLOSE: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 5l14 14M19 5L5 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly UNDO: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 9h14v10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M9 5L5 9l4 4\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly PLUS: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 12h14M12 5v14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly MINUS: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 12h14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_DOWN: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_LEFT: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M15 18l-6-6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_RIGHT: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M9 18l6-6-6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SPIN_UP: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 15l6-6 6 6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SPIN_DOWN: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n}>"
+    "const: Readonly<{\n    readonly CALENDAR: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<rect x=\\\"2\\\" y=\\\"4\\\" width=\\\"20\\\" height=\\\"18\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M8 2v4M16 2v4M2 10h20\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CLOCK: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v5l3.5 2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly ERROR: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<circle cx=\\\"12\\\" cy=\\\"12\\\" r=\\\"10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M12 7v6M12 17h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly LOADER: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<path d=\\\"M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly KEYBOARD: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"full\";\n        content: \"<rect x=\\\"2\\\" y=\\\"6\\\" width=\\\"20\\\" height=\\\"12\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M6 10h0M10 10h0M14 10h0M18 10h0M6 14h0M9 14h6M18 14h0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SEARCH: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<circle cx=\\\"10.5\\\" cy=\\\"10.5\\\" r=\\\"5.5\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M14.4 14.4 19 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHECKMARK: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 13l4 4L19 7\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CLOSE: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 5l14 14M19 5L5 19\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly UNDO: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 9h14v10\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/><path d=\\\"M9 5L5 9l4 4\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly PLUS: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 12h14M12 5v14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly MINUS: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"compact\";\n        content: \"<path d=\\\"M5 12h14\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_DOWN: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_LEFT: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M15 18l-6-6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly CHEVRON_RIGHT: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M9 18l6-6-6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SPIN_UP: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 15l6-6 6 6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n    readonly SPIN_DOWN: Readonly<{\n        viewBox: \"0 0 24 24\";\n        span: \"directional\";\n        content: \"<path d=\\\"M6 9l6 6 6-6\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\\"2\\\" stroke-linecap=\\\"round\\\" stroke-linejoin=\\\"round\\\"/>\";\n    }>;\n}>"
   ],
   "widgets:MDY_ICON_GRID": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_ICON_SPANS": [
-    "const-> Readonly<{\n    /** 2–22. A glyph with internal detail: a calendar's grid, a clock's hands. */\n    readonly full: 20;\n    /** 5–19. A self-contained mark: a tick, a cross, a magnifier. */\n    readonly compact: 14;\n    /** 6–18. A direction, not an object. */\n    readonly directional: 12;\n}>"
+    "const: Readonly<{\n    /** 2–22. A glyph with internal detail: a calendar's grid, a clock's hands. */\n    readonly full: 20;\n    /** 5–19. A self-contained mark: a tick, a cross, a magnifier. */\n    readonly compact: 14;\n    /** 6–18. A direction, not an object. */\n    readonly directional: 12;\n}>"
   ],
   "widgets:MDY_ICON_STROKE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_LABELABLE_TAGS": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_LAYOUT_BREAKPOINTS": [
-    "const-> Readonly<Record<MdyDynamicBreakpoint, string>>"
+    "const: Readonly<Record<MdyDynamicBreakpoint, string>>"
   ],
   "widgets:MDY_LAYOUT_CLASSES": [
-    "const-> Readonly<{\n    /** A titled group of fields. */\n    section: \"mdy-layout-section\";\n    /** The section's title. */\n    sectionLabel: \"mdy-layout-legend\";\n    /** A row that divides its width into columns. */\n    columns: \"mdy-layout-columns\";\n    /** One column within that row. */\n    column: \"mdy-layout-column\";\n}>"
+    "const: Readonly<{\n    /** A titled group of fields. */\n    section: \"mdy-layout-section\";\n    /** The section's title. */\n    sectionLabel: \"mdy-layout-legend\";\n    /** A row that divides its width into columns. */\n    columns: \"mdy-layout-columns\";\n    /** One column within that row. */\n    column: \"mdy-layout-column\";\n}>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_COUNT_PROPERTIES": [
-    "const-> Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_COUNT_PROPERTY": [
-    "const-> \"--mdy-layout-column-count\""
+    "const: \"--mdy-layout-column-count\""
   ],
   "widgets:MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES": [
-    "const-> Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_START_PROPERTIES": [
-    "const-> Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
   ],
   "widgets:MDY_LIFECYCLE_ISSUE": [
-    "const-> {\n    /** An element the instance mounted is still in the document — including one it portalled out. */\n    readonly domSurvived: \"DOM_SURVIVED_UNMOUNT\";\n    /** An id the instance minted still resolves, so a new instance would collide with a ghost. */\n    readonly idSurvived: \"ID_SURVIVED_UNMOUNT\";\n    /** A disposed instance still reacts: setting a value after teardown changed the document. */\n    readonly reactiveEffectSurvived: \"REACTIVE_EFFECT_SURVIVED_UNMOUNT\";\n    /** Two live instances minted the same id, so one field's relationships point at the other's DOM. */\n    readonly idCollidedAcrossInstances: \"ID_COLLIDED_ACROSS_INSTANCES\";\n    /**\n     * A disposed instance still ran, and failed.\n     *\n     * The distinction from {@link reactiveEffectSurvived} is which side refused. A handle that rejects\n     * a write after teardown is answering correctly and nothing renders. An *effect* that is still\n     * subscribed does run, reads a form that has been destroyed, and raises — leaving nothing in the\n     * document to see, which is why a check that only compares the document reads it as clean.\n     */\n    readonly effectThrewAfterUnmount: \"EFFECT_THREW_AFTER_UNMOUNT\";\n}"
+    "const: {\n    /** An element the instance mounted is still in the document — including one it portalled out. */\n    readonly domSurvived: \"DOM_SURVIVED_UNMOUNT\";\n    /** An id the instance minted still resolves, so a new instance would collide with a ghost. */\n    readonly idSurvived: \"ID_SURVIVED_UNMOUNT\";\n    /** A disposed instance still reacts: setting a value after teardown changed the document. */\n    readonly reactiveEffectSurvived: \"REACTIVE_EFFECT_SURVIVED_UNMOUNT\";\n    /** Two live instances minted the same id, so one field's relationships point at the other's DOM. */\n    readonly idCollidedAcrossInstances: \"ID_COLLIDED_ACROSS_INSTANCES\";\n    /**\n     * A disposed instance still ran, and failed.\n     *\n     * The distinction from {@link reactiveEffectSurvived} is which side refused. A handle that rejects\n     * a write after teardown is answering correctly and nothing renders. An *effect* that is still\n     * subscribed does run, reads a form that has been destroyed, and raises — leaving nothing in the\n     * document to see, which is why a check that only compares the document reads it as clean.\n     */\n    readonly effectThrewAfterUnmount: \"EFFECT_THREW_AFTER_UNMOUNT\";\n}"
   ],
   "widgets:MDY_LIFECYCLE_TRANSITIONS": [
-    "const-> readonly [\"mount\", \"update-schema\", \"update-value\", \"update-locale\", \"update-theme\", \"disable\", \"reset\", \"unmount\", \"remount\"]"
+    "const: readonly [\"mount\", \"update-schema\", \"update-value\", \"update-locale\", \"update-theme\", \"disable\", \"reset\", \"unmount\", \"remount\"]"
   ],
   "widgets:MDY_NOT_READ": [
-    "const-> \"(not read)\""
+    "const: \"(not read)\""
   ],
   "widgets:MDY_OVERLAY_GAP": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_OVERLAY_PORTAL_CLASS": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_OVERLAY_VIEWPORT_MARGIN": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_PAINT_BEATS": [
-    "const-> readonly [\"synchronous\", \"microtask\", \"task\", \"host\"]"
+    "const: readonly [\"synchronous\", \"microtask\", \"task\", \"host\"]"
   ],
   "widgets:MDY_PART_NAMES": [
-    "const-> Readonly<Record<string, string>>"
+    "const: Readonly<Record<string, string>>"
   ],
   "widgets:MDY_PART_PRESENCE": [
-    "const-> Readonly<Record<string, MdyPartPresence>>"
+    "const: Readonly<Record<string, MdyPartPresence>>"
   ],
   "widgets:MDY_PART_PRESENCES": [
-    "const-> readonly [\"documentDeclaresIt\", \"fieldIsRequired\", \"fieldCanBeInvalid\", \"errorsAreVisible\", \"overlayIsOpen\", \"valueIsPresent\", \"valueIsAbsent\", \"kindOffersIt\", \"viewIsActive\", \"valuesOverflow\", \"inputWasRefused\", \"pointerIsOnAValue\", \"workIsInFlight\"]"
+    "const: readonly [\"documentDeclaresIt\", \"fieldIsRequired\", \"fieldCanBeInvalid\", \"errorsAreVisible\", \"overlayIsOpen\", \"valueIsPresent\", \"valueIsAbsent\", \"kindOffersIt\", \"viewIsActive\", \"valuesOverflow\", \"inputWasRefused\", \"pointerIsOnAValue\", \"workIsInFlight\"]"
   ],
   "widgets:MDY_PART_REQUIRES": [
-    "const-> Readonly<Record<string, string>>"
+    "const: Readonly<Record<string, string>>"
   ],
   "widgets:MDY_POPUP_CLASS": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_POPUP_OPENERS": [
-    "const-> Readonly<Partial<Record<MdyWidgetKind, MdyPopupOpener>>>"
+    "const: Readonly<Partial<Record<MdyWidgetKind, MdyPopupOpener>>>"
   ],
   "widgets:MDY_PRESENCE_RESOLUTION": [
-    "const-> Readonly<Record<MdyPartPresence, {\n    /** The published name that answers it, or `null` where nothing does. */\n    readonly resolver: string | null;\n    /** Why nothing answers it — `\"owed\"`, or the reason no answer is possible or needed. */\n    readonly because: string;\n}>>"
+    "const: Readonly<Record<MdyPartPresence, {\n    /** The published name that answers it, or `null` where nothing does. */\n    readonly resolver: string | null;\n    /** Why nothing answers it — `\"owed\"`, or the reason no answer is possible or needed. */\n    readonly because: string;\n}>>"
   ],
   "widgets:MDY_SEMANTICS_REQUIRING_NAME": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_SEMANTIC_ELEMENTS": [
-    "const-> Readonly<Record<string, {\n    tags: readonly string[];\n    roles: readonly string[];\n} | undefined>>"
+    "const: Readonly<Record<string, {\n    tags: readonly string[];\n    roles: readonly string[];\n} | undefined>>"
   ],
   "widgets:MDY_SHARED_REGION_ATTRIBUTE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_SHARED_REGION_ID": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_SHARED_UI_CLASSES": [
-    "const-> readonly string[]"
+    "const: readonly string[]"
   ],
   "widgets:MDY_STATE_EXPRESSION": [
-    "const-> Readonly<Record<MdyWidgetKind, \"class\" | \"structural\">>"
+    "const: Readonly<Record<MdyWidgetKind, \"class\" | \"structural\">>"
   ],
   "widgets:MDY_STATE_MODIFIERS": [
-    "const-> Readonly<{\n    /** Chosen — an option taken, a date picked, a segment on. */\n    selected: \"selected\";\n    /** Where the keyboard is, which is not the same as chosen. */\n    active: \"active\";\n    /** Under the pointer or holding focus, for a part that distinguishes it from `active`. */\n    focused: \"focused\";\n    /** Not available. */\n    disabled: \"disabled\";\n    /** Read but not written. */\n    readonly: \"readonly\";\n    /** Its overlay is showing. */\n    open: \"open\";\n    /** Failing validation. */\n    error: \"error\";\n    /** Failing validation, named as the projections name it on a control rather than a field. */\n    invalid: \"invalid\";\n    /** Waiting on something asynchronous — options being fetched, most often. */\n    loading: \"loading\";\n    /** Has a value — what a floating label rises for. */\n    filled: \"filled\";\n    /** Has an error to show, as distinct from `error`: the label reserves room, the wrapper paints. */\n    hasError: \"has-error\";\n    /** The user has been here and left. */\n    touched: \"touched\";\n    /** Filtered out of the list, still in the DOM. */\n    hidden: \"hidden\";\n    /** A file is being dragged over the dropzone. */\n    dragover: \"dragover\";\n    /** Today's date. */\n    today: \"today\";\n    /** A day belonging to the month either side of the one on show. */\n    outside: \"outside\";\n    /** Between the two ends of a selected range. */\n    inRange: \"in-range\";\n    /** The first day of a selected range. */\n    rangeStart: \"range-start\";\n    /** The last day of a selected range. */\n    rangeEnd: \"range-end\";\n    /** Can be taken off — a value chip with a dismiss affordance. */\n    removable: \"removable\";\n    /** Held and travelling: a chip a pointer has picked up and not yet put down. */\n    dragging: \"dragging\";\n    /**\n     * Showing words the shell composed because no document wrote any.\n     *\n     * Everything inside a field is named by pointing at its label, so an empty one leaves a group, a\n     * grid or a dialog announced as its role and nothing else. The words are `fieldAccessibleName`'s\n     * and they are owed to a screen reader; whether they are also a heading on the page is what this\n     * lets a theme decide.\n     */\n    unwritten: \"unwritten\";\n    /** Laid out along the row rather than down the column. */\n    horizontal: \"horizontal\";\n    /** The dense form of a control that has one. */\n    compact: \"compact\";\n    /** Drawn where the pointer is rather than where the value is — a second hand, faintly. */\n    ghost: \"ghost\";\n    /** Moves rather than jumps. Asked for by the host: a thing in motion is briefly not where it is. */\n    animated: \"animated\";\n    /** The action that commits, as against the one that dismisses. */\n    confirm: \"confirm\";\n    /** The overlay sits above its anchor. */\n    above: \"above\";\n    /** The overlay gave up on its anchor and centred itself. */\n    overlay: \"overlay\";\n    /** The overlay hangs from the end of its anchor rather than the start. The start is the ordinary\n     * case and carries no class, exactly as \"below\" does for placement. */\n    right: \"right\";\n    /**\n     * On the inner ring of a face that has two.\n     *\n     * A clock face has twelve positions and 24-hour time has twenty-four hours, so the second twelve\n     * sit at the same positions on a shorter radius. Which numbers those are is the contract's\n     * (`timepickerDialNumbers`); this is how a renderer says which ring it drew one on.\n     */\n    inner: \"inner\";\n}>"
+    "const: Readonly<{\n    /** Chosen — an option taken, a date picked, a segment on. */\n    selected: \"selected\";\n    /** Where the keyboard is, which is not the same as chosen. */\n    active: \"active\";\n    /** Under the pointer or holding focus, for a part that distinguishes it from `active`. */\n    focused: \"focused\";\n    /** Not available. */\n    disabled: \"disabled\";\n    /** Read but not written. */\n    readonly: \"readonly\";\n    /** Its overlay is showing. */\n    open: \"open\";\n    /** Failing validation. */\n    error: \"error\";\n    /** Failing validation, named as the projections name it on a control rather than a field. */\n    invalid: \"invalid\";\n    /** Waiting on something asynchronous — options being fetched, most often. */\n    loading: \"loading\";\n    /** Has a value — what a floating label rises for. */\n    filled: \"filled\";\n    /** Has an error to show, as distinct from `error`: the label reserves room, the wrapper paints. */\n    hasError: \"has-error\";\n    /** The user has been here and left. */\n    touched: \"touched\";\n    /** Filtered out of the list, still in the DOM. */\n    hidden: \"hidden\";\n    /** A file is being dragged over the dropzone. */\n    dragover: \"dragover\";\n    /** Today's date. */\n    today: \"today\";\n    /** A day belonging to the month either side of the one on show. */\n    outside: \"outside\";\n    /** Between the two ends of a selected range. */\n    inRange: \"in-range\";\n    /** The first day of a selected range. */\n    rangeStart: \"range-start\";\n    /** The last day of a selected range. */\n    rangeEnd: \"range-end\";\n    /** Can be taken off — a value chip with a dismiss affordance. */\n    removable: \"removable\";\n    /** Held and travelling: a chip a pointer has picked up and not yet put down. */\n    dragging: \"dragging\";\n    /**\n     * Showing words the shell composed because no document wrote any.\n     *\n     * Everything inside a field is named by pointing at its label, so an empty one leaves a group, a\n     * grid or a dialog announced as its role and nothing else. The words are `fieldAccessibleName`'s\n     * and they are owed to a screen reader; whether they are also a heading on the page is what this\n     * lets a theme decide.\n     */\n    unwritten: \"unwritten\";\n    /** Laid out along the row rather than down the column. */\n    horizontal: \"horizontal\";\n    /** The dense form of a control that has one. */\n    compact: \"compact\";\n    /** Drawn where the pointer is rather than where the value is — a second hand, faintly. */\n    ghost: \"ghost\";\n    /** Moves rather than jumps. Asked for by the host: a thing in motion is briefly not where it is. */\n    animated: \"animated\";\n    /** The action that commits, as against the one that dismisses. */\n    confirm: \"confirm\";\n    /** The overlay sits above its anchor. */\n    above: \"above\";\n    /** The overlay gave up on its anchor and centred itself. */\n    overlay: \"overlay\";\n    /** The overlay hangs from the end of its anchor rather than the start. The start is the ordinary\n     * case and carries no class, exactly as \"below\" does for placement. */\n    right: \"right\";\n    /**\n     * On the inner ring of a face that has two.\n     *\n     * A clock face has twelve positions and 24-hour time has twenty-four hours, so the second twelve\n     * sit at the same positions on a shorter radius. Which numbers those are is the contract's\n     * (`timepickerDialNumbers`); this is how a renderer says which ring it drew one on.\n     */\n    inner: \"inner\";\n}>"
   ],
   "widgets:MDY_TESTING_VOCABULARIES": [
-    "const-> readonly MdyTestingVocabulary[]"
+    "const: readonly MdyTestingVocabulary[]"
   ],
   "widgets:MDY_TIMEPICKER_ADVANCE_MS": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_TIMEPICKER_DEFAULT_FORMAT": [
-    "const-> MdyTimeFormat"
+    "const: MdyTimeFormat"
   ],
   "widgets:MDY_TIMEPICKER_INITIAL_VIEW": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_TIMEPICKER_INNER_RING": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_TIMEPICKER_NUMBER_SIZE": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_TIMEPICKER_RING_BAND": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_TYPEAHEAD_IDLE_MS": [
-    "const-> (inferred)"
+    "const: (inferred)"
   ],
   "widgets:MDY_VOCABULARIES_ELSEWHERE": [
-    "const-> readonly {\n    readonly name: string;\n    readonly package: string;\n    readonly describes: string;\n}[]"
+    "const: readonly {\n    readonly name: string;\n    readonly package: string;\n    readonly describes: string;\n}[]"
   ],
   "widgets:MDY_WIDGET_CONTRACTS": [
-    "const-> Readonly<{\n    text: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    email: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    password: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    textarea: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    number: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"decrement\" | \"errorItem\" | \"errors\" | \"increment\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    slider: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"value\">;\n    checkbox: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"indicator\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\">;\n    toggle: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\" | \"thumb\" | \"track\">;\n    radio: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionControl\" | \"optionLabel\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    segmented: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionText\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    select: import(\"./kinds.js\").MdyWidgetDefinition<\"arrow\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"options\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"value\">;\n    multiselect: import(\"./kinds.js\").MdyWidgetDefinition<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\">;\n    datepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"control\" | \"dialogHeader\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    daterange: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"dialogHeader\" | \"endControl\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"separator\" | \"startControl\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    timepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"control\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"errorItem\" | \"errors\" | \"header\" | \"hour\" | \"hourControl\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"toggle\">;\n    file: import(\"./kinds.js\").MdyWidgetDefinition<\"clear\" | \"content\" | \"control\" | \"dropzone\" | \"errorItem\" | \"errors\" | \"fileItem\" | \"fileList\" | \"label\" | \"rejected\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    colors: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"customEntry\" | \"customTint\" | \"errorItem\" | \"errors\" | \"hexInput\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"nativePicker\" | \"popup\" | \"presets\" | \"preview\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"swatch\" | \"toggle\">;\n}>"
+    "const: Readonly<{\n    text: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    email: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    password: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    textarea: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    number: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"decrement\" | \"errorItem\" | \"errors\" | \"increment\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    slider: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"value\">;\n    checkbox: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"indicator\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\">;\n    toggle: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\" | \"thumb\" | \"track\">;\n    radio: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionControl\" | \"optionLabel\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    segmented: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionText\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    select: import(\"./kinds.js\").MdyWidgetDefinition<\"arrow\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"options\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"value\">;\n    multiselect: import(\"./kinds.js\").MdyWidgetDefinition<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\">;\n    datepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"control\" | \"dialogHeader\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    daterange: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"dialogHeader\" | \"endControl\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"separator\" | \"startControl\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    timepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"control\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"errorItem\" | \"errors\" | \"header\" | \"hour\" | \"hourControl\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"toggle\">;\n    file: import(\"./kinds.js\").MdyWidgetDefinition<\"clear\" | \"content\" | \"control\" | \"dropzone\" | \"errorItem\" | \"errors\" | \"fileItem\" | \"fileList\" | \"label\" | \"rejected\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    colors: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"customEntry\" | \"customTint\" | \"errorItem\" | \"errors\" | \"hexInput\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"nativePicker\" | \"popup\" | \"presets\" | \"preview\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"swatch\" | \"toggle\">;\n}>"
   ],
   "widgets:MDY_WIDGET_CONTRACT_VERSION": [
-    "const-> 5"
+    "const: 5"
   ],
   "widgets:MDY_WIDGET_KEYBOARD": [
-    "const-> Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>>"
+    "const: Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>>"
   ],
   "widgets:MDY_WIDGET_KINDS": [
-    "const-> readonly [\"text\", \"email\", \"password\", \"textarea\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"radio\", \"segmented\", \"select\", \"multiselect\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
+    "const: readonly [\"text\", \"email\", \"password\", \"textarea\", \"number\", \"slider\", \"checkbox\", \"toggle\", \"radio\", \"segmented\", \"select\", \"multiselect\", \"datepicker\", \"daterange\", \"timepicker\", \"file\", \"colors\"]"
   ],
   "widgets:MDY_WIDGET_RELATIONS": [
-    "const-> Readonly<Record<MdyWidgetKind, readonly MdyWidgetRelation[]>>"
+    "const: Readonly<Record<MdyWidgetKind, readonly MdyWidgetRelation[]>>"
   ],
   "widgets:MDY_WIDGET_STATES": [
-    "const-> readonly [\"pristine\", \"touched\", \"empty\", \"filled\", \"invalid\", \"disabled\", \"readonly\", \"open\", \"focused\", \"selected\", \"loading\"]"
+    "const: readonly [\"pristine\", \"touched\", \"empty\", \"filled\", \"invalid\", \"disabled\", \"readonly\", \"open\", \"focused\", \"selected\", \"loading\"]"
   ],
   "widgets:MDY_WIDGET_STATE_CONTRACTS": [
-    "const-> Readonly<Record<MdyWidgetState, MdyWidgetStateContract>>"
+    "const: Readonly<Record<MdyWidgetState, MdyWidgetStateContract>>"
   ],
   "widgets:MDY_WIDGET_STATE_SUPPORT": [
-    "const-> Readonly<Record<MdyWidgetKind, readonly MdyWidgetState[]>>"
+    "const: Readonly<Record<MdyWidgetKind, readonly MdyWidgetState[]>>"
   ],
   "widgets:MDY_WIDGET_TRANSITIONS": [
-    "const-> Readonly<Record<MdyWidgetKind, readonly MdyWidgetTransition[]>>"
+    "const: Readonly<Record<MdyWidgetKind, readonly MdyWidgetTransition[]>>"
   ],
   "widgets:MdyAccessibleName": [
     "mechanism: MdyNameMechanism",
@@ -4954,7 +4954,7 @@
     "-> returns: string"
   ],
   "widgets:defaultWidgetIdFactory": [
-    "const-> MdyWidgetIdFactory"
+    "const: MdyWidgetIdFactory"
   ],
   "widgets:dialHandLength": [
     "(0) face: Element",
@@ -5553,7 +5553,7 @@
     "-> returns: MdySelectKeyboardAction | null"
   ],
   "widgets:selectTransitionFixtures": [
-    "const-> readonly MdySelectTransitionFixture[]"
+    "const: readonly MdySelectTransitionFixture[]"
   ],
   "widgets:setOverlayOpen": [
     "(0) popup: HTMLElement",
@@ -5605,7 +5605,7 @@
     "-> returns: { readonly min: number; readonly max: number; readonly step: number | null; }"
   ],
   "widgets:ssrRuntimeCapabilities": [
-    "const-> MdyWidgetRuntimeCapabilities"
+    "const: MdyWidgetRuntimeCapabilities"
   ],
   "widgets:stabilizeOverlayPlacement": [
     "(0) previous: MdyOverlayDecision | null",

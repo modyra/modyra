@@ -223,7 +223,12 @@ const surface = JSON.parse(readFileSync(join(root, "packages/widgets/contract-ba
 //
 // What is not acceptable is dropping them quietly, so their count is printed and their unexercised
 // ones are listed: excluded from the verdict, never from the report.
-const isConstant = (key) => (surface[key] ?? []).some((member) => String(member).startsWith("const->"));
+// Matched on the member name alone, so the recorded shape can change spelling without this reader
+// going quietly wrong: it looked for `const->` and the surface began writing `const: T`, which put a
+// constant back into a population it had been excluded from and turned this gate red on a name
+// nobody had touched. A reader that pattern-matches a neighbour's format is a reader that breaks
+// when the neighbour improves.
+const isConstant = (key) => (surface[key] ?? []).some((member) => /^const\s*[:>-]/.test(String(member)));
 const constantKeys = Object.keys(surface).filter(isConstant);
 const names = new Set(Object.keys(surface).filter((key) => !isConstant(key))
   .map((key) => key.slice(key.indexOf(":") + 1)));
