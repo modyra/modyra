@@ -74,13 +74,60 @@ type TestFn = (name: string, fn: () => void | Promise<void>) => void;
  * }));
  * ```
  */
+
+/** One check the suite registered but could not perform, and the reason it could not. */
+export interface MdySkippedReactivityCheck {
+  /** The adapter the check was registered for. */
+  readonly adapter: string;
+  /** The check's own name, as the suite registers it. */
+  readonly check: string;
+  /** Which declaration made it unperformable, in the words a reader can act on. */
+  readonly because: string;
+}
+
+/**
+ * What the last run of this suite could not check, and why.
+ *
+ * A check that returns early reports as a passing test, and a suite of thirty greens where eleven
+ * of them never performed their act is the shape this ledger exists to remove: the number a runner
+ * prints is the number of tests registered, never the number of questions answered.
+ *
+ * An adapter that answers `false` to a capability is not doing anything wrong — most `false`s are
+ * the truth. What is wrong is not being able to see which conformance those answers bought out of.
+ */
+const skipped: MdySkippedReactivityCheck[] = [];
+const registered: string[] = [];
+
+/** Every check this suite has registered, and every one it could not perform. */
+export function reactivityContractLedger(): {
+  readonly registered: readonly string[];
+  readonly skipped: readonly MdySkippedReactivityCheck[];
+} {
+  return { registered: [...registered], skipped: [...skipped] };
+}
+
+/** Forget what earlier runs recorded. A ledger that accumulates across suites counts twice. */
+export function resetReactivityContractLedger(): void {
+  skipped.length = 0;
+  registered.length = 0;
+}
+
 export function runReactivityContractTests(
   test: TestFn,
   assert: AssertLike,
   name: string,
   createHarness: () => MdyReactivityTestHarness,
 ): void {
-  test(`${name}: signal read, set, update and asReadonly`, () => {
+  /** Register a check under its own name, so the ledger counts what was asked, not what ran. */
+  const check = (title: string, fn: () => void | Promise<void>): void => {
+    registered.push(`${name}: ${title}`);
+    test(`${name}: ${title}`, fn);
+  };
+  /** Record that a check could not be performed, and say which declaration bought it out. */
+  const cannot = (title: string, because: string): void => {
+    skipped.push({ adapter: name, check: `${name}: ${title}`, because });
+  };
+  check("signal read, set, update and asReadonly", () => {
     const { reactivity: rx, destroy } = createHarness();
     const s = rx.signal("a");
     assert.equal(s(), "a");
@@ -98,7 +145,7 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: computed caches and invalidates`, () => {
+  check("computed caches and invalidates", () => {
     const { reactivity: rx, destroy } = createHarness();
     const s = rx.signal(1);
     let computations = 0;
@@ -117,7 +164,7 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: untracked read does not create a dependency`, () => {
+  check("untracked read does not create a dependency", () => {
     const { reactivity: rx, destroy } = createHarness();
     const tracked = rx.signal(1);
     const untrackedDep = rx.signal(10);
@@ -145,7 +192,7 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: effect runs, reruns, cleans up and can be destroyed`, async () => {
+  check("effect runs, reruns, cleans up and can be destroyed", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
 
     if (!reactivityRunsEffects(rx)) {
@@ -195,7 +242,7 @@ export function runReactivityContractTests(
   // failed — additive, not a regression gate, until each adapter's own
   // migration milestone (see STATUS.md's REACT-M1..M8 log).
 
-  test(`${name}: capabilities never claim a fictitious guarantee`, () => {
+  check("capabilities never claim a fictitious guarantee", () => {
     const { reactivity: rx, destroy } = createHarness();
     if (rx.capabilities) {
       for (const [key, value] of Object.entries(rx.capabilities)) {
@@ -205,13 +252,14 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: a computed refuses a write to a signal (if capable)`, () => {
+  check("a computed refuses a write to a signal (if capable)", () => {
     const { reactivity: rx, destroy } = createHarness();
     // A computed is a function of its inputs under every reactivity — whether it runs at all
     // depends on who reads it. What differs is whether a graph can see the breach, which is what
     // the capability states; a graph that answers `false` is not being given permission, it is
     // saying it will not notice. See ADR 0032.
     if (rx.capabilities?.pureComputeds !== true) {
+      cannot("a computed refuses a write to a signal (if capable)", "capabilities.pureComputeds is not true");
       destroy();
       return;
     }
@@ -232,9 +280,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: scope destroy is idempotent and cascades to children`, () => {
+  check("scope destroy is idempotent and cascades to children", () => {
     const { reactivity: rx, destroy } = createHarness();
     if (!rx.createScope) {
+      cannot("scope destroy is idempotent and cascades to children", "createScope is not implemented");
       destroy();
       return;
     }
@@ -261,9 +310,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: change is decided the way the reference runtime decides it`, async () => {
+  check("change is decided the way the reference runtime decides it", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (rx.capabilities?.effects !== true) {
+      cannot("change is decided the way the reference runtime decides it", "capabilities.effects is not true");
       destroy();
       return;
     }
@@ -291,9 +341,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: a declared signalEquality is actually honoured`, async () => {
+  check("a declared signalEquality is actually honoured", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (rx.capabilities?.signalEquality !== true || rx.capabilities?.effects !== true) {
+      cannot("a declared signalEquality is actually honoured", "capabilities.signalEquality or capabilities.effects is not true");
       destroy();
       return;
     }
@@ -316,9 +367,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: a declared computedEquality is actually honoured`, async () => {
+  check("a declared computedEquality is actually honoured", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (rx.capabilities?.computedEquality !== true || rx.capabilities?.effects !== true) {
+      cannot("a declared computedEquality is actually honoured", "capabilities.computedEquality or capabilities.effects is not true");
       destroy();
       return;
     }
@@ -337,9 +389,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: a destroyed scope stops the effects it owns`, async () => {
+  check("a destroyed scope stops the effects it owns", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     if (!rx.createScope || rx.capabilities?.effects !== true) {
+      cannot("a destroyed scope stops the effects it owns", "createScope is not implemented, or capabilities.effects is not true");
       destroy();
       return;
     }
@@ -366,9 +419,10 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: registering on a destroyed scope throws a typed error`, () => {
+  check("registering on a destroyed scope throws a typed error", () => {
     const { reactivity: rx, destroy } = createHarness();
     if (!rx.createScope) {
+      cannot("registering on a destroyed scope throws a typed error", "createScope is not implemented");
       destroy();
       return;
     }
@@ -380,10 +434,11 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: batch() coalesces effect runs (if capable)`, async () => {
+  check("batch() coalesces effect runs (if capable)", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     const batching = asBatching(rx);
     if (!batching) {
+      cannot("batch() coalesces effect runs (if capable)", "capabilities.batching is not true");
       destroy();
       return;
     }
@@ -407,10 +462,11 @@ export function runReactivityContractTests(
     destroy();
   });
 
-  test(`${name}: flush() settles pending effects deterministically (if capable)`, () => {
+  check("flush() settles pending effects deterministically (if capable)", () => {
     const { reactivity: rx, destroy } = createHarness();
     const flushable = asFlush(rx);
     if (!flushable) {
+      cannot("flush() settles pending effects deterministically (if capable)", "capabilities.deterministicFlush is not true");
       destroy();
       return;
     }
@@ -429,10 +485,11 @@ export function runReactivityContractTests(
     });
   });
 
-  test(`${name}: observe() only fires on an actual change, never on the initial run (if capable)`, async () => {
+  check("observe() only fires on an actual change, never on the initial run (if capable)", async () => {
     const { reactivity: rx, flushIfSupported, destroy } = createHarness();
     const observable = asObserve(rx);
     if (!observable) {
+      cannot("observe() only fires on an actual change, never on the initial run (if capable)", "capabilities.directObservation is not true");
       destroy();
       return;
     }

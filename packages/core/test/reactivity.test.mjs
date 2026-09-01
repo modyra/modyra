@@ -8,8 +8,8 @@
  * made inside it.
  */
 import assert from "node:assert/strict";
-import { test } from "node:test";
-import { runReactivityContractTests } from "../dist/testing/index.js";
+import { after, test } from "node:test";
+import { reactivityContractLedger, runReactivityContractTests } from "../dist/testing/index.js";
 import { createForm, field, group, required, vanillaReactivity } from "../dist/index.js";
 import { MdyComputedWriteError } from "../dist/reactivity-errors.js";
 
@@ -24,6 +24,27 @@ runReactivityContractTests(test, assert, "vanillaReactivity", () => {
     flushIfSupported: () => Promise.resolve(),
     destroy: () => scope.destroy(),
   };
+});
+
+/**
+ * What this run could not check, said out loud.
+ *
+ * A capability answered `false` is usually the truth, and answering it honestly is the whole point
+ * of the flags. What it also does is buy a conformance check out of running — and a check that
+ * returns early reports as a passing test, so the number a runner prints is the number registered
+ * rather than the number answered.
+ *
+ * Printed rather than asserted: which capabilities an adapter has is its own business, and a
+ * threshold here would be this file having an opinion about that. What is not negotiable is that
+ * the difference is visible.
+ */
+after(() => {
+  const ledger = reactivityContractLedger();
+  const answered = ledger.registered.length - ledger.skipped.length;
+  console.log(`\nreactivity contract: ${answered} of ${ledger.registered.length} checks performed`);
+  for (const skip of ledger.skipped) {
+    console.log(`  not performed — ${skip.check}\n      because ${skip.because}`);
+  }
 });
 
 /**

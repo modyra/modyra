@@ -1994,6 +1994,11 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
+  "core:MdySkippedReactivityCheck": [
+    "adapter: string",
+    "because: string",
+    "check: string"
+  ],
   "core:MdySnapshotOptions": [
     "sensitive?: (path: string) => boolean | undefined"
   ],
@@ -2578,6 +2583,9 @@
     "(2) clientY: number",
     "-> returns: number"
   ],
+  "core:reactivityContractLedger": [
+    "-> returns: { readonly registered: readonly string[]; readonly skipped: readonly MdySkippedReactivityCheck[]; }"
+  ],
   "core:reactivityRunsEffects": [
     "(0) rx: Pick<MdyReactivity, \"capabilities\">",
     "-> returns: boolean"
@@ -2595,6 +2603,9 @@
   "core:registerHandleOwner": [
     "(0) handle: object",
     "(1) rx: MdyReactivity",
+    "-> returns: void"
+  ],
+  "core:resetReactivityContractLedger": [
     "-> returns: void"
   ],
   "core:runReactivityContractTests": [
