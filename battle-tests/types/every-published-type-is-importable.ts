@@ -276,6 +276,7 @@ import type {
   MdyStateIssueCode,
   MdyStateMatrixOptions,
   MdyAccessibleName,
+  MdyDivergence,
   MdyIdClaim,
   MdyPartObservation,
   MdyReadingHost,
@@ -901,3 +902,6 @@ void held279;
 
 declare const held280: MdyIdClaim;
 void held280;
+
+declare const held281: MdyDivergence;
+void held281;

@@ -103,9 +103,27 @@ export function reading<T>(
  */
 export const MDY_NOT_READ = "(not read)" as const;
 
-/** The text for a reading, whether or not it has a value. Never empty for an unread one. */
+/**
+ * What a reader is shown for a value that was read and renders as nothing.
+ *
+ * The empty string is a legitimate and common reading — an `id=""`, a label whose text node is
+ * blank — and it is the one value whose rendering collides with having read nothing at all. Both
+ * would occupy the same width on a page: none. So the two states that must never be confused are
+ * each given a word, and neither is spelled with silence.
+ */
+export const MDY_EMPTY = "(empty)" as const;
+
+/**
+ * The text for a reading, whether or not it has a value. Never empty, in either state.
+ *
+ * The guarantee is on the output, not on the branch: a reading is shown as its value, as the
+ * reason it has none, or as the word for a value that renders as nothing. A reader shown a blank
+ * has been told nothing and cannot tell which of the three they are looking at.
+ */
 export function readingText<T>(one: MdyReading<T>, show: (value: T) => string = String): string {
-  return one.read ? show(one.value) : `${MDY_NOT_READ} — ${one.reason}`;
+  if (!one.read) return `${MDY_NOT_READ} — ${one.reason}`;
+  const drawn = show(one.value);
+  return drawn === "" ? MDY_EMPTY : drawn;
 }
 
 /**
@@ -438,4 +456,87 @@ export function readIdClaims(
       .filter(([, claimants]) => claimants > 1)
       .map(([id, claimants]) => ({ id, claimants }));
   });
+}
+
+
+/** One question, asked of two renderers, and what each answered. */
+export interface MdyDivergence {
+  readonly label: string;
+  readonly left: string;
+  readonly right: string;
+  /**
+   * Why the two differ.
+   *
+   * `values` — both read something and the somethings differ. `one-unread` — one read and the other
+   * could not, which is usually a defect in the probe rather than in the renderer. `both-unread` —
+   * neither could look, and comparing them says nothing about either.
+   */
+  readonly kind: "values" | "one-unread" | "both-unread";
+}
+
+/**
+ * Compare what two renderers answered to the same questions.
+ *
+ * **This instrument cannot tell you whether either answer is right.** It compares renderers to each
+ * other, so a property all of them get wrong in the same way passes silently — and that has already
+ * happened here: three renderers agreed on a target size below the threshold, and on a position no
+ * baseline had ever recorded. Agreement is evidence of consistency and nothing else.
+ *
+ * What it does catch is the other half, and it is the half that reaches a person: two renderers of
+ * one contract that disagree mean at least one is wrong, and a form drawn two ways is two products.
+ *
+ * `both-unread` is reported rather than skipped. Two probes that could not look agree about nothing,
+ * and a comparison that quietly treated that as a match would report its own blindness as success —
+ * the defect the reading layer exists to remove, reappearing one level up.
+ */
+export function compareReadings<T>(
+  left: {
+    readonly name: string;
+    readonly readings: ReadonlyArray<{ readonly label: string; readonly reading: MdyReading<T> }>;
+  },
+  right: {
+    readonly name: string;
+    readonly readings: ReadonlyArray<{ readonly label: string; readonly reading: MdyReading<T> }>;
+  },
+  show: (value: T) => string = String,
+): readonly MdyDivergence[] {
+  const found: MdyDivergence[] = [];
+  const rightBy = new Map(right.readings.map((one) => [one.label, one.reading]));
+
+  for (const { label, reading: theirs } of left.readings) {
+    const other = rightBy.get(label);
+    if (other === undefined) {
+      // A question asked of one renderer and not the other is a gap in the comparison, not a
+      // divergence between them — and saying so is what keeps the count honest.
+      found.push({
+        label,
+        left: readingText(theirs, show),
+        right: `${MDY_NOT_READ} \u2014 not-attempted`,
+        kind: "one-unread",
+      });
+      continue;
+    }
+    if (!theirs.read && !other.read) {
+      found.push({
+        label,
+        left: readingText(theirs, show),
+        right: readingText(other, show),
+        kind: "both-unread",
+      });
+      continue;
+    }
+    if (theirs.read !== other.read) {
+      found.push({
+        label,
+        left: readingText(theirs, show),
+        right: readingText(other, show),
+        kind: "one-unread",
+      });
+      continue;
+    }
+    const mine = readingText(theirs, show);
+    const yours = readingText(other, show);
+    if (mine !== yours) found.push({ label, left: mine, right: yours, kind: "values" });
+  }
+  return found;
 }

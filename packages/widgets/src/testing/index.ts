@@ -38,10 +38,12 @@ export type { MdySelectTransitionFixture } from "../select/fixtures/transitions.
 export { MDY_TESTING_VOCABULARIES, type MdyTestingVocabulary } from "./vocabularies.js";
 
 export {
+  MDY_EMPTY,
   MDY_NOT_READ,
   reading,
   readingOf,
   readingText,
+  compareReadings,
   drawReadings,
   readAccessibleName,
   readIdClaims,
@@ -54,4 +56,4 @@ export {
 // on `read` and switches on `reason` without naming either — so exporting them adds three words to
 // the surface that buy nothing a reader does not already have. `unread` still takes a reason, and a
 // literal is checked against the union at the call site.
-export type { MdyAccessibleName, MdyIdClaim, MdyReadingHost, MdyReferenceTargets, MdyResolvedReference, MdyPartObservation, MdyReading } from "./reading.js";
+export type { MdyAccessibleName, MdyDivergence, MdyIdClaim, MdyReadingHost, MdyReferenceTargets, MdyResolvedReference, MdyPartObservation, MdyReading } from "./reading.js";

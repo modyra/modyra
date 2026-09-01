@@ -11,6 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  MDY_EMPTY,
   MDY_NOT_READ,
   reading,
   readingOf,
@@ -63,13 +64,36 @@ test("nothing a reader is shown is blank, whichever way the reading ended", () =
     readingOf(false, WHERE),
   ];
 
+  // Every ending, including the ones that were read. A loop that skipped those would be asserting
+  // the claim only where it cannot fail, which is how an empty read value stayed blank.
   for (const one of endings) {
     const text = readingText(one);
+    const what = one.read ? `a read ${JSON.stringify(one.value)}` : `an unread ${one.reason}`;
+    assert.notEqual(text.trim(), "", `${what} rendered as a blank`);
     if (one.read) continue;
-    assert.notEqual(text.trim(), "", `an unread ${one.reason} rendered as a blank`);
     assert.match(text, new RegExp(MDY_NOT_READ.replace(/[()]/g, "\\$&")));
     assert.match(text, new RegExp(one.reason), "the reason a reader must act on is not shown");
   }
+});
+
+test("a value that was read and renders as nothing says so, and does not say it was not read", () => {
+  // The two states a blank cell would fold together: an `id=""` that was found and read, and an
+  // element that was never reached. Both occupy no width; only one of them is a defect to chase.
+  const wasEmpty = readingText(reading(WHERE, () => ""));
+  const wasNotRead = readingText(unread("absent-probe", "text.control"));
+
+  assert.equal(wasEmpty, MDY_EMPTY);
+  assert.notEqual(wasEmpty, wasNotRead);
+  assert.doesNotMatch(wasEmpty, /not read/, "a value that was read is reported as unread");
+  assert.doesNotMatch(wasNotRead, new RegExp(MDY_EMPTY.replace(/[()]/g, "\\$&")));
+});
+
+test("the word for an empty value is not spent on a value that renders as itself", () => {
+  // `show` decides what nothing looks like: a formatter that returns text for the empty string
+  // has no empty rendering, and must not be overruled into one.
+  const shown = readingText(reading(WHERE, () => ""), (value) => `<${value.length} chars>`);
+  assert.equal(shown, "<0 chars>");
+  assert.notEqual(shown, MDY_EMPTY);
 });
 
 test("a read falsey value is not mistaken for an absence", () => {
