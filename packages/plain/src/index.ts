@@ -6,7 +6,7 @@
  * interactive DOM for every field, wired to @modyra/widgets' headless
  * controllers. No virtual DOM, no template engine, no framework runtime.
  */
-export { mountMdyForm } from "./mount.js";
+export { mountDynamicForm, mountMdyForm } from "./mount.js";
 export type { MdyPlainForm, MountMdyFormOptions } from "./mount.js";
 
 export { buildForm, buildFormSchema, applyFieldValidators } from "./schema.js";

@@ -12,7 +12,7 @@ import {
   required as mdyRequired,
 } from "@modyra/core";
 import { MDY_PALETTE_MODELS, compileMdyTheme, serializeMdyThemeCss } from "@modyra/styles";
-import { mountMdyForm, renderField } from "@modyra/plain";
+import { mountDynamicForm, mountMdyForm, renderField } from "@modyra/plain";
 import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { inspectWidgetDom } from "@modyra/widgets/testing";
 import { portalRootFor } from "@modyra/widgets";
@@ -709,18 +709,19 @@ if (servedNote && servedHost) {
       return;
     }
 
-    const verdict = parseDynamicForm(payload, { mode: "strict" });
-    if (!verdict.ok) {
+    // Parsed strictly, its rules applied, and mounted — in one act. Doing it in three steps is
+    // what this door exists to stop: forget `applyDynamicRules` between them and the form still
+    // mounts, with every condition the document declared inert.
+    try {
+      const parsed = parseDynamicForm(payload, { mode: "strict" });
+      servedNote.textContent =
+        `Contract v${parsed.version} · ${parsed.fields.length} fields · built in Rust, drawn here.`;
+      mountDynamicForm(servedHost, payload, { submitLabel: "Place order" });
+    } catch (refusal) {
       servedNote.textContent =
         "The API served a document this reader refuses — which is the check working, not a network "
-        + "problem: "
-        + verdict.diagnostics.map((each) => `${each.code} at ${each.path}`).join(", ");
-      return;
+        + `problem:\n${refusal.message}`;
     }
-
-    servedNote.textContent =
-      `Contract v${verdict.version} · ${verdict.fields.length} fields · built in Rust, drawn here.`;
-    mountMdyForm(servedHost, verdict.fields, { submitLabel: "Place order" });
   };
 
   void loadServed();

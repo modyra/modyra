@@ -10,7 +10,7 @@
 import type {
   MdyDynamicValidation, MdyDraftOptions } from "@modyra/core";
 import { adoptSilentWrites, bindFormReset, reportIdCollision } from "@modyra/widgets";
-import { applyDynamicRules, assertLayoutWithinDepth, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
+import { applyDynamicRules, parseDynamicForm, assertLayoutWithinDepth, assertSafeDynamicFieldNames, vanillaReactivity, type MdyDynamicCollection, type MdyDynamicField, type MdyDynamicLayoutChild, type MdyDynamicLayoutNode, type MdyDynamicLayoutSlot, type MdyDynamicRule, type MdyFieldHandle, type MdyFormSchema, type MdyReactivity, type MdySubmittedValue, type MdyTypedForm } from "@modyra/core";
 import { buildForm } from "./schema.js";
 import { formErrorsOf, formScopeOf, idSafeKey, isValidWidgetId, layoutNodeAttributes, layoutSlotStyle, MDY_FORM_SHELL_CLASSES, MDY_ID_DELIMITER, MDY_LAYOUT_CLASSES } from "@modyra/widgets";
 import { renderField } from "./fields/index.js";
@@ -380,4 +380,42 @@ export function mountMdyForm(
   }
 
   return { form, reactivity, dispose };
+}
+
+/**
+ * Mount a form from a document, in one act.
+ *
+ * `parseDynamicForm` reads a document and `mountMdyForm` draws fields — and between them sits
+ * `applyDynamicRules`, which a caller has to remember. Forget it and everything still compiles, the
+ * form still mounts, and the conditions the document declared simply never fire: the page looks
+ * obeyed. Three steps where two of them are the interesting one is a sequence nobody gets wrong
+ * twice, and everybody gets wrong once.
+ *
+ * **Strict, whatever the parser's default is.** A lenient parse returns what it could read and says
+ * what it could not; that is the right default for a reader, and the wrong one for this door,
+ * because the person using it is exactly the one who will not read the diagnostics. A document that
+ * lost something is refused here, with what it lost.
+ */
+export function mountDynamicForm(
+  container: HTMLElement,
+  document_: unknown,
+  options: Omit<MountMdyFormOptions, "layout" | "rules" | "collections"> = {},
+): MdyPlainForm {
+  const parsed = parseDynamicForm(document_, { mode: "strict" });
+  if (!parsed.ok) {
+    const errors = parsed.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+    throw new TypeError(
+      `This document cannot be mounted:\n\n`
+      + errors.map((each) => `    ${each.code} at ${each.path}\n      ${each.message}`).join("\n")
+      + "\n\n  Mounted strictly: a document that lost a declaration is refused rather than drawn\n"
+      + "  without it. `parseDynamicForm` reads leniently if that is what you want, and tells you\n"
+      + "  what it dropped.",
+    );
+  }
+  return mountMdyForm(container, parsed.fields, {
+    ...options,
+    layout: parsed.layout,
+    rules: parsed.rules,
+    collections: parsed.collections,
+  });
 }

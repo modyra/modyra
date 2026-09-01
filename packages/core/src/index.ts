@@ -71,7 +71,9 @@ export {
   declaredRuleNames,
   declaredRuleShape,
 } from "./declared-rules.js";
-export type { MdyDeclaredRules, MdyRuleRefusal } from "./declared-rules.js";
+// `MdyDeclaredRules` and `MdyRuleRefusal` are deliberately not exported. Rules are written inline —
+// `{ rules: { required: true } }` — so nothing is gained by naming their shape, and a refusal is
+// only ever read off `buildDeclaredRules`, where it arrives structurally.
 export type { MdyFieldConstraints, MdyValidatorFacts } from "./validator-facts.js";
 
 export {

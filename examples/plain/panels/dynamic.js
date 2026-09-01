@@ -6,7 +6,7 @@
  * it says out loud. Paste something broken and read the diagnostics — that is the panel.
  */
 import { MDY_DYNAMIC_DIAGNOSTICS, MDY_DYNAMIC_INVALID_FIELD, evaluateRuleCondition, parseDynamicForm } from "@modyra/core";
-import { mountMdyForm } from "@modyra/plain";
+import { mountDynamicForm, mountMdyForm } from "@modyra/plain";
 import { formErrorsOf, MDY_FORM_SHELL_CLASSES, MDY_FORM_SHELL_STRUCTURE, MDY_TIMEPICKER_DEFAULT_FORMAT, timepickerPlaceholder } from "@modyra/widgets";
 import { action, readoutPrinter, toolbar } from "./shell.js";
 
@@ -78,6 +78,7 @@ export const dynamicPanel = {
     "MDY_DISABLED_BLOCKS_TRANSITIONS",
     "MDY_DRAFT_KEY_IN_USE",
     "MDY_DRAFT_NOT_RESTORED",
+    "mountDynamicForm",
     "MDY_DYNAMIC_DIAGNOSTICS",
     "MDY_DYNAMIC_FIELD_KINDS",
     "MDY_DYNAMIC_INVALID_FIELD",
@@ -453,17 +454,19 @@ export const dynamicPanel = {
         return;
       }
 
-      const verdict = parseDynamicForm(payload, { mode: "strict" });
-      if (!verdict.ok) {
+      // Parsed strictly, its rules applied, and mounted — in one act. The three-step version is
+      // what this door removes: forget `applyDynamicRules` in the middle and the form still mounts,
+      // with every condition the document declared inert and the page looking obeyed.
+      try {
+        const verdict = parseDynamicForm(payload, { mode: "strict" });
+        servedNote.textContent =
+          `Contract v${verdict.version}, ${verdict.fields.length} fields, built in Rust and drawn here.`;
+        servedMount = mountDynamicForm(servedHost, payload, { submitLabel: "Place order" });
+      } catch (refusal) {
         servedNote.textContent =
           "The API served a document this reader refuses — which is the check doing its job, not a "
-          + "network problem: " + verdict.diagnostics.map((d) => `${d.code} at ${d.path}`).join(", ");
-        return;
+          + `network problem: ${refusal.message}`;
       }
-
-      servedNote.textContent =
-        `Contract v${verdict.version}, ${verdict.fields.length} fields, built in Rust and drawn here.`;
-      servedMount = mountMdyForm(servedHost, verdict.fields, { submitLabel: "Place order" });
     };
 
     void loadServed();
