@@ -257,6 +257,61 @@ for (const version of readdirSync(CORPUS)) {
   }
 }
 
+/**
+ * **Every document is visible to every reader that claims to read the corpus.**
+ *
+ * The readers outside this repository's language name their fixtures one at a time — `include_str!`
+ * in Rust, a path resolved per file in Java — and a hand-written list answers exactly about what was
+ * written into it and is silent about the rest. That is not a hypothesis: three documents sat in the
+ * corpus unread by both SDKs until somebody counted, and neither suite went red, because a fixture
+ * nobody reads cannot fail. Their totals were honest and uninformative — the count a list reports is
+ * the count it was given.
+ *
+ * So the corpus, which knows what it contains, asks instead of waiting to be asked. This does not
+ * check that a reader *agrees* with the document — its own suite does that, against the verdict
+ * declared beside it. It checks that the reader has been shown the document at all, which is the
+ * premise every one of those agreements rests on.
+ *
+ * Named by file rather than by path because the readers spell the path differently and the names do
+ * not collide; a collision would make this ambiguous, so it is refused rather than guessed at.
+ */
+const READERS = [
+  { name: "the Rust reader", dir: "sdk/rust", suffix: ".rs" },
+  { name: "the Java reader", dir: "sdk/java", suffix: ".java" },
+];
+
+function sourcesUnder(dir, suffix) {
+  const found = [];
+  const walk = (at) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      const next = join(at, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === "target" || entry.name === "node_modules") continue;
+        walk(next);
+      } else if (entry.name.endsWith(suffix)) {
+        found.push(readFileSync(next, "utf8"));
+      }
+    }
+  };
+  walk(at0(dir));
+  return found;
+}
+const at0 = (dir) => join(ROOT, dir);
+
+for (const reader of READERS) {
+  if (!existsSync(at0(reader.dir))) continue;
+  const sources = sourcesUnder(reader.dir, reader.suffix).join("\n");
+  for (const version of readdirSync(CORPUS)) {
+    for (const file of readdirSync(join(CORPUS, version))) {
+      if (!file.endsWith(".json") || file.slice(0, -".json".length).includes(".")) continue;
+      if (!sources.includes(file)) {
+        findings.push(`spec/fixtures/dynamic-form/${version}/${file}: ${reader.name} never names it, `
+          + "so whatever that suite reports says nothing about this document");
+      }
+    }
+  }
+}
+
 console.log("# Contract schema audit\n");
 console.log(`Schemas: ${SCHEMAS.map((s) => s.path).join(", ")}`);
 console.log(`Fixtures checked: ${fixtureCount}`);

@@ -61,6 +61,19 @@ jobs:
       - name: UI contract gates
         run: pnpm run test:contracts
 
+      # The corpus is read by four runtimes and only three of them are JavaScript. The gate above
+      # asserts that every fixture is *named* by the readers outside this language; this asserts that
+      # what they do with it agrees. Neither replaces the other: a reader can be shown a document and
+      # disagree about it, and it can agree about every document it was shown while never being shown
+      # the newest one.
+      #
+      # No toolchain step and no cache: cargo ships with the runner image — Rust 1.98 on both the
+      # current label and the one after it, read from the published manifest rather than assumed —
+      # and the whole thing builds from an empty CARGO_HOME in 14 seconds, two dependencies deep.
+      # Caching a fourteen-second build costs more attention than it returns.
+      - name: The Rust reader agrees with the corpus
+        run: cargo test --manifest-path sdk/rust/modyra-contract/Cargo.toml
+
       - name: Studio and framework-free renderer tests
         run: pnpm run test:studio
 
