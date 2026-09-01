@@ -1341,6 +1341,9 @@
     "end: string | null",
     "start: string | null"
   ],
+  "core:MdyDeclaredRules": [
+    "-> Readonly"
+  ],
   "core:MdyDestroyedScopeError": [
     "constructor(0) scopeId?: symbol | undefined,-> returns: (inferred)",
     "scopeId?: symbol | undefined"
@@ -1684,6 +1687,7 @@
     "asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>",
     "asyncWhen?: (value: TValue, formValue: Record<string, unknown>) => boolean",
     "options?: readonly unknown[]",
+    "rules?: MdyDeclaredRules",
     "sanitize?: MdySanitizer",
     "sensitive?: boolean",
     "shape?: MdyValueShape",
@@ -1947,6 +1951,10 @@
   ],
   "core:MdyRootRef": [
     "root: true"
+  ],
+  "core:MdyRuleRefusal": [
+    "because: string",
+    "rule: string"
   ],
   "core:MdySanitizeProfile": [
     "\"off\"",
@@ -2253,6 +2261,10 @@
     "(1) firstDayOfWeek?: number",
     "-> returns: MdyDateLocale"
   ],
+  "core:buildDeclaredRules": [
+    "(0) rules: MdyDeclaredRules",
+    "-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly refusals: readonly MdyRuleRefusal[]; }"
+  ],
   "core:buildDynamicFieldValidators": [
     "(0) field: MdyDynamicField",
     "-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly marksRequired: boolean; }"
@@ -2318,6 +2330,17 @@
     "(0) year: number",
     "(1) month: number",
     "-> returns: number"
+  ],
+  "core:declarationOf": [
+    "(0) fn: unknown",
+    "-> returns: MdyValidatorDeclaration | undefined"
+  ],
+  "core:declaredRuleNames": [
+    "-> returns: readonly string[]"
+  ],
+  "core:declaredRuleShape": [
+    "(0) rule: string",
+    "-> returns: MdyValidatorDeclaration | undefined"
   ],
   "core:dialHour": [
     "(0) angle: number",
@@ -2650,6 +2673,7 @@
   "core:withFacts": [
     "(0) fn: ValidatorFn<T>",
     "(1) facts: MdyValidatorFacts",
+    "(2) declaration?: MdyValidatorDeclaration",
     "-> returns: ValidatorFn<T>"
   ],
   "widgets:MdyAccessibleNameSource": [

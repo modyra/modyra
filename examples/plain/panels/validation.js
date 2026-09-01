@@ -8,8 +8,12 @@
  * them off; that is what the facts on a rule exist to prevent.
  */
 import {
+  buildDeclaredRules,
   compose,
   createForm,
+  declarationOf,
+  declaredRuleNames,
+  declaredRuleShape,
   crossField,
   email as mdyEmail,
   field as mdyField,
@@ -51,6 +55,10 @@ export const validationPanel = {
    * covered. What a panel exercises is a claim its own browser test checks.
    */
   exercises: [
+    "buildDeclaredRules",
+    "declarationOf",
+    "declaredRuleNames",
+    "declaredRuleShape",
     "MDY_ADAPTER_CONTRACT_VIOLATION",
     "MDY_ANY_PRINTABLE_KEY",
     "MDY_ASYNC_FEATURE_DISABLED",
@@ -268,6 +276,67 @@ export const validationPanel = {
       print();
     });
 
-    return () => { effect.destroy(); print.cancel(); for (const d of dispose) d?.(); form.destroy(); };
+    // ── The rules a field can be given by name ──────────────────────────────────────────────────
+    //
+    // The same rules as above, said as data instead of as imports. The list is not written here: it
+    // is asked of the validators, each of which declares the name a document may use — so a rule
+    // added to the library appears in this box without anybody editing the demo, and one that never
+    // offered itself (`oneOf`, whose declarative form is a field's `options`) never appears.
+    const rulesSection = document.createElement("section");
+    rulesSection.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
+    const rulesHeading = document.createElement("h3");
+    rulesHeading.textContent = "Rules a field can be given by name";
+    rulesSection.append(rulesHeading);
+
+    const vocabulary = document.createElement("p");
+    vocabulary.style.cssText = "font-size:.9em;margin:.25rem 0 1rem";
+    vocabulary.textContent = `Declarable: ${declaredRuleNames()
+      .map((rule) => {
+        const takes = declaredRuleShape(rule).takes;
+        return takes.length === 0 ? rule : `${rule}(${takes.join(", ")})`;
+      })
+      .join(" · ")}`;
+    rulesSection.append(vocabulary);
+
+    const declaredHost = document.createElement("div");
+    declaredHost.dataset.declaredRules = "";
+    rulesSection.append(declaredHost);
+    const declaredReadout = document.createElement("pre");
+    declaredReadout.style.cssText = "font-size:.8rem;margin-top:.75rem";
+    rulesSection.append(declaredReadout);
+    work.append(rulesSection);
+
+    const RULES = { required: true, minLength: 3, pattern: "^[A-Z]+$" };
+    const declaredForm = createForm({ code: mdyField("", [], { rules: RULES }) });
+    const declaredDispose = renderField(declaredHost, declaredForm.f.code, {
+      kind: "text",
+      label: "Code — declared as { required, minLength: 3, pattern }",
+    });
+    const declaredEffect = declaredForm.reactivity.effect(() => {
+      declaredReadout.textContent = JSON.stringify(
+        {
+          declared: RULES,
+          // What those names built, and what the control learned from them: the facts are the
+          // consequence a rule has for the native input, which is why the two lists differ.
+          builtValidators: buildDeclaredRules(RULES).validators.length,
+          eachDeclaresItsName: buildDeclaredRules(RULES).validators.map(
+            (validator) => declarationOf(validator)?.rule ?? "(undeclared)",
+          ),
+          errors: declaredForm.f.code.errors().map((error) => error.message),
+        },
+        null,
+        2,
+      );
+    });
+
+    return () => {
+      effect.destroy();
+      declaredEffect.destroy();
+      declaredDispose?.();
+      declaredForm.destroy();
+      print.cancel();
+      for (const d of dispose) d?.();
+      form.destroy();
+    };
   },
 };

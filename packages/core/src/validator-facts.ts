@@ -83,15 +83,55 @@ export const NO_CONSTRAINTS: MdyFieldConstraints = {
 };
 
 /** Attaches facts to a validator, keeping the function itself untouched. */
+/**
+ * What a rule calls itself in a declarative document, and what it takes to build one.
+ *
+ * A document says what it *wants* — `{ integer: true }`, `{ minLength: 3 }` — and the rule it names
+ * is the intention. The facts a rule attaches are its *consequences* for the native control, which
+ * is why the two vocabularies do not line up member for member: `email` is a rule whose consequence
+ * is `inputMode`, and `integer` is a rule whose consequence is `step`.
+ *
+ * Declared by the rule rather than inferred from its signature. Inference reads a first parameter
+ * and guesses: `required(message?)` takes nothing, `minLength(min, message?)` takes a number, and a
+ * rule like `startsWith("MDY-")` would be read as message-only and called with no argument — code
+ * that compiles and validates nothing. The rule knows; nothing else does.
+ */
+export interface MdyValidatorDeclaration {
+  /** The name a document uses for this rule. */
+  readonly rule: string;
+  /**
+   * The arguments a document supplies, in order.
+   *
+   * A list rather than one word, so a rule taking two — `between(min, max)` — has a shape to
+   * declare when somebody writes one. `[]` is a rule a document turns on: `{ required: true }`.
+   */
+  readonly takes: readonly ("number" | "string" | "pattern")[];
+}
+
+const MDY_VALIDATOR_DECLARATION: unique symbol = Symbol("mdyValidatorDeclaration");
+
+/** How a document names this rule, when the rule says so. `undefined` for one that does not. */
+export function declarationOf(fn: unknown): MdyValidatorDeclaration | undefined {
+  if (typeof fn !== "function") return undefined;
+  return Reflect.get(fn, MDY_VALIDATOR_DECLARATION) as MdyValidatorDeclaration | undefined;
+}
+
 export function withFacts<T>(
   fn: ValidatorFn<T>,
   facts: MdyValidatorFacts,
+  declaration?: MdyValidatorDeclaration,
 ): ValidatorFn<T> {
   // A wrapper rather than a tag on the caller's function: this is exported, so the function handed
   // in may be one the caller uses elsewhere, and hanging facts on it would change a rule they did
   // not ask to change.
   const declared: ValidatorFn<T> = (value) => fn(value);
-  return Object.assign(declared, { [MDY_VALIDATOR_FACTS]: { ...factsOf(fn), ...facts } });
+  const tagged = Object.assign(declared, { [MDY_VALIDATOR_FACTS]: { ...factsOf(fn), ...facts } });
+  // Carried on the wrapper, not merged from the wrapped function: a rule declares its own name or
+  // has none, and inheriting one would let a rule built out of another answer to a name that
+  // belongs to something else.
+  return declaration === undefined
+    ? tagged
+    : Object.assign(tagged, { [MDY_VALIDATOR_DECLARATION]: declaration });
 }
 
 /** What a single rule declares, including the standalone required marker an adapter may have set. */

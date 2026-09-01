@@ -1,3 +1,4 @@
+import { buildDeclaredRules, type MdyDeclaredRules } from "./declared-rules.js";
 
 import { MDY_UNSUPPORTED_ADAPTER_OPTION, type MdyDiagnostics } from "./reactivity-diagnostics.js";
 import type { MdyValueShape } from "./value-contracts.js";
@@ -119,6 +120,19 @@ export type {
 // ─── Schema descriptors ───────────────────────────────────────────────────────
 
 export interface MdyFieldOptions<TValue> {
+  /**
+   * The rules this field declares, by name: `{ required: true, minLength: 3 }`.
+   *
+   * The same rules the validator list carries, said the way most fields need them — without the
+   * imports. They are appended to `validators`, so the two can be mixed and a rule written either
+   * way is the same rule: `rules` is a shorthand, never a second engine.
+   *
+   * The vocabulary comes from the validators themselves — each declares the name a document may
+   * use — so a name nothing declares is refused rather than ignored. `oneOf` is deliberately not
+   * among them: a field's `options` is the declarative form of that list, and carrying it twice
+   * would let one copy disagree with the other.
+   */
+  readonly rules?: MdyDeclaredRules;
   readonly asyncValidators?: ReadonlyArray<MdyAsyncValidatorFn<TValue>>;
   /**
    * Milliseconds to wait after the last change before running the async
@@ -206,10 +220,22 @@ export function field<TValue>(
 ): MdyFieldDescriptor<MdyWiden<TValue>> {
   assertValidatorList(validators);
   reportUnknownFieldOptions(options);
+  const declared = options?.rules ? buildDeclaredRules(options.rules) : undefined;
+  if (declared && declared.refusals.length > 0) {
+    // Thrown rather than warned: a rule the field does not have is a constraint the author believes
+    // is being enforced, and a form that quietly enforces less than it was told to is the failure
+    // this door exists to avoid.
+    throw new TypeError(
+      `This field declares ${declared.refusals.length === 1 ? "a rule" : "rules"} it cannot build:\n\n`
+      + declared.refusals.map((refusal) => `    ${refusal.rule} — ${refusal.because}`).join("\n"),
+    );
+  }
   return {
     kind: "field",
     initial,
-    validators,
+    validators: declared
+      ? [...validators, ...(declared.validators as ReadonlyArray<ValidatorFn<MdyWiden<TValue>>>)]
+      : validators,
     asyncValidators: options?.asyncValidators ?? [],
     asyncDebounceMs: options?.asyncDebounceMs ?? 0,
     asyncDependsOn: options?.asyncDependsOn ?? [],
@@ -620,7 +646,7 @@ function reportUnknownOptions(options: unknown): void {
 /** What a field may be given. Grows with the library, which is why an unknown key is said rather than refused. */
 const FIELD_OPTIONS: ReadonlySet<string> = new Set([
   "asyncValidators", "asyncDebounceMs", "asyncDependsOn", "asyncTimeoutMs", "asyncWhen",
-  "when", "sanitize", "sensitive", "shape", "options",
+  "when", "sanitize", "sensitive", "shape", "options", "rules",
 ]);
 
 /**

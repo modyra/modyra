@@ -60,11 +60,18 @@ export {
 export {
   MDY_VALIDATOR_FACTS,
   NO_CONSTRAINTS,
+  declarationOf,
   factsOf,
   factsOfAll,
   mergeFacts,
   withFacts,
 } from "./validator-facts.js";
+export {
+  buildDeclaredRules,
+  declaredRuleNames,
+  declaredRuleShape,
+} from "./declared-rules.js";
+export type { MdyDeclaredRules, MdyRuleRefusal } from "./declared-rules.js";
 export type { MdyFieldConstraints, MdyValidatorFacts } from "./validator-facts.js";
 
 export {

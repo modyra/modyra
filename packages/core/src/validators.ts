@@ -68,7 +68,7 @@ export const required = <T>(message = 'This field is required'): ValidatorFn<T> 
     if (isEmptyRange(value)) return [message];
     return [];
   };
-  return withFacts(fn, { required: true });
+  return withFacts(fn, { required: true }, { rule: "required", takes: [] });
 };
 
 /**
@@ -157,7 +157,7 @@ export const minLength = (
     return value.length < min
       ? [message ?? `Minimum length is ${min}`]
       : [];
-  }, { minLength: min });
+  }, { minLength: min }, { rule: "minLength", takes: ["number"] });
 
 /** Maximum string/array length. Empty passes, for the reason given on {@link minLength}. */
 export const maxLength = (
@@ -169,7 +169,7 @@ export const maxLength = (
     return len > max
       ? [message ?? `Maximum length is ${max}`]
       : [];
-  }, { maxLength: max });
+  }, { maxLength: max }, { rule: "maxLength", takes: ["number"] });
 
 /**
  * What `<input type="email">` accepts, as the HTML standard defines it.
@@ -193,7 +193,7 @@ export const email = (message = 'Invalid email address'): ValidatorFn<string | n
     return EMAIL.test(value) ? [] : [message];
     // The keyboard, not the type: which control this is belongs to the kind, and a rule that could
     // change it would let a validator turn a text field into something else.
-  }, { inputMode: "email" });
+  }, { inputMode: "email" }, { rule: "email", takes: [] });
 
 /**
  * The rules a *kind* carries, before a document declares any of its own.
@@ -219,7 +219,7 @@ export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<
     return regex.test(value) ? [] : [message];
     // `<input pattern>` is anchored and has no flags, so only a source without them can be offered;
     // a flagged expression stays a rule, which is where it was working already.
-  }, regex.flags === "" ? { pattern: regex.source } : {});
+  }, regex.flags === "" ? { pattern: regex.source } : {}, { rule: "pattern", takes: ["pattern"] });
 
 /** Numeric minimum. Empty passes — whether a field may be empty is `required`'s question. */
 export const min = (minimum: number, message?: string): ValidatorFn<number | null> => {
@@ -232,7 +232,7 @@ export const min = (minimum: number, message?: string): ValidatorFn<number | nul
       ? [message ?? `Minimum value is ${minimum}`]
       : [];
   };
-  return withFacts(fn, { min: minimum });
+  return withFacts(fn, { min: minimum }, { rule: "min", takes: ["number"] });
 };
 
 /** Numeric maximum. Empty passes — whether a field may be empty is `required`'s question. */
@@ -244,7 +244,7 @@ export const max = (maximum: number, message?: string): ValidatorFn<number | nul
       ? [message ?? `Maximum value is ${maximum}`]
       : [];
   };
-  return withFacts(fn, { max: maximum });
+  return withFacts(fn, { max: maximum }, { rule: "max", takes: ["number"] });
 };
 
 /**
@@ -261,7 +261,7 @@ export const integer = (message = 'Enter a whole number'): ValidatorFn<number | 
   withFacts((value) => {
     if (value === null || value === undefined) return [];
     return Number.isInteger(value) ? [] : [message];
-  }, { step: 1 });
+  }, { step: 1 }, { rule: "integer", takes: [] });
 
 /**
  * Whether a value is the option that was offered.
@@ -351,6 +351,17 @@ function optionsSentence(values: readonly unknown[], subject: string): string {
   return `${subject} must be one of: ${values.map(optionText).join(", ")}`;
 }
 
+/**
+ * Not declared for a document, and that is the decision rather than an omission.
+ *
+ * A field already says which values it offers, in `options`, and a document that also declared
+ * `oneOf` would carry the same list in two places — free to disagree with itself, with nothing to
+ * say which one wins. `options` is the declarative form of this rule; this is the function behind
+ * it, for a schema assembled in code.
+ *
+ * A test refuses a `rule` declaration here, so this reasoning cannot be undone by an edit that
+ * looks like completeness.
+ */
 export const oneOf = (
   values: readonly unknown[],
   message?: string,
