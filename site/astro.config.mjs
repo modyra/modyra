@@ -119,6 +119,7 @@ export default defineConfig({
 						{ label: 'Compatibility', slug: 'contract-compatibility' },
 						{ label: 'Known issues', slug: 'known-issues' },
 						{ label: 'Reactivity capability matrix', slug: 'reactivity-capability-matrix' },
+						{ label: 'The deprecation harvest, measured', slug: 'deprecation-dossier' },
 					],
 				},
 				{

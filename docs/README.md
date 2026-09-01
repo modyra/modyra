@@ -69,6 +69,7 @@ One definition of how a control behaves, shared by every renderer.
 - [Contract compatibility](contract-compatibility.md) — what a change costs, and which changes break
 - [Known issues](known-issues.md) — what does not work yet, and who it affects
 - [Reactivity capability matrix](reactivity-capability-matrix.md) — generated, per adapter
+- [The deprecation harvest, measured](deprecation-dossier.md) — who names each alias and orphan candidate, and what a removal would cost
 
 ## Architecture and integration
 
