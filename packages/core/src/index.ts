@@ -331,3 +331,11 @@ export type {
 // They live behind their own subpaths (@modyra/core/datetime, /localization,
 // /ui, /serialize, /devtools, ...) so the main entry bundles only the form
 // engine.
+
+export {
+  mdyServerSnapshot,
+  mdyRestoreSnapshot,
+  type MdyServerSnapshot,
+  type MdyServerFieldSnapshot,
+  type MdyServerVerdict,
+} from "./server-snapshot.js";

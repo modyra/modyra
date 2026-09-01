@@ -194,8 +194,10 @@ import type {
   MdyContextRef,
   MdyCoreFormOptions,
   MdyDiagnosticSeverity,
+  MdyDraftStorage,
   MdyDynamicArrayNode,
   MdyDynamicBooleanField,
+  MdyDynamicBreakpoint,
   MdyDynamicCalendarOptions,
   MdyDynamicCollection,
   MdyDynamicColorsField,
@@ -218,6 +220,7 @@ import type {
   MdyDynamicRule,
   MdyDynamicRuleOperator,
   MdyDynamicSection,
+  MdyDynamicSlotPlacement,
   MdyDynamicTextField,
   MdyDynamicValidation,
   MdyDynamicValidators,
@@ -240,7 +243,10 @@ import type {
   MdySecurityViolation,
   MdySecurityViolationKind,
   MdySelfRef,
+  MdyServerFieldSnapshot,
+  MdyServerSnapshot,
   MdyServerValidatorOptions,
+  MdyServerVerdict,
   MdySubmittedItemValue,
   MdyValidationMessages,
   MdyValidatorFacts,
@@ -249,9 +255,6 @@ import type {
   MdyValueSecurityResult,
   MdyValueShape,
   MdyWebStorageLike,
-  MdyDynamicBreakpoint,
-  MdyDynamicSlotPlacement,
-  MdyDraftStorage,
 } from "@modyra/core";
 
 import type {
@@ -905,3 +908,12 @@ void held280;
 
 declare const held281: MdyDivergence;
 void held281;
+
+declare const held282: MdyServerSnapshot;
+void held282;
+
+declare const held283: MdyServerFieldSnapshot;
+void held283;
+
+declare const held284: MdyServerVerdict;
+void held284;

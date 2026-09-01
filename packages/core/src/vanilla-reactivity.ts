@@ -302,8 +302,8 @@ export function vanillaReactivity(): MdyReactivity &
   return {
     id: Symbol("vanilla"),
     kind: "vanilla",
-    // graphInspection/serverSnapshots are not implemented — reporting them
-    // true would be a fictitious capability.
+    // graphInspection is not implemented — reporting it true would be a
+    // fictitious capability.
     capabilities: {
       effects: true,
       effectOwnership: true,
@@ -321,7 +321,10 @@ export function vanillaReactivity(): MdyReactivity &
       // Enforced, not merely intended: writing a signal while a computed recomputes throws.
       pureComputeds: true,
       graphInspection: false,
-      serverSnapshots: false,
+      // Builds with no browser globals present and re-runs its computations after a write, which
+      // is what a snapshot taken away from a browser depends on. Asserted by the run that puts a
+      // form built here and a form built in a browser side by side.
+      serverSnapshots: true,
     },
     signal<T>(initial: T, options?: MdySignalOptions<T>): MdyWritableSignal<T> {
       const node = new VanillaSignal(initial, options?.equal);

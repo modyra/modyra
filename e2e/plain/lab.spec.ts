@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test";
  * panel: it reports the previous answer with the authority of the current one. These are the checks
  * that the controls do what the panel says they do.
  */
-const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless", "nested", "renderer"];
+const PANELS = ["states", "validation", "collections", "lifecycle", "dynamic", "security", "headless", "nested", "renderer", "carried"];
 
 async function open(page: import("@playwright/test").Page, id: string) {
   const errors: string[] = [];
@@ -408,4 +408,41 @@ test("renderer: the contract answers about every kind it declares", async ({ pag
     .toBe("timepicker");
   const second = await readout(page);
   expect(second.always, "two kinds do not draw the same parts").not.toEqual(first.always);
+});
+
+/**
+ * The two roads, driven rather than asserted.
+ *
+ * The panel exists because the freeze is invisible in the half a round trip checks: a restore
+ * re-derives, so a sending side whose rules never re-ran still produces correct verdicts here. What
+ * moves is the sender's own column, and this drives the buttons that show it.
+ */
+test("carried: the two roads agree, and a frozen sender is where they stop", async ({ page }) => {
+  await open(page, "carried");
+
+  await page.getByRole("button", { name: "Take and restore" }).click();
+  await page.waitForTimeout(120);
+  const sound = await readout(page);
+  expect(sound.taken, "nothing was carried").toBeTruthy();
+  expect(sound.frozen).toBe(false);
+  // The field that was written reaches the same verdict on both roads.
+  const nameCarried = sound.taken.fields.find((each: { path: string }) => each.path === "name");
+  const nameHere = sound.restored.find((each: { path: string }) => each.path === "name");
+  expect(nameCarried.verdict).toBe("valid");
+  expect(nameHere.verdict).toBe("valid");
+
+  await page.getByRole("button", { name: "Freeze the sender" }).click();
+  await page.waitForTimeout(120);
+  const frozen = await readout(page);
+  expect(frozen.frozen).toBe(true);
+  // The sender is wrong about a field holding a name; the restored column is not, which is the
+  // whole reason the run compares what the sender concluded rather than only the round trip.
+  expect(frozen.taken.fields.find((each: { path: string }) => each.path === "name").verdict).toBe("invalid");
+  expect(frozen.restored.find((each: { path: string }) => each.path === "name").verdict).toBe("valid");
+
+  await page.getByRole("button", { name: "Refuse a runtime" }).click();
+  await page.waitForTimeout(120);
+  const refused = await readout(page);
+  expect(refused.refusal, "a runtime that had not declared the capability was accepted")
+    .toContain("serverSnapshots");
 });
