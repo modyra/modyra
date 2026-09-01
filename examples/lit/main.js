@@ -21,7 +21,9 @@ import {
   required,
   serverValidator,
 } from "@modyra/lit/adapter";
-import { defineMdyElements } from "@modyra/lit/ui";
+import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
+import { html as staticHtml, unsafeStatic } from "lit/static-html.js";
+import { applyDynamicRules, buildFlatFormSchema, parseDynamicForm } from "@modyra/core";
 import { html, LitElement, nothing } from "lit";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 import { legendWhenReady } from "../shared/legend.js";
@@ -241,6 +243,88 @@ class SignupApp extends LitElement {
   }
 }
 customElements.define("signup-app", SignupApp);
+
+/**
+ * The same checkout the plain demo draws, from the same service, drawn by Lit.
+ *
+ * This is the claim the contract exists for: one document, defined by a Rust backend, and every
+ * renderer draws it. Nothing here knows what a checkout is — it asks `mdyLitTagFor` which element
+ * draws each kind the document names, and hands it the field handle.
+ *
+ * Parsed strictly before a single element is created. A document off a network is data from
+ * somewhere else even when the somewhere else is ours.
+ */
+class ServedCheckout extends LitElement {
+  static properties = { _note: { state: true }, _fields: { state: true } };
+
+  createRenderRoot() { return this; }
+
+  constructor() {
+    super();
+    this._note = "asking the API…";
+    this._fields = [];
+    this._form = null;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    void this._load();
+  }
+
+  async _load() {
+    let payload;
+    try {
+      const response = await fetch("http://127.0.0.1:3000/v1/forms/checkout", {
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!response.ok) throw new Error(`the API answered ${response.status}`);
+      payload = await response.json();
+    } catch (error) {
+      // An absence that says how to end it. A blank space reads as a renderer that failed, which is
+      // the wrong thing to go and debug.
+      this._note = `The form API is not answering (${error.message}). Run this demo with `
+        + "`npm run demo:lit`, which starts it, or `cargo run -p modyra-axum-form-server-example`.";
+      return;
+    }
+
+    const parsed = parseDynamicForm(payload, { mode: "strict" });
+    if (!parsed.ok) {
+      this._note = "The API served a document this reader refuses — the check working, not a network "
+        + `problem: ${parsed.diagnostics.map((d) => `${d.code} at ${d.path}`).join(", ")}`;
+      return;
+    }
+
+    // The document's own rules reach the form: a condition parsed and never applied is a form that
+    // looks obeyed while every rule in it is inert.
+    this._form = createLitForm(buildFlatFormSchema(parsed.fields), { autoActivate: false });
+    applyDynamicRules(this._form, parsed.rules);
+    this._form.activate();
+
+    this._note = `Contract v${parsed.version} · ${parsed.fields.length} fields · built in Rust, drawn by Lit.`;
+    this._fields = parsed.fields;
+  }
+
+  render() {
+    return html`
+      <h2>A checkout its backend defined</h2>
+      <p style="font-size:.9em">${this._note}</p>
+      ${this._form
+        ? this._fields.map((each) => {
+            const tag = mdyLitTagFor(each.kind);
+            // A kind this package draws nothing for is said, not skipped: a document naming one
+            // would otherwise lose a field with nobody told.
+            if (!tag) return html`<p>no Lit element draws <code>${each.kind}</code></p>`;
+            return staticHtml`<${unsafeStatic(tag)}
+              .field=${this._form.f[each.name]}
+              label=${each.label ?? each.name}
+            ></${unsafeStatic(tag)}>`;
+          })
+        : null}
+    `;
+  }
+}
+customElements.define("served-checkout", ServedCheckout);
+
 
 /**
  * The arrangement `record()` exists for, in Lit.
