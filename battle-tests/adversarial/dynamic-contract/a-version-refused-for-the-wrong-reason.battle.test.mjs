@@ -28,6 +28,8 @@
  * whichever shape the document takes. It says nothing about which versions should exist.
  */
 
+import { readdirSync } from "node:fs";
+
 import { parseDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
@@ -47,8 +49,28 @@ function refusalFor(document) {
   };
 }
 
-/** Versions no shape of this contract has ever had. */
-const UNSUPPORTED = Object.freeze([5, 99, -1, 0, 1.5, "3", null]);
+/**
+ * Versions no shape of this contract has, read from what it publishes rather than written down.
+ *
+ * The first entry used to be a literal `5`, which was a version nobody had shipped on the day this
+ * was written and became the newest one the day the language grew. A list of what does not exist is
+ * a list that goes stale in exactly one direction — silently, and towards claiming that a supported
+ * version is refused.
+ *
+ * So the boundary is derived: the published schemas are the statement of which versions exist, and
+ * the one after the highest of them is the one that does not. That keeps this adversarial — the
+ * schemas and the parser are two sources, and the battle is whether they agree — instead of asking
+ * the parser to confirm its own opinion.
+ *
+ * The rest are not versions at all. They stay literal because a negative number, a fraction, a
+ * numeral spelled as text and an absent value are shapes rather than positions on a scale, and no
+ * amount of publishing will bring them into existence.
+ */
+const PUBLISHED = readdirSync(new URL("../../../spec/", import.meta.url))
+  .map((name) => /^dynamic-form-v(\d+)\.schema\.json$/.exec(name))
+  .filter((match) => match !== null)
+  .map((match) => Number(match[1]));
+const UNSUPPORTED = Object.freeze([Math.max(...PUBLISHED) + 1, 99, -1, 0, 1.5, "3", null]);
 
 battle(
   {

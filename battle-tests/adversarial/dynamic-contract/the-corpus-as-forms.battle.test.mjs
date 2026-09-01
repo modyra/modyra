@@ -87,6 +87,25 @@ function addRow(handle, node, key) {
  * Returns what was found rather than asserting, so the caller decides what a mismatch means and the
  * walk stays usable from more than one battle.
  */
+/**
+ * Whether a tree declares a collection at all, read from the document rather than from the form.
+ *
+ * These battles are about what a collection does, and they selected their subjects by asking whether
+ * a document declares a tree — which was the same set until the corpus grew a tree that declares a
+ * rule and no collection. It then read as four failures about a fixture that is simply about
+ * something else: the walk reached nothing, so filling changed nothing, so the draft held nothing,
+ * so the round trip was vacuous. One property of one new document, reported four times as a defect.
+ *
+ * The protection those assertions carried is real and is kept — it just belongs to the population
+ * rather than to each member. A corpus that stopped declaring collections anywhere must still fail
+ * loudly; a corpus that gains a document about something else must not.
+ */
+function declaresCollection(node) {
+  if (node === null || typeof node !== "object") return false;
+  if (node.node === "record" || node.node === "array") return true;
+  return Object.values(node).some(declaresCollection);
+}
+
 function fillAndInspect(node, handle, path, found) {
   if (node?.node === "record" || node?.node === "array") {
     const before = node.node === "record" ? handle.keys().length : handle.length();
@@ -154,10 +173,19 @@ battle(
       detail: CORPUS,
     });
 
-    const trees = documents.filter(({ document }) => document.schema !== undefined);
+    const declared = documents.filter(({ document }) => document.schema !== undefined);
+    const trees = declared.filter(({ document }) => declaresCollection(document.schema));
+    // Named, not silently dropped: a tree left out here is a document these battles say nothing
+    // about, and a reader counting green tests would otherwise believe they had covered it.
+    const skipped = declared.filter(({ document }) => !declaresCollection(document.schema));
+    if (skipped.length > 0) {
+      ctx.log.note("trees carrying no collection, so outside these claims", {
+        where: skipped.map(({ where }) => where),
+      });
+    }
     expectClaim(trees.length > 0, {
       claimIds: ["DYN-001"],
-      what: "no fixture in the corpus declares a tree, so no collection was exercised",
+      what: "no fixture in the corpus declares a collection, so no collection was exercised",
     });
 
     for (const { where, document, context } of trees) {
@@ -252,7 +280,7 @@ battle(
     // History is where a nested geometry is most likely to disagree with itself: undoing a row that
     // holds a collection has to take the collection with it, and redoing has to bring back the same
     // one rather than a fresh empty. These are the deepest shapes anything in the project publishes.
-    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined)) {
+    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined && declaresCollection(document.schema))) {
       const { form, initial, filled: full } = filled(document, { history: true }, context);
       try {
         expectClaim(full !== initial, {
@@ -305,7 +333,7 @@ battle(
     // inside a keyed map inside a list, and a list whose rows are themselves lists. What comes back
     // has to be what was there, at every depth, or a user who closed the tab loses the part of the
     // form they went deepest into.
-    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined)) {
+    for (const { where, document, context } of corpus().filter(({ document }) => document.schema !== undefined && declaresCollection(document.schema))) {
       const storage = memoryStorage();
       const draft = { key: "corpus", storage };
 

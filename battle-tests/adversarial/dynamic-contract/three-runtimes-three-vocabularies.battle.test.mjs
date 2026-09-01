@@ -54,10 +54,26 @@ function versionsTypeScriptAccepts() {
   return accepted;
 }
 
-/** The version numbers a guard names, read off the source. */
+/**
+ * The version numbers a guard names, read off the source, in either spelling.
+ *
+ * A guard states its set as literals — `version != 2 && version != 3` — or as a range once the set
+ * grows past the point where writing them out reads well. Both are the same statement, and reading
+ * only the first form returns an empty set from a guard that is perfectly clear: Rust said
+ * `!(2..=5).contains(&form.version)` and this reported that it accepts nothing.
+ *
+ * An empty set is the dangerous answer here, because every other runtime agrees with it — a
+ * comparison against nothing finds no disagreement. The caller's own guard catches that, and it did;
+ * this makes the case not arise.
+ */
 function versionsNamedIn(path, pattern) {
   const source = readFileSync(join(REPO, path), "utf8");
   const line = source.split("\n").find((each) => pattern.test(each)) ?? "";
+  const span = /\b([1-9])\s*\.\.=\s*([1-9])\b/.exec(line);
+  if (span !== null) {
+    const [from, to] = [Number(span[1]), Number(span[2])];
+    return Array.from({ length: to - from + 1 }, (_, step) => from + step);
+  }
   return [...line.matchAll(/\b([1-9])\b/g)].map((match) => Number(match[1])).sort((a, b) => a - b);
 }
 
@@ -69,7 +85,12 @@ battle(
   },
   async (ctx) => {
     const typescript = versionsTypeScriptAccepts();
-    const rust = versionsNamedIn("sdk/rust/modyra-contract/src/lib.rs", /form\.version != \d/);
+    // Either spelling of the same guard: the crate wrote its set out until it grew, and now names a
+    // range. A pattern that knows only the older one reads the newer as silence.
+    const rust = versionsNamedIn(
+      "sdk/rust/modyra-contract/src/lib.rs",
+      /form\.version != \d|\.\.=\s*\d\s*\)\.contains\(&form\.version\)/,
+    );
     const java = versionsNamedIn(
       "sdk/java/modyra-contract/src/main/java/dev/modyra/contract/MdyDynamicFormParser.java",
       /version == \d+ \|\| version == \d+/,
