@@ -23,7 +23,7 @@
       href="./themes/modyra-salience.theme.css"
     />
 
-    <title>Modyra × plain</title>
+    <title>Modyra — a form contract, live</title>
 
     <style>
       [data-rows-section] {
@@ -124,12 +124,92 @@
 
       body {
         margin: 0;
-        padding: 2rem;
+        padding: 0 clamp(1rem, 4vw, 2rem) 4rem;
         font:
           15px/1.5 system-ui,
           sans-serif;
         background: var(--mdy-sys-color-background, #fff);
         color: var(--mdy-sys-color-on-background, #111);
+      }
+
+      /* Reachable by keyboard before anything else, and out of the way until it is focused. */
+      .skip {
+        position: absolute;
+        left: -9999px;
+      }
+      .skip:focus {
+        position: static;
+        display: inline-block;
+        margin: 0.5rem 0;
+      }
+
+      .page-head { padding: 2.5rem 0 1rem; }
+      .page-head h1 { margin: 0; font-size: clamp(1.75rem, 5vw, 2.5rem); }
+      .tagline {
+        margin: 0.5rem 0 0;
+        max-width: 46rem;
+        font-size: 1.0625rem;
+        color: var(--mdy-on-surface-variant, inherit);
+      }
+
+      /*
+        The index of a page this long. Sticky rather than fixed so it never covers a control at the
+        bottom of a short viewport, and it wraps instead of scrolling sideways at 320px.
+      */
+      .section-nav {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1rem;
+        padding: 0.75rem 0;
+        margin-bottom: 1rem;
+        background: var(--mdy-sys-color-background, #fff);
+        border-bottom: 1px solid var(--mdy-outline-variant, rgb(0 0 0 / 15%));
+      }
+      .section-nav a {
+        color: inherit;
+        font-size: 0.9rem;
+        text-decoration-color: color-mix(in srgb, currentcolor 35%, transparent);
+      }
+
+      main > section {
+        padding: 2.5rem 0;
+        border-top: 1px solid var(--mdy-outline-variant, rgb(0 0 0 / 12%));
+        /* A heading landed on from the nav must not sit under it. */
+        scroll-margin-top: 4rem;
+      }
+      main > section:first-of-type { border-top: 0; }
+      main > section > h2 {
+        margin: 0 0 0.5rem;
+        font-size: clamp(1.25rem, 3vw, 1.6rem);
+      }
+      .lead {
+        margin: 0 0 1.5rem;
+        max-width: 60ch;
+        color: var(--mdy-on-surface-variant, inherit);
+      }
+
+      /* Two columns where there is room, one where there is not — never a broken grid. */
+      .split {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 2rem;
+        align-items: start;
+      }
+      @media (max-width: 900px) {
+        .split { grid-template-columns: minmax(0, 1fr); }
+      }
+
+      .bars { display: grid; gap: 1rem; }
+      .served-note {
+        margin: 0 0 1rem;
+        padding: 0.6rem 0.85rem;
+        border-left: 3px solid var(--mdy-primary, currentcolor);
+        background: var(--mdy-surface-container-low, rgb(0 0 0 / 4%));
+        border-radius: 0 8px 8px 0;
+        max-width: 60ch;
       }
 
       header {
@@ -182,13 +262,6 @@
         opacity: 0.6;
       }
 
-      main {
-        display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-        gap: 2rem;
-        align-items: start;
-      }
-
       pre {
         margin: 0;
         padding: 1rem;
@@ -215,11 +288,6 @@
         white-space: pre-wrap;
       }
 
-      @media (max-width: 900px) {
-        main {
-          grid-template-columns: minmax(0, 1fr);
-        }
-      }
       .demo-scenario { max-width: 60ch; opacity: 0.9; margin: 0 0 1rem; }
       .demo-level { border-left: 3px solid color-mix(in srgb, var(--mdy-primary) 60%, transparent); padding-left: 0.85rem; margin: 0.6rem 0; }
       .demo-level .demo-level { border-left-color: color-mix(in srgb, var(--mdy-primary) 35%, transparent); }
@@ -239,56 +307,109 @@
   </head>
 
   <body>
-    <header>
-      <h1>@modyra/plain — full catalog</h1>
+    <a class="skip" href="#kinds">Skip to the fields</a>
 
-      <div class="bar">
-        <span class="bar-label">theme</span>
-        <div data-themes></div>
-      </div>
-
-      <div class="bar">
-        <span class="bar-label">palette maths</span>
-        <div data-palette></div>
-      </div>
-
-      <div class="bar">
-        <span class="bar-label">mode</span>
-        <div data-color-mode></div>
-      </div>
+    <header class="page-head">
+      <h1>Modyra</h1>
+      <p class="tagline">
+        One form contract, drawn by any renderer. Everything below is live — type in it, break it,
+        watch what it says.
+      </p>
     </header>
 
+    <!--
+      Six anchors, and they are links to headings rather than buttons that scroll. A person moving
+      by keyboard lands on the heading itself, and a screen reader announces where they arrived.
+    -->
+    <nav class="section-nav" aria-label="Sections">
+      <a href="#kinds">Fields</a>
+      <a href="#rules">Rules</a>
+      <a href="#conditions">Conditions</a>
+      <a href="#collections">Collections</a>
+      <a href="#served">Served by Rust</a>
+      <a href="#looks">Themes</a>
+    </nav>
+
     <main>
-      <div>
+      <section id="kinds-section" aria-labelledby="kinds">
+        <h2 id="kinds">Every field kind, drawn from one contract</h2>
+        <p class="lead">
+          Seventeen kinds, each declared as data and rendered by <code>@modyra/plain</code>. The
+          panel on the right is the form's own state — it moves as you type.
+        </p>
         <div id="conformance"></div>
-        <div data-form></div>
+        <div class="split">
+          <div data-form></div>
+          <pre data-state aria-label="Live form state"></pre>
+        </div>
+      </section>
 
-        <section data-rows-section>
-          <h2>Rows keyed by data</h2>
-          <p class="rows-lead">
-            A table rendered <strong>by column</strong>: each column mounts one cell of each row, so
-            the two controls of a row are created in different places and at different times. Rows
-            enter and leave edit mode, the table sorts, and a provisional key becomes a real one —
-            none of it touches a value or the verdict below.
-          </p>
-          <div data-rows></div>
-          <pre class="keyed-rows-state" data-rows-state></pre>
-        </section>
+      <section id="rules-section" aria-labelledby="rules">
+        <h2 id="rules">Rules the control carries</h2>
+        <p class="lead">
+          A rule is declared once and the native control learns it: the code below carries
+          <code>maxlength</code> and <code>pattern</code> because its rules say so — nothing wrote
+          those attributes. Leave a required field empty and the message appears in space that was
+          already reserved, so nothing under it jumps.
+        </p>
+        <div data-conditional></div>
+        <pre class="conditional-state" data-conditional-state aria-label="What the form holds"></pre>
+      </section>
 
-        <section data-rows-section data-conditional-section>
-          <h2>A section that only counts sometimes</h2>
-          <p class="rows-lead">
-            The company details are declared like everything else and are <strong>out of play</strong>
-            while the account is personal: not validated, not submitted, and what was typed into them
-            kept. The code below carries <code>maxlength</code> and <code>pattern</code> because its
-            rules say so — nothing wrote those attributes.
-          </p>
-          <div data-conditional></div>
-          <pre class="conditional-state" data-conditional-state></pre>
-        </section>
-      </div>
+      <section id="conditions-section" aria-labelledby="conditions">
+        <h2 id="conditions">A section that only counts sometimes</h2>
+        <p class="lead">
+          The company details above are declared like everything else and are
+          <strong>out of play</strong> while the account is personal: not validated, not submitted,
+          and what was typed into them kept. Switch the account type and watch the verdict change
+          without the values moving.
+        </p>
+      </section>
 
-      <pre data-state></pre>
+      <section id="collections-section" aria-labelledby="collections">
+        <h2 id="collections">Rows keyed by data</h2>
+        <p class="lead">
+          A table rendered <strong>by column</strong>: the two controls of one row are created in
+          different places and at different times. Rows enter and leave edit mode, the table sorts,
+          and a provisional key becomes a real one — none of it touches a value or the verdict.
+        </p>
+        <div data-rows></div>
+        <pre class="keyed-rows-state" data-rows-state aria-label="What the collection holds"></pre>
+      </section>
+
+      <section id="served-section" aria-labelledby="served">
+        <h2 id="served">A checkout its backend defined</h2>
+        <p class="lead">
+          This form is not written in the page. A Rust service builds it from its own business
+          objects, hands it over as contract JSON, and the page parses it
+          <strong>strictly</strong> before drawing a single control — a document off a network is
+          data from somewhere else, even when the somewhere else is ours.
+        </p>
+        <p class="served-note" data-served-note>asking the API…</p>
+        <div data-served-form></div>
+      </section>
+
+      <section id="looks-section" aria-labelledby="looks">
+        <h2 id="looks">The same form, dressed differently</h2>
+        <p class="lead">
+          Themes are compiled from a palette rather than hand-written, so a colour decision is one
+          number and not a stylesheet. Every control above changes with these.
+        </p>
+        <div class="bars">
+          <div class="bar">
+            <span class="bar-label" id="bar-theme">theme</span>
+            <div data-themes role="group" aria-labelledby="bar-theme"></div>
+          </div>
+          <div class="bar">
+            <span class="bar-label" id="bar-palette">palette maths</span>
+            <div data-palette role="group" aria-labelledby="bar-palette"></div>
+          </div>
+          <div class="bar">
+            <span class="bar-label" id="bar-mode">mode</span>
+            <div data-color-mode role="group" aria-labelledby="bar-mode"></div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script type="module" src="./main.js"></script>

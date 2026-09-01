@@ -2,6 +2,7 @@
 // explicit light/dark/auto mode, and the live contract verdict for what is on screen.
 import {
   createForm,
+  parseDynamicForm,
   field as mdyField,
   group as mdyGroup,
   maxLength as mdyMaxLength,
@@ -674,4 +675,53 @@ if (conditionalHost && conditionalState) {
       2,
     );
   });
+}
+
+// ── The checkout its backend defined ──────────────────────────────────────────────────────────
+//
+// A Rust service builds this document from its own business objects and serves it as contract
+// JSON. The page parses it strictly before mounting: a document off a network is data from
+// somewhere else even when the somewhere else is ours, and `ok: false` here would mean the two
+// implementations of one contract disagree — which is worth seeing rather than hiding.
+
+const servedNote = document.querySelector("[data-served-note]");
+const servedHost = document.querySelector("[data-served-form]");
+
+if (servedNote && servedHost) {
+  const loadServed = async () => {
+    servedHost.replaceChildren();
+    servedNote.textContent = "asking the API…";
+
+    let payload;
+    try {
+      const response = await fetch("http://127.0.0.1:3000/v1/forms/checkout", {
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!response.ok) throw new Error(`the API answered ${response.status}`);
+      payload = await response.json();
+    } catch (error) {
+      // An absence that says what it is and how to end it. A blank space here reads as a renderer
+      // that failed, which is the wrong thing to go and debug.
+      servedNote.textContent =
+        `The form API is not answering (${error.message}). Run this demo with `
+        + "`npm run demo:plain`, which starts it for you, or start it yourself with "
+        + "`cargo run -p modyra-axum-form-server-example`.";
+      return;
+    }
+
+    const verdict = parseDynamicForm(payload, { mode: "strict" });
+    if (!verdict.ok) {
+      servedNote.textContent =
+        "The API served a document this reader refuses — which is the check working, not a network "
+        + "problem: "
+        + verdict.diagnostics.map((each) => `${each.code} at ${each.path}`).join(", ");
+      return;
+    }
+
+    servedNote.textContent =
+      `Contract v${verdict.version} · ${verdict.fields.length} fields · built in Rust, drawn here.`;
+    mountMdyForm(servedHost, verdict.fields, { submitLabel: "Place order" });
+  };
+
+  void loadServed();
 }
