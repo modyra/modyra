@@ -10,7 +10,8 @@
  * nodes and skips the optional ones, because that is what "optional" invites a first reader to do.
  * What conformance says about that choice is the measurement.
  */
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_VALUE_CONTRACTS } from "@modyra/core";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_RELATIONS } from "@modyra/widgets";
 
 /** The tag a semantic element is drawn with, guessed from its name — the contract names roles, not tags. */
 const TAG = {
@@ -82,11 +83,8 @@ export function mount(kind, asked = {}) {
       if (v !== null && v !== undefined) element.setAttribute(k, String(v));
     }
     if (node.part === "label") element.textContent = "F";
-    // **An id on the control, and a label that names it.** Neither is in `MDY_WIDGET_CONTRACTS`:
-    // `structure` carries `kind` and `nodes` and no relations at all, and the requirement that a
-    // `<label>` point at the control with `for` lives in the kit's own checks. The kit's finding is
-    // what taught it — which is the kit teaching, not the contract.
-    if (node.part === "control" || node.part === "indicator") element.id = `stub-${kind}-${node.part}`;
+    // An id, because a relation is an IDREF and a part that is pointed at needs one.
+    element.id = `stub-${kind}-${node.part}`;
     const parent = node.parent ? made.get(node.parent) : host;
     // A required node whose parent was skipped has nowhere to go. Reported rather than dropped:
     // silently reparenting it to the root would hide the question this exercise exists to ask.
@@ -103,8 +101,17 @@ export function mount(kind, asked = {}) {
   // accept it and drop it: the sections that pass one report against what they asked for. Rules are
   // the shape this renderer can honour, so it honours them; the others it does not claim.
   const control = made.get("control") ?? made.get("indicator");
-  const labelElement = made.get("label");
-  if (labelElement !== undefined && control !== undefined) labelElement.setAttribute("for", control.id);
+  // **The relations the contract declares, drawn from the declaration.** `MDY_WIDGET_RELATIONS` says
+  // which part points at which and with what attribute; earlier this file hard-coded `label[for]`,
+  // which it had learned from a finding's wording rather than from anything published. A relation
+  // whose targets were not drawn is skipped rather than pointed at nothing — a dangling IDREF is a
+  // worse answer than an absent one.
+  for (const relation of MDY_WIDGET_RELATIONS[kind] ?? []) {
+    const from = made.get(relation.from);
+    const targets = relation.to.map((part) => made.get(part)).filter((one) => one !== undefined);
+    if (from === undefined || targets.length === 0) continue;
+    from.setAttribute(relation.attribute, targets.map((one) => one.id).join(" "));
+  }
   if (control !== undefined && asked.rules) {
     for (const [rule, value] of Object.entries(asked.rules)) {
       const attribute = ATTRIBUTE[rule];
@@ -127,11 +134,15 @@ export function mount(kind, asked = {}) {
     // The value the field holds. Optional in the type — "when the adapter can name it" — but a
     // renderer that draws an input can name it, and declining leaves the kit comparing against
     // `undefined` where the contract's `valueSlot` says what to read.
+    // **What the field holds, read from the catalogue that says so.** `valueSlot` declares *where* a
+    // value is drawn and never *what* it is; the shape lives in `MDY_VALUE_CONTRACTS`, which the
+    // widgets index names as a vocabulary living elsewhere. Reading `valueSlot` for the shape was
+    // this file's own mistake, and it produced `""` for a field that holds `false`.
     value: () => {
-      const control = made.get("control") ?? made.get("indicator");
-      if (control === undefined) return undefined;
-      const slot = contract.valueSlot;
-      return slot === "checked" ? control.checked === true : control.value ?? "";
+      const shape = MDY_VALUE_CONTRACTS[kind]?.shape;
+      if (shape === "boolean") return false;
+      if (shape === "string") return "";
+      return undefined;
     },
     //
     // `false` is the honest answer for a renderer that draws and does not drive: the kit collects
