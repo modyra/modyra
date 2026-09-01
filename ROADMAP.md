@@ -98,13 +98,23 @@ Six items, in the order their dependencies allow:
    list would end that distinction the first time somebody wrote `inputMode` as a rule. What is owed
    is the declared map between them.
 
-   One gap is real rather than legitimate, and it is not the one the key names suggest. `step` is a
-   consequence like `inputMode` — `integer()` attaches `{ step: 1 }` exactly as `email()` attaches
-   `{ inputMode: "email" }` — so a document has no business declaring it. What a document cannot
-   declare is **`integer` itself**: the rule of which `step` is the consequence. That is the whole
-   gap. `oneOf` and `eachOneOf` are already covered, because a field states its list as `options`,
-   and they stay out of `rules:` for that reason — two places for one list diverge. At 2 files of
-   use, that exclusion costs almost nothing.
+   The gap the key names suggested was never the gap. `step` is a consequence like `inputMode` —
+   `integer()` attaches `{ step: 1 }` exactly as `email()` attaches `{ inputMode: "email" }` — so a
+   document has no business declaring it. What a document could not declare was **`integer`
+   itself**, the rule of which `step` is the consequence; contract v5 gives it a word, and its
+   `validators` now states nine members against the eight v4 knew. `oneOf` and `eachOneOf` are
+   covered rather than missing, because a field states its list as `options`, and they stay out of
+   `rules:` for that reason — two places for one list diverge. At 2 files of use, that exclusion
+   costs almost nothing.
+
+   What the closing left behind is the item's real work. A word costs **five files in two
+   languages**: the TypeScript vocabulary, three JSON Schemas, and a hand-written Java record in the
+   SDK that mirrors it. Twelve such mirrors exist, one of them mirroring a test file rather than a
+   published surface, and the count was never taken until a word needed adding. The one measured
+   here is two members behind — it has neither `integer` nor `messages` — so the language is
+   declared in three places and the third drifts in silence. Either the record is generated from the
+   vocabulary, which is the derivation that cannot diverge, or a gate compares the three the way
+   `test:contract-schema` already compares two.
 
    And a door that parses, applies and mounts in one act closes both of scenario (b)'s traps by
    construction: rules the parser reads are not applied unless a second call applies them, and a rule
