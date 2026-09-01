@@ -62,10 +62,30 @@ be harder to start. What it is measured against are three scenarios written down
 from the same words rather than edited from the same file:
 
 ```
-(a) a starter                 1–3 doors · 8–10 named symbols
-(b) a form described by data  2 doors · 3 symbols · 8 concepts · 9 keys on the parse result
-(c) a reactivity binding      1 door · 3 symbols · 2 interfaces · 10 members
+                              before                              after item 2
+(a) a starter                 1 door · 7 symbols                  1 door · 4 symbols
+(b) a form described by data  2 doors · 3 symbols · 9 result keys 1 door · 1 symbol · 0 result keys
+(c) a reactivity binding      1 door · 3 symbols · 10 members     1 door · 2 symbols · 10 members
 ```
+
+Measured on `examples/stackblitz-vue/src/main.js` for (a) and on `examples/baseline/` for (b) and
+(c), against prose that did not change. Every transformation was exercised rather than assumed:
+`rules: { required: true, minLength: 3 }` refuses an empty value and `"ab"`, accepts `"abc"`, and
+reports `required()` at the control; `rules: { email: true }` refuses `"nonvale"` and accepts
+`"a@b.example"`; and `mountDynamicForm(host, document)` draws three controls and refuses a document
+that lost a declaration, naming the code.
+
+Two findings from the measurement, both against what the design expected:
+
+**(c) was expected not to move and moved.** It imports `required` for a single field, and a rule
+said by name drops it — the reactivity binding was outside item 2's perimeter, but the validator it
+happens to carry was not. One symbol, and it says the perimeter was drawn around the feature rather
+than around the files.
+
+**The fall costs a positional placeholder.** `rules` is the third argument, so a field with no
+functions to pass writes `field("", [], { rules: … })`. A symbol left the import list and an empty
+array entered every call site — which is a concept traded for a symbol, and concepts are the thing
+this criterion says to count first.
 
 **3.0.0 at the criterion is: these numbers fall, at unchanged prose.** Concepts before symbols — a
 symbol is counted, a concept is paid for.
