@@ -1222,6 +1222,13 @@
       },
       "relations": [
         {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
+        {
           "from": "control",
           "attribute": "aria-describedby",
           "to": [
@@ -1406,6 +1413,13 @@
         }
       },
       "relations": [
+        {
+          "from": "label",
+          "attribute": "for",
+          "to": [
+            "control"
+          ]
+        },
         {
           "from": "control",
           "attribute": "aria-describedby",

@@ -49,7 +49,12 @@ const LABEL_TARGET: Readonly<Partial<Record<MdyWidgetKind, string>>> = Object.fr
   multiselect: "trigger",
   // The typeable hex field, not the hidden native picker behind it.
   colors: "hexInput",
-  // checkbox and toggle wrap their input in the label itself, which is the association.
+  // A wrapping label would be the other legitimate association, and this table said that is what
+  // these two do. They do not: both renderers point, with `for` on the label and an id on the
+  // input, exactly as every other kind does. The contract described a pattern nobody implements, so
+  // a renderer built from it alone learned nothing about how a checkbox comes by its name — while
+  // the conformance kit went on demanding the association the renderers actually make.
+  checkbox: "control", toggle: "control",
   // radio and segmented are groups, named below.
 });
 
