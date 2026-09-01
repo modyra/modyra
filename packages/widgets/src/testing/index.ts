@@ -42,6 +42,7 @@ export {
   reading,
   readingOf,
   readingText,
+  readAccessibleName,
   readPartAttribute,
   readPartPresence,
   unread,
@@ -50,4 +51,4 @@ export {
 // on `read` and switches on `reason` without naming either — so exporting them adds three words to
 // the surface that buy nothing a reader does not already have. `unread` still takes a reason, and a
 // literal is checked against the union at the call site.
-export type { MdyPartObservation, MdyReading } from "./reading.js";
+export type { MdyAccessibleName, MdyPartObservation, MdyReading } from "./reading.js";

@@ -275,6 +275,7 @@ import type {
   MdyStateIssue,
   MdyStateIssueCode,
   MdyStateMatrixOptions,
+  MdyAccessibleName,
   MdyPartObservation,
   MdyReading,
   MdyStateMatrixResult,
@@ -882,3 +883,6 @@ declare const held274: MdyReading<string>;
 void held274;
 declare const held275: MdyPartObservation;
 void held275;
+
+declare const held276: MdyAccessibleName;
+void held276;

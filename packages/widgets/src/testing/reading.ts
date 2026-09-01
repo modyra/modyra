@@ -229,3 +229,80 @@ export interface MdyPartObservationNode {
   readonly presentWhen?: string;
   readonly requires?: string;
 }
+
+/** How an accessible name was arrived at, in the order the naming rules consult them. */
+export type MdyNameMechanism =
+  | "aria-labelledby"
+  | "aria-label"
+  | "native-label"
+  | "content"
+  | "none";
+
+/** A resolved accessible name, and which mechanism produced it. */
+export interface MdyAccessibleName {
+  /** The name a reader would hear. Empty string when nothing names the element. */
+  readonly name: string;
+  readonly mechanism: MdyNameMechanism;
+}
+
+/**
+ * Resolve the name an element would be announced by, and say how.
+ *
+ * **Computed here, not asked of the platform.** No browser exposes its own name computation to a
+ * page, so this is a derivation — and it says so: `method` is `"own-implementation"`, never
+ * presented as the browser's answer. A panel that borrowed authority it does not have would be
+ * worse than one that abstained, because a reader would stop checking.
+ *
+ * The order is the naming rules' own and it is the whole difficulty: `aria-labelledby` beats
+ * `aria-label`, which beats a `<label>`, which beats the element's own text. An implementation that
+ * checks them in a different order still answers "yes, it has a name" correctly — which is why the
+ * kit's own boolean helper can afford a different order — and answers *which* name wrongly the
+ * moment an element carries two.
+ */
+export function readAccessibleName(
+  element: {
+    getAttribute(name: string): string | null;
+    closest(selector: string): { textContent: string | null } | null;
+    textContent: string | null;
+  },
+  at: string,
+  document_?: {
+    getElementById(id: string): { textContent: string | null } | null;
+    querySelector(selector: string): { textContent: string | null } | null;
+  } | null,
+): MdyReading<MdyAccessibleName> {
+  const where = { source: at, at, method: "own-implementation" };
+  return reading(where, () => {
+    const labelledBy = element.getAttribute("aria-labelledby");
+    if (labelledBy && document_) {
+      const named = labelledBy
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document_.getElementById(id)?.textContent?.trim() ?? "")
+        .filter(Boolean)
+        .join(" ");
+      // A reference that resolves to nothing is not a name, and falls through to the next
+      // mechanism — which is what a reader would actually hear.
+      if (named) return { name: named, mechanism: "aria-labelledby" as const };
+    }
+
+    const label = element.getAttribute("aria-label")?.trim();
+    if (label) return { name: label, mechanism: "aria-label" as const };
+
+    const id = element.getAttribute("id");
+    if (id && document_) {
+      const native = document_
+        .querySelector(`label[for="${id.replace(/["\\]/g, "\\$&")}"]`)
+        ?.textContent?.trim();
+      if (native) return { name: native, mechanism: "native-label" as const };
+    }
+    const wrapping = element.closest("label")?.textContent?.trim();
+    if (wrapping) return { name: wrapping, mechanism: "native-label" as const };
+
+    const own = element.textContent?.trim();
+    if (own) return { name: own, mechanism: "content" as const };
+
+    // Nameless is an answer, not a failure to look: the element was there and was asked.
+    return { name: "", mechanism: "none" as const };
+  });
+}

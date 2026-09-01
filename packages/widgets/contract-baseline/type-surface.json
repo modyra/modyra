@@ -2680,6 +2680,10 @@
     "(2) declaration?: MdyValidatorDeclaration",
     "-> returns: ValidatorFn<T>"
   ],
+  "widgets:MdyAccessibleName": [
+    "mechanism: MdyNameMechanism",
+    "name: string"
+  ],
   "widgets:MdyAccessibleNameSource": [
     "\"label\"",
     "\"labelledby\"",
@@ -4989,6 +4993,12 @@
     "(2) words: { readonly settled: string; readonly atMinimum: string; }",
     "(3) minimum?: number",
     "-> returns: string"
+  ],
+  "widgets:readAccessibleName": [
+    "(0) element: { getAttribute(name: string): string | null; closest(selector: string): { textContent: string | null; } | null; textContent: string | null; }",
+    "(1) at: string",
+    "(2) document_?: { getElementById(id: string): { textContent: string | null; } | null; querySelector(selector: string): { textContent: string | null; } | null; } | null",
+    "-> returns: MdyReading<MdyAccessibleName>"
   ],
   "widgets:readPartAttribute": [
     "(0) root: { querySelector(selector: string): { getAttribute(name: string): string | null; } | null; }",
