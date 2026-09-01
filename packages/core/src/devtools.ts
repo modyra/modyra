@@ -3,6 +3,7 @@
  * a form running on ANY reactivity (it refreshes by polling, so it never
  * couples to the host graph). Sensitive-looking paths are masked.
  */
+import { MDY_DEV } from "./dev-flags.js";
 import { MdyReactivity, MdySignal, reactivityRunsEffects } from "./reactivity-contract.js";
 import { mdyFormSerialize } from "./serialize.js";
 import { MdyFormState } from "./types.js";
@@ -264,4 +265,35 @@ export function mountMdyDevtools(
     clearInterval(timer);
     host.innerHTML = "";
   };
+}
+
+/**
+ * Whether the inspector should mount, given what the caller asked for.
+ *
+ * `true` and `false` are answers; `undefined` is the absence of one, and that is where the bundler's
+ * development flag decides. The distinction is the whole of it: an option that is only a default is
+ * a guess a consumer cannot correct, and an option with no default is a line every starter has to
+ * carry — which is how the inspector came to look like part of the minimum a form needs.
+ *
+ * So the heuristic is the default of the option, never the mechanism: `devtools: false` keeps it out
+ * of a development build, and `devtools: true` puts it in a production one, because a consumer
+ * asking for either has a reason this library does not know.
+ */
+export function devtoolsWanted(asked: boolean | undefined, inDevelopment: boolean = MDY_DEV): boolean {
+  return asked ?? inDevelopment;
+}
+
+/**
+ * Mount the inspector where it was asked for, and nowhere else.
+ *
+ * Returns a disposer in every case, so a caller unmounts the same way whether or not anything was
+ * mounted — a conditional disposer is the shape that leaks the one time the condition changes.
+ */
+export function mountMdyDevtoolsIfWanted(
+  form: InspectableForm,
+  host: HTMLElement | null | undefined,
+  asked?: boolean,
+): () => void {
+  if (!devtoolsWanted(asked) || !host) return () => {};
+  return mountMdyDevtools(form, host);
 }

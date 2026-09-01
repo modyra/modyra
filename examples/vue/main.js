@@ -8,7 +8,10 @@ import {
   createVueForm, crossField, email, field, minLength, required,
   serverValidator,
 } from "@modyra/vue";
-import { mountMdyDevtools } from "@modyra/core/devtools";
+// The inspector is a development tool, not part of a form. `IfWanted` mounts it when the build
+// says development and skips it otherwise — and takes `true` or `false` when you want to decide
+// yourself, in either direction.
+import { mountMdyDevtoolsIfWanted } from "@modyra/core/devtools";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 import { legendWhenReady } from "../shared/legend.js";
 
@@ -94,7 +97,7 @@ createApp({
       document.getElementById("theme").href = `./themes/${THEMES[theme.value]}`;
     });
     let dispose;
-    onMounted(() => { dispose = mountMdyDevtools(form, document.getElementById("devtools")); });
+    onMounted(() => { dispose = mountMdyDevtoolsIfWanted(form, document.getElementById("devtools")); });
     onUnmounted(() => dispose?.());
     return {
       theme,

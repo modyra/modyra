@@ -1341,9 +1341,6 @@
     "end: string | null",
     "start: string | null"
   ],
-  "core:MdyDeclaredRules": [
-    "-> Readonly"
-  ],
   "core:MdyDestroyedScopeError": [
     "constructor(0) scopeId?: symbol | undefined,-> returns: (inferred)",
     "scopeId?: symbol | undefined"
@@ -1952,10 +1949,6 @@
   "core:MdyRootRef": [
     "root: true"
   ],
-  "core:MdyRuleRefusal": [
-    "because: string",
-    "rule: string"
-  ],
   "core:MdySanitizeProfile": [
     "\"off\"",
     "\"strict\"",
@@ -2342,6 +2335,11 @@
     "(0) rule: string",
     "-> returns: MdyValidatorDeclaration | undefined"
   ],
+  "core:devtoolsWanted": [
+    "(0) asked: boolean | undefined",
+    "(1) inDevelopment?: boolean",
+    "-> returns: boolean"
+  ],
   "core:dialHour": [
     "(0) angle: number",
     "(1) ring?: \"outer\" | \"inner\"",
@@ -2555,6 +2553,12 @@
     "(0) form: InspectableForm",
     "(1) host: HTMLElement",
     "(2) intervalMs?: number",
+    "-> returns: () => void"
+  ],
+  "core:mountMdyDevtoolsIfWanted": [
+    "(0) form: InspectableForm",
+    "(1) host: HTMLElement | null | undefined",
+    "(2) asked?: boolean",
     "-> returns: () => void"
   ],
   "core:observerFor": [

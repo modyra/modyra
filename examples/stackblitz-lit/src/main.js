@@ -15,7 +15,10 @@ import {
   required,
   serverValidator,
 } from "@modyra/lit/adapter";
-import { mountMdyDevtools } from "@modyra/core/devtools";
+// The inspector is a development tool, not part of a form. `IfWanted` mounts it when the build
+// says development and skips it otherwise — and takes `true` or `false` when you want to decide
+// yourself, in either direction.
+import { mountMdyDevtoolsIfWanted } from "@modyra/core/devtools";
 import { defineMdyElements } from "@modyra/lit/ui";
 import { html, LitElement, nothing } from "lit";
 
@@ -95,7 +98,7 @@ class SignupApp extends LitElement {
   createRenderRoot() { return this; } // light DOM: the theme applies
 
   firstUpdated() {
-    this._disposeDevtools = mountMdyDevtools(this.form, this.querySelector("#devtools"));
+    this._disposeDevtools = mountMdyDevtoolsIfWanted(this.form, this.querySelector("#devtools"));
   }
   disconnectedCallback() {
     super.disconnectedCallback();
