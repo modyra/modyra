@@ -95,9 +95,39 @@ Three further plants go red: a snapshot that carries no errors, one that folds "
 into "passed", and one that reads the clock. Making the freeze a no-op turns its own check red, so
 that check is known to detect the freeze rather than some other difference.
 
-What stays unguarded: nothing asserts that the four relabelled runtimes still spread vanilla's
-engine, and the round trip is exercised on one reactivity, so agreement is evidence that
+What stays unguarded: the round trip is exercised on one reactivity, so agreement is evidence that
 serialization survives rather than that a different runtime would agree.
+
+### Amendment: half of what this section called unguarded now has a check
+
+This record was written saying that nothing asserts the four relabelled runtimes still take vanilla's
+answer. A differential check now does: it compares each of their declared capabilities against
+vanilla's and names the binding and the key that drifted.
+
+The residue is much narrower than the original sentence, and narrower than the first draft of this
+amendment, which named the wrong thing. That draft said a binding could reimplement a member while
+copying the capability object and satisfy every check. Measured instead of asserted — `computed`
+overridden in one binding to compute once, `capabilities` untouched, under a build watched rather
+than suppressed:
+
+```
+capability guard                                        green — nothing was restated
+a form means the same thing on every runtime             RED
+```
+
+So two checks cover the two ways of drifting, and neither covers the other: one reads what a binding
+**declares**, the other what a form **does** on it. An overridden member is caught by the second.
+
+What is genuinely left is thinner than either sentence: an override that changes a member without
+changing any verdict the compared operation log produces. That is not nothing — the log is a
+finite set of collections, validations and submissions — but it is a much smaller claim than "nothing
+asserts it".
+
+Identity is not the instrument for the gap that remains, and trying it costs a wrong conclusion:
+`vanillaReactivity()` is a factory, so two vanilla instances share no member by reference and vanilla
+is not `===` to itself. What answers today is the source — each of the four is one line,
+`{ ...vanillaReactivity(), kind }`, holding no capability literal — and that is a reading, not a
+gate.
 
 ## Security and privacy
 
