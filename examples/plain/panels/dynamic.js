@@ -332,6 +332,15 @@ export const dynamicPanel = {
       };
       // A document the parser refused mounts nothing. Rendering "the part that parsed" is how a
       // rejected document becomes a form somebody fills in.
+      //
+      // **`ok` is the right question here, and the nested panel's opposite answer is not a
+      // disagreement.** `ok` answers *was anything lost*: a rule written on the field instead of
+      // beside it leaves every field standing and drops the constraint, so the form that would be
+      // drawn is looser than the one that was written. This is an editor — somebody types a document
+      // and gets a form back — and handing back a form that is not what was typed is the failure this
+      // panel would cause. The nested panel reads what survives instead, because showing the fields
+      // arriving without their arrangement is the thing it exists to demonstrate. Same flag, two
+      // purposes, and neither should be edited to match the other.
       if (parsed.ok && parsed.fields.length > 0) {
         mounted = mountMdyForm(formHost, parsed.fields, {
           idPrefix: "dyn",
@@ -373,6 +382,15 @@ export const dynamicPanel = {
     const print = readoutPrinter(readout, () => ({
       ...lastResult,
       controlsMounted: formHost.querySelectorAll(".mdy-renderer").length,
+      // **Why nothing was drawn, when something parsed.** `fields` and `controlsMounted` disagreeing
+      // is the whole answer for a document that keeps its fields and loses a constraint, and two
+      // numbers side by side do not say that they are meant to disagree — a reader can take `fields`
+      // for what was built. `ok` answers *was anything lost*, so a rule written on the field instead
+      // of beside it makes it false while every field arrives: the form that would be drawn is
+      // looser than the one that was written, which is exactly when a lab must not hand one over.
+      whyNothingMounted: lastResult.ok === false && (lastResult.fields?.length ?? 0) > 0
+        ? "the parse kept these fields and lost something else, so what would be drawn is not what was written"
+        : null,
       // What the form has to say about itself, and where it says it. The two are printed together
       // because a refusal the engine holds and the page does not show is the failure this region
       // exists for: a person pressed the button, the answer was no, and nothing appeared.
