@@ -349,7 +349,10 @@
         --mdy-daterange-endpoint-bg: var(--mdy-comp-date-picker-endpoint-bg);
         --mdy-daterange-endpoint-color: var(--mdy-comp-date-picker-endpoint-color);
         --mdy-daterange-input-min-width: 8ch;
-        --mdy-daterange-input-padding: var(--mdy-space-0) var(--mdy-space-2);
+        /* Inline is `space-4` like every other field: where the writing begins does not depend on
+           how many boxes share the row. Vertical stays `space-0` because two boxes in one row sit
+           inside the wrapper's own height rather than adding to it. */
+        --mdy-daterange-input-padding: var(--mdy-space-0) var(--mdy-space-4);
         --mdy-daterange-sep-padding: var(--mdy-space-0) var(--mdy-space-1);
 
         /* ── Select Arrow ───────────────────────────────────────────────────────── */
