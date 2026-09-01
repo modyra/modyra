@@ -276,6 +276,7 @@ import type {
   MdyStateIssueCode,
   MdyStateMatrixOptions,
   MdyAccessibleName,
+  MdyIdClaim,
   MdyPartObservation,
   MdyReadingHost,
   MdyReferenceTargets,
@@ -897,3 +898,6 @@ declare const held278: MdyReferenceTargets;
 void held278;
 declare const held279: MdyResolvedReference;
 void held279;
+
+declare const held280: MdyIdClaim;
+void held280;

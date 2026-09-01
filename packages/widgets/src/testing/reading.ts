@@ -403,3 +403,39 @@ export function readReferenceTargets(
     };
   });
 }
+
+/** An id and how many elements in the document claim it. */
+export interface MdyIdClaim {
+  readonly id: string;
+  readonly claimants: number;
+}
+
+/**
+ * Every id under a root, and which of them more than one element claims.
+ *
+ * A duplicate id does not fail loudly. `getElementById` returns the first, `label[for]` names the
+ * first, and every reference silently resolves to whichever the document happens to hold first —
+ * so two instances of one widget on a page produce a form where clicking the second field's label
+ * focuses the first, and nothing anywhere reports an error.
+ *
+ * Counted rather than merely flagged: two elements claiming an id is a collision, and five is a
+ * loop that has been minting the same id since it was written. The number is the difference between
+ * a mistake and a mechanism.
+ */
+export function readIdClaims(
+  root: { querySelectorAll(selector: string): Iterable<{ getAttribute(name: string): string | null }> },
+  at: string,
+): MdyReading<readonly MdyIdClaim[]> {
+  const where = { source: `${at} [id]`, at, method: "querySelectorAll([id])" };
+  return reading(where, () => {
+    const counted = new Map<string, number>();
+    for (const element of root.querySelectorAll("[id]")) {
+      const id = element.getAttribute("id");
+      if (id) counted.set(id, (counted.get(id) ?? 0) + 1);
+    }
+    // An empty document is a reading of "no ids", not an absence: it was looked at and had none.
+    return [...counted]
+      .filter(([, claimants]) => claimants > 1)
+      .map(([id, claimants]) => ({ id, claimants }));
+  });
+}

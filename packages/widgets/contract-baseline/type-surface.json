@@ -3297,6 +3297,10 @@
   "widgets:MdyIconName": [
     "(opaque)"
   ],
+  "widgets:MdyIdClaim": [
+    "claimants: number",
+    "id: string"
+  ],
   "widgets:MdyKeyBinding": [
     "awaits?: string",
     "by?: -1 | 1",
@@ -5020,6 +5024,11 @@
     "(1) at: string",
     "(2) document_?: { getElementById(id: string): { textContent: string | null; } | null; querySelector(selector: string): { textContent: string | null; } | null; } | null",
     "-> returns: MdyReading<MdyAccessibleName>"
+  ],
+  "widgets:readIdClaims": [
+    "(0) root: { querySelectorAll(selector: string): Iterable<{ getAttribute(name: string): string | null; }>; }",
+    "(1) at: string",
+    "-> returns: MdyReading<readonly MdyIdClaim[]>"
   ],
   "widgets:readPartAttribute": [
     "(0) root: { querySelector(selector: string): { getAttribute(name: string): string | null; } | null; }",
