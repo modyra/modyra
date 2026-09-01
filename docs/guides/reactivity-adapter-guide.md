@@ -48,11 +48,53 @@ export interface MdyReactivityCapabilities {
   readonly batching: boolean;
   readonly deterministicFlush: boolean;
   readonly directObservation: boolean;
-  readonly writableComputed: boolean;
   readonly graphInspection: boolean;
   readonly serverSnapshots: boolean;
+  readonly pureComputeds: boolean;
 }
 ```
+
+### What each one asserts, and what answering `false` costs
+
+`false` is usually the truth and saying so is the point of the flags. What it is
+not is free: every `false` buys a conformance check out of running, and two of
+them change what the engine does. The three groups below cost very different
+things, so they are worth telling apart before you answer.
+
+**Read by the engine — answering changes behaviour.**
+
+| flag | asserts | `true` | `false` |
+| --- | --- | --- | --- |
+| `effects` | reactions run when their dependencies change | an array field reconciles itself through an effect; devtools observe live | `_reconcile` is null and nothing watches for you — reconciliation has to be driven explicitly, and four conformance checks go unasked |
+| `batching` | several writes in one block propagate once | the engine groups its writes through your `batch` | every write pays its own propagation. Declaring it `true` without a working `batch` is worse than `false`: intermediate states become observable |
+
+**Read only by the conformance suite — answering costs you a check.**
+
+| flag | asserts | what goes unchecked when `false` |
+| --- | --- | --- |
+| `signalEquality` | writing an equal value notifies nobody | that an identical write causes no recompute |
+| `computedEquality` | a recomputation to an equal value does not propagate | that a chain of computeds stops at an unchanged value |
+| `deterministicFlush` | there is a defined moment when pending effects have run | that "after the flush, X" holds — the suite waits for settling instead, which is slower and less precise |
+| `directObservation` | a signal can be observed without an effect | that state can be read without mounting a reaction |
+| `pureComputeds` | writing inside a computed is refused | that a write in a computed raises rather than creating a cycle nobody diagnoses |
+
+**Read by nothing, today.**
+
+| flag | asserts | why it is here |
+| --- | --- | --- |
+| `graphInspection` | the runtime can expose its dependency graph | the devtools panel is its intended consumer, and is planned for 3.0.0 |
+| `serverSnapshots` | a coherent snapshot can be produced and restored outside a browser, with the same verdicts | the SSR path is its intended consumer, same release |
+| `effectOwnership` | effects created in a scope die with the scope | **nothing reads it — not the engine, not the suite.** Every adapter declares it and no code consults it. Answer it honestly, and know that today the answer changes nothing |
+
+The three in the last group are the ones to be most careful with, for opposite
+reasons: the first two are promises whose consumers do not exist yet, so a `true`
+there will be checked for the first time when they arrive; the third is measured
+by nothing at all.
+
+**Do not answer `true` out of ambition.** Conformance will check it and fail
+loudly, which is the safe direction for the mistake. Answering `false` when the
+guarantee is real is the quieter error: you keep a check that would have passed
+from ever running, and the skipped-check report is the only place that shows.
 
 A capability is `true` only when your adapter provides the **observable
 guarantee**, not just a same-named method. Two examples from this
