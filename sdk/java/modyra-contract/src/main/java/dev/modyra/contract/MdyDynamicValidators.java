@@ -7,11 +7,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record MdyDynamicValidators(
     Boolean required,
     Boolean email,
+    /** The value must be a whole number. Arrived with contract v5. */
+    Boolean integer,
     Double min,
     Double max,
     Integer minLength,
     Integer maxLength,
-    String pattern
+    String pattern,
+    MdyDynamicValidatorMessages messages
 ) {
-  public static final MdyDynamicValidators NONE = new MdyDynamicValidators(null, null, null, null, null, null, null);
+  public static final MdyDynamicValidators NONE = new MdyDynamicValidators(null, null, null, null, null, null, null, null, null);
 }

@@ -581,7 +581,7 @@ public final class MdyDynamicFormParser {
 
   /** Whether a structured envelope carries a schema and a layout — v2 and everything after it. */
   private static boolean isStructuredVersion(int version) {
-    return version == 2 || version == 3 || version == 4;
+    return version == 2 || version == 3 || version == 4 || version == 5;
   }
 
   /**

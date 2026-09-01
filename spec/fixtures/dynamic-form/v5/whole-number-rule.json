@@ -1,0 +1,1 @@
+{"version":5,"id":"whole-number-rule","schema":{"node":"group","children":{"seats":{"node":"field","field":{"kind":"number","label":"Seats","validators":{"required":true,"integer":true,"min":1,"messages":{"integer":"Seats come in whole numbers"}}}},"note":{"node":"field","field":{"kind":"text","label":"Note"}}}}}

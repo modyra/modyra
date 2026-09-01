@@ -69,3 +69,43 @@ test("the refusal speaks the form's language, and the author's words win", () =>
     ["Whole numbers only"],
   );
 });
+
+/**
+ * Every version reads the same document the same way.
+ *
+ * A version is added by widening a list, and the lists are in more places than the one being
+ * edited: the envelope check, the tree-form guard, the layout vocabulary, the result type. v5's
+ * first draft widened four of them and left two, so a v5 document in the tree form fell through to
+ * the flat-form reader and came back "neither a field array nor a config envelope" — a document
+ * identical to a working v4 one but for its number.
+ *
+ * The guard is a document carrying nothing version-specific, parsed at every version the contract
+ * accepts. They must agree, because there is nothing in it for them to disagree about.
+ */
+test("a document with no version-specific word reads the same at every version", () => {
+  const shape = {
+    id: "same",
+    schema: {
+      node: "group",
+      children: {
+        seats: { node: "field", field: { kind: "number", label: "Seats", validators: { required: true } } },
+        note: { node: "field", field: { kind: "text", label: "Note" } },
+      },
+    },
+  };
+
+  const accepted = [2, 3, 4, 5, 6, 7].filter(
+    (version) => parseDynamicForm({ ...shape, version }).version === version,
+  );
+  assert.ok(accepted.length >= 4, "the probe found too few versions to be measuring the parser");
+
+  const readings = accepted.map((version) => {
+    const parsed = parseDynamicForm({ ...shape, version }, { mode: "strict" });
+    return [version, parsed.ok, parsed.fields.map((field) => field.name).join(",")];
+  });
+
+  for (const [version, ok, names] of readings) {
+    assert.equal(ok, true, `v${version} refused a document with nothing version-specific in it`);
+    assert.equal(names, "seats,note", `v${version} read different fields`);
+  }
+});

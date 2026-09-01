@@ -23,9 +23,14 @@ class MdyDynamicFormParserTest {
 
   private static final Path SPEC_FIXTURES = Path.of("../../../spec/fixtures/dynamic-form/v2");
   private static final Path SPEC_FIXTURES_V3 = Path.of("../../../spec/fixtures/dynamic-form/v3");
+  private static final Path SPEC_FIXTURES_V5 = Path.of("../../../spec/fixtures/dynamic-form/v5");
 
   private static String readFixture(String name) throws IOException {
     return Files.readString(SPEC_FIXTURES.resolve(name));
+  }
+
+  private static String readV5Fixture(String name) throws IOException {
+    return Files.readString(SPEC_FIXTURES_V5.resolve(name));
   }
 
   private static String readV3Fixture(String name) throws IOException {
@@ -39,6 +44,26 @@ class MdyDynamicFormParserTest {
   }
 
   private final MdyDynamicFormParser parser = new MdyDynamicFormParser();
+
+  /**
+   * Contract v5, read from the same file the TypeScript parser and the schema audit read.
+   *
+   * <p>A version this reader does not know is refused wholesale, so accepting the document is the
+   * whole of what this asserts: a v5 envelope reaches the tree walk and comes back with its fields.
+   * The mirror record grew {@code integer} and {@code messages} in the same change, and a reader
+   * that had not been told about v5 would refuse the document before either could matter.
+   */
+  @Test
+  void acceptsSharedV5Fixture() throws IOException {
+    String json = readV5Fixture("whole-number-rule.json");
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertTrue(result.ok(), () -> "expected ok=true, diagnostics: " + result.diagnostics());
+    assertEquals(5, result.version());
+    assertEquals(2, result.fields().size());
+    assertEquals("seats", result.fields().get(0).name());
+    assertEquals("note", result.fields().get(1).name());
+  }
 
   @Test
   void acceptsSharedValidFixture() throws IOException {

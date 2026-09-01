@@ -1726,8 +1726,7 @@ export function parseDynamicForm(
     (message, path) => diagnostics.push({
       code: diagnosticCode(message), severity: "error", path: path ?? "/fields", message,
     }),
-    () => (rawEnvelope?.version === 2 || rawEnvelope?.version === 3 || rawEnvelope?.version === 4)
-      && rawEnvelope.schema !== undefined
+    () => isSupportedVersion(rawEnvelope?.version) && rawEnvelope.schema !== undefined
       ? []
       : parseDynamicFields(input),
   );
@@ -1880,7 +1879,7 @@ export function parseDynamicForm(
       }
       reportLayoutMembers(raw, `/layout/${index}`);
       layoutRefusal = "reference";
-      if (!validLayoutNode(raw, names, placed, 1, version === 3 || version === 4)) {
+      if (!validLayoutNode(raw, names, placed, 1, version !== null && version >= 3)) {
         diagnostics.push(layoutRefusalDiagnostic(layoutRefusal, `/layout/${index}`, version));
         continue;
       }
