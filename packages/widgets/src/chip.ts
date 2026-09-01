@@ -55,20 +55,18 @@ export const MDY_CHIP_CLASSES = Object.freeze({
 
 export type MdyChipPart = keyof typeof MDY_CHIP_CLASSES;
 
-/**
- * How a multiselect treats its options: taken or not, or taken a number of times.
- *
- * The mode is a field of the Dynamic Form Contract, so the name that owns it lives in `@modyra/core`
- * and everything else refers to it. A chip's appearance follows the value a document carries; a
- * second declaration of the same two strings is a place for the two to disagree.
- */
-export type MdyChipMode = MdyMultiselectMode;
-
 /** Where a chip appears: offered among the options, or standing for a value already taken. */
 export type MdyChipRole = "option" | "value";
 
 export interface MdyChipAppearance {
-  readonly mode?: MdyChipMode;
+  /**
+   * How a multiselect treats its options: taken or not, or taken a number of times.
+   *
+   * Named by the contract that owns it rather than by a second name of this package's own: a chip's
+   * appearance follows the value a document carries, and two declarations of the same two strings
+   * are a place for them to disagree.
+   */
+  readonly mode?: MdyMultiselectMode;
   readonly role?: MdyChipRole;
   readonly selected?: boolean;
   /** Carries a dismiss affordance. A value chip you can take back off the control. */

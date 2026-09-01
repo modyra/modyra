@@ -34,7 +34,6 @@ import type {
   MdyCatalogWidgetIntent,
   MdyCatalogWidgetState,
   MdyChipAppearance,
-  MdyChipMode,
   MdyChipPart,
   MdyChipRole,
   MdyColorValueIntent,
@@ -88,10 +87,8 @@ import type {
   MdyGranularityProblem,
   MdyKeyBinding,
   MdyKeyOrPress,
-  MdyLayoutBreakpoint,
   MdyLayoutColumnCounts,
   MdyLayoutPart,
-  MdyLayoutSlotPlacement,
   MdyLightDismiss,
   MdyLightDismissOptions,
   MdyMultiselectFieldA11yOptions,
@@ -361,8 +358,6 @@ declare const held16: MdyCatalogWidgetState;
 void held16;
 declare const held17: MdyChipAppearance;
 void held17;
-declare const held18: MdyChipMode;
-void held18;
 declare const held19: MdyChipPart;
 void held19;
 declare const held20: MdyChipRole;
@@ -469,14 +464,10 @@ declare const held70: MdyKeyBinding;
 void held70;
 declare const held71: MdyKeyOrPress;
 void held71;
-declare const held72: MdyLayoutBreakpoint;
-void held72;
 declare const held73: MdyLayoutColumnCounts;
 void held73;
 declare const held74: MdyLayoutPart;
 void held74;
-declare const held75: MdyLayoutSlotPlacement;
-void held75;
 declare const held76: MdyLightDismiss;
 void held76;
 declare const held77: MdyLightDismissOptions;

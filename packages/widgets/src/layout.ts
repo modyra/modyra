@@ -48,23 +48,19 @@ export const MDY_LAYOUT_BREAKPOINTS: Readonly<Record<MdyDynamicBreakpoint, strin
   lg: "80rem",
 });
 
-/**
- * The same sizes a document authors against, not a second list that happens to agree.
+/*
+ * Sizes and placements are named by the contract that owns them, never by a second name here.
  *
  * A placement declared for a size nothing paints is a layout that silently does nothing, so the set
- * is derived rather than restated: `MDY_LAYOUT_BREAKPOINTS` is typed by it, and a size added on
- * either side fails to compile until both carry it.
+ * is derived rather than restated: `MDY_LAYOUT_BREAKPOINTS` is typed by `MdyDynamicBreakpoint`, and
+ * a size added on either side fails to compile until both carry it.
  */
-export type MdyLayoutBreakpoint = MdyDynamicBreakpoint;
-
-/** Where a child sits at one size. Aliased, because a document and a renderer describe one placement. */
-export type MdyLayoutSlotPlacement = MdyDynamicSlotPlacement;
 
 /** How many tracks a row has, per breakpoint. Omitted sizes inherit the next smaller one. */
-export type MdyLayoutColumnCounts = Partial<Readonly<Record<MdyLayoutBreakpoint, number>>>;
+export type MdyLayoutColumnCounts = Partial<Readonly<Record<MdyDynamicBreakpoint, number>>>;
 
 /** The custom property carrying the track count at each size. */
-export const MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+export const MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: Readonly<Record<MdyDynamicBreakpoint, string>> = Object.freeze({
   base: MDY_CSS_PROPERTIES.layout.columnCount,
   sm: `${MDY_CSS_PROPERTIES.layout.columnCount}-sm`,
   md: `${MDY_CSS_PROPERTIES.layout.columnCount}-md`,
@@ -72,7 +68,7 @@ export const MDY_LAYOUT_COLUMN_COUNT_PROPERTIES: Readonly<Record<MdyLayoutBreakp
 });
 
 /** The custom property carrying a column's starting track at each size. */
-export const MDY_LAYOUT_COLUMN_START_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+export const MDY_LAYOUT_COLUMN_START_PROPERTIES: Readonly<Record<MdyDynamicBreakpoint, string>> = Object.freeze({
   base: MDY_CSS_PROPERTIES.layout.columnStart,
   sm: `${MDY_CSS_PROPERTIES.layout.columnStart}-sm`,
   md: `${MDY_CSS_PROPERTIES.layout.columnStart}-md`,
@@ -80,7 +76,7 @@ export const MDY_LAYOUT_COLUMN_START_PROPERTIES: Readonly<Record<MdyLayoutBreakp
 });
 
 /** The custom property carrying whether a column shows at each size. */
-export const MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: Readonly<Record<MdyLayoutBreakpoint, string>> = Object.freeze({
+export const MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: Readonly<Record<MdyDynamicBreakpoint, string>> = Object.freeze({
   base: MDY_CSS_PROPERTIES.layout.columnDisplay,
   sm: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-sm`,
   md: `${MDY_CSS_PROPERTIES.layout.columnDisplay}-md`,
@@ -102,11 +98,11 @@ export const MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES: Readonly<Record<MdyLayoutBrea
  * no properties and a column with no slot is untouched.
  */
 export function layoutSlotStyle(
-  at: Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>> | undefined,
+  at: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>> | undefined,
 ): Readonly<Record<string, string>> {
   const style: Record<string, string> = {};
   if (!at) return style;
-  for (const size of Object.keys(MDY_LAYOUT_BREAKPOINTS) as MdyLayoutBreakpoint[]) {
+  for (const size of Object.keys(MDY_LAYOUT_BREAKPOINTS) as MdyDynamicBreakpoint[]) {
     const placement = at[size];
     if (!placement) continue;
     if (placement.column !== undefined) {
@@ -131,7 +127,7 @@ export function layoutNodeAttributes(
      * Tracks per breakpoint on a row. A section's `at` is a placement rather than a count — it says
      * where the section's own column sits — and is read by `layoutSlotStyle`, not here.
      */
-    readonly at?: MdyLayoutColumnCounts | Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>>;
+    readonly at?: MdyLayoutColumnCounts | Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>;
   },
 ): { readonly className: string; readonly style: Readonly<Record<string, string>>; readonly dataset: Readonly<Record<string, string>> } {
   if (node.kind === "section") {
@@ -142,7 +138,7 @@ export function layoutNodeAttributes(
   // is a placement instead, so anything that is not a number is ignored rather than turned into
   // `NaN` tracks — the two shapes meet whenever a layout is walked as a union.
   const raw = (node.at ?? {}) as Readonly<Record<string, unknown>>;
-  const count = (size: MdyLayoutBreakpoint): number | undefined =>
+  const count = (size: MdyDynamicBreakpoint): number | undefined =>
     typeof raw[size] === "number" ? (raw[size] as number) : undefined;
   // Mobile-first, and the default is the behaviour the foundation already had: one column until the
   // first breakpoint, then the tracks the row declares. Authoring `at` overrides any of the four.
@@ -154,7 +150,7 @@ export function layoutNodeAttributes(
   };
   const style: Record<string, string> = {};
   for (const [size, count] of Object.entries(counts)) {
-    style[MDY_LAYOUT_COLUMN_COUNT_PROPERTIES[size as MdyLayoutBreakpoint]] = String(Math.max(1, count));
+    style[MDY_LAYOUT_COLUMN_COUNT_PROPERTIES[size as MdyDynamicBreakpoint]] = String(Math.max(1, count));
   }
   return { className: MDY_LAYOUT_CLASSES.columns, style, dataset: { layoutId: node.id } };
 }
