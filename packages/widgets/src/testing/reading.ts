@@ -136,3 +136,96 @@ export function readPartAttribute(
     return element.getAttribute(attribute) as string | null;
   }) as MdyReading<string | null>;
 }
+
+/**
+ * Whether a part is on the page, and — when it is not — whether it was owed.
+ *
+ * "Missing" is three different findings wearing one word: a part the contract requires and the
+ * renderer did not draw, a part excused by a condition that does not hold right now, and a part
+ * nobody looked for. A panel that prints "absent" for all three sends its reader to the wrong one
+ * twice out of three times.
+ *
+ * The excuse is evaluated **when this is asked**, not baked in: a part excused by a closed overlay
+ * becomes owed again the moment the overlay opens, in the same session, without the caller
+ * re-declaring anything. That is what `partIsOwed` already does; this carries its answer alongside
+ * the observation so the two cannot be reported apart.
+ */
+/*
+ * Named an observation rather than a presence: `MdyPartPresence` is already the vocabulary of
+ * *conditions* a part may be gated on — `"overlayIsOpen"`, `"documentDeclaresIt"`. This is what was
+ * seen when one was looked for, which is a different thing, and one name for both would make a
+ * reader ask which sense they had in front of them.
+ */
+export interface MdyPartObservation {
+  /** Whether an element for the part was found. */
+  readonly present: boolean;
+  /** Whether the contract requires it under the conditions that hold right now. */
+  readonly owed: boolean;
+  /**
+   * What to make of it.
+   *
+   * `drawn` — present and owed. `extra` — present and not owed, which is a renderer's prerogative.
+   * `excused` — absent and not owed, and the condition says why. `missing` — absent and owed, which
+   * is the only one of the four that is a defect.
+   */
+  readonly verdict: "drawn" | "extra" | "excused" | "missing";
+  /** The condition the contract gates it on, where it has one. */
+  readonly presentWhen?: string;
+}
+
+/**
+ * Read a part's presence against what the contract owes right now.
+ *
+ * `holds` and `offers` are the caller's, because only the caller knows whether this widget is open
+ * or what capabilities its field was given — and a collector that guessed either would be reporting
+ * its guess as the contract's answer.
+ */
+export function readPartPresence(
+  root: { querySelector(selector: string): unknown },
+  part: {
+    readonly name: string;
+    readonly selector: string;
+    readonly node: {
+      readonly part: string;
+      readonly optional?: boolean;
+      readonly presentWhen?: string;
+      readonly requires?: string;
+    };
+  },
+  facts: {
+    readonly holds: (condition: string) => boolean;
+    readonly offers: (capability: string) => boolean;
+    /** How the contract decides. Passed in so this file does not import the structure module. */
+    readonly owes: (
+      node: MdyPartObservationNode,
+      facts: { holds: (condition: string) => boolean; offers: (capability: string) => boolean },
+    ) => boolean;
+  },
+): MdyReading<MdyPartObservation> {
+  const where = {
+    source: part.selector,
+    at: part.name,
+    method: "querySelector + partIsOwed",
+  };
+  return reading(where, () => {
+    const present = root.querySelector(part.selector) !== null;
+    const owed = facts.owes(part.node as MdyPartObservationNode, facts);
+    const verdict = present
+      ? (owed ? "drawn" : "extra")
+      : (owed ? "missing" : "excused");
+    return {
+      present,
+      owed,
+      verdict,
+      ...(part.node.presentWhen === undefined ? {} : { presentWhen: part.node.presentWhen }),
+    } as MdyPartObservation;
+  });
+}
+
+/** The shape `partIsOwed` takes, named here so this file does not depend on the structure module. */
+export interface MdyPartObservationNode {
+  readonly part: string;
+  readonly optional?: boolean;
+  readonly presentWhen?: string;
+  readonly requires?: string;
+}

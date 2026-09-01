@@ -3584,6 +3584,12 @@
   "widgets:MdyPartMap": [
     "-> Readonly"
   ],
+  "widgets:MdyPartObservation": [
+    "owed: boolean",
+    "present: boolean",
+    "presentWhen?: string",
+    "verdict: \"drawn\" | \"extra\" | \"excused\" | \"missing\""
+  ],
   "widgets:MdyPartPresence": [
     "\"documentDeclaresIt\"",
     "\"errorsAreVisible\"",
@@ -4989,6 +4995,12 @@
     "(1) part: { readonly name: string; readonly selector: string; }",
     "(2) attribute: string",
     "-> returns: MdyReading<string | null>"
+  ],
+  "widgets:readPartPresence": [
+    "(0) root: { querySelector(selector: string): unknown; }",
+    "(1) part: { readonly name: string; readonly selector: string; readonly node: { readonly part: string; readonly optional?: boolean; readonly presentWhen?: string; readonly requires?: string; }; }",
+    "(2) facts: { readonly holds: (condition: string) => boolean; readonly offers: (capability: string) => boolean; /** How the contract decides. Passed in so this file does not import the structure module. */ readonly owes: (node: MdyPartObservationNode, facts: { holds: (condition: string) => boolean; offers: (capability: string) => boolean; }) => boolean; }",
+    "-> returns: MdyReading<MdyPartObservation>"
   ],
   "widgets:reading": [
     "(0) where: { readonly source: string; readonly at: string; readonly method: string; }",

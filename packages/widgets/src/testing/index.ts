@@ -43,10 +43,11 @@ export {
   readingOf,
   readingText,
   readPartAttribute,
+  readPartPresence,
   unread,
 } from "./reading.js";
 // Only the union. Its two halves and the reason union are reachable through it — a consumer narrows
 // on `read` and switches on `reason` without naming either — so exporting them adds three words to
 // the surface that buy nothing a reader does not already have. `unread` still takes a reason, and a
 // literal is checked against the union at the call site.
-export type { MdyReading } from "./reading.js";
+export type { MdyPartObservation, MdyReading } from "./reading.js";

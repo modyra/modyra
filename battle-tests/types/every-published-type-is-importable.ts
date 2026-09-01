@@ -275,6 +275,8 @@ import type {
   MdyStateIssue,
   MdyStateIssueCode,
   MdyStateMatrixOptions,
+  MdyPartObservation,
+  MdyReading,
   MdyStateMatrixResult,
   MdyStateMatrixRow,
   MdyStructureContractIssue,
@@ -875,3 +877,8 @@ declare const heldScrollOption: typeof scrollOptionIntoView;
 void heldScrollOption;
 declare const heldOpenModality: MdyOpenModality;
 void heldOpenModality;
+
+declare const held274: MdyReading<string>;
+void held274;
+declare const held275: MdyPartObservation;
+void held275;
