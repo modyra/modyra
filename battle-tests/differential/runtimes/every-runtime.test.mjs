@@ -28,6 +28,8 @@
  * would find that out the hard way otherwise.
  */
 
+import { vanillaReactivity } from "@modyra/core";
+
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectSameObservation } from "../../harness/assertions.mjs";
 import { RENDERER_ONLY_FIELDS } from "../../harness/canonical-snapshot.mjs";
@@ -90,6 +92,57 @@ async function drive(context) {
   await new Promise((resolve) => setTimeout(resolve, 0));
   return context.observe("after the sequence");
 }
+
+/**
+ * A binding that takes vanilla's capabilities does not restate them.
+ *
+ * Four of the six are `{ ...vanillaReactivity(), kind }`, so what they declare about themselves is
+ * whatever the core declares — and that is right, because they *are* the core's engine under another
+ * name. It is also unguarded: raising a flag on vanilla raised it on all four at once, which was
+ * correct and invisible, and a `capabilities:` literal added to one of them tomorrow would break
+ * nothing and be found by nobody.
+ *
+ * `solid` and `vue` are excluded, and not by convenience: both declare their own with a reason
+ * written per key — solid's memos take a real comparator, vue's `shallowRef` skips a same-value
+ * write — so they are entitled to differ and comparing them here would forbid the very thing the
+ * capability vocabulary exists to express.
+ *
+ * `===` does not answer this question, which is the part worth keeping. `vanillaReactivity()` is a
+ * factory: fresh closures on every call, so vanilla is not identical to itself, and an identity
+ * check reports all eight members as diverging — measured against a vanilla-versus-vanilla control
+ * before it was believed. What the members *are* is the question, so the comparison is deep.
+ */
+const TAKES_VANILLAS_CAPABILITIES = Object.freeze(["react", "preact", "svelte", "lit"]);
+
+battle(
+  {
+    claims: ["REA-001"],
+    title: "a binding that takes vanilla's capabilities declares no others",
+    environments: ["node"],
+  },
+  async (ctx) => {
+    const vanilla = vanillaReactivity().capabilities;
+    // The premise: this compares against a real vocabulary and not an empty object, which every
+    // binding would agree with.
+    expectClaim(Object.keys(vanilla).length >= 8, {
+      claimIds: ["REA-001"],
+      what: `vanilla declares ${Object.keys(vanilla).length} capabilities, too few to be the real set`,
+    });
+
+    for (const [name, make] of RUNTIMES) {
+      if (!TAKES_VANILLAS_CAPABILITIES.includes(name)) continue;
+      const mine = (await make()).capabilities;
+      const differing = Object.keys({ ...vanilla, ...mine })
+        .filter((key) => mine[key] !== vanilla[key])
+        .map((key) => `${key}: ${String(mine[key])} against vanilla's ${String(vanilla[key])}`);
+      expectClaim(differing.length === 0, {
+        claimIds: ["REA-001"],
+        what: `${name} restates a capability instead of taking vanilla's — ${differing.join(" · ")}`,
+      });
+      ctx.log.note("a binding that takes vanilla's capabilities", { runtime: name, keys: Object.keys(mine).length });
+    }
+  },
+);
 
 battle(
   {
