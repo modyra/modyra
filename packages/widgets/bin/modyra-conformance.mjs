@@ -173,7 +173,17 @@ const record = (title, findings, note) => sections.push({ title, findings, note 
 
 // ── State matrix ──────────────────────────────────────────────────────────────────────────
 {
-  const matrix = await collectStateMatrix({ kinds, mount });
+  // A fixture the kit cannot drive is a config problem, and this tool already refuses to answer one
+  // with a stack trace from inside itself: the message names the member and what it is for, and the
+  // exit code says it is the config rather than the renderer.
+  let matrix;
+  try {
+    matrix = await collectStateMatrix({ kinds, mount });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.error(`\nThis config's mount does not return what the kit drives.\n\n  ${reason}\n`);
+    process.exit(2);
+  }
   const findings = Object.entries(matrix.observed).map(
     ([pair, codes]) => `${pair}: ${codes.join(", ")}`,
   );

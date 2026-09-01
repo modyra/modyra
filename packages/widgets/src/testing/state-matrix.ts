@@ -80,6 +80,43 @@ export interface MdyStateMatrixResult {
 }
 
 /** Run every declared state of every kind this adapter renders. */
+/**
+ * What a mount owes the kit, and what it may leave out.
+ *
+ * The reference config delegates `mount` to a fixture it already has, so a renderer author copying
+ * it sees `export const mount = fixture.mount` and never learns what one returns. Left unchecked,
+ * the first missing member arrives as `fixture.drive is not a function`, thrown inside a kit file
+ * the author has never opened — a stack trace about somebody else's code, for a requirement nobody
+ * stated.
+ *
+ * So the boundary speaks the contract's language: the kit says which member is missing and what it
+ * is for, before anything is driven.
+ */
+const FIXTURE_MEMBERS: ReadonlyArray<readonly [keyof MdyStateFixture, string]> = [
+  ["root", "the element the widget was rendered into"],
+  ["parts", "where each contract part is, as `inspectWidgetDom` takes it"],
+  ["drive", "put the widget in a state, or return false when the public API cannot reach it"],
+  ["settle", "let the rendering settle, so an assertion does not read the previous value"],
+  ["dispose", "take the widget down again"],
+];
+
+/**
+ * The members this fixture is missing, in the order they are declared.
+ *
+ * Empty for a fixture the kit can drive. `root` is a property and the rest are callable, which is
+ * the only distinction worth making here: a `parts` that is a string is as unusable as an absent
+ * one, and saying so costs nothing.
+ */
+export function missingFixtureMembers(fixture: unknown): ReadonlyArray<string> {
+  if (typeof fixture !== "object" || fixture === null) {
+    return FIXTURE_MEMBERS.map(([member, purpose]) => `${String(member)} — ${purpose}`);
+  }
+  const held = fixture as Record<string, unknown>;
+  return FIXTURE_MEMBERS.filter(([member]) =>
+    member === "root" ? held.root === undefined || held.root === null : typeof held[member] !== "function",
+  ).map(([member, purpose]) => `${String(member)} — ${purpose}`);
+}
+
 export async function collectStateMatrix(
   options: MdyStateMatrixOptions,
 ): Promise<MdyStateMatrixResult> {
@@ -90,6 +127,18 @@ export async function collectStateMatrix(
   for (const kind of options.kinds) {
     for (const state of MDY_WIDGET_STATE_SUPPORT[kind]) {
       const fixture = await options.mount(kind);
+      const missing = missingFixtureMembers(fixture);
+      if (missing.length > 0) {
+        // Thrown rather than collected: the run cannot say anything about a renderer it has no way
+        // to drive, and a report that omitted the reason would be the silence this check replaces.
+        throw new TypeError(
+          `mount("${kind}") returned a fixture missing ${missing.length === 1 ? "a member" : "members"} `
+          + `the kit needs:\n\n    ${missing.join("\n    ")}\n\n`
+          + "  A mount returns an `MdyStateFixture`, exported from `@modyra/widgets/testing`.\n"
+          + "  The reference config delegates to a fixture that already has these, so copying it\n"
+          + "  does not show them.",
+        );
+      }
       try {
         const driven = await fixture.drive(state);
         await fixture.settle();

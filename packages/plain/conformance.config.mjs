@@ -20,7 +20,39 @@ const contractParts = await import("./test/contract-parts.mjs");
 
 export const name = "@modyra/plain";
 export const kinds = fixture.KINDS;
-export const mount = fixture.mount;
+
+/**
+ * Mount one widget, ready to drive.
+ *
+ * Delegated to the fixture the package's own suites already use — but written out rather than
+ * assigned across, because this file is what an implementer copies. `export const mount =
+ * fixture.mount` is shorter and shows nothing: the members below are what the kit calls, and a
+ * mount that omits one is refused by name before anything is driven.
+ *
+ * `root`, `parts`, `drive`, `settle` and `dispose` are owed. `control`, `value` and `press` are
+ * offered when the adapter can answer them, and skipped with a reason when it cannot.
+ */
+export const mount = async (...given) => {
+  // Every argument forwarded, not just the kind: the kit hands a mount its `rules` and `value` when
+  // the config says it passes them on, and a wrapper that names only the first silently drops them —
+  // which reads as a renderer ignoring a declared constraint rather than as a config that never
+  // handed one over.
+  const mounted = await fixture.mount(...given);
+  return {
+    /** The element the widget was rendered into. */
+    root: mounted.root,
+    /** Where each contract part is, as `inspectWidgetDom` takes it. */
+    parts: () => mounted.parts(),
+    /** Put the widget in a state; `false` when the public API offers no way to reach it. */
+    drive: (state) => mounted.drive(state),
+    /** Let the rendering settle, so an assertion does not read the previous value. */
+    settle: () => mounted.settle(),
+    dispose: () => mounted.dispose(),
+    ...(mounted.control ? { control: () => mounted.control() } : {}),
+    ...(mounted.value ? { value: () => mounted.value() } : {}),
+    ...(mounted.press ? { press: (key) => mounted.press(key) } : {}),
+  };
+};
 
 /** What each kind legitimately does not render at rest -- the suite's own list, not a second one. */
 export const absentParts = contractParts.ABSENT;
