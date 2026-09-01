@@ -1994,11 +1994,6 @@
     "debugName?: string",
     "equal?: MdyEqualityFn<T>"
   ],
-  "core:MdySkippedReactivityCheck": [
-    "adapter: string",
-    "because: string",
-    "check: string"
-  ],
   "core:MdySnapshotOptions": [
     "sensitive?: (path: string) => boolean | undefined"
   ],

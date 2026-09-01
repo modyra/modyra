@@ -77,6 +77,32 @@ test("what an adapter cannot answer is reported, with the reason", async () => {
   }
 });
 
+/**
+ * Every member `MdySkippedReactivityCheck` declares carries something a reader can act on.
+ *
+ * A skip is read by somebody deciding whether a `false` was worth what it cost, and they need all
+ * three: which adapter answered, which question went unasked, and which declaration did it. A
+ * member that is declared and always empty is a promise the type makes and the ledger does not
+ * keep — and `adapter` was exactly that until this asserted it.
+ *
+ * @type {(entry: import("../dist/testing/index.js").MdySkippedReactivityCheck) => void}
+ */
+const readable = (entry) => {
+  assert.equal(typeof entry.adapter, "string", "a skip must say which adapter answered");
+  assert.ok(entry.adapter.length > 0, "a skip named no adapter");
+  assert.ok(entry.check.startsWith(entry.adapter), "a skip's check does not belong to its adapter");
+  assert.equal(typeof entry.because, "string", "a skip must say what bought it out");
+};
+
+test("a recorded skip carries every member the type declares", async () => {
+  const { bodies, read } = ledgerFor(HONEST);
+  for (const body of bodies) await body();
+
+  const { skipped } = read();
+  assert.ok(skipped.length > 0, "nothing was skipped, so the shape below is unmeasured");
+  for (const entry of skipped) readable(entry);
+});
+
 test("turning a capability off costs a check, and the ledger names which", async () => {
   const run = async (capabilities) => {
     const { bodies, read } = ledgerFor(capabilities);
