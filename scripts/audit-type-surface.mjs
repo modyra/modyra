@@ -511,6 +511,25 @@ for (const { pkg, file: entry } of ENTRIES) {
     } else if (exported && ts.isClassDeclaration(node) && node.name) {
       surface[`${pkg}:${node.name.text}`] = classMembersOf(node);
       classNames.add(`${pkg}:${node.name.text}`);
+    } else if (ts.isVariableStatement(node)
+      && node.declarationList.declarations.some((one) => ts.isIdentifier(one.name) && PUBLIC.has(one.name.text))) {
+      // **An exported constant is public surface and no index held it.** This scan recorded
+      // interfaces, aliases, classes and functions, so a `export const` could enter the published
+      // surface and leave it again with nothing reporting either: `test:type-surface` said
+      // UNCHANGED because it compares *types*, and `contract:diff` looks at the widget contract's
+      // parts. The only thing naming such a name was a changeset written by hand — discipline
+      // rather than a gate.
+      //
+      // What is recorded is the declared type where the declaration carries one, and the fact of the
+      // name where it does not. A constant's *value* is deliberately not recorded: a number that
+      // changes is not a surface change, and a baseline that moved on every tuned threshold would be
+      // re-accepted without reading, which is how a diff stops being read at all.
+      for (const one of node.declarationList.declarations) {
+        if (!ts.isIdentifier(one.name) || !PUBLIC.has(one.name.text)) continue;
+        surface[`${pkg}:${one.name.text}`] = [
+          `const-> ${one.type ? one.type.getText(source) : "(inferred)"}`,
+        ];
+      }
     } else if (exported && ts.isFunctionDeclaration(node) && node.name) {
       // A function is public surface too, and the projections made that concrete: each returns an
       // inline type literal naming which parts it hands back, so "which parts does this projection

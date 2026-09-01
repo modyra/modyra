@@ -213,7 +213,20 @@ const surface = JSON.parse(readFileSync(join(root, "packages/widgets/contract-ba
 // a bare key records only whichever was scanned last. This audit asks whether a *name* is mentioned
 // by a test, which is a question about the name and not about who declares it — so the package is
 // dropped here rather than pushed into the question.
-const names = new Set(Object.keys(surface).map((key) => key.slice(key.indexOf(":") + 1)));
+// **Constants are recorded on the surface and measured apart from it, and the split is named rather
+// than silent.** The surface gained exported constants so that a public name could no longer enter
+// and leave with nothing reporting it — the hole that let a new scalar ship named only by a
+// hand-written changeset. But "is this name asserted in a test body" is a question about behaviour,
+// and a threshold or a class string is asserted by the checks that use it rather than by being
+// spelled. Folding them into this population would move this gate by a definition change rather
+// than by anything anybody did, which is how a number stops meaning what it says.
+//
+// What is not acceptable is dropping them quietly, so their count is printed and their unexercised
+// ones are listed: excluded from the verdict, never from the report.
+const isConstant = (key) => (surface[key] ?? []).some((member) => String(member).startsWith("const->"));
+const constantKeys = Object.keys(surface).filter(isConstant);
+const names = new Set(Object.keys(surface).filter((key) => !isConstant(key))
+  .map((key) => key.slice(key.indexOf(":") + 1)));
 // `plain` is here because it is the renderer the panels drive: its two entry points are the surface
 // a person actually touches, and leaving them out measured the contract while ignoring the way in.
 const runtimeNames = new Set();
@@ -322,6 +335,16 @@ if (uncoveredPanels.length > 0) {
 
 console.log(`Panels: ${panelReport.length}, all covered by ${PANEL_SUITE.split("/").slice(-3).join("/")}`);
 console.log(`Public names: ${score.published}`);
+if (constantKeys.length > 0) {
+  // Reported beside the verdict, not folded into it: a reader who sees only the score would not know
+  // this population exists, and an exclusion nobody can see is one nobody can dispute.
+  const unexercised = constantKeys
+    .map((key) => key.slice(key.indexOf(":") + 1))
+    .filter((name) => !mentions(tests, name));
+  console.log(`Public constants, measured apart: ${constantKeys.length}`
+    + (unexercised.length === 0 ? " — all named by a test" : `, ${unexercised.length} named by no test:`));
+  for (const name of unexercised) console.log(`  · ${name}`);
+}
 console.log(`  asserted somewhere: ${score.asserted} (was ${baseline.score.asserted})`);
 console.log(`  shown in a demo:    ${score.shown} of ${score.showable} that a page could show (was ${baseline.score.shown})`);
 
