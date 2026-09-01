@@ -56,11 +56,24 @@ export function mount(kind) {
 
   return {
     root: made.get("root") ?? host,
-    parts: () => ({}),
-    // The member the reference config does not show, because it delegates to a fixture that has it.
-    // It is declared — `MdyStateFixture` in `@modyra/widgets/testing`, and the tool's own header
-    // says `mount` returns one — but a reader who copies the reference and not the header meets it
-    // as a crash inside the kit rather than as a requirement.
+    // **Where each part is.** `MdyStateFixture.parts()` returns an `MdyDomPartMap`, whose own
+    // declaration says it plainly: `Record<string, Element>`, and *"parts absent from the map are
+    // treated as not rendered"*. Returning `{}` therefore reports a widget with nothing in it,
+    // whatever was drawn — which is what this file did, and why its findings were about the fixture
+    // rather than about the drawing.
+    //
+    // Nothing here inspects the DOM to find them: the loop above already knows which element it made
+    // for each part, so the map is that knowledge handed over rather than rediscovered.
+    parts: () => Object.fromEntries(made),
+    // The value the field holds. Optional in the type — "when the adapter can name it" — but a
+    // renderer that draws an input can name it, and declining leaves the kit comparing against
+    // `undefined` where the contract's `valueSlot` says what to read.
+    value: () => {
+      const control = made.get("control") ?? made.get("indicator");
+      if (control === undefined) return undefined;
+      const slot = contract.valueSlot;
+      return slot === "checked" ? control.checked === true : control.value ?? "";
+    },
     //
     // `false` is the honest answer for a renderer that draws and does not drive: the kit collects
     // those as `undrivable` and says so, instead of reporting a state as observed when nothing put
