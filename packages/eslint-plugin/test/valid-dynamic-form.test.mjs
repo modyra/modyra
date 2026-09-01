@@ -36,9 +36,15 @@ const codesOf = (messages) =>
 
 const fixtures = readdirSync(CORPUS).flatMap((version) =>
   readdirSync(join(CORPUS, version))
-    // A fixture's context lives in a twin file beside it and is not a document (ADR 0098): linting
-    // it would ask the rule what the parser says about an object the parser never reads.
-    .filter((file) => !file.endsWith(".context.json"))
+    // **A document is named for itself; anything with a second suffix is written beside one.** A
+    // fixture's context is a twin file, not a document (ADR 0098), and so is the verdict a document
+    // declares — linting either would ask the rule what the parser says about an object the parser
+    // never reads.
+    //
+    // Stated as one rule rather than as a list of known suffixes: the list was `.context.json`
+    // alone, so the corpus gaining a second kind of companion turned this into two failures about a
+    // file that is not a document. A rule that names the shape holds for the third kind too.
+    .filter((file) => file.endsWith(".json") && !file.slice(0, -".json".length).includes("."))
     .map((file) => ({
     name: `${version}/${file}`,
     document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")),

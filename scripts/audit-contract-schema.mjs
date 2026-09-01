@@ -23,7 +23,7 @@
  *   node scripts/audit-contract-schema.mjs          # report
  *   node scripts/audit-contract-schema.mjs --check  # exit 1 on defects
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import Ajv from "ajv/dist/2020.js";
 import { MDY_DYNAMIC_FIELD_KINDS, MDY_DYNAMIC_MEMBERS, parseDynamicForm, MDY_DYNAMIC_MEMBER_ARRIVALS } from "../packages/core/dist/dynamic-config.js";
@@ -169,6 +169,19 @@ const validators = new Map([...byVersion.values()].map((schema) => [schema, ajv.
 /** Fixtures the schema passes and the parser refuses — the boundary, not a defect. */
 const boundary = [];
 
+/**
+ * What a document declares should happen to it, read from beside it.
+ *
+ * Absence is a declaration too, and the common one: no sidecar means accepted with nothing to say.
+ * Spelling that out here rather than at each call keeps the ordinary fixture free of ceremony.
+ */
+function expectedFor(version, file) {
+  const beside = join(CORPUS, version, file.replace(/\.json$/, ".expected.json"));
+  if (!existsSync(beside)) return { valid: true, diagnostics: [] };
+  const declared = readJson(join("spec/fixtures/dynamic-form", version, file.replace(/\.json$/, ".expected.json")));
+  return { valid: declared.valid !== false, diagnostics: declared.diagnostics ?? [] };
+}
+
 for (const version of readdirSync(CORPUS)) {
   const schema = byVersion.get(Number(version.replace("v", "")));
   if (!schema) {
@@ -180,8 +193,12 @@ for (const version of readdirSync(CORPUS)) {
     // The context a fixture is built with lives beside it, not in it: the document is what three
     // runtimes parse and the context is what a host supplies, which is the distinction ADR 0092
     // draws. A fixture with no twin is one built without context.
-    if (file.endsWith(".context.json")) {
-      const document = file.replace(/\.context\.json$/, ".json");
+    // The verdict a document expects lives beside it for the same reason its context does: the
+    // document is what four runtimes parse, and a slot carrying an expectation would be a slot they
+    // each have to know to ignore — a skip list wearing the document's own clothes.
+    if (file.endsWith(".context.json") || file.endsWith(".expected.json")) {
+      const suffix = file.endsWith(".context.json") ? ".context.json" : ".expected.json";
+      const document = file.replace(new RegExp(`\\${suffix}$`), ".json");
       if (!readdirSync(join(CORPUS, version)).includes(document)) {
         findings.push(`spec/fixtures/dynamic-form/${version}/${file}: names no document (${document} is not there)`);
       }
@@ -216,6 +233,26 @@ for (const version of readdirSync(CORPUS)) {
       // Expected, and worth printing rather than passing over: it is the boundary the schema cannot
       // cross, and seeing it named is what stops a green schema being read as a valid document.
       boundary.push(`${where}: ${parserFindings.map((d) => d.code).join(", ")}`);
+    }
+
+    // **What the corpus says should happen, against what happened.** Until this, nothing asserted
+    // the parser's verdict on a fixture at all: a document it refuses was printed under the boundary
+    // above and the audit still exited 0, so a regression that started refusing a good document
+    // moved a line in a report and changed no verdict. The expectation is declared once, beside the
+    // document, rather than known separately by each reader — which is what lets a reader be added
+    // without teaching it the corpus by hand.
+    //
+    // A document with no sidecar declares the ordinary case: accepted, with nothing to say. So the
+    // eleven that are simply valid need no file, and only a document that expects a refusal carries
+    // one.
+    const expectation = expectedFor(version, file);
+    const actualCodes = [...new Set(parserFindings.map((one) => one.code))].sort();
+    const wantedCodes = [...new Set(expectation.diagnostics)].sort();
+    if (expectation.valid !== (parserFindings.length === 0)) {
+      findings.push(`${where}: declares valid=${expectation.valid}, the parser says `
+        + `${parserFindings.length === 0}${actualCodes.length > 0 ? ` (${actualCodes.join(", ")})` : ""}`);
+    } else if (actualCodes.join("|") !== wantedCodes.join("|")) {
+      findings.push(`${where}: declares [${wantedCodes.join(", ")}], the parser says [${actualCodes.join(", ")}]`);
     }
   }
 }
