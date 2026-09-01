@@ -3,6 +3,7 @@
 import {
   createForm,
   parseDynamicForm,
+  serverValidator,
   field as mdyField,
   group as mdyGroup,
   maxLength as mdyMaxLength,
@@ -716,7 +717,35 @@ if (servedNote && servedHost) {
       const parsed = parseDynamicForm(payload, { mode: "strict" });
       servedNote.textContent =
         `Contract v${parsed.version} · ${parsed.fields.length} fields · built in Rust, drawn here.`;
-      mountDynamicForm(servedHost, payload, { submitLabel: "Place order" });
+      mountDynamicForm(servedHost, payload, {
+        submitLabel: "Place order",
+        // The one check the page cannot make: a VAT number against a register only the service can
+        // reach. Attached by the host because an asynchronous check is a function and a document is
+        // data — the contract lets a document say *when* they run, never *that* a field has any.
+        //
+        // Everything after the attachment is the contract's own: the field goes `pending` while the
+        // answer is in flight and carries what comes back exactly as it carries a rule it checked
+        // itself. There is no second channel for "the server said no".
+        fieldOptions: {
+          vat: serverValidator(
+            async (value, ctx) => {
+              if (!String(value ?? "").trim()) return null;
+              const response = await fetch("http://127.0.0.1:3000/v1/forms/checkout/vat", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ value, country: ctx?.form?.country ?? "" }),
+                signal: AbortSignal.timeout(4000),
+              });
+              const { errors } = await response.json();
+              return errors;
+            },
+            // Long enough that a person stops typing before it asks, and the wait is visible on
+            // purpose: `pending` is the state a synchronous demo can never show, and the one a
+            // person actually experiences on a form that asks somebody else.
+            { debounceMs: 400, dependsOn: ["country"], timeoutMs: 5000 },
+          ),
+        },
+      });
     } catch (refusal) {
       servedNote.textContent =
         "The API served a document this reader refuses — which is the check working, not a network "
@@ -726,3 +755,4 @@ if (servedNote && servedHost) {
 
   void loadServed();
 }
+

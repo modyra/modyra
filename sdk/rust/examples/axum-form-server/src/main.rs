@@ -5,7 +5,7 @@ use axum::{
     Router,
 };
 use axum::extract::State;
-use modyra_contract::{DynamicFormV2, DynamicNode, Field, OptionItem, Validators};
+use modyra_contract::{DynamicFormV2, Expression, DynamicNode, Field, OptionItem, Validators};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -104,6 +104,23 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
                 min_items: Some(1), max_items: Some(20),
             }),
             ("coupon".into(), field("text", "Coupon", None, None)),
+            // Asked for only where it applies, and the condition travels with the document: the
+            // page does not know that Italy is the country with a VAT number, and does not need to.
+            ("vat".into(), DynamicNode::Field {
+                field: match field("text", "VAT number", None, Some(Validators {
+                    pattern: Some("^[A-Za-z]{2}[0-9]{11}$".into()),
+                    ..validators(true)
+                })) {
+                    DynamicNode::Field { field, .. } => field,
+                    _ => unreachable!(),
+                },
+                when: Some(Expression {
+                    op: "equals".into(),
+                    operand: None,
+                    operands: Some(vec![json!({ "path": "country" }), json!("IT")]),
+                }),
+                async_when: None,
+            }),
         ]),
     };
 
@@ -241,6 +258,47 @@ async fn health(State(leases): State<Leases>) -> Json<Value> {
     }))
 }
 
+
+/// One value, checked where the answer lives.
+///
+/// A VAT number is checked against a register the browser cannot reach, which is what makes this
+/// worth showing: the rule is not a pattern the page could have applied itself. The answer comes
+/// back in the contract's own diagnostic shape, so the field carries it exactly as it carries a
+/// rule it checked locally — one channel, not a parallel one for "server said no".
+#[derive(Deserialize)]
+struct VatCheck {
+    value: String,
+    #[serde(default)]
+    country: String,
+}
+
+async fn check_vat(Json(body): Json<VatCheck>) -> Json<Value> {
+    // Deliberately slow enough to see: the field stays `pending` while this runs, which is the half
+    // of asynchronous validation a demo usually hides by answering instantly.
+    tokio::time::sleep(Duration::from_millis(600)).await;
+
+    let vat = body.value.trim().to_uppercase();
+    if vat.is_empty() {
+        return Json(json!({ "errors": [] }));
+    }
+
+    let prefix: String = vat.chars().take(2).collect();
+    let digits = &vat[prefix.len().min(vat.len())..];
+
+    let errors: Vec<String> = if !body.country.is_empty() && prefix != body.country.to_uppercase() {
+        vec![format!("A {} VAT number starts with {}", body.country, body.country.to_uppercase())]
+    } else if digits.len() != 11 || !digits.chars().all(|c| c.is_ascii_digit()) {
+        vec![format!("{prefix} VAT numbers carry eleven digits after the country code")]
+    } else if digits.starts_with('0') {
+        // A register the page has no copy of: this is the check that cannot move to the browser.
+        vec!["No company is registered under that number".into()]
+    } else {
+        vec![]
+    };
+
+    Json(json!({ "errors": errors }))
+}
+
 fn app_with(leases: Leases) -> Router {
     // Every demo that talks to this server, by the port its launcher uses. Named rather than
     // opened to anything: a development server that answers the whole internet is a habit that
@@ -257,6 +315,7 @@ fn app_with(leases: Leases) -> Router {
     Router::new()
         .route("/v1/forms/checkout", get(get_checkout_form))
         .route("/v1/forms/checkout/submissions", post(submit_checkout))
+        .route("/v1/forms/checkout/vat", post(check_vat))
         .route("/lease", post(open_lease))
         .route("/health", get(health))
         .layer(cors)

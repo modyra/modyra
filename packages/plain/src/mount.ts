@@ -57,6 +57,14 @@ export interface MountMdyFormOptions {
    */
   readonly idPrefix?: string;
   /**
+   * What a document cannot declare, supplied by the host: `{ vat: serverValidator(check) }`.
+   *
+   * An asynchronous check is a function and a document is data, so a field verified against
+   * something only a server can reach has its check attached here, by name. Merged onto what the
+   * document declared rather than replacing it.
+   */
+  readonly fieldOptions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+  /**
    * Contract v2 `rules`: what a document says a field's presence or availability depends on.
    *
    * The parse returns them beside `fields` and `layout`, and a form built without them behaves as
@@ -163,6 +171,7 @@ export function mountMdyForm(
   const form = buildForm(fields, reactivity, options.collections, {
     draft: options.draft,
     validations: options.validations,
+    fieldOptions: options.fieldOptions,
   });
   // Applied to the form rather than to the markup: what a rule decides is whether the field is in
   // play, which is the form's word and reaches the payload as well as the page.

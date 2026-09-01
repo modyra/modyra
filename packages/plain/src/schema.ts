@@ -53,10 +53,38 @@ export function buildForm(
      * the form's own validators — one rule about two fields has no field to belong to.
      */
     readonly validations?: ReadonlyArray<MdyDynamicValidation>;
+    /**
+     * What a document cannot declare, supplied by the host that mounted it.
+     *
+     * A document says which rules a field has and *when* its asynchronous checks run — and has no
+     * way to say that a field has any, because an async check is a function and a document is data.
+     * A field verified against something only the server can reach therefore needs its check
+     * attached here, by name.
+     *
+     * Merged onto the descriptor the document built rather than replacing it, so what the document
+     * declared survives: a host adding a server check does not silently drop the rules the document
+     * asked for.
+     */
+    readonly fieldOptions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   } = {},
 ): MdyTypedForm<MdyFormSchema> {
-  const { validations = [], ...forwarded } = formOptions;
-  const form = createForm(buildFlatFormSchema(fields, collections), {
+  const { validations = [], fieldOptions, ...forwarded } = formOptions;
+  const schema = buildFlatFormSchema(fields, collections);
+  if (fieldOptions) {
+    for (const [name, extra] of Object.entries(fieldOptions)) {
+      const descriptor = (schema as Record<string, unknown>)[name];
+      if (descriptor === undefined) {
+        // Named a field the document does not have: a check attached to nothing is a guarantee the
+        // host believes is in force, which is worse than no check at all.
+        throw new TypeError(
+          `fieldOptions names "${name}", which this document does not declare. `
+          + `It has: ${Object.keys(schema).join(", ")}`,
+        );
+      }
+      (schema as Record<string, unknown>)[name] = { ...(descriptor as object), ...extra };
+    }
+  }
+  const form = createForm(schema, {
     ...forwarded,
     validators: buildDynamicValidations(validations),
     reactivity,
