@@ -54,7 +54,23 @@ export interface MdyStateMatrixOptions {
   /** Which kinds this adapter renders. */
   readonly kinds: readonly MdyWidgetKind[];
   /** Mount one widget of a kind, ready to drive. */
-  mount(kind: MdyWidgetKind): MdyStateFixture | Promise<MdyStateFixture>;
+  /**
+   * Mount one widget of a kind, ready to drive.
+   *
+   * `asked` carries what the calling section needs drawn — a configured variant, a field with no
+   * rules, or a field with exactly these rules. A mount that ignores it is conforming for every
+   * section that does not send one; a mount written from a one-argument signature never receives
+   * what a document declares, and the sections that ask cannot tell that from a renderer that
+   * dropped it.
+   */
+  mount(
+    kind: MdyWidgetKind,
+    asked?: {
+      readonly variant?: string;
+      readonly validators?: false;
+      readonly rules?: unknown;
+    },
+  ): MdyStateFixture | Promise<MdyStateFixture>;
 }
 
 export interface MdyStateMatrixRow {

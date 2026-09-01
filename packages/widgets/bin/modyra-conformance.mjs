@@ -14,7 +14,21 @@
  *
  *   export const name  = "@acme/renderer";
  *   export const kinds = ["text", "select"];              // the kinds you draw
- *   export async function mount(kind) { … }               // returns an MdyStateFixture
+ *   export async function mount(kind, asked) { … }        // returns an MdyStateFixture
+ *
+ * `asked` is the second argument this tool passes, and a renderer written from the one-argument
+ * signature never receives what a document declares — so a section asking whether a part appears
+ * *because the document declared it* cannot be answered, and reports a defect the renderer does not
+ * have. Three shapes arrive, each from the section that needs it:
+ *
+ *   { variant }             draw this configured variant of the kind
+ *   { validators: false }   draw it with no rules at all, whatever your fixture's default is
+ *   { rules }               draw it with exactly these rules, so their reaching the control can be
+ *                           checked — declare `declaresRules` to say you pass them on
+ *
+ * A mount that ignores `asked` is conforming for every section that does not use it. What it may
+ * not do is accept the argument and drop it: the sections that pass one report against what they
+ * asked for.
  *
  * The config owns its own environment. A renderer needs a DOM and only its author knows how theirs
  * is set up, so the config installs one before exporting `mount`. This repository's own two
