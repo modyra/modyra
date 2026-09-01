@@ -54,6 +54,12 @@ export const WIDGETS = [
   // kind whose next move should be named.
   "segmented",
   "radio-group",
+  // The range, added after its inner inset was found wrong in two renderers and corrected. It had no
+  // image of its own, so the only thing that could see it was the full-page shot — where an eight
+  // pixel move arrives as a few hundred changed pixels among a few hundred thousand, indistinguishable
+  // from the page having been edited. A kind that has already been argued about is a kind that earns
+  // its own frame.
+  "daterange",
 ] as const;
 
 /**
