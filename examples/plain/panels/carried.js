@@ -68,6 +68,11 @@ export const carriedPanel = {
   /** The public names this panel drives. */
   exercises: ["mdyServerSnapshot", "mdyRestoreSnapshot"],
 
+  blurb:
+    "A form built where there is no browser, carried across as text, and started from here. The buttons drive both roads and the third one breaks the sending side on purpose.",
+  invariant:
+    "The two roads reach the same verdicts — and the half a round trip cannot check is the sender's own. A restore re-derives from the values, so a sending side whose rules froze at creation still yields correct verdicts here while having rendered wrong ones itself; only its own column moves.",
+
   mount(work, readout) {
     const reactivity = vanillaReactivity();
     let state = { taken: null, restored: null, frozen: false };
