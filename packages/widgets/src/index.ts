@@ -219,7 +219,7 @@ export { applyPart } from "./apply-part.js";
 export { focusIsInsideField, overlayControlledId, projectOverlayOpenerA11y } from "./opener-a11y.js";
 export type { MdyOverlayOpenerA11yOptions } from "./opener-a11y.js";
 
-export { MDY_CONTRACT_VOCABULARIES } from "./vocabularies.js";
+export { MDY_CONTRACT_VOCABULARIES, MDY_VOCABULARIES_ELSEWHERE } from "./vocabularies.js";
 export type { MdyVocabulary, MdyVocabularyShape } from "./vocabularies.js";
 
 export { bindingForIntent, capabilityOf, isWidgetKind, keyMeans } from "./ask.js";

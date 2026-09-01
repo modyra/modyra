@@ -128,6 +128,12 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
    * Read, never entered: a quantity stepped with buttons is still read by looking at the number.
    * Declared here so three renderers stop deciding it separately — the question sounds like a
    * property of a control, and it is a property of the contract.
+   *
+   * **Where the value is drawn, never what it is.** What a kind *holds* — a boolean, a string, a
+   * list of options, and whether it may be null — is declared by `MDY_VALUE_CONTRACTS` on
+   * `@modyra/core`. The two get confused because both sound like "the value", and a renderer
+   * author who reads only this one is left deciding what a checkbox holds by looking at a
+   * checkbox.
    */
   readonly valueSlot: MdyValueSlot;
   readonly capabilities: {

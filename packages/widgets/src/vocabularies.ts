@@ -85,6 +85,18 @@ export interface MdyVocabulary {
   readonly door: "." | "./vocabulary";
 }
 
+const VOCABULARIES_ELSEWHERE: readonly {
+  readonly name: string;
+  readonly package: string;
+  readonly describes: string;
+}[] = deepFreeze([
+  {
+    name: "MDY_VALUE_CONTRACTS",
+    package: "@modyra/core",
+    describes: "what each kind's value is: its shape, whether it may be null, and when it commits",
+  },
+]);
+
 const CATALOGUES: MdyVocabulary[] = [
   { name: "MDY_WIDGET_CONTRACTS", shape: "keyed-by-kind", value: MDY_WIDGET_CONTRACTS, door: ".",
     describes: "each kind's anatomy: its parts, where they hang, what they are and what they carry" },
@@ -184,5 +196,34 @@ CATALOGUES.push({
   name: "MDY_CONTRACT_VOCABULARIES", shape: "list", value: CATALOGUES, door: ".",
   describes: "this index: every catalogue the contract is made of, and the shape of each",
 });
+// And the pointer list, for the same reason the index holds itself: a published collection missing
+// from the index is one the "everything is listed" check cannot see, and this one exists precisely
+// so a reader stops believing the index is the whole contract.
+CATALOGUES.push({
+  name: "MDY_VOCABULARIES_ELSEWHERE", shape: "list", value: VOCABULARIES_ELSEWHERE, door: ".",
+  describes: "catalogues a renderer needs that this package does not publish, by name and package",
+});
 
 export const MDY_CONTRACT_VOCABULARIES: readonly MdyVocabulary[] = deepFreeze(CATALOGUES);
+
+/**
+ * Catalogues a renderer needs that this package does not publish.
+ *
+ * The index above covers what `@modyra/widgets` declares, and reads to somebody scanning it as the
+ * whole contract. It is not: what a kind *holds* — a boolean, a string, a list of options, whether
+ * it may be null — is `MDY_VALUE_CONTRACTS`, on `@modyra/core`. A renderer author who does not
+ * already know that has no way to learn it from here, and decides what a checkbox holds by looking
+ * at a checkbox.
+ *
+ * Named rather than re-exported. A derivation must not restate what it derives, and copying core's
+ * catalogue into this index would give it a second home free to drift from the first — the failure
+ * the `--since` tools exist to catch, installed on purpose.
+ *
+ * Names, not values: this package must not import a catalogue it does not own to say that it
+ * exists.
+ */
+export const MDY_VOCABULARIES_ELSEWHERE: readonly {
+  readonly name: string;
+  readonly package: string;
+  readonly describes: string;
+}[] = VOCABULARIES_ELSEWHERE;
