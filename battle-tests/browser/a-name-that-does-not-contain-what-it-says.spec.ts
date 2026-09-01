@@ -76,8 +76,11 @@ for (const host of HOSTS) {
         const normalise = (text: string) => text.replace(/\s+/g, " ").trim().toLowerCase();
         /** The accessible name as it is computed, by the routes a control may be named through. */
         const nameOf = (element: Element): string => {
-          const label = element.getAttribute("aria-label");
-          if (label !== null && label.trim() !== "") return label;
+          // **`aria-labelledby` first.** The naming rules put the reference before the literal, so an
+          // element carrying both has the referenced text as its name and reading the literal first
+          // reports the markup rather than what a screen reader says. The inversion survived because
+          // every assertion under it asks whether a name *exists*, and a wrong precedence still finds
+          // a non-empty string — latent in the assertion rather than absent from the code.
           const by = element.getAttribute("aria-labelledby");
           if (by !== null) {
             const joined = by.split(/\s+/)
@@ -85,6 +88,8 @@ for (const host of HOSTS) {
               .join(" ").trim();
             if (joined !== "") return joined;
           }
+          const label = element.getAttribute("aria-label");
+          if (label !== null && label.trim() !== "") return label;
           const title = element.getAttribute("title");
           if (title !== null && title.trim() !== "") return title;
           // A native control is named by its label element, which is the ordinary route for the two

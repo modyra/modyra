@@ -54,6 +54,45 @@ test("a field declared with a label names its control", async ({ page }) => {
   expect(named.aria === "Given name" || named.labelText === "Given name", JSON.stringify(named)).toBe(true);
 });
 
+test("with both mechanisms the name is the referenced one, not the literal", async ({ page }) => {
+  // **The assertion the inverted precedence survived under, written the other way round.** Every
+  // check in this file asked whether a name *exists*, and a resolver reading `aria-label` first
+  // still finds a non-empty string — so the defect was latent in what was asked rather than absent
+  // from the code, and the repair is only guarded once something asks *which* name.
+  //
+  // The naming rules put the reference before the literal: an element carrying both is announced by
+  // the referenced text. Reporting the literal is being right about the markup and wrong about what
+  // a screen reader says.
+  await page.evaluate(async () => {
+    window.battle.mountFields("both", [{ name: "f", kind: "text", label: "Given name" }] as never);
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    const control = document.querySelector('[data-form="both"] input');
+    const target = document.createElement("span");
+    target.id = "both-mechanisms-target";
+    target.textContent = "The referenced name";
+    control?.parentElement?.append(target);
+    control?.setAttribute("aria-label", "The literal name");
+    control?.setAttribute("aria-labelledby", "both-mechanisms-target");
+  });
+
+  const resolved = await page.evaluate(() => {
+    const element = document.querySelector('[data-form="both"] input');
+    if (element === null) return null;
+    const by = element.getAttribute("aria-labelledby");
+    if (by !== null) {
+      const text = by.split(/\s+/)
+        .map((ref) => (document.getElementById(ref)?.innerText ?? "").trim())
+        .join(" ").trim();
+      if (text !== "") return text;
+    }
+    const literal = element.getAttribute("aria-label");
+    return literal !== null && literal.trim() !== "" ? literal.trim() : "";
+  });
+
+  expect(resolved, "no control was found to name").not.toBeNull();
+  expect(resolved, "the literal was reported where a reference was present").toBe("The referenced name");
+});
+
 test("every control has a name even when the document declared none", async ({ page }) => {
   const unnamed: Array<Record<string, unknown>> = [];
 
@@ -71,8 +110,11 @@ test("every control has a name even when the document declared none", async ({ p
 
       /** The accessible name of one element, as far as this check can compute it. */
       const nameOf = (element: Element): string => {
-        const aria = element.getAttribute("aria-label");
-        if (aria !== null && aria.trim() !== "") return aria.trim();
+        // **`aria-labelledby` first.** The naming rules put the reference before the literal, so an
+        // element carrying both has the referenced text as its name and reading the literal first
+        // reports the markup rather than what a screen reader says. The inversion survived because
+        // every assertion under it asks whether a name *exists*, and a wrong precedence still finds
+        // a non-empty string — latent in the assertion rather than absent from the code.
         const by = element.getAttribute("aria-labelledby");
         if (by !== null) {
           const text = by
@@ -82,6 +124,8 @@ test("every control has a name even when the document declared none", async ({ p
             .trim();
           if (text !== "") return text;
         }
+        const aria = element.getAttribute("aria-label");
+        if (aria !== null && aria.trim() !== "") return aria.trim();
         const id = (element as HTMLElement).id;
         if (id !== "") {
           const label = host.querySelector(`label[for="${CSS.escape(id)}"]`) as HTMLElement | null;
