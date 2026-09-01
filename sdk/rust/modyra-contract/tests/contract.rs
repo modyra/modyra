@@ -338,74 +338,88 @@ fn a_collection_nests_without_a_limit() {
         .any(|d| d.code == "MDY_DYNAMIC_UNSAFE_NAME"));
 }
 
-/// The corpus documents this suite had never read.
+/// Every document in the shared corpus, found rather than named.
 ///
-/// Two nested-collection documents and one recursive checkout were absent from the hand-written
-/// list rather than exempt from it — all three parse clean, and always did. A list of names is a
-/// coverage claim nobody re-counts: it says thirteen and reads ten, and nothing notices, because
-/// the number it reports is the number it was given.
+/// `include_str!` is a list, and a list is a coverage claim nobody re-counts: this suite read ten
+/// of thirteen documents and reported its passes as if it had read them all, because the number a
+/// list reports is the number it was given. Two of the three it missed had been in the corpus for
+/// as long as it had.
+///
+/// So the directory is walked, and each document's expected verdict comes from the corpus too — a
+/// `.expected.json` beside it, whose absence means "this one parses clean". A fixture added
+/// tomorrow is read here the day it lands, and one that is meant to be refused is not mistaken for
+/// a regression.
 #[test]
-fn accepts_the_corpus_documents_the_list_had_missed() {
-    for (name, json) in [
-        (
-            "v3/keyed-rows.json",
-            include_str!("../../../../spec/fixtures/dynamic-form/v3/keyed-rows.json"),
-        ),
-        (
-            "v3/positional-nesting.json",
-            include_str!("../../../../spec/fixtures/dynamic-form/v3/positional-nesting.json"),
-        ),
-        (
-            "v2/checkout-recursive.json",
-            include_str!("../../../../spec/fixtures/dynamic-form/v2/checkout-recursive.json"),
-        ),
-    ] {
-        let result = parse_v2(json, ValidationMode::Strict).unwrap();
-        assert!(result.valid, "{name} was refused: {:?}", result.diagnostics);
-    }
-}
+fn reads_every_document_in_the_shared_corpus() {
+    use std::collections::BTreeSet;
+    use std::fs;
+    use std::path::Path;
 
-/// The shared corpus's v5 document, read by this SDK.
-///
-/// One file, four readers: the schema audit holds it against `dynamic-form-v5.schema.json`, the
-/// TypeScript parser reads it, the Java test reads it, and this does. A version list left unswept in
-/// any of them fails somebody's suite — which is the whole reason the corpus is shared rather than
-/// copied per SDK.
-///
-/// `integer` is what v5 adds, and this document carries it on a quantity along with the sentence the
-/// author wrote for it. A reader that took the word but not the version, or the version but not the
-/// word, refuses this file.
-#[test]
-fn accepts_the_shared_v5_fixture() {
-    let json = include_str!("../../../../spec/fixtures/dynamic-form/v5/whole-number-rule.json");
-    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    let corpus = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../spec/fixtures/dynamic-form");
+    let mut documents: Vec<(String, std::path::PathBuf)> = Vec::new();
+
+    let mut versions: Vec<_> = fs::read_dir(&corpus)
+        .expect("the shared corpus is not where this test looks for it")
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir())
+        .collect();
+    versions.sort();
+
+    for version in &versions {
+        let mut entries: Vec<_> = fs::read_dir(version)
+            .expect("a corpus version directory could not be read")
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .collect();
+        entries.sort();
+        for path in entries {
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
+            // A document is a file whose name carries no second suffix. `.expected.json` states a
+            // verdict and `.context.json` supplies host facts; neither is a document, and a rule
+            // about suffixes covers the next kind of companion without being edited for it.
+            if !name.ends_with(".json") || name.matches('.').count() > 1 {
+                continue;
+            }
+            let label = format!(
+                "{}/{name}",
+                version.file_name().and_then(|n| n.to_str()).unwrap_or_default()
+            );
+            documents.push((label, path));
+        }
+    }
+
     assert!(
-        result.valid,
-        "the published v5 fixture was refused: {:?}",
-        result.diagnostics
+        documents.len() >= 10,
+        "the walk found {} documents, which is too few to be reading the corpus",
+        documents.len()
     );
 
-    let form = result.form.expect("a valid document produced no form");
-    assert_eq!(form.version, 5);
-}
+    for (label, path) in documents {
+        let json = fs::read_to_string(&path).expect("a corpus document could not be read");
+        let result = parse_v2(&json, ValidationMode::Strict)
+            .unwrap_or_else(|error| panic!("{label} is not JSON this reader can take: {error}"));
 
-/// The shared corpus's v4 documents, read by this SDK.
-///
-/// The corpus is what makes one contract out of three implementations: the same documents, the same
-/// verdict. A version present in one reader and absent from two is the shape that costs the most,
-/// and v4 is the version that carries the conditions.
-#[test]
-fn accepts_the_shared_v4_fixtures() {
-    for json in [
-        include_str!("../../../../spec/fixtures/dynamic-form/v4/conditional-tree.json"),
-        include_str!("../../../../spec/fixtures/dynamic-form/v4/self-and-root.json"),
-        include_str!("../../../../spec/fixtures/dynamic-form/v4/context-conditions.json"),
-    ] {
-        let result = parse_v2(json, ValidationMode::Strict).unwrap();
-        assert!(
-            result.valid,
-            "a published v4 fixture was refused: {:?}",
-            result.diagnostics
-        );
+        let expected_path = path.with_extension("expected.json");
+        let expected: Option<serde_json::Value> = fs::read_to_string(&expected_path)
+            .ok()
+            .map(|text| serde_json::from_str(&text).expect("an expected-verdict sidecar is not JSON"));
+
+        match expected {
+            // No sidecar is itself a statement: this document parses clean.
+            None => assert!(result.valid, "{label} was refused: {:?}", result.diagnostics),
+            Some(verdict) => {
+                let wanted = verdict["valid"].as_bool().unwrap_or(true);
+                assert_eq!(result.valid, wanted, "{label}: {:?}", result.diagnostics);
+
+                if let Some(codes) = verdict["diagnostics"].as_array() {
+                    let wanted: BTreeSet<&str> = codes.iter().filter_map(|code| code.as_str()).collect();
+                    let said: BTreeSet<&str> =
+                        result.diagnostics.iter().map(|d| &*d.code).collect();
+                    assert_eq!(said, wanted, "{label} reported different codes than the corpus declares");
+                }
+            }
+        }
     }
 }
+

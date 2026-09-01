@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +65,56 @@ class MdyDynamicFormParserTest {
     assertEquals(2, result.fields().size());
     assertEquals("seats", result.fields().get(0).name());
     assertEquals("note", result.fields().get(1).name());
+  }
+
+  /**
+   * Every document in the shared corpus, found rather than named.
+   *
+   * <p>A list of file names is a coverage claim nobody re-counts: this suite named eleven of
+   * thirteen documents and reported its passes as if it had read them all, because the number a
+   * list reports is the number it was given.
+   *
+   * <p>Each document's expected verdict comes from the corpus too — a {@code .expected.json}
+   * beside it, whose absence means "this one parses clean". A fixture added tomorrow is read the
+   * day it lands, and one meant to be refused is not mistaken for a regression.
+   */
+  @Test
+  void readsEveryDocumentInTheSharedCorpus() throws IOException {
+    Path corpus = Path.of("../../../spec/fixtures/dynamic-form");
+    List<Path> documents = new ArrayList<>();
+    try (var versions = Files.list(corpus)) {
+      for (Path version : versions.filter(Files::isDirectory).sorted().toList()) {
+        try (var entries = Files.list(version)) {
+          for (Path path : entries.sorted().toList()) {
+            String name = path.getFileName().toString();
+            // A document is a file whose name carries no second suffix. `.expected.json` states a
+            // verdict and `.context.json` supplies host facts; a rule about suffixes covers the
+            // next kind of companion without being edited for it.
+            if (name.endsWith(".json") && name.chars().filter(c -> c == '.').count() == 1) {
+              documents.add(path);
+            }
+          }
+        }
+      }
+    }
+
+    assertTrue(documents.size() >= 10, "the walk found " + documents.size() + " documents, too few to be the corpus");
+
+    for (Path path : documents) {
+      String label = path.getParent().getFileName() + "/" + path.getFileName();
+      MdyDynamicFormParseResult result =
+          parser.parse(Files.readString(path), MdyDynamicFormParser.Mode.STRICT);
+
+      Path expected = path.resolveSibling(
+          path.getFileName().toString().replace(".json", ".expected.json"));
+      if (!Files.exists(expected)) {
+        assertTrue(result.ok(), () -> label + " was refused: " + result.diagnostics());
+        continue;
+      }
+      JsonNode verdict = new ObjectMapper().readTree(Files.readString(expected));
+      boolean wanted = !verdict.has("valid") || verdict.get("valid").asBoolean();
+      assertEquals(wanted, result.ok(), label + ": " + result.diagnostics());
+    }
   }
 
   @Test
