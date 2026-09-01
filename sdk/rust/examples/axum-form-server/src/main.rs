@@ -4,8 +4,11 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use axum::extract::State;
 use modyra_contract::{DynamicFormV2, DynamicNode, Field, OptionItem, Validators};
 use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tower_http::cors::CorsLayer;
@@ -162,7 +165,83 @@ async fn submit_checkout(Json(payload): Json<CheckoutSubmission>) -> (StatusCode
     (StatusCode::CREATED, Json(SubmissionResponse { ok: true, submission_id: Some("sub_rust_checkout_001".into()), errors: vec![] }))
 }
 
-fn app() -> Router {
+
+/// How long a lease stands without being renewed. A client refreshes at a third of it, so two
+/// missed heartbeats are tolerated before it is considered gone.
+const LEASE_TTL: Duration = Duration::from_secs(30);
+
+/// Who is holding the server open, and whether anybody ever did.
+///
+/// The demos each hold one, by name: two starts of the same demo refresh a single lease rather
+/// than stacking two, because what is being counted is *demos open*, not *requests made*.
+#[derive(Clone)]
+struct Leases {
+    held: Arc<Mutex<(BTreeMap<String, Instant>, bool)>>,
+    linked: bool,
+}
+
+impl Leases {
+    fn new(linked: bool) -> Self {
+        Self { held: Arc::new(Mutex::new((BTreeMap::new(), false))), linked }
+    }
+
+    /// Open or renew a named lease. Idempotent: the name is the identity.
+    fn renew(&self, client: &str, now: Instant) {
+        let mut guard = self.held.lock().unwrap();
+        guard.0.insert(client.to_string(), now + LEASE_TTL);
+        guard.1 = true;
+    }
+
+    /// The leases still standing at `now`, dropping the rest.
+    fn live(&self, now: Instant) -> Vec<String> {
+        let mut guard = self.held.lock().unwrap();
+        guard.0.retain(|_, expires| *expires > now);
+        guard.0.keys().cloned().collect()
+    }
+
+    fn ever_held(&self) -> bool {
+        self.held.lock().unwrap().1
+    }
+}
+
+/// Whether the server has been left with nothing to stay up for.
+///
+/// Three conditions, and all three are needed. `linked` is the regime the launcher chose, so a
+/// server started for manual API work never leaves on its own. `ever_held` keeps a linked server
+/// alive during the moment between binding the port and the launcher's first lease — without it a
+/// linked server exits before the demo it was started for can say hello. `live == 0` is the
+/// question everyone thinks this is.
+fn should_stand_down(linked: bool, ever_held: bool, live: usize) -> bool {
+    linked && ever_held && live == 0
+}
+
+#[derive(Deserialize)]
+struct LeaseRequest {
+    client: String,
+}
+
+async fn open_lease(State(leases): State<Leases>, Json(body): Json<LeaseRequest>) -> Json<Value> {
+    let now = Instant::now();
+    leases.renew(&body.client, now);
+    Json(json!({
+        "client": body.client,
+        "ttlSeconds": LEASE_TTL.as_secs(),
+        "renewWithinSeconds": LEASE_TTL.as_secs() / 3,
+        "leases": leases.live(now),
+    }))
+}
+
+/// What regime this server is in, so nobody has to guess it from how it was started.
+async fn health(State(leases): State<Leases>) -> Json<Value> {
+    let live = leases.live(Instant::now());
+    Json(json!({
+        "mode": if leases.linked { "linked" } else { "standalone" },
+        "leases": live,
+        "willExitWhenLeasesEnd": leases.linked,
+    }))
+}
+
+fn app_with(leases: Leases) -> Router {
     let cors = CorsLayer::new()
         .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
         .allow_methods([Method::GET, Method::POST])
@@ -171,16 +250,55 @@ fn app() -> Router {
     Router::new()
         .route("/v1/forms/checkout", get(get_checkout_form))
         .route("/v1/forms/checkout/submissions", post(submit_checkout))
+        .route("/lease", post(open_lease))
+        .route("/health", get(health))
         .layer(cors)
+        .with_state(leases)
+}
+
+#[cfg(test)]
+fn app() -> Router {
+    app_with(Leases::new(false))
 }
 
 #[tokio::main]
 async fn main() {
+    // The regime is chosen by whoever starts the server, and said out loud: the demo launcher passes
+    // `--linked` so the server goes away with the demos, and a person testing the API starts it
+    // without the flag and keeps it. Either way `/health` reports which, so nobody infers it.
+    let linked = std::env::args().any(|argument| argument == "--linked");
+    let leases = Leases::new(linked);
+
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
         .await
         .expect("cannot bind port 3000");
     println!("Modyra Rust form API: http://127.0.0.1:3000/v1/forms/checkout");
-    axum::serve(listener, app()).await.expect("server failed");
+    println!(
+        "mode: {} — {}",
+        if linked { "linked" } else { "standalone" },
+        if linked {
+            "exits once every lease has expired"
+        } else {
+            "stays up; leases are accepted and do not end it"
+        }
+    );
+
+    let watching = leases.clone();
+    axum::serve(listener, app_with(leases))
+        .with_graceful_shutdown(async move {
+            loop {
+                tokio::time::sleep(LEASE_TTL / 3).await;
+                let live = watching.live(Instant::now());
+                if should_stand_down(watching.linked, watching.ever_held(), live.len()) {
+                    // A server that vanishes without saying why is a thing to diagnose; one that
+                    // says why is a behaviour.
+                    println!("last lease expired, shutting down");
+                    return;
+                }
+            }
+        })
+        .await
+        .expect("server failed");
 }
 
 #[cfg(test)]
@@ -189,6 +307,66 @@ mod tests {
     use axum::{body::Body, http::Request};
     use http_body_util::BodyExt;
     use tower::ServiceExt;
+
+    /// The three conditions that end a linked server, each shown to matter on its own.
+    ///
+    /// Tested as a decision rather than as a process: a test that starts a server and waits for it
+    /// to die measures the clock as much as the rule, and is the kind that passes on a fast machine
+    /// and fails on a loaded one.
+    #[test]
+    fn a_server_stands_down_only_when_all_three_conditions_hold() {
+        assert!(should_stand_down(true, true, 0), "linked, leased, and none left: this is the case");
+
+        assert!(
+            !should_stand_down(false, true, 0),
+            "a standalone server must not leave when a demo that borrowed it closes"
+        );
+        assert!(
+            !should_stand_down(true, false, 0),
+            "a linked server must survive the gap between binding the port and its first lease"
+        );
+        assert!(
+            !should_stand_down(true, true, 1),
+            "a lease still standing is a reason to stay"
+        );
+    }
+
+    /// A lease is named, so the same demo starting twice is one reason to stay, not two.
+    #[test]
+    fn a_lease_is_identified_by_its_holder() {
+        let leases = Leases::new(true);
+        let now = Instant::now();
+
+        assert!(!leases.ever_held(), "nothing has been held yet");
+        leases.renew("demo-angular", now);
+        leases.renew("demo-angular", now);
+        assert_eq!(leases.live(now), vec!["demo-angular"], "one demo, one lease");
+
+        leases.renew("demo-lit", now);
+        assert_eq!(leases.live(now).len(), 2, "two demos, two leases");
+
+        // Past every expiry: the holders are gone, but that they existed is not forgotten — which
+        // is what tells a linked server it was started for something rather than started early.
+        let later = now + LEASE_TTL + Duration::from_secs(1);
+        assert!(leases.live(later).is_empty(), "an unrenewed lease does not stand");
+        assert!(leases.ever_held(), "a server must remember it was once held");
+        assert!(should_stand_down(true, leases.ever_held(), leases.live(later).len()));
+    }
+
+    #[tokio::test]
+    async fn health_says_which_regime_it_is_in() {
+        for (linked, expected) in [(true, "linked"), (false, "standalone")] {
+            let response = app_with(Leases::new(linked))
+                .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+            let bytes = response.into_body().collect().await.unwrap().to_bytes();
+            let json: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(json["mode"], expected, "the regime must be readable, not inferred");
+            assert_eq!(json["willExitWhenLeasesEnd"], linked);
+        }
+    }
 
     #[tokio::test]
     async fn returns_recursive_checkout_to_the_angular_client() {
