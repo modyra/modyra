@@ -2980,16 +2980,16 @@
     "const: Readonly<{\n    /** A titled group of fields. */\n    section: \"mdy-layout-section\";\n    /** The section's title. */\n    sectionLabel: \"mdy-layout-legend\";\n    /** A row that divides its width into columns. */\n    columns: \"mdy-layout-columns\";\n    /** One column within that row. */\n    column: \"mdy-layout-column\";\n}>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_COUNT_PROPERTIES": [
-    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyDynamicBreakpoint, string>>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_COUNT_PROPERTY": [
     "const: \"--mdy-layout-column-count\""
   ],
   "widgets:MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES": [
-    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyDynamicBreakpoint, string>>"
   ],
   "widgets:MDY_LAYOUT_COLUMN_START_PROPERTIES": [
-    "const: Readonly<Record<MdyLayoutBreakpoint, string>>"
+    "const: Readonly<Record<MdyDynamicBreakpoint, string>>"
   ],
   "widgets:MDY_LIFECYCLE_ISSUE": [
     "const: {\n    /** An element the instance mounted is still in the document — including one it portalled out. */\n    readonly domSurvived: \"DOM_SURVIVED_UNMOUNT\";\n    /** An id the instance minted still resolves, so a new instance would collide with a ghost. */\n    readonly idSurvived: \"ID_SURVIVED_UNMOUNT\";\n    /** A disposed instance still reacts: setting a value after teardown changed the document. */\n    readonly reactiveEffectSurvived: \"REACTIVE_EFFECT_SURVIVED_UNMOUNT\";\n    /** Two live instances minted the same id, so one field's relationships point at the other's DOM. */\n    readonly idCollidedAcrossInstances: \"ID_COLLIDED_ACROSS_INSTANCES\";\n    /**\n     * A disposed instance still ran, and failed.\n     *\n     * The distinction from {@link reactiveEffectSurvived} is which side refused. A handle that rejects\n     * a write after teardown is answering correctly and nothing renders. An *effect* that is still\n     * subscribed does run, reads a form that has been destroyed, and raises — leaving nothing in the\n     * document to see, which is why a check that only compares the document reads it as clean.\n     */\n    readonly effectThrewAfterUnmount: \"EFFECT_THREW_AFTER_UNMOUNT\";\n}"
@@ -3254,13 +3254,10 @@
     "open: boolean"
   ],
   "widgets:MdyChipAppearance": [
-    "mode?: MdyChipMode",
+    "mode?: MdyMultiselectMode",
     "removable?: boolean",
     "role?: MdyChipRole",
     "selected?: boolean"
-  ],
-  "widgets:MdyChipMode": [
-    "-> MdyMultiselectMode"
   ],
   "widgets:MdyChipPart": [
     "(opaque)"
@@ -3751,17 +3748,11 @@
   "widgets:MdyKeyOrPress": [
     "(opaque)"
   ],
-  "widgets:MdyLayoutBreakpoint": [
-    "-> MdyDynamicBreakpoint"
-  ],
   "widgets:MdyLayoutColumnCounts": [
     "-> Partial"
   ],
   "widgets:MdyLayoutPart": [
     "(opaque)"
-  ],
-  "widgets:MdyLayoutSlotPlacement": [
-    "-> MdyDynamicSlotPlacement"
   ],
   "widgets:MdyLifecycleIssue": [
     "code: MdyLifecycleIssueCode",
@@ -5194,11 +5185,11 @@
     "-> returns: readonly MdyWidgetKind[]"
   ],
   "widgets:layoutNodeAttributes": [
-    "(0) node: { readonly kind: \"section\" | \"columns\"; readonly id: string; readonly columns?: ReadonlyArray<unknown>; /** * Tracks per breakpoint on a row. A section's `at` is a placement rather than a count — it says * where the section's own column sits — and is read by `layoutSlotStyle`, not here. */ readonly at?: MdyLayoutColumnCounts | Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>>; }",
+    "(0) node: { readonly kind: \"section\" | \"columns\"; readonly id: string; readonly columns?: ReadonlyArray<unknown>; /** * Tracks per breakpoint on a row. A section's `at` is a placement rather than a count — it says * where the section's own column sits — and is read by `layoutSlotStyle`, not here. */ readonly at?: MdyLayoutColumnCounts | Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>; }",
     "-> returns: { readonly className: string; readonly style: Readonly<Record<string, string>>; readonly dataset: Readonly<Record<string, string>>; }"
   ],
   "widgets:layoutSlotStyle": [
-    "(0) at: Partial<Readonly<Record<MdyLayoutBreakpoint, MdyLayoutSlotPlacement>>> | undefined",
+    "(0) at: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>> | undefined",
     "-> returns: Readonly<Record<string, string>>"
   ],
   "widgets:listboxNextIndex": [
