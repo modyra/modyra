@@ -67,6 +67,10 @@ const TESTING_ONLY = new Set([
   // are drawn on, which span each glyph occupies, the stroke width. A renderer reads `MDY_ICONS`
   // and nothing else, so there is no demo that could show these without inventing one.
   "MDY_ICON_GRID", "MDY_ICON_SPANS", "MDY_ICON_STROKE",
+  // What an adapter is missing before the engine will take it. An adapter author runs it against
+  // their own reactivity; a page has only the adapters that already work, so demonstrating it would
+  // mean shipping a broken one to have something to refuse.
+  "missingReactivityMembers",
 ]);
 
 const PANELS = join(root, "examples/plain/panels");

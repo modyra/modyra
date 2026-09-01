@@ -8,6 +8,7 @@
  * unit tests.
  */
 export {
+  missingReactivityMembers,
   reactivityRunsEffects,
   vanillaReactivity
 } from "./reactivity.js";

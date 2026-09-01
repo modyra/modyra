@@ -2524,6 +2524,10 @@
     "(0) text: string",
     "-> returns: number | null"
   ],
+  "core:missingReactivityMembers": [
+    "(0) rx: unknown",
+    "-> returns: ReadonlyArray<string>"
+  ],
   "core:mountMdyDevtools": [
     "(0) form: InspectableForm",
     "(1) host: HTMLElement",

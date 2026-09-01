@@ -5,6 +5,7 @@ import {
   MdySignal,
   MdyWritableSignal,
   reactivityRunsEffects,
+  missingReactivityMembers,
 } from "./reactivity-contract.js";
 
 /** Narrows to a reactivity that reports (and implements) real runtime batching. */
@@ -551,6 +552,19 @@ export class MdyFormEngine
       "valid-only",
     options?: MdyFormEngineOptions,
   ) {
+    // The boundary speaks the contract's language. Anything past this line assumes a reactivity the
+    // engine can use, and the first assumption to fail did so from inside a file the adapter's
+    // author has never opened.
+    const missing = missingReactivityMembers(_rx);
+    if (missing.length > 0) {
+      throw new TypeError(
+        `This reactivity is missing ${missing.length === 1 ? "a member" : "members"} the form engine `
+        + `needs:\n\n    ${missing.join("\n    ")}\n\n`
+        + "  A reactivity implements `MdyReactivity`, and the signals it makes implement\n"
+        + "  `MdyWritableSignal` — a second interface, which is why a compiler can pass an adapter\n"
+        + "  whose signals the engine cannot use.",
+      );
+    }
     this._devWarnings = options?.devWarnings ?? true;
     this._diagnostics = options?.diagnostics;
     this._security = assertSecurityPolicy(options?.security);

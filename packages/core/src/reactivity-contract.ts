@@ -142,6 +142,73 @@ export interface MdyReactivityCapabilities {
  * `canEffect` alias reported before it was removed. The engine then skips async validators, drafts
  * and history with a warning rather than throwing on a missing property.
  */
+/**
+ * What a reactivity owes the engine, and what a signal it makes owes in turn.
+ *
+ * An adapter implements `MdyReactivity`, and the compiler checks it — but an adapter written in
+ * JavaScript, or handed across a bundle boundary, or assembled by spreading another one, is checked
+ * by nothing. The first missing member then arrives from inside the engine: `hasDraft.asReadonly is
+ * not a function`, thrown in a file the adapter's author has never opened, naming a local variable
+ * that means nothing to them.
+ *
+ * The second half is the one a type would not have caught anyway. `asReadonly` is declared on
+ * `MdyWritableSignal`, a different interface from the one being implemented, so an adapter can
+ * satisfy `MdyReactivity` completely and still hand back signals the engine cannot use.
+ */
+/**
+ * The members the engine cannot construct without, measured rather than assumed.
+ *
+ * `effect` is deliberately not here, and neither is `capabilities`: a reactivity that cannot run
+ * reactions is a supported thing — the engine degrades and reports what it could not do through the
+ * diagnostics sink — so refusing one here would turn a documented fallback into a crash. What is
+ * listed is what the engine calls unconditionally while building a form.
+ */
+const REACTIVITY_MEMBERS: ReadonlyArray<readonly [string, string]> = [
+  ["signal", "make a writable signal"],
+  ["computed", "derive a value from other signals"],
+  ["untracked", "read a signal without depending on it"],
+];
+
+const WRITABLE_SIGNAL_MEMBERS: ReadonlyArray<readonly [string, string]> = [
+  ["set", "replace the value"],
+  ["update", "derive the next value from the current one"],
+  ["asReadonly", "hand out a view that cannot be written through"],
+];
+
+/**
+ * What this reactivity is missing, in the words its author can act on. Empty when the engine can
+ * use it.
+ *
+ * Reported rather than thrown, so the caller decides where the sentence appears: an engine says it
+ * at construction, a test asserts on it.
+ */
+export function missingReactivityMembers(rx: unknown): ReadonlyArray<string> {
+  if (typeof rx !== "object" || rx === null) {
+    return [`a reactivity must be an object, and this is ${rx === null ? "null" : typeof rx}`];
+  }
+  const held = rx as Record<string, unknown>;
+  const missing = REACTIVITY_MEMBERS
+    .filter(([member]) => typeof held[member] !== "function")
+    .map(([member, purpose]) => `${member}() — ${purpose}, required by MdyReactivity`);
+  if (missing.length > 0) return missing;
+
+  // The signal is made rather than assumed: what `signal()` returns is the contract, and only
+  // calling it can say whether the returned value keeps it.
+  let made: unknown;
+  try {
+    made = (held.signal as (initial: unknown) => unknown)(undefined);
+  } catch (error) {
+    return [`signal() threw when the engine called it: ${error instanceof Error ? error.message : String(error)}`];
+  }
+  if (typeof made !== "function") {
+    return [`signal() returned ${typeof made}, and a signal is read by calling it`];
+  }
+  const signal = made as unknown as Record<string, unknown>;
+  return WRITABLE_SIGNAL_MEMBERS
+    .filter(([member]) => typeof signal[member] !== "function")
+    .map(([member, purpose]) => `signal().${member}() — ${purpose}, required by MdyWritableSignal`);
+}
+
 export function reactivityRunsEffects(rx: Pick<MdyReactivity, "capabilities">): boolean {
   return rx.capabilities?.effects === true;
 }
