@@ -22,7 +22,20 @@ const TAG = {
 /** Kinds this stub claims. Two, because the issue says one that passes beats none. */
 export const KINDS = ["text", "checkbox"];
 
-export function mount(kind) {
+/**
+ * The rules a document declares, put where a control carries them.
+ *
+ * The kit hands them in the contract's vocabulary and asks that they reach the control; on an
+ * `<input>` the platform already has the words, so the translation is a rename and nothing more.
+ * A rule with no native spelling is left alone rather than approximated — a renderer that invented
+ * an attribute would be answering a question nobody asked.
+ */
+const ATTRIBUTE = {
+  required: "required", minLength: "minlength", maxLength: "maxlength",
+  min: "min", max: "max", pattern: "pattern", step: "step",
+};
+
+export function mount(kind, asked = {}) {
   const contract = MDY_WIDGET_CONTRACTS[kind];
   const host = document.createElement("div");
   document.body.append(host);
@@ -30,8 +43,34 @@ export function mount(kind) {
   const made = new Map();
   // `order` is what the contract gives for sibling sequence; nodes arrive parent-before-child here
   // because the contract lists them that way, and a reader has nothing else to go on.
-  for (const node of [...contract.structure.nodes].sort((a, b) => a.order - b.order)) {
-    if (node.optional) continue;
+  // **Neither the declared order nor `order` gives a tree.** `order` is a sibling sequence — two nodes
+  // under different parents both carry `order: 0` — so sorting the whole list by it puts children
+  // before parents. And the declared order is not parent-before-child either: `checkbox` lists
+  // `indicator` before the `label` it names as its parent. What survives both is walking the tree:
+  // take a node once its parent exists, and order siblings by `order`.
+  const remaining = [...contract.structure.nodes].sort((a, b) => a.order - b.order);
+  const inTreeOrder = [];
+  while (remaining.length > 0) {
+    const ready = remaining.findIndex((node) => node.parent === undefined
+      || inTreeOrder.some((done) => done.part === node.parent));
+    // A node whose parent never arrives is a cycle or a dangling name; taking it in declared order
+    // keeps the loop finite and lets the report say what happened rather than hanging.
+    inTreeOrder.push(...remaining.splice(ready === -1 ? 0 : ready, 1));
+  }
+  for (const node of inTreeOrder) {
+    // **A part conditioned on the document is drawn when this renderer has what the condition names.**
+    // `presentWhen` is the contract's own word for it, and of the five conditions the two kinds carry
+    // only one can be decided from here: a field has a label, so `documentDeclaresIt` is satisfied for
+    // `label` and for nothing else — no prefix, suffix or supporting text was handed to this
+    // renderer. `fieldIsRequired`, `errorsAreVisible` and `fieldCanBeInvalid` describe a state at
+    // rest this mount is not in, and are skipped rather than guessed at.
+    //
+    // That the widget is *for a field*, and that the field has a label, is the one thing nothing told
+    // this renderer: the kit's config contract documents `mount(kind, asked)` and the three shapes
+    // `asked` takes, none of which carries a field. The reference config invents `{ name: "f", kind,
+    // label: "F" }` because its author knew to.
+    const conditioned = node.optional && node.presentWhen === "documentDeclaresIt" && node.part === "label";
+    if (node.optional && !conditioned) continue;
     const element = document.createElement(TAG[node.element] ?? "div");
     const part = contract.parts[node.part] ?? {};
     for (const one of part.classes ?? []) element.classList.add(one);
@@ -42,6 +81,12 @@ export function mount(kind) {
     for (const [k, v] of Object.entries(part.attributes ?? {})) {
       if (v !== null && v !== undefined) element.setAttribute(k, String(v));
     }
+    if (node.part === "label") element.textContent = "F";
+    // **An id on the control, and a label that names it.** Neither is in `MDY_WIDGET_CONTRACTS`:
+    // `structure` carries `kind` and `nodes` and no relations at all, and the requirement that a
+    // `<label>` point at the control with `for` lives in the kit's own checks. The kit's finding is
+    // what taught it — which is the kit teaching, not the contract.
+    if (node.part === "control" || node.part === "indicator") element.id = `stub-${kind}-${node.part}`;
     const parent = node.parent ? made.get(node.parent) : host;
     // A required node whose parent was skipped has nowhere to go. Reported rather than dropped:
     // silently reparenting it to the root would hide the question this exercise exists to ask.
@@ -52,6 +97,20 @@ export function mount(kind) {
       parent.append(element);
     }
     made.set(node.part, element);
+  }
+
+  // **What was asked for, applied.** The kit documents a second argument and says a mount may not
+  // accept it and drop it: the sections that pass one report against what they asked for. Rules are
+  // the shape this renderer can honour, so it honours them; the others it does not claim.
+  const control = made.get("control") ?? made.get("indicator");
+  const labelElement = made.get("label");
+  if (labelElement !== undefined && control !== undefined) labelElement.setAttribute("for", control.id);
+  if (control !== undefined && asked.rules) {
+    for (const [rule, value] of Object.entries(asked.rules)) {
+      const attribute = ATTRIBUTE[rule];
+      if (attribute === undefined || value === false || value === null) continue;
+      control.setAttribute(attribute, value === true ? "" : String(value));
+    }
   }
 
   return {
@@ -92,6 +151,24 @@ export function mount(kind) {
  * the question badly is more informative than declining it, since what the suite reports is exactly
  * what a renderer that forgot ids looks like from outside.
  */
-export function mountScoped(kind, _scope) {
-  return mount(kind);
+export function mountScoped(kind, scope) {
+  // The scope is what keeps two live instances from claiming one id. It arrives for exactly that
+  // reason, and ignoring it produced the collision the isolation section reported the moment this
+  // renderer started emitting ids at all — a section that had been reporting "not run" because
+  // there was nothing that could collide.
+  const fixture = mount(kind, {});
+  for (const element of fixture.root.querySelectorAll?.("[id]") ?? []) {
+    element.id = `${scope}-${element.id}`;
+  }
+  return fixture;
 }
+
+/**
+ * Declared, because it is now true: `mount` takes the kit's `rules` and writes them onto the control.
+ *
+ * The kit is explicit that this export is a claim rather than a switch — it "cannot tell a renderer
+ * that ignores a constraint from a config that never handed it one". Exporting it to unlock a
+ * section this renderer does not serve would turn a section that honestly reads *not established*
+ * into one that reports a defect against a request that never arrived.
+ */
+export const declaresRules = true;
