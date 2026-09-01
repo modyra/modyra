@@ -100,3 +100,38 @@ test("a reference pointing at nothing is not a name", async ({ page }) => {
   expect(named[1], "the name fell through to nothing rather than to the next mechanism")
     .toMatch(/\S/);
 });
+
+test("a value read and empty is named, not left blank", async ({ page }) => {
+  // The one value that used to produce a blank cell, and the reason the claim needed planting rather
+  // than believing: `null` prints "null" and `undefined` prints "undefined", so the empty string was
+  // the only reading that rendered as nothing — and it is a legitimate, common one. A reader glancing
+  // at a blank cell cannot tell "read, and it was empty" from "nobody looked", which are two findings
+  // with two different repairs.
+  await page.evaluate(() => {
+    document.querySelector(".mdy-renderer--text input, .mdy-renderer input")?.setAttribute("id", "");
+  });
+  await reread(page);
+
+  const row = rowNamed(await readTable(page), "control id");
+  expect(row[1], "the panel drew no row for the control's id").toBeDefined();
+  expect(row[1], "an empty read rendered as a blank cell").toMatch(/\S/);
+  // Named as empty, and not as unread: it *was* read, and the cell says what was found rather than
+  // whether anyone looked. Reporting it as unread would be the same lie in the other direction.
+  expect(row[1]).toContain("empty");
+  expect(row[1], "a value that was read was reported as not read").not.toContain("not read");
+});
+
+test("no cell a reader is shown is blank, whatever the reading found", async ({ page }) => {
+  // The property over the whole table rather than over one row: the guard that used to exist
+  // protected the branch that could not fail — an unread reading always builds a sentence — while
+  // the branch that could was left alone.
+  await page.evaluate(() => {
+    const control = document.querySelector(".mdy-renderer--text input, .mdy-renderer input");
+    control?.setAttribute("id", "");
+    control?.setAttribute("aria-label", "");
+  });
+  await reread(page);
+
+  const blank = (await readTable(page)).filter((row) => row.some((cell) => cell === ""));
+  expect(blank, `${blank.length} cell(s) are blank: ${JSON.stringify(blank)}`).toEqual([]);
+});
