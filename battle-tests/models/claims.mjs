@@ -238,6 +238,17 @@ const CLAIMS = [
     ],
   },
   {
+    id: "REA-004",
+    title: "A conformance check that could not be performed is named, with the declaration that bought it out.",
+    area: "reactivity",
+    severity: "S2",
+    publicEvidence: [
+      "@modyra/core/testing reactivityContractLedger — what was registered and what was skipped",
+      "@modyra/core/testing MdyReactivityTestHarness — the shape an adapter supplies to be measured",
+      "@modyra/core MdyReactivity.capabilities — the ten declarations a check is gated on",
+    ],
+  },
+  {
     id: "REA-003",
     title: "A condition the published diagnostic vocabulary names is reported with its code.",
     area: "reactivity",
