@@ -70,6 +70,21 @@ export interface MdyVisualFixture {
   /** Something the renderer has certainly drawn, waited for before anything is shot. */
   readonly ready: string;
   /**
+   * The page these images are taken on, defaulting to the renderer's front door.
+   *
+   * A per-widget baseline is sensitive to fractional layout *above* the widget: the box itself is a
+   * whole number of pixels, its position is not, and a capture at a fractional offset rounds one way
+   * or the other. Measured on the demo page: 72 elements carry a fractional height — every heading,
+   * every line of prose — so a widget below them lands on a half pixel and a sentence rewritten
+   * anywhere above it moves fourteen images.
+   *
+   * That is the failure a baseline suite must not have. Not because re-recording costs anything, but
+   * because a prose edit then presents as fourteen widget regressions, and the habit that teaches is
+   * re-recording without looking. So a renderer with a bench points its images there: the bench holds
+   * every kind and nothing else, which makes an image move when the widget moves and not before.
+   */
+  readonly at?: string;
+  /**
    * How this renderer is told to take the modal placement, when it can be told at all.
    *
    * A popup that covers the viewport is reached by running out of room, which a desktop shot never
@@ -177,7 +192,7 @@ export function declareVisualBaselines(fixture: MdyVisualFixture): void {
 
   test.beforeEach(async ({ page }) => {
     await page.clock.setFixedTime(PINNED);
-    await page.goto("/");
+    await page.goto(fixture.at ?? "/");
     await expect(page.locator(fixture.ready).first()).toBeVisible();
   });
 
