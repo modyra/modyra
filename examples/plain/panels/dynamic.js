@@ -387,6 +387,70 @@ export const dynamicPanel = {
     }));
 
     render();
-    return () => { mounted?.dispose(); print.cancel(); };
+
+    // ── The same contract, served by a different language ───────────────────────────────────────
+    //
+    // The document above is typed into the page. This one is built by a Rust process from its own
+    // business objects and handed over as contract JSON — which is the claim worth showing: the
+    // form is defined by the backend and drawn by whichever renderer is on the page.
+    //
+    // It is parsed strictly before it is mounted. A document arriving over a network is data from
+    // somewhere else even when the somewhere else is ours, and the panel's own opening line says
+    // so about the editor above.
+    const served = document.createElement("section");
+    served.dataset.servedByRust = "";
+    served.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-sys-color-outline,#ccc)";
+    const servedHeading = document.createElement("h3");
+    servedHeading.textContent = "Checkout, served by the Rust API";
+    served.append(servedHeading);
+    const servedNote = document.createElement("p");
+    servedNote.style.cssText = "margin:.25rem 0 1rem;font-size:.9em";
+    served.append(servedNote);
+    const servedHost = document.createElement("div");
+    servedHost.dataset.servedForm = "";
+    served.append(servedHost);
+    work.append(served);
+
+    let servedMount = null;
+    const loadServed = async () => {
+      servedMount?.dispose();
+      servedMount = null;
+      servedHost.replaceChildren();
+      servedNote.textContent = "asking the API…";
+
+      let payload;
+      try {
+        const response = await fetch("http://127.0.0.1:3000/v1/forms/checkout", {
+          signal: AbortSignal.timeout(4000),
+        });
+        if (!response.ok) throw new Error(`the API answered ${response.status}`);
+        payload = await response.json();
+      } catch (error) {
+        // An absence that says what it is and how to end it. A blank space here would read as a
+        // renderer that failed, which is the wrong thing to go and debug.
+        servedNote.textContent =
+          `The form API is not answering (${error.message}). Start it with: `
+          + "cargo run -p modyra-axum-form-server-example — or run this demo with npm run demo:plain, "
+          + "which starts it for you.";
+        return;
+      }
+
+      const verdict = parseDynamicForm(payload, { mode: "strict" });
+      if (!verdict.ok) {
+        servedNote.textContent =
+          "The API served a document this reader refuses — which is the check doing its job, not a "
+          + "network problem: " + verdict.diagnostics.map((d) => `${d.code} at ${d.path}`).join(", ");
+        return;
+      }
+
+      servedNote.textContent =
+        `Contract v${verdict.version}, ${verdict.fields.length} fields, built in Rust and drawn here.`;
+      servedMount = mountMdyForm(servedHost, verdict.fields, { submitLabel: "Place order" });
+    };
+
+    void loadServed();
+    action(bar, "Reload from the API", loadServed);
+
+    return () => { mounted?.dispose(); servedMount?.dispose(); print.cancel(); };
   },
 };

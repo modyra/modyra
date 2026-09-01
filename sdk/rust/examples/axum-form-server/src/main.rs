@@ -242,8 +242,15 @@ async fn health(State(leases): State<Leases>) -> Json<Value> {
 }
 
 fn app_with(leases: Leases) -> Router {
+    // Every demo that talks to this server, by the port its launcher uses. Named rather than
+    // opened to anything: a development server that answers the whole internet is a habit that
+    // travels, and the list is three lines.
+    let origins = ["http://localhost:4200", "http://localhost:4303", "http://localhost:4307"]
+        .iter()
+        .map(|origin| origin.parse::<HeaderValue>().unwrap())
+        .collect::<Vec<_>>();
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
+        .allow_origin(origins)
         .allow_methods([Method::GET, Method::POST])
         .allow_headers([axum::http::header::CONTENT_TYPE]);
 
