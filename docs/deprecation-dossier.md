@@ -16,6 +16,9 @@ formality: `@modyra/angular` exists to be consumed by applications, none of whic
 `node_modules` and `target` excluded. Prose counted separately — a name mentioned in a comment or a
 `.md` has no consumer, and counting it as one is how a census reports nothing to report.
 
+**Three corrections stand in this page rather than behind it**, because each changed the answer and
+a reader deciding from these numbers should know what the instrument did before it was right.
+
 **Two exclusions, and both change the answer.** A package's own source is not a consumer of itself,
 and its own tests are its own suite rather than a consumer. And
 `battle-tests/types/every-published-type-is-importable.ts` is excluded by construction: it names
@@ -23,20 +26,29 @@ and its own tests are its own suite rather than a consumer. And
 reported 0 names with no consumer. Excluding it, 174. The first number was the instrument, not the
 repository.
 
-**One caveat on the baseline.** `npm run test:type-surface` currently reports `widgets:unread is
-newly exported [minor]` — the recorded surface is one name behind the build. Everything below reads
-the recorded surface, so a name added since is missing from these counts.
+**A third correction, and the largest.** These counts were first taken against a surface of 843
+recorded names — and that recording was blind to `export const`, so it held interfaces, aliases,
+classes and `function` declarations and nothing else. Its blind spot followed how a declaration is
+spelled rather than what it is, which put `required`, `email` and `minLength` — the most-imported
+names in this repository — outside the census entirely. The audit was repaired and the surface is now
+992; every number below is re-measured against it.
 
 ## The whole surface, by who names it
 
-| | names |
-| --- | --- |
-| consumed by another package's source | 442 |
-| used outside their package, but by no package source (tests, battles, e2e, examples) | 160 |
-| named only in prose, or only by their own package's suite | 67 |
-| no code outside their own package names them at all | 174 |
+| | names | before the audit was repaired |
+| --- | --- | --- |
+| consumed by another package's source | 497 | 442 |
+| used outside their package, but by no package source (tests, battles, e2e, examples) | 221 | 160 |
+| named only in prose, or only by their own package's suite | 80 | 67 |
+| no code outside their own package names them at all | 194 | 174 |
 
-The 174 by package: **widgets 122 · angular 34 · core 18**.
+The 194 by package: **widgets 138 · angular 40 · core 16**.
+
+The 136 entries the blind audit never recorded land like this: **55 consumed by another package's
+source, 57 used outside by no source, 17 with no consumer, 7 named only in prose or their own
+suite.** So most of the growth in every bucket is names that were always there and never counted,
+and `core`'s no-consumer count *fell* — from 18 to 16 — because what the repair added to `core` was
+the validator API, which has real consumers.
 
 The angular 34 is where the caveat above bites hardest: an adapter's public surface is consumed by
 applications, and this repository holds one demo. Reading those 34 as unused would be reading the
