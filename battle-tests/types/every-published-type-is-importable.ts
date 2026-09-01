@@ -278,6 +278,8 @@ import type {
   MdyAccessibleName,
   MdyPartObservation,
   MdyReadingHost,
+  MdyReferenceTargets,
+  MdyResolvedReference,
   MdyReading,
   MdyStateMatrixResult,
   MdyStateMatrixRow,
@@ -890,3 +892,8 @@ void held276;
 
 declare const held277: MdyReadingHost;
 void held277;
+
+declare const held278: MdyReferenceTargets;
+void held278;
+declare const held279: MdyResolvedReference;
+void held279;

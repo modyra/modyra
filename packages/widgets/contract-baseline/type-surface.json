@@ -3637,12 +3637,23 @@
     "cell: unknown",
     "row: { append(...cells: unknown[]): void; }"
   ],
+  "widgets:MdyReferenceTargets": [
+    "attribute: string",
+    "dangling: readonly string[]",
+    "emptyButPresent: readonly string[]",
+    "targets: readonly MdyResolvedReference[]"
+  ],
   "widgets:MdyRelationAttribute": [
     "\"aria-activedescendant\"",
     "\"aria-controls\"",
     "\"aria-describedby\"",
     "\"aria-labelledby\"",
     "\"for\""
+  ],
+  "widgets:MdyResolvedReference": [
+    "id: string",
+    "present: boolean",
+    "text: string"
   ],
   "widgets:MdySelectA11yOptions": [
     "activeKey: string | null",
@@ -5021,6 +5032,13 @@
     "(1) part: { readonly name: string; readonly selector: string; readonly node: { readonly part: string; readonly optional?: boolean; readonly presentWhen?: string; readonly requires?: string; }; }",
     "(2) facts: { readonly holds: (condition: string) => boolean; readonly offers: (capability: string) => boolean; /** How the contract decides. Passed in so this file does not import the structure module. */ readonly owes: (node: MdyPartObservationNode, facts: { holds: (condition: string) => boolean; offers: (capability: string) => boolean; }) => boolean; }",
     "-> returns: MdyReading<MdyPartObservation>"
+  ],
+  "widgets:readReferenceTargets": [
+    "(0) element: { getAttribute(name: string): string | null; }",
+    "(1) attribute: string",
+    "(2) at: string",
+    "(3) document_?: { getElementById(id: string): { textContent: string | null; } | null; } | null",
+    "-> returns: MdyReading<MdyReferenceTargets>"
   ],
   "widgets:reading": [
     "(0) where: { readonly source: string; readonly at: string; readonly method: string; }",

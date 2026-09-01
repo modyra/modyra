@@ -341,3 +341,65 @@ export function drawReadings<T>(
     );
   }
 }
+
+/** What one id in a reference attribute resolved to. */
+export interface MdyResolvedReference {
+  readonly id: string;
+  /** Whether an element with that id is in the document. */
+  readonly present: boolean;
+  /** The text it contributes. Empty for a present element holding nothing. */
+  readonly text: string;
+}
+
+/** A reference attribute, resolved id by id. */
+export interface MdyReferenceTargets {
+  readonly attribute: string;
+  readonly targets: readonly MdyResolvedReference[];
+  /** Ids naming nothing in the document. A promise the page cannot keep. */
+  readonly dangling: readonly string[];
+  /** Ids naming an element that is there and holds nothing. */
+  readonly emptyButPresent: readonly string[];
+}
+
+/**
+ * Resolve every id in a reference attribute, and keep the two kinds of nothing apart.
+ *
+ * `aria-describedby` naming an element that is **not in the document** is a defect in every case: the
+ * reference cannot resolve, and no rendering of the field will make it. Naming an element that **is**
+ * there and holds nothing is not — ADR 0180 reserves the error container under every field that can
+ * fail a rule, so a reference to an empty one is the resting state of a conforming form.
+ *
+ * Both read as "the description came back empty" in a failing assertion, which is why they are
+ * separated here rather than by whoever reads the result. A sweep that folds them together sends a
+ * reader to the container when the defect is in the reference, and the other way round.
+ */
+export function readReferenceTargets(
+  element: { getAttribute(name: string): string | null },
+  attribute: string,
+  at: string,
+  document_?: { getElementById(id: string): { textContent: string | null } | null } | null,
+): MdyReading<MdyReferenceTargets> {
+  const where = { source: `${at}[${attribute}]`, at, method: "getElementById per id" };
+  return reading(where, () => {
+    const written = element.getAttribute(attribute);
+    // No attribute is not an empty reference: nothing was promised, so there is nothing to resolve.
+    if (written === null) return undefined;
+    if (!document_) {
+      // Honest about the limit rather than reporting every id as dangling, which would be this
+      // collector inventing a defect out of its own missing context.
+      return undefined;
+    }
+
+    const ids = written.split(/\s+/).filter(Boolean);
+    const targets = ids.map((id) => {
+      const found = document_.getElementById(id);
+      return { id, present: found !== null, text: found?.textContent?.trim() ?? "" };
+    });
+    return {
+      attribute,
+      targets,
+      dangling: targets.filter((one) => !one.present).map((one) => one.id),
+      emptyButPresent: targets.filter((one) => one.present && one.text === "").map((one) => one.id),
+    };
+  });
+}
