@@ -45,10 +45,17 @@ test("a fixed split makes the invoice valid, and the server's verdict lands on t
 test("an approved line is readonly but consulted: not editable, still in the value", async ({ page }, testInfo) => {
   const scope = scopeOf(page, testInfo.project.name);
   await scope.getByRole("button", { name: "Approve the line" }).click();
-  await expect(scope.locator("[data-line] input").first()).not.toBeEditable();
-  // The readout is written after the paint it describes, so the model is asked until it answers.
+
+  // **The model first, the rendering second, because they fail for different reasons and the old
+  // order could not tell them apart.** Asking whether the input is editable is asking about the
+  // consequence of an approval; if the press never registered, that question is answered by a page
+  // where nothing was approved, and the failure reads *the input is still editable* — which is true,
+  // and about the wrong thing. This has failed twice on one engine and reproduced in none of
+  // thirty-six local attempts, including under saturated cores, so what it says when it next fails
+  // is the only thing that will separate a lost press from a binding that did not apply.
   await expect.poll(async () => (await state(page, testInfo.project.name)).approved)
     .toContain("invoices.INV-1.lines.l1");
+  await expect(scope.locator("[data-line] input").first()).not.toBeEditable();
   const s = await state(page, testInfo.project.name);
   expect(s.value["INV-1"].lines.l1.desc).toBe("Consulting");
 });
