@@ -298,9 +298,33 @@ function sourcesUnder(dir, suffix) {
 }
 const at0 = (dir) => join(ROOT, dir);
 
+/**
+ * A reader that walks the corpus names nothing, and is blind to nothing.
+ *
+ * Naming each document was the only way a reader could be shown one when this check was written, so
+ * the check looked for the name. Then a reader started walking the directory — the repair this very
+ * gate existed to prompt — and reported seven documents unnamed, because it now names none. A gate
+ * that goes red at the improvement it asked for teaches the opposite of what it wants, and would
+ * push a suite back to the hand-written list.
+ *
+ * So enumeration is recognised, and it is recognised by both halves together: the sources name the
+ * corpus **as a directory** *and* read a directory. Naming it as a directory is the half that carries
+ * the weight — a reader that names thirteen files also contains the corpus path thirteen times, so
+ * "mentions the corpus" is satisfied by exactly the hand-written list this is trying to tell apart.
+ * A planted reader that stopped walking the corpus was excused by that weaker reading, which is how
+ * this one was arrived at.
+ */
+const WALKS_A_DIRECTORY = /read_dir|readdirSync|Files\.list|Files\.walk|DirectoryStream|opendir/;
+/** The corpus named as a place, rather than as the prefix of one document. */
+const NAMES_THE_DIRECTORY = /fixtures\/dynamic-form(\/v\d+)?["'`)\s]/;
+const enumerating = [];
 for (const reader of READERS) {
   if (!existsSync(at0(reader.dir))) continue;
   const sources = sourcesUnder(reader.dir, reader.suffix).join("\n");
+  if (NAMES_THE_DIRECTORY.test(sources) && WALKS_A_DIRECTORY.test(sources)) {
+    enumerating.push(reader.name);
+    continue;
+  }
   for (const version of readdirSync(CORPUS)) {
     for (const file of readdirSync(join(CORPUS, version))) {
       if (!file.endsWith(".json") || file.slice(0, -".json".length).includes(".")) continue;
@@ -316,6 +340,11 @@ console.log("# Contract schema audit\n");
 console.log(`Schemas: ${SCHEMAS.map((s) => s.path).join(", ")}`);
 console.log(`Fixtures checked: ${fixtureCount}`);
 console.log(`Kinds the parser accepts: ${MDY_DYNAMIC_FIELD_KINDS.length}`);
+// Said rather than assumed: a reader excused from the per-document check because it walks the
+// corpus is a claim, and a claim nobody can see is one nobody can dispute.
+if (enumerating.length > 0) {
+  console.log(`Readers that walk the corpus, so named by none of it: ${enumerating.join(", ")}`);
+}
 console.log(`Document slots read from the type: ${documentSlots(Math.max(...SCHEMAS.map(({ version }) => version))).join(", ")}\n`);
 
 console.log("Cross-reference findings are the parser's, not the schema's: a slot naming an absent");
