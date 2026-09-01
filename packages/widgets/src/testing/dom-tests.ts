@@ -505,7 +505,14 @@ export function inspectWidgetDom(
       const onlyWhileOpen = overlayOnlyParts(kind).includes(node.part);
       // Required by the kind, or by the variant it was configured as.
       const required = !node.optional || (variant?.required.includes(node.part) ?? false);
-      if (required && (!onlyWhileOpen || options.open === true)) {
+      // A mandatory part whose only declared home is gone was not omitted — it had nowhere to be.
+      // `checkbox.indicator` is mandatory and lives under `label`, which a document without a
+      // caption may legitimately not have; demanding the child there asks a renderer for an element
+      // and refuses it the place to put it. The overlay rule above is this same shape, written for
+      // one condition; this covers the rest — `kindOffersIt`, `documentDeclaresIt`, and whatever
+      // the vocabulary gains next.
+      const nowhereToBe = hasAbsentAncestor(node.part);
+      if (required && !nowhereToBe && (!onlyWhileOpen || options.open === true)) {
         issues.push({ code: "PART_MISSING", part: node.part, message: `required part ${node.part} was not rendered` });
       }
       continue;
