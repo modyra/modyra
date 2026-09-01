@@ -68,6 +68,22 @@ const FIELD_BY_KIND = [
  * stores it under; `name` stays in the field's own list because the flat form is where a field
  * carries it, and a tree document that repeats it is naming a member the contract has.
  */
+/**
+ * The version each member arrived with, for the members that did not arrive with v2.
+ *
+ * Listed once and read twice: the parser refuses a member in a document whose version predates it,
+ * and the schema audit excuses the published schemas that were written before it existed. The
+ * alternative — the arrival spelled out in each reader — is a pair that agrees until somebody edits
+ * one of them.
+ *
+ * A member absent from this table arrived with v2, which is where the contract starts.
+ */
+export const MDY_DYNAMIC_MEMBER_ARRIVALS: Readonly<Record<string, Readonly<Record<string, number>>>> =
+  Object.freeze({
+    document: Object.freeze({ requiresContext: 4 }),
+    validators: Object.freeze({ integer: 5 }),
+  });
+
 export const MDY_DYNAMIC_MEMBERS = Object.freeze({
   /**
    * The envelope's own members, every version's together.
@@ -81,7 +97,7 @@ export const MDY_DYNAMIC_MEMBERS = Object.freeze({
   ] as readonly string[]),
   field: Object.freeze([...FIELD_BASE, ...FIELD_BY_KIND] as readonly string[]),
   validators: Object.freeze([
-    "required", "email", "min", "max", "minLength", "maxLength", "pattern", "messages",
+    "required", "email", "integer", "min", "max", "minLength", "maxLength", "pattern", "messages",
   ] as readonly string[]),
   option: Object.freeze(["value", "label", "disabled"] as readonly string[]),
   rule: Object.freeze(["effect", "target", "when"] as readonly string[]),

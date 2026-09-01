@@ -25,7 +25,7 @@ import {
   isSafeDynamicSegment,
   warnDev,
 } from "./guards.js";
-import { MDY_DYNAMIC_MEMBERS, unknownMembers } from "./members.js";
+import { MDY_DYNAMIC_MEMBERS, unknownMembers, MDY_DYNAMIC_MEMBER_ARRIVALS } from "./members.js";
 import { dynamicPatternRefusal } from "./pattern-cost.js";
 import { explainValueMismatch, type MdyValueKind } from "../value-contracts.js";
 import { MDY_FIELD_KINDS } from "../field-kinds.js";
@@ -275,7 +275,7 @@ function hasValidOptions(options: unknown): options is ReadonlyArray<MdySelectOp
 
 /** The rules a field declares, and so the only keys its messages may name. */
 const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set([
-  "required", "email", "min", "max", "minLength", "maxLength", "pattern",
+  "required", "email", "integer", "min", "max", "minLength", "maxLength", "pattern",
 ]);
 
 function hasValidValidatorConfig(
@@ -290,7 +290,7 @@ function hasValidValidatorConfig(
     return false;
   }
   const config = validators as Partial<MdyDynamicValidators>;
-  const boolKeys = ["required", "email"] as const;
+  const boolKeys = ["required", "email", "integer"] as const;
   for (const key of boolKeys) {
     const value = config[key];
     if (value !== undefined && typeof value !== "boolean") {
@@ -648,12 +648,44 @@ export interface MdyDynamicFormConfigV4 extends Omit<MdyDynamicFormConfigV3, "ve
   readonly requiresContext?: readonly string[];
 }
 
+/**
+ * v5: a document can say **whole number**.
+ *
+ * `integer` is a rule a form could be given by hand and not by document, so the same form written
+ * the two ways produced two different controls — the hand-written one attaches `step: 1`, which is
+ * what lets a number box offer whole numbers to the keyboard, and the declared one had no way to
+ * ask for it.
+ *
+ * It is a new word, so it takes a new number. v2, v3 and v4 are published, and a word added to a
+ * published version leaves two readers that both claim to support it disagreeing about what a
+ * document of that version is.
+ *
+ * Everything else is v4's, unchanged: a v4 document is a v5 document with the version raised.
+ */
+export interface MdyDynamicFormConfigV5 extends Omit<MdyDynamicFormConfigV4, "version"> {
+  readonly version: 5;
+}
+
 export type MdyDynamicFormDocument =
   | MdyDynamicFormConfigV2
   | MdyDynamicFormConfigV3
-  | MdyDynamicFormConfigV4;
+  | MdyDynamicFormConfigV4
+  | MdyDynamicFormConfigV5;
 
 export type MdyDynamicParseMode = "lenient" | "strict";
+
+/**
+ * The versions this contract reads, and the sentence that names them.
+ *
+ * Declared once because it is said in four places — the type union, the two refusals a person
+ * reads, and the check that accepts an envelope. A list spelled out in each is a list that agrees
+ * until somebody adds a version and updates three of them.
+ */
+const SUPPORTED_VERSIONS = [2, 3, 4, 5] as const;
+const SUPPORTED_VERSIONS_PHRASE =
+  `${SUPPORTED_VERSIONS.slice(0, -1).join(", ")} and ${SUPPORTED_VERSIONS[SUPPORTED_VERSIONS.length - 1]}`;
+const isSupportedVersion = (value: unknown): value is 2 | 3 | 4 | 5 =>
+  (SUPPORTED_VERSIONS as readonly number[]).includes(value as number);
 
 export interface MdyDynamicDiagnostic {
   readonly code: string;
@@ -664,7 +696,7 @@ export interface MdyDynamicDiagnostic {
 
 export interface MdyDynamicFormParseResult {
   readonly ok: boolean;
-  readonly version: 1 | 2 | 3 | 4 | null;
+  readonly version: 1 | 2 | 3 | 4 | 5 | null;
   readonly fields: ReadonlyArray<MdyDynamicField>;
   /**
    * The collections the document declared, by path and kind.
@@ -705,10 +737,10 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     "fields" in input
   ) {
     const envelope = input as { version?: unknown; fields?: unknown };
-    if (envelope.version !== 2 && envelope.version !== 3 && envelope.version !== 4) {
+    if (!isSupportedVersion(envelope.version)) {
       warnDev(
         `Unsupported dynamic form config version ${String(envelope.version)} — this contract has ` +
-        "versions 2, 3 and 4." +
+        `versions ${SUPPORTED_VERSIONS_PHRASE}.` +
         (envelope.version === 1
           ? ' Version 1 was read by this runtime alone and is no longer supported — set "version": 2, ' +
             "which reads the same fields."
@@ -1192,7 +1224,7 @@ function refuse(reason: LayoutRefusal): false {
 function layoutRefusalDiagnostic(
   reason: LayoutRefusal,
   path: string,
-  version: 1 | 2 | 3 | 4 | null,
+  version: 1 | 2 | 3 | 4 | 5 | null,
 ): MdyDynamicDiagnostic {
   if (reason === "version") {
     return {
@@ -1648,8 +1680,7 @@ export function parseDynamicForm(
   const versionDeclared = rawEnvelope !== undefined && "version" in rawEnvelope
     ? rawEnvelope.version
     : undefined;
-  const versionUnderstood = versionDeclared === undefined
-    || versionDeclared === 2 || versionDeclared === 3 || versionDeclared === 4;
+  const versionUnderstood = versionDeclared === undefined || isSupportedVersion(versionDeclared);
   if (!versionUnderstood) {
     return {
       ok: false,
@@ -1667,7 +1698,7 @@ export function parseDynamicForm(
         path: "/version",
         message:
           `Unsupported dynamic form config version ${JSON.stringify(versionDeclared)} — this contract ` +
-          "has versions 2, 3 and 4, and nothing in this document was read. " +
+          `has versions ${SUPPORTED_VERSIONS_PHRASE}, and nothing in this document was read. ` +
           (versionDeclared === 1
             // The one refusal people will meet with a document that worked yesterday, so it carries
             // the whole migration rather than the fact of the refusal: version 1 differs from 2 in
@@ -1715,11 +1746,11 @@ export function parseDynamicForm(
   // A bare field array declares no version and is the shape most callers pass; it is read as the
   // flat document it is. A declared `version: 1` never reaches here — it is refused above, because a
   // version two of the three runtimes refuse is not a version this contract has (ADR 0136).
-  const version: 1 | 2 | 3 | 4 | null = Array.isArray(input)
-    ? 1 : envelope?.version === 2 ? 2 : envelope?.version === 3 ? 3 : envelope?.version === 4 ? 4 : null;
+  const version: 1 | 2 | 3 | 4 | 5 | null = Array.isArray(input)
+    ? 1 : isSupportedVersion(envelope?.version) ? envelope.version : null;
   // v3 is v2 plus per-slot placement: every envelope member is read the same way, and only the
   // layout validator is told which vocabulary the document is entitled to use.
-  const structured = version === 2 || version === 3 || version === 4;
+  const structured = version !== null && version !== 1;
   if (structured && envelope?.schema !== undefined) {
     const { structural, perField, contextRead } = validateDynamicSchema(envelope.schema);
     diagnostics.push(...structural, ...perField);
@@ -1937,6 +1968,29 @@ export function parseDynamicForm(
   const rejectedCount = (declaredLeaves === undefined
     ? Math.max(0, sourceCount - fields.length)
     : treeRejected) + elsewhere;
+  // A rule the document's version predates. `integer` arrived with v5, and a v2 document carrying it
+  // is asking for a constraint no reader of that contract emits — the field would validate one way
+  // here and another wherever the document's declared version is what is honoured.
+  //
+  // The arrival number is read from the contract rather than written here: the schema audit excuses
+  // the published schemas from the same table, and two spellings of one arrival is the drift this
+  // whole version exists to avoid.
+  {
+    const arrivedWith = MDY_DYNAMIC_MEMBER_ARRIVALS.validators?.integer;
+    if (arrivedWith !== undefined && version !== null && version < arrivedWith) {
+      for (const field of fields) {
+        if ((field.validators as { integer?: unknown } | undefined)?.integer === undefined) continue;
+        diagnostics.push({
+          code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+          severity: "error",
+          path: `/fields/${field.name}/validators/integer`,
+          message:
+            `Unsupported dynamic form config version for "integer": it arrived with version ` +
+            `${arrivedWith}, and this document says ${version}. Set "version": ${arrivedWith} to use it.`,
+        });
+      }
+    }
+  }
   const strict = modeUnderstood && asked === "strict";
   // What strict mode refuses on. A warning is published as the severity a consumer reads to tell
   // what must be fixed from what is worth knowing, so refusing the whole document for one turns the

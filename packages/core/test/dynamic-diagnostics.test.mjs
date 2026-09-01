@@ -254,8 +254,18 @@ test("refusing version one says which version, which versions it has, and what t
 
   const said = refused.diagnostics[0].message;
   assert.match(said, /\b1\b/, "the refusal does not name the version it refused");
-  assert.match(said, /2, 3 and 4/, "the refusal does not name the versions it has");
   assert.match(said, /"version": 2/, "the refusal does not say what to write instead");
+
+  // Which versions the contract has is asked of the parser rather than written here. A list spelled
+  // out in the test is one that has to be remembered the day a version is added — and the sentence
+  // it guards exists precisely because a reader needs to be told the current set.
+  const accepted = [2, 3, 4, 5, 6, 7].filter((version) =>
+    parseDynamicForm({ version, fields: [{ name: "a", kind: "text" }] }).version === version,
+  );
+  assert.ok(accepted.length >= 3, "the probe found no versions, so it is not measuring the parser");
+  for (const version of accepted) {
+    assert.match(said, new RegExp(`\\b${version}\\b`), `the refusal does not name version ${version}`);
+  }
 });
 
 /** The shape most callers pass declares no version at all, and it is not what was refused. */

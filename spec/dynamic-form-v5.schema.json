@@ -1,0 +1,865 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://modyra.dev/schemas/dynamic-form-v5.schema.json",
+  "title": "Modyra Dynamic Form Contract v5",
+  "description": "Contract v5: v4 plus `validators.integer`, the rule that a value is a whole number. It is declared as the rule, not as the `step: 1` it implies for the control. A v4 document is a v5 document with the version raised.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version"
+  ],
+  "properties": {
+    "version": {
+      "const": 5
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flatField"
+      }
+    },
+    "layout": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/layout"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      }
+    },
+    "validations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/validation"
+      }
+    },
+    "schema": {
+      "$ref": "#/$defs/node"
+    },
+    "requiresContext": {
+      "type": "array",
+      "description": "The context keys this document's conditions read. A host is told what to supply; a key read and not declared is refused by the parser.",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "breakpoint": {
+      "enum": [
+        "base",
+        "sm",
+        "md",
+        "lg"
+      ]
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "placementAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/breakpoint"
+      },
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/placement"
+        },
+        "sm": {
+          "$ref": "#/$defs/placement"
+        },
+        "md": {
+          "$ref": "#/$defs/placement"
+        },
+        "lg": {
+          "$ref": "#/$defs/placement"
+        }
+      }
+    },
+    "trackCountAt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {
+        "$ref": "#/$defs/breakpoint"
+      },
+      "properties": {
+        "base": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "sm": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "md": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "lg": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    },
+    "validators": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "email": {
+          "type": "boolean"
+        },
+        "integer": {
+          "type": "boolean",
+          "description": "The value must be a whole number. Arrived with contract v5."
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "minLength": {
+          "type": "number"
+        },
+        "maxLength": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "messages": {
+          "type": "object",
+          "description": "What each rule says when it refuses, in the author's own words. Omitted, the form answers in its own language.",
+          "additionalProperties": false,
+          "properties": {
+            "required": {
+              "type": "string",
+              "minLength": 1
+            },
+            "email": {
+              "type": "string",
+              "minLength": 1
+            },
+            "integer": {
+              "type": "string"
+            },
+            "min": {
+              "type": "string",
+              "minLength": 1
+            },
+            "max": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "maxLength": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pattern": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "label"
+      ],
+      "properties": {
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "object"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "disabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "enum": [
+              "__proto__",
+              "prototype",
+              "constructor"
+            ]
+          },
+          "pattern": "^[^.]+$"
+        },
+        "kind": {
+          "enum": [
+            "text",
+            "textarea",
+            "email",
+            "password",
+            "number",
+            "slider",
+            "checkbox",
+            "toggle",
+            "select",
+            "radio",
+            "multiselect",
+            "segmented",
+            "datepicker",
+            "daterange",
+            "timepicker",
+            "file",
+            "colors"
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "ariaLabel": {
+          "type": "string"
+        },
+        "supportingText": {
+          "type": "string",
+          "description": "The line under the control: a format, a limit, why the field is there. Named by aria-describedby, so a field that declares nothing leaves the reference pointing at an empty element."
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "sensitive": {
+          "type": "boolean"
+        },
+        "initialValue": {},
+        "validators": {
+          "$ref": "#/$defs/validators"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/option"
+          }
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Short content set against the control \u2014 a currency mark, a unit, a domain."
+        },
+        "suffix": {
+          "type": "string",
+          "description": "Short content set after the control."
+        },
+        "mode": {
+          "enum": [
+            "single",
+            "multi"
+          ],
+          "description": "Multiselect only: a toggle set, or a bag the same option can be taken into more than once."
+        },
+        "reorderable": {
+          "type": "boolean",
+          "description": "multiselect only: whether a person may rearrange what they chose, with the keyboard on a focused chip or by dragging it. Absent means they may not \u2014 most lists have an order nobody chose."
+        },
+        "searchable": {
+          "type": "boolean",
+          "description": "Select and multiselect only: whether the list filters as the user types, which decides whether the widget is a listbox or a combobox."
+        },
+        "loading": {
+          "type": "boolean",
+          "description": "Select and multiselect only: the options are being fetched, shown on the control."
+        },
+        "locale": {
+          "type": "string",
+          "description": "Calendar kinds: BCP 47 tag. Unset follows the browser."
+        },
+        "firstDayOfWeek": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Calendar kinds: 0 = Sunday \u2026 6 = Saturday. Unset follows the locale."
+        },
+        "minDate": {
+          "type": "string",
+          "description": "Calendar kinds: earliest selectable date, ISO yyyy-MM-dd. Presentation only \u2014 bounds are enforced by validators."
+        },
+        "maxDate": {
+          "type": "string",
+          "description": "Calendar kinds: latest selectable date, ISO yyyy-MM-dd."
+        },
+        "format": {
+          "enum": [
+            "12h",
+            "24h"
+          ],
+          "description": "timepicker only: which clock the field draws and reads. Absent draws the 24-hour clock. The stored value is the same either way."
+        },
+        "viewMode": {
+          "enum": [
+            "dial",
+            "input"
+          ],
+          "description": "timepicker only: which of the two views the picker opens in. Absent opens on the dial. Closing the picker returns it here, so this is the view the field has rather than the one it started with."
+        },
+        "granularity": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "timepicker only: which times the field offers. Absent offers every one. A step that does not divide its unit, a window covering no time, or two windows claiming the same minutes are refused where they are declared.",
+          "properties": {
+            "minuteStep": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 60,
+              "description": "Minutes between offered times. Must divide 60."
+            },
+            "hourStep": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24,
+              "description": "Hours between offered hours. Must divide 24."
+            },
+            "windows": {
+              "type": "array",
+              "description": "Stretches of the day whose minute step differs from the field's. Half-open: from inclusive, to exclusive, so adjacent windows tile without overlapping. A window's step overrides the field's rather than composing with it.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "from",
+                  "to",
+                  "minuteStep"
+                ],
+                "properties": {
+                  "from": {
+                    "type": "string",
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+                    "description": "HH:MM, 24-hour, inclusive."
+                  },
+                  "to": {
+                    "type": "string",
+                    "pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+                    "description": "HH:MM, 24-hour, exclusive."
+                  },
+                  "minuteStep": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 60
+                  }
+                }
+              }
+            }
+          }
+        },
+        "animateHand": {
+          "type": "boolean",
+          "description": "timepicker only: whether the dial's hand moves rather than jumps. Absent is a hand that jumps, which never shows a value where it is not."
+        },
+        "showUnavailable": {
+          "type": "boolean",
+          "description": "timepicker only: whether the dial shows which stretches of its ring carry no selectable time. Absent draws a ring that looks the same all the way round."
+        },
+        "accept": {
+          "type": "string",
+          "description": "File only: mirrors the native input attribute."
+        },
+        "multiple": {
+          "type": "boolean",
+          "description": "File only: mirrors the native input attribute."
+        },
+        "presets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Colors only: the palette offered beside free choice."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "select",
+                  "radio",
+                  "multiselect",
+                  "segmented"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "options"
+            ]
+          }
+        }
+      ]
+    },
+    "flatField": {
+      "description": "A field in the flat list, where the field carries its own name. In the tree the parent's key is the name, which is why the name is required here and not on the field itself.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/field"
+        },
+        {
+          "required": [
+            "name"
+          ]
+        }
+      ]
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "at": {
+          "$ref": "#/$defs/placementAt"
+        }
+      }
+    },
+    "layoutChild": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/$defs/slot"
+        },
+        {
+          "$ref": "#/$defs/layout"
+        }
+      ]
+    },
+    "layout": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "children"
+          ],
+          "properties": {
+            "kind": {
+              "const": "section"
+            },
+            "id": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "at": {
+              "$ref": "#/$defs/placementAt"
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/layoutChild"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "id",
+            "columns"
+          ],
+          "properties": {
+            "kind": {
+              "const": "columns"
+            },
+            "id": {
+              "type": "string"
+            },
+            "at": {
+              "$ref": "#/$defs/trackCountAt"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/layoutChild"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect",
+        "target",
+        "when"
+      ],
+      "properties": {
+        "effect": {
+          "enum": [
+            "visible",
+            "hidden",
+            "enabled",
+            "disabled"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "operator"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "operator": {
+              "enum": [
+                "equals",
+                "notEquals",
+                "in",
+                "notIn",
+                "isEmpty",
+                "isNotEmpty",
+                "greaterThan",
+                "greaterThanOrEqual",
+                "lessThan",
+                "lessThanOrEqual"
+              ]
+            },
+            "value": {}
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "in",
+                      "notIn"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "operator": {
+                    "enum": [
+                      "greaterThan",
+                      "greaterThanOrEqual",
+                      "lessThan",
+                      "lessThanOrEqual"
+                    ]
+                  }
+                },
+                "required": [
+                  "operator"
+                ]
+              },
+              "then": {
+                "required": [
+                  "value"
+                ],
+                "properties": {
+                  "value": {
+                    "type": [
+                      "number",
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "when",
+        "message"
+      ],
+      "properties": {
+        "when": {
+          "description": "An expression tree. Its shape is the parser's to judge: a schema that described it would be a second definition of the expression language.",
+          "type": "object"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "fieldNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "field"
+      ],
+      "properties": {
+        "node": {
+          "const": "field"
+        },
+        "field": {
+          "$ref": "#/$defs/field"
+        },
+        "when": {
+          "$ref": "#/$defs/condition"
+        },
+        "asyncWhen": {
+          "$ref": "#/$defs/condition"
+        }
+      }
+    },
+    "groupNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "children"
+      ],
+      "properties": {
+        "node": {
+          "const": "group"
+        },
+        "label": {
+          "type": "string"
+        },
+        "children": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "when": {
+          "$ref": "#/$defs/condition"
+        }
+      }
+    },
+    "arrayNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "array"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
+            },
+            {
+              "$ref": "#/$defs/arrayNode"
+            }
+          ],
+          "description": "A row's shape, a collection of either kind included. A row's descendants are addressed below this array's index, and a collection the row declares names its own rows the same way, so a second positional level is as addressable as the first (ADR 0043)."
+        },
+        "initialValue": {
+          "type": "array",
+          "maxItems": 100
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "recordNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node",
+        "item"
+      ],
+      "properties": {
+        "node": {
+          "const": "record"
+        },
+        "label": {
+          "type": "string"
+        },
+        "item": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/fieldNode"
+            },
+            {
+              "$ref": "#/$defs/groupNode"
+            },
+            {
+              "$ref": "#/$defs/recordNode"
+            },
+            {
+              "$ref": "#/$defs/arrayNode"
+            }
+          ],
+          "description": "A row's shape, a collection of either kind included: keys address a row, so nothing below one moves."
+        },
+        "initialValue": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[^.]+$"
+          },
+          "maxProperties": 100
+        }
+      }
+    },
+    "node": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/fieldNode"
+        },
+        {
+          "$ref": "#/$defs/groupNode"
+        },
+        {
+          "$ref": "#/$defs/arrayNode"
+        },
+        {
+          "$ref": "#/$defs/recordNode"
+        }
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "description": "A predicate tree \u2014 see MdyExpression. Evaluated against what encloses the clause.",
+      "required": [
+        "op"
+      ],
+      "properties": {
+        "op": {
+          "type": "string"
+        },
+        "operand": {},
+        "operands": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "fields"
+      ]
+    },
+    {
+      "required": [
+        "schema"
+      ]
+    }
+  ]
+}

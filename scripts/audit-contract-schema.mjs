@@ -26,7 +26,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import Ajv from "ajv/dist/2020.js";
-import { MDY_DYNAMIC_FIELD_KINDS, MDY_DYNAMIC_MEMBERS, parseDynamicForm } from "../packages/core/dist/dynamic-config.js";
+import { MDY_DYNAMIC_FIELD_KINDS, MDY_DYNAMIC_MEMBERS, parseDynamicForm, MDY_DYNAMIC_MEMBER_ARRIVALS } from "../packages/core/dist/dynamic-config.js";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const CORPUS = join(ROOT, "spec/fixtures/dynamic-form");
@@ -39,6 +39,7 @@ const SCHEMAS = [
   { path: "spec/dynamic-form-v2.schema.json", version: 2 },
   { path: "spec/dynamic-form-v3.schema.json", version: 3 },
   { path: "spec/dynamic-form-v4.schema.json", version: 4 },
+  { path: "spec/dynamic-form-v5.schema.json", version: 5 },
 ];
 
 /**
@@ -131,8 +132,13 @@ for (const { path: schemaPath, version } of SCHEMAS) {
       note(schemaPath, `does not declare ${slot} where this audit reads it (${path.join("/")})`);
       continue;
     }
+    // A member a version predates is not one that schema omits — it is one that schema could not
+    // have had. The arrival is read from the contract, so this excuses exactly what the parser
+    // refuses and the two cannot drift apart.
+    const arrivals = MDY_DYNAMIC_MEMBER_ARRIVALS[slot] ?? {};
     const known = MDY_DYNAMIC_MEMBERS[slot]
-      .filter((member) => !(version < 3 && slot === "layoutSection" && member === "at"));
+      .filter((member) => !(version < 3 && slot === "layoutSection" && member === "at"))
+      .filter((member) => !(arrivals[member] !== undefined && version < arrivals[member]));
     const missing = known.filter((member) => !declared.includes(member));
     const extra = declared.filter((member) => !known.includes(member));
     if (missing.length > 0) note(schemaPath, `${slot} omits member(s) the parser reads: ${missing.join(", ")}`);
