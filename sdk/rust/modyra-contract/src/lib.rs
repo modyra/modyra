@@ -24,6 +24,29 @@ pub struct OptionItem {
     pub disabled: Option<bool>,
 }
 
+/// Mirrors `MdyDynamicValidatorMessages`: what each rule says when it refuses, in the author's own
+/// words. A rule with no sentence here refuses in the form's own language.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidatorMessages {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub integer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_length: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_length: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pattern: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Validators {
@@ -31,6 +54,9 @@ pub struct Validators {
     pub required: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<bool>,
+    /// The value must be a whole number. Arrived with contract v5.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub integer: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -41,6 +67,8 @@ pub struct Validators {
     pub max_length: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub messages: Option<ValidatorMessages>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -481,11 +509,11 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
     // moment a layout places a slot per breakpoint, and refusing it outright made
     // a form authored responsively unreadable by this SDK.
-    if form.version != 2 && form.version != 3 && form.version != 4 {
+    if !(2..=5).contains(&form.version) {
         d.push(diag(
             "MDY_DYNAMIC_UNSUPPORTED_VERSION",
             "/version",
-            "expected contract version 2, 3 or 4",
+            "expected contract version 2, 3, 4 or 5",
         ));
     }
     // A member the document's version predates. `requiresContext` arrived with v4, and a v2 or v3

@@ -41,8 +41,8 @@ impl Default for CheckoutConfiguration {
 
 fn validators(required: bool) -> Validators {
     Validators {
-        required: Some(required), email: None, min: None, max: None,
-        min_length: None, max_length: None, pattern: None,
+        required: Some(required), email: None, integer: None, min: None, max: None,
+        min_length: None, max_length: None, pattern: None, messages: None,
     }
 }
 
@@ -65,7 +65,7 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
     };
     country.options = Some(country_options);
 
-    let mut qty = match field("number", "Quantity", Some(json!(1)), Some(Validators { min: Some(1.0), ..validators(true) })) {
+    let mut qty = match field("number", "Quantity", Some(json!(1)), Some(Validators { min: Some(1.0), integer: Some(true), ..validators(true) })) {
         DynamicNode::Field { field, .. } => field,
         _ => unreachable!(),
     };
@@ -105,7 +105,7 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
     };
 
     DynamicFormV2 {
-        version: 2, id: Some("checkout".into()), fields: vec![],
+        version: 5, id: Some("checkout".into()), fields: vec![],
         schema: Some(schema), layout: vec![], rules: vec![], requires_context: vec![],
     }
 }
@@ -205,7 +205,21 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let bytes = response.into_body().collect().await.unwrap().to_bytes();
         let json: Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(json["version"], 2);
+        // What the server writes, the contract reader must accept — strictly, and without being
+        // told which version to expect. A literal here would have to be edited every time the
+        // language grows, which is the edit that gets forgotten; parsing is the assertion that
+        // cannot go stale.
+        let verdict = modyra_contract::parse_v2(
+            std::str::from_utf8(&bytes).unwrap(),
+            modyra_contract::ValidationMode::Strict,
+        )
+        .expect("the served document is not JSON the reader can take");
+        assert!(
+            verdict.valid,
+            "the server served a document its own contract reader refuses: {:?}",
+            verdict.diagnostics
+        );
+        assert_eq!(json["version"], 5, "the demo serves the newest version the reader accepts");
         assert_eq!(json["schema"]["node"], "group");
         assert_eq!(json["schema"]["children"]["shipping"]["node"], "group");
         assert_eq!(json["schema"]["children"]["items"]["node"], "array");

@@ -156,11 +156,26 @@ fn refuses_placement_where_no_column_can_honour_it() {
     let result = parse_v2(past_the_end, ValidationMode::Strict).unwrap();
     assert!(!result.valid, "a column the row does not have must be refused");
 
-    // And a version this SDK has never heard of is still refused. Four is one it has: v4 is v3 plus
-    // a condition on a node and the context keys a document declares it reads.
-    let v5 = r#"{"version":5,"fields":[{"name":"a","kind":"text"}]}"#;
-    let result = parse_v2(v5, ValidationMode::Strict).unwrap();
-    assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+    // And a version this SDK has never heard of is still refused. Which number that is depends on
+    // how far the language has grown, so it is found rather than named: a literal here becomes a
+    // sentinel that silently stops testing anything the day that version arrives — which is what
+    // happened to the `5` that used to be written here.
+    let first_unknown = (2..=32)
+        .find(|version| {
+            let document = format!(
+                r#"{{"version":{version},"fields":[{{"name":"a","kind":"text"}}]}}"#
+            );
+            parse_v2(&document, ValidationMode::Strict)
+                .unwrap()
+                .diagnostics
+                .iter()
+                .any(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION")
+        })
+        .expect("this reader accepts every version up to 32, which cannot be right");
+    assert!(
+        first_unknown > 5,
+        "v5 is a version this contract has, so it must not be the first one refused"
+    );
 }
 
 /// The three readers of this contract accept the same versions, and read v4's own members.
@@ -321,6 +336,30 @@ fn a_collection_nests_without_a_limit() {
         .diagnostics
         .iter()
         .any(|d| d.code == "MDY_DYNAMIC_UNSAFE_NAME"));
+}
+
+/// The shared corpus's v5 document, read by this SDK.
+///
+/// One file, four readers: the schema audit holds it against `dynamic-form-v5.schema.json`, the
+/// TypeScript parser reads it, the Java test reads it, and this does. A version list left unswept in
+/// any of them fails somebody's suite — which is the whole reason the corpus is shared rather than
+/// copied per SDK.
+///
+/// `integer` is what v5 adds, and this document carries it on a quantity along with the sentence the
+/// author wrote for it. A reader that took the word but not the version, or the version but not the
+/// word, refuses this file.
+#[test]
+fn accepts_the_shared_v5_fixture() {
+    let json = include_str!("../../../../spec/fixtures/dynamic-form/v5/whole-number-rule.json");
+    let result = parse_v2(json, ValidationMode::Strict).unwrap();
+    assert!(
+        result.valid,
+        "the published v5 fixture was refused: {:?}",
+        result.diagnostics
+    );
+
+    let form = result.form.expect("a valid document produced no form");
+    assert_eq!(form.version, 5);
 }
 
 /// The shared corpus's v4 documents, read by this SDK.
