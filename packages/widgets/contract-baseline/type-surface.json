@@ -3633,6 +3633,10 @@
   "widgets:MdyReading": [
     "(opaque)"
   ],
+  "widgets:MdyReadingHost": [
+    "cell: unknown",
+    "row: { append(...cells: unknown[]): void; }"
+  ],
   "widgets:MdyRelationAttribute": [
     "\"aria-activedescendant\"",
     "\"aria-controls\"",
@@ -4511,6 +4515,12 @@
   "widgets:dragPointOf": [
     "(0) event: MouseEvent | TouchEvent",
     "-> returns: MdyDragPoint | null"
+  ],
+  "widgets:drawReadings": [
+    "(0) host: MdyReadingHost",
+    "(1) readings: ReadonlyArray<{ readonly label: string; readonly reading: MdyReading<T>; }>",
+    "(2) show?: (value: T) => string",
+    "-> returns: void"
   ],
   "widgets:dynamicParts": [
     "(0) kind: MdyWidgetKind",

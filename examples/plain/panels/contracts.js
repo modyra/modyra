@@ -14,6 +14,13 @@ import {
   required as mdyRequired,
 } from "@modyra/core";
 import { renderField } from "@modyra/plain";
+import {
+  drawReadings,
+  readAccessibleName,
+  readPartAttribute,
+  readPartPresence,
+} from "@modyra/widgets/testing";
+import { MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -385,6 +392,112 @@ export const contractsPanel = {
 
     const effect = form.reactivity.effect(() => { form.state.valid(); print(); });
     draw();
+
+    // ── What the page says about itself, and how it was asked ───────────────────────────────────
+    //
+    // The inspection layer, drawing a real widget. Every row is a reading: it carries a value and
+    // says where it came from, or carries the reason there is none. There is no way to put a bare
+    // value in this table — `drawReadings` takes readings and has no overload that takes anything
+    // else — which is the difference between a rule the authors remember and one the shape keeps.
+    //
+    // The point is visible in the third column: a blank cell would read as "this is empty", and
+    // "empty" is a claim. Several of these rows are legitimately absent, and each says which.
+    const inspection = document.createElement("section");
+    inspection.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
+    const inspectionHeading = document.createElement("h3");
+    inspectionHeading.textContent = "What this widget says about itself";
+    inspection.append(inspectionHeading);
+
+    const inspectionHost = document.createElement("div");
+    inspectionHost.dataset.inspection = "";
+    inspection.append(inspectionHost);
+    work.append(inspection);
+
+    const inspect = () => {
+      const subject = work.querySelector(".mdy-renderer--text") ?? work.querySelector(".mdy-renderer");
+      inspectionHost.replaceChildren();
+      if (!subject) {
+        inspectionHost.textContent = "no widget on the page to inspect";
+        return;
+      }
+      const kind = [...subject.classList]
+        .map((one) => /^mdy-renderer--(.+)$/.exec(one)?.[1])
+        .find((one) => one && CONTRACTS[one]) ?? "text";
+
+      const table = document.createElement("table");
+      table.style.cssText = "width:100%;border-collapse:collapse;font-size:.82rem";
+      const host = {
+        row() {
+          const tr = document.createElement("tr");
+          table.append(tr);
+          return {
+            append: (...cells) => {
+              for (const cell of cells) tr.append(cell);
+            },
+          };
+        },
+        cell(text, cellKind) {
+          const td = document.createElement("td");
+          td.textContent = text;
+          td.style.cssText = "padding:.25rem .5rem;border-top:1px solid var(--mdy-outline-variant,#eee);vertical-align:top"
+            + (cellKind === "unread" ? ";opacity:.7;font-style:italic" : "")
+            + (cellKind === "label" ? ";font-weight:600;white-space:nowrap" : "");
+          return td;
+        },
+      };
+
+      const nodes = CONTRACTS[kind].structure.nodes;
+      // A part is found by its classes where it has any, and by the element the structure says it
+      // is where it has none — `control` carries no class of its own, which is why a selector built
+      // from classes alone finds nothing and the collector correctly reports that nobody looked.
+      const ELEMENT_TAG = { input: "input, textarea, select", button: "button", label: "label" };
+      const partOf = (name) => {
+        const node = nodes.find((one) => one.part === name);
+        if (!node) return undefined;
+        const classes = CONTRACTS[kind].parts[name]?.classes ?? [];
+        const selector = classes.length > 0
+          ? classes.map((c) => `.${c}`).join("")
+          : ELEMENT_TAG[node.element] ?? node.element;
+        return { name: `${kind}.${name}`, selector, node };
+      };
+      const control = partOf("control");
+      const label = partOf("label");
+      const errors = partOf("errors");
+      // What actually holds right now, asked of the page rather than assumed. A stub answering
+      // "false" to everything makes every optional part read as `extra`, which is a true statement
+      // about the stub and a false one about the widget.
+      const facts = {
+        holds: (condition) => {
+          if (condition === "documentDeclaresIt") return true;
+          if (condition === "fieldCanBeInvalid") return true;
+          if (condition === "overlayIsOpen") return subject.querySelector(".mdy-popup:not([hidden])") !== null;
+          return false;
+        },
+        offers: () => true,
+        owes: partIsOwed,
+      };
+
+      drawReadings(host, [
+        ...(control ? [{ label: "control id", reading: readPartAttribute(subject, control, "id") }] : []),
+        ...(control ? [{ label: "control is named", reading: readAccessibleName(
+          subject.querySelector(control.selector) ?? { getAttribute: () => null, closest: () => null, textContent: null },
+          control.name,
+          document,
+        ) }] : []),
+        ...(label ? [{ label: "label present", reading: readPartPresence(subject, label, facts) }] : []),
+        ...(errors ? [{ label: "errors present", reading: readPartPresence(subject, errors, facts) }] : []),
+        { label: "a part nobody probes", reading: readPartAttribute(subject, { name: `${kind}.absent`, selector: ".mdy-not-drawn" }, "id") },
+      ], (value) => (typeof value === "object" && value !== null
+        ? ("verdict" in value ? `${value.verdict}${value.presentWhen ? ` (${value.presentWhen})` : ""}`
+          : `${value.name || "(no name)"} — ${value.mechanism}`)
+        : String(value)));
+
+      inspectionHost.append(table);
+    };
+
+    inspect();
+    actionWithHint(bar, "Re-read the page", "asks every collector again, so an absence that has become present is seen", inspect);
+
     return () => { effect.destroy(); print.cancel?.(); for (const d of rendered) d?.(); form.destroy(); };
   },
 };

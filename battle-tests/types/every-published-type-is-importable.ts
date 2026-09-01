@@ -277,6 +277,7 @@ import type {
   MdyStateMatrixOptions,
   MdyAccessibleName,
   MdyPartObservation,
+  MdyReadingHost,
   MdyReading,
   MdyStateMatrixResult,
   MdyStateMatrixRow,
@@ -886,3 +887,6 @@ void held275;
 
 declare const held276: MdyAccessibleName;
 void held276;
+
+declare const held277: MdyReadingHost;
+void held277;

@@ -306,3 +306,38 @@ export function readAccessibleName(
     return { name: "", mechanism: "none" as const };
   });
 }
+
+/** The element vocabulary a drawing host supplies, so this module builds no DOM of its own. */
+export interface MdyReadingHost {
+  row(): { append(...cells: unknown[]): void };
+  cell(text: string, kind: "value" | "unread" | "label"): unknown;
+}
+
+/**
+ * Draw a set of readings, and refuse to draw anything else.
+ *
+ * The signature is the mechanism: it takes `MdyReading<T>` and there is no overload taking `T`, so a
+ * caller holding a bare value cannot reach this function without first saying where the value came
+ * from or why it has none. A drawing layer that accepted both would rely on its authors choosing the
+ * right one, which is the habit being replaced rather than a defence against it.
+ *
+ * Cells are marked `unread` rather than left empty, because the whole finding is that a blank reads
+ * as *absent* when it may mean *nobody looked* — and a host that styles the two alike still cannot
+ * lose the distinction from the text.
+ */
+export function drawReadings<T>(
+  host: MdyReadingHost,
+  readings: ReadonlyArray<{ readonly label: string; readonly reading: MdyReading<T> }>,
+  show: (value: T) => string = String,
+): void {
+  for (const { label, reading: one } of readings) {
+    const row = host.row();
+    row.append(
+      host.cell(label, "label"),
+      host.cell(readingText(one, show), one.read ? "value" : "unread"),
+      // Where it came from, or why it did not: the column a reader uses to go and look for
+      // themselves, which is what makes a reading checkable rather than merely reported.
+      host.cell(one.read ? `${one.source} · ${one.method}` : (one.detail ?? one.reason), one.read ? "value" : "unread"),
+    );
+  }
+}
