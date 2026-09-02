@@ -1387,11 +1387,26 @@ key defaults and computed accessible names cannot be answered in Node, and a gre
 nothing would be worse than an honest gap. A config reaches them by exporting `openBrowserSession`,
 and none of this repository's three configs does.
 
-**What is not a gap.** The questions themselves are answered here, in a browser, on every renderer:
-`e2e/keyboard.spec.ts` holds nineteen keyboard cases across nine projects, `e2e/screen-reader.spec.ts`
-asserts that every operable control has an accessible name, that a control claiming a description has
-one, and that the accessible name is the label a user can see. So the shipped behaviour is verified;
-what is unverified is nothing.
+**What is not a gap — corrected, and the correction is the point.** This paragraph read: *"The
+questions themselves are answered here, in a browser, on every renderer … what is unverified is
+nothing."* Measured with `--list`, both suites declare three projects and all three are Angular:
+
+```
+e2e/screen-reader.spec.ts   angular · angular-webkit · angular-firefox
+e2e/keyboard.spec.ts        angular · angular-webkit · angular-firefox
+```
+
+They pass — nine and fifty-seven — and they establish Angular. They say nothing about Plain or Lit,
+so "on every renderer" was never true and "what is unverified is nothing" was the strongest possible
+form of the error: a claim of total coverage resting on a third of it.
+
+This is the shape the record names two paragraphs above — *a check that reports success over
+candidates it never considered* — committed by the prose that closes the finding rather than by a
+check. A sentence like this is worse than a green gate, because nothing re-runs it: it will close
+this same gap again the next time somebody reads it.
+
+What remains true is narrower and worth keeping: the keyboard and accessible-name questions **are**
+asked in a browser, against one renderer, and that renderer answers them.
 
 **What is the gap, and who it affects.** The kit exists so that *someone else's* renderer can be
 judged by the same rules, and those two sections carry rules that this repository re-derives in its
