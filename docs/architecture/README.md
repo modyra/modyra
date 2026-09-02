@@ -205,6 +205,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0188: A panel that cannot say nothing](0188-a-panel-that-cannot-say-nothing.md) — an inspection panel whose every datum carries whether it was read, because a blank cell claims a value is absent when it may mean nobody looked; and what it inherits from 0048, 0089 and 0099 rather than deciding again
 - [ADR 0189: A second reader of the same question](0189-a-second-reader-of-the-same-question.md) — a question the contract can answer has one reader; two that are never run together are two beliefs, and putting the panel's and the bench's on six documents found a precedence inversion latent under the assertion it sat beneath
 - [ADR 0190: A verdict that has not happened](0190-a-verdict-that-has-not-happened.md) — an asynchronous rule that has not answered is `unknown`, not valid and not invalid; a restore re-derives rather than installs; and a runtime that has not declared the capability is refused by name
+- [ADR 0191: A gate nobody runs](0191-a-gate-nobody-runs.md) — the conformance kit's browser half was in no workflow; its eleven findings against plain were all its own, and a probe that does not assert its focus landed cannot tell a press that went nowhere from a widget that ignored it
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

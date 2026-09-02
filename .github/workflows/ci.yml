@@ -138,6 +138,19 @@ jobs:
           npx playwright install --with-deps chromium firefox webkit
           pnpm run test:e2e
 
+      # **The conformance kit's browser half, which nothing ran.** Its two sections — keyboard and
+      # accessible names — are the ones the Node run reports as *not established*, so a green Node
+      # verdict says nothing about them; and this command was in `package.json` and in no workflow.
+      # It reported eleven findings against `plain` for as long as that was true, and all eleven were
+      # the kit's own: an `<input type="hidden">` asked for a name it cannot have, and two openers
+      # named for elements that are a `<span>` without tabindex and a class that matches nothing.
+      # A gate nobody runs is how a report stays wrong.
+      #
+      # Placed after the smoke step because that one installs the browsers, and this needs one.
+      - name: The conformance kit in a browser
+        if: github.event_name != 'pull_request'
+        run: pnpm run test:conformance-browser
+
       # A failed visual comparison is only actionable if the actual and diff images can be read.
       # Without this, diagnosing a baseline mismatch means re-recording on a runner — a full
       # workflow round-trip to see what one image already showed.

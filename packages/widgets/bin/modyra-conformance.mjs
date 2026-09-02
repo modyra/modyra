@@ -406,7 +406,7 @@ if (typeof config.mountScoped === "function") {
 const OPEN_THE_WIDGET = `(root) => {
   const opener = root.querySelector(
     ".mdy-select__trigger, .mdy-datepicker__toggle, .mdy-timepicker__toggle,"
-    + " .mdy-colors__toggle-area, .mdy-multiselect__search-btn",
+    + " .mdy-colors__primary-picker, .mdy-multiselect__trigger",
   );
   if (!opener) return false;
   opener.click();
@@ -436,6 +436,13 @@ const READ_NAMELESS_CONTROLS = `(root) => {
   let total = 0;
   for (const element of root.querySelectorAll(OPERABLE)) {
     if (element.closest("[aria-hidden=true]") || element.hidden) continue;
+    // **An \`<input type="hidden">\` is not a control.** It is not rendered, not focusable and not
+    // announced, so it cannot carry an accessible name and does not owe one. The selector above
+    // matches a bare \`input\`, and the two exclusions beside this one cover \`aria-hidden\` and the
+    // \`hidden\` *attribute* — neither of which a hidden *type* has. Every name this audit reported
+    // missing on plain was one of these: a field carrying a native input so a form submit sends the
+    // value, behind the control a person actually operates.
+    if (element.tagName === "INPUT" && element.type === "hidden") continue;
     total += 1;
     const labelled = element.getAttribute("aria-labelledby");
     const fromIds = labelled

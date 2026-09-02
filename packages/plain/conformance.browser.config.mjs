@@ -115,15 +115,25 @@ export async function openBrowserSession(kind) {
         ".mdy-select__trigger",
         ".mdy-datepicker__toggle",
         ".mdy-timepicker__toggle",
-        ".mdy-colors__toggle-area",
-        ".mdy-multiselect__search-btn",
+        // Named for what the widget actually exposes: `.mdy-colors__toggle-area` is a `<span>` with
+        // no tabindex, so focusing it left focus on `<body>` and every key went nowhere; and
+        // `.mdy-multiselect__search-btn` matches nothing at all, so the search fell through to the
+        // generic line below and pressed at whatever came first. Six bindings were reported as a
+        // renderer ignoring a key it never received.
+        ".mdy-colors__primary-picker",
+        ".mdy-multiselect__trigger",
         "input, select, textarea, button",
       ];
       for (const candidate of candidates) {
         const opener = root.locator(candidate).first();
         if ((await opener.count()) === 0) continue;
         await opener.focus();
-        return true;
+        // **Focus is asserted, not assumed.** An element that cannot take focus accepts `focus()`
+        // without complaint and leaves it where it was, so returning true here is what let a key be
+        // delivered to the document and reported against the widget. If this one would not take it,
+        // the next candidate is tried rather than the press being wasted.
+        const landed = await opener.evaluate((element) => element === element.ownerDocument.activeElement);
+        if (landed) return true;
       }
       return false;
     },
