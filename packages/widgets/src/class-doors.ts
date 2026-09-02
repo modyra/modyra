@@ -62,6 +62,18 @@ export interface MdyClassDoor {
    * never infers a domain, because a domain it invented would claim classes no call site can emit.
    */
   readonly argDomains?: readonly (readonly unknown[] | null)[];
+  /**
+   * For a door reached by reading a property path rather than by calling a function.
+   *
+   * A renderer that holds the catalogue reaches a part's classes through it instead of spelling
+   * them, and that is an access, not a call: no argument list names the kind or the part. The path
+   * names its two ends, and the wildcard between them is the shape rather than something a reader
+   * interprets. The kind comes from whoever is scanning, because they know which widget the file
+   * draws; a path read without one is perimeter rather than a guess.
+   */
+  readonly readPath?: { readonly root: string; readonly leaf: string };
+  /** The classes that path yields, for a kind the caller supplies and a part the path names. */
+  readonly resolvePath?: (kind: string, part: string) => readonly string[];
   readonly unresolvable?: string;
 }
 
@@ -110,6 +122,18 @@ export const MDY_CLASS_DOORS: readonly MdyClassDoor[] = Object.freeze([
       role: ["option", "value"],
       selected: [false, true],
       removable: [false, true],
+    },
+  },
+  {
+    name: "contractParts",
+    readPath: { root: "parts", leaf: "classes" },
+    resolvePath: (kind, part) => {
+      if (!(MDY_WIDGET_KINDS as readonly string[]).includes(kind)) return [];
+      try {
+        return partClasses(kind as MdyWidgetKind, part as never);
+      } catch {
+        return [];
+      }
     },
   },
   {

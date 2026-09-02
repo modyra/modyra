@@ -13,7 +13,7 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACT_VERSION } from "../packages/widgets/dist/index.js";
 import { classesFromDoors, perimeterLine } from "./lib/class-doors-in-source.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -49,24 +49,15 @@ for (const file of files.sort()) {
   // drawing the part — and the golden would lose the very classes it exists to guard. The doors are
   // declared in the contract and read through the one reader every scanning gate shares, so a door
   // added to the contract is seen by all of them at once rather than taught to each separately.
-  const fromDoors = classesFromDoors(source, MDY_CLASS_DOORS);
+  // The kind the file draws, so a door read as a property path can be answered. A file that names
+  // no kind leaves it out, and those paths are reported as perimeter rather than guessed at.
+  const kind = /widgetKind\s*=\s*["'`]([a-z-]+)["'`]/.exec(source)?.[1];
+  const fromDoors = classesFromDoors(source, MDY_CLASS_DOORS, { kind });
   const fromContract = [...fromDoors.classes];
   for (const entry of fromDoors.perimeter) {
     const seen = perimeter.get(entry.door) ?? { door: entry.door, reason: entry.reason, calls: 0 };
     seen.calls += entry.calls;
     perimeter.set(entry.door, seen);
-  }
-  // A part's classes reached through the component's own `widgetContract` field. This is a property
-  // access, not a call, so no door describes it and the shared reader does not see it: a renderer
-  // that stops restating a name the catalogue holds would read as one that stopped drawing the part.
-  const kindMatch = /widgetKind\s*=\s*["'`]([a-z-]+)["'`]/.exec(source);
-  if (kindMatch) {
-    const parts = MDY_WIDGET_CONTRACTS[kindMatch[1]]?.parts;
-    if (parts) {
-      for (const [, part] of source.matchAll(/widgetContract\.parts\.([A-Za-z0-9_]+)\.classes/g)) {
-        for (const name of parts[part]?.classes ?? []) fromContract.push(name);
-      }
-    }
   }
   // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
   // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name

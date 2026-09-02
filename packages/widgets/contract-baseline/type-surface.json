@@ -3285,8 +3285,10 @@
     "argDomains?: readonly (readonly unknown[] | null)[]",
     "domains?: Readonly<Record<string, readonly unknown[]>>",
     "name: string",
+    "readPath?: { readonly root: string; readonly leaf: string; }",
     "resolve?: (args: readonly string[]) => readonly string[]",
     "resolveObject?: (record: Record<string, unknown>) => readonly string[]",
+    "resolvePath?: (kind: string, part: string) => readonly string[]",
     "unresolvable?: string"
   ],
   "widgets:MdyColorValueIntent": [

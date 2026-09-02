@@ -17,7 +17,9 @@ import { MDY_CLASS_DOORS, partClasses, presentationClass } from "../dist/index.j
 
 test("every door either answers or says why it cannot", () => {
   for (const door of MDY_CLASS_DOORS) {
-    const answers = typeof door.resolve === "function" || typeof door.resolveObject === "function";
+    const answers = typeof door.resolve === "function"
+      || typeof door.resolveObject === "function"
+      || typeof door.resolvePath === "function";
     const explains = typeof door.unresolvable === "string" && door.unresolvable.length > 0;
     assert.ok(answers !== explains, `${door.name} must do exactly one of answering and explaining`);
   }
@@ -74,5 +76,17 @@ test("the doors a renderer actually calls are all declared", () => {
   // at once, which is worse than the per-gate blindness it replaces.
   for (const name of ["partClasses", "presentationClass", "stateClass", "multiselectChipClasses"]) {
     assert.ok(MDY_CLASS_DOORS.some((d) => d.name === name), `${name} is not declared as a door`);
+  }
+});
+
+test("a door read as a path declares both of its ends and the way to answer them", () => {
+  // Half of this pair is worse than neither: a path with no resolver is a door a reader recognises
+  // and cannot answer, and a resolver with no path is a function nothing ever reaches. Both fail
+  // silently, by producing no classes, which is indistinguishable from a renderer that draws nothing.
+  for (const door of MDY_CLASS_DOORS) {
+    if (door.readPath === undefined && door.resolvePath === undefined) continue;
+    assert.ok(door.readPath, `${door.name} resolves a path and declares none`);
+    assert.ok(typeof door.resolvePath === "function", `${door.name} declares a path and cannot answer it`);
+    assert.ok(door.readPath.root && door.readPath.leaf, `${door.name} declares a path missing an end`);
   }
 });
