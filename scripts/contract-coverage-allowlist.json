@@ -33,7 +33,6 @@
     "mdy-segmented__button--first": "unreviewed",
     "mdy-segmented__button--last": "unreviewed",
     "mdy-select__dropdown--right": "derived by popupPlacementClass/popupAlignmentClass and emitted by the renderers; no theme reacts to it yet. A placement class only earns a rule where the popup has a top/bottom or left/right asymmetry to answer — the select and multiselect flip their search box, a calendar has nothing to flip.",
-    "mdy-select__empty": "unreviewed",
     "mdy-select__list--open": "unreviewed",
     "mdy-select__option-label": "unreviewed",
     "mdy-select__trigger--disabled": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
@@ -249,18 +248,6 @@
     ],
     "themes": [
       "modyra-material.css"
-    ]
-  },
-  "mdy-select__no-results": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
     ]
   },
   "mdy-select__option--create": {
