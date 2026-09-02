@@ -19,7 +19,95 @@
  */
 
 /**
- * Every `door("literal", "literal")` call in a blob of source, resolved through the contract.
+ * The text of every object-literal argument passed to one door, brace-matched.
+ *
+ * A regex cannot find the closing brace of `{ mode: this.mode(), selected }` — nested calls carry
+ * their own braces and parentheses — so the end is found by counting, not by matching.
+ */
+function objectCallSites(code, name) {
+  const sites = [];
+  const opener = new RegExp(`\\b${name}\\s*\\(\\s*\\{`, "g");
+  for (const match of code.matchAll(opener)) {
+    const start = match.index + match[0].length - 1;
+    let depth = 0;
+    for (let i = start; i < code.length; i += 1) {
+      const ch = code[i];
+      if (ch === "{") depth += 1;
+      else if (ch === "}") {
+        depth -= 1;
+        if (depth === 0) { sites.push(code.slice(start, i + 1)); break; }
+      }
+    }
+  }
+  return sites;
+}
+
+/** How many argument combinations one call site may be expanded into before the reader stops. */
+const COMBINATION_CAP = 64;
+
+/**
+ * An object-literal argument as its keys, each classified as literal, expression, or absent.
+ *
+ * **The three cases are not the same and collapsing them breaks in both directions.** A key written
+ * as a literal is fixed. A key written as an expression varies over the domain its door declares. A
+ * key that is not there at all takes the function's own default — which is why "just union
+ * everything the door can produce" is wrong: `multiselectChipClasses({ mode: expr, role: "value" })`
+ * cannot produce `--removable`, because nothing passes `removable`. A blind union overstates, and a
+ * gate that overstates is as broken as one that loses classes; it merely fails on the other side.
+ */
+function objectArgumentKeys(text) {
+  const body = text.trim();
+  if (!body.startsWith("{") || !body.endsWith("}")) return null;
+  const keys = new Map();
+  let depth = 0;
+  let current = "";
+  const flush = () => {
+    const part = current.trim();
+    current = "";
+    if (part === "") return;
+    const colon = part.indexOf(":");
+    // `{ selected }` — shorthand is a variable, so it is an expression under another spelling.
+    if (colon === -1) return keys.set(part.replace(/^\.\.\./, "").trim(), { expression: true });
+    const key = part.slice(0, colon).trim().replace(/^["'`]|["'`]$/g, "");
+    const value = part.slice(colon + 1).trim();
+    const literal = value.match(/^(["'`])([^"'`]*)\1$/);
+    if (literal) return keys.set(key, { literal: literal[2] });
+    if (value === "true" || value === "false") return keys.set(key, { literal: value === "true" });
+    keys.set(key, { expression: true });
+  };
+  for (const ch of body.slice(1, -1)) {
+    if (ch === "{" || ch === "(" || ch === "[") depth += 1;
+    else if (ch === "}" || ch === ")" || ch === "]") depth -= 1;
+    if (ch === "," && depth === 0) { flush(); continue; }
+    current += ch;
+  }
+  flush();
+  return keys;
+}
+
+/**
+ * Every record the reader must resolve for one call site: literals fixed, expressions over their
+ * declared domain, absent keys left out so the door's own default applies.
+ */
+function recordsFor(keys, domains) {
+  let records = [{}];
+  for (const [key, form] of keys) {
+    if ("literal" in form) {
+      records = records.map((record) => ({ ...record, [key]: form.literal }));
+      continue;
+    }
+    const domain = domains?.[key];
+    // A key the door declares no domain for cannot be expanded, and guessing one would invent
+    // classes. The call site keeps the key out of the record and is reported as perimeter instead.
+    if (!Array.isArray(domain)) return null;
+    records = records.flatMap((record) => domain.map((value) => ({ ...record, [key]: value })));
+    if (records.length > COMBINATION_CAP) return null;
+  }
+  return records;
+}
+
+/**
+ * Every `door(…)` call in a blob of source, resolved through the contract.
  *
  * Comments are stripped first: a door named in prose puts nothing on an element, and counting it
  * would inflate exactly the gates this is meant to make honest.
@@ -50,17 +138,34 @@ export function classesFromDoors(source, doors) {
     const literalSites = [...code.matchAll(literalCall)];
     const allSites = (code.match(anyCall) ?? []).length;
 
+    let answered = 0;
     if (door.resolve) {
       for (const site of literalSites) {
         const args = [site[2], site[4]].filter((value) => value !== undefined);
         for (const cls of door.resolve(args) ?? []) classes.add(cls);
-        resolved += 1;
+        answered += 1;
       }
     }
 
+    // Doors whose argument is an object are read key by key. A door that declares `resolveObject`
+    // asks for a record; the domains it declares are what an expression key is expanded over, so
+    // nothing here is guessed and the domain lives beside the door instead of inside a gate.
+    if (door.resolveObject) {
+      for (const site of objectCallSites(code, door.name)) {
+        const keys = objectArgumentKeys(site);
+        const records = keys && recordsFor(keys, door.domains);
+        if (!records) continue;
+        for (const record of records) {
+          for (const cls of door.resolveObject(record) ?? []) classes.add(cls);
+        }
+        answered += 1;
+      }
+    }
+
+    resolved += answered;
     // A call this reader could not answer: either the door declares itself unresolvable, or its
-    // arguments were expressions. Both are perimeter, and both are said out loud.
-    const unanswered = allSites - (door.resolve ? literalSites.length : 0);
+    // arguments were expressions it has no declared domain for. Both are perimeter, said out loud.
+    const unanswered = allSites - answered;
     if (unanswered > 0) {
       perimeter.push({
         door: door.name,
