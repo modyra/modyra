@@ -159,29 +159,6 @@
     ],
     "themes": []
   },
-  "mdy-dynamic-form": {
-    "kind": "drift",
-    "adapters": [
-      "plain"
-    ],
-    "themes": [
-      "modyra-modern.css"
-    ]
-  },
-  "mdy-floating-label": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "material-filled-field.css",
-      "modyra-ionic.css",
-      "modyra-ios.css",
-      "modyra-material.css",
-      "modyra.css"
-    ]
-  },
   "mdy-forms": {
     "kind": "unstyled",
     "adapters": [

@@ -529,6 +529,8 @@ export const MDY_FIELD_SHELL_CLASSES = Object.freeze({
   errorItem: "mdy-control__error",
 } satisfies Record<MdyFieldShellPart, string>);
 
+
+
 /**
  * States every field-like widget's shell parts share.
  *
@@ -624,6 +626,13 @@ export const MDY_SHARED_UI_CLASSES = Object.freeze([
   "mdy-overlay-backdrop",
   "mdy-glass-effect",
   "mdy-glass-effect--medium",
+  // The label that rides above a filled control. Six themes select on it and one adapter draws it,
+  // which is the asymmetry an undeclared shared name produces: a promise the stylesheets already
+  // keep, from a vocabulary that never named it.
+  "mdy-floating-label",
+  // Set on the element a whole document renders itself into. It belongs to no kind because it holds
+  // all of them.
+  "mdy-dynamic-form",
 ]);
 
 /**
