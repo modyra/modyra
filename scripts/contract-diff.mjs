@@ -465,11 +465,34 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
   }
 }
 
+/**
+ * What the verdict above covers, printed with it.
+ *
+ * This classifies **the widget contract**: parts, relations, keyboard bindings, the shared class
+ * vocabulary. It is silent on everything else a consumer can feel, and silence reads as `patch`.
+ * A published tool that becomes stricter, a default that moves, an error string somebody parses —
+ * all of them leave every part and relation exactly as they were, and all of them can turn a
+ * consumer's green run red without them having touched anything.
+ *
+ * Said in the output rather than only in this comment, because the number is what gets copied into
+ * a changeset, and a reader who takes `patch` for "consumers will not notice" has been told that by
+ * a tool that was never asked.
+ */
+function sayWhatIsNotClassified() {
+  console.log(
+    "\n  This covers the widget contract only — parts, relations, keyboard, shared classes.\n"
+      + "  A change that leaves all of those alone is `patch` here even when a consumer would notice\n"
+      + "  it: a published tool grown stricter, a moved default, a parsed message. If your change is\n"
+      + "  one of those and this says patch, the disagreement is the finding — say it in the changeset.",
+  );
+}
+
 const level = changes.reduce((worst, change) => (SEVERITY[change.severity] > SEVERITY[worst] ? change.severity : worst), "patch");
 
 if (changes.length === 0) {
   console.log(`Contract unchanged against ${baselineName} — ${MDY_WIDGET_KINDS.length} kinds at version ${current.contractVersion}.`);
   console.log("\nclassification: patch");
+  sayWhatIsNotClassified();
   process.exit(0);
 }
 
@@ -485,6 +508,7 @@ for (const [scope, scoped] of byScope) {
 
 console.log(`\nclassification: ${level}`);
 console.log(`  ${changes.filter((c) => c.severity === "major").length} major · ${changes.filter((c) => c.severity === "minor").length} minor`);
+sayWhatIsNotClassified();
 
 if (process.argv.includes("--require-changeset")) {
   const declared = declaredReleaseLevel();
