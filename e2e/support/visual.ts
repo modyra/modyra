@@ -110,8 +110,24 @@ export interface MdyVisualFixture {
 /** The popup every renderer puts its calendar in, named by the catalogue rather than by a guess. */
 const POPUP = ".mdy-datepicker__popup";
 
-/** The affordance that opens it, which all three renderers draw with the same class. */
-const CALENDAR_TOGGLE = ".mdy-renderer--datepicker:not(.mdy-renderer--daterange) .mdy-datepicker__toggle";
+/**
+ * The kinds that open a calendar, and the affordance that opens each — which all three renderers
+ * draw with the same class.
+ *
+ * `datepicker` excludes `daterange` because a daterange *is* a datepicker by class, so the bare
+ * selector would resolve to whichever came first in the document.
+ *
+ * **`daterange` is here because it was silently absent.** The exclusion above used to be the whole
+ * story: nothing ever opened a daterange calendar, so a plant that broke its day cells passed with
+ * every baseline green and was caught only by the adapter suites. An exemption living inside a
+ * selector is a decision nobody can read — and this one was not even a decision, since the calendar
+ * opens perfectly well when asked. Measured before writing this: both kinds expose one toggle, and
+ * both open on a click.
+ */
+const CALENDAR_KINDS = ["datepicker", "daterange"] as const;
+const calendarToggle = (kind: string): string =>
+  `.mdy-renderer--${kind}${kind === "datepicker" ? ":not(.mdy-renderer--daterange)" : ""} .mdy-datepicker__toggle`;
+const calendarPopup = (kind: string): string => `.mdy-renderer--${kind} ${POPUP}`;
 
 /**
  * Takes one full-page shot and throws it away, because the first one moves the page.
@@ -162,8 +178,8 @@ async function heightHasStopped(page: import("@playwright/test").Page): Promise<
 }
 
 export function declareVisualBaselines(fixture: MdyVisualFixture): void {
-  const openCalendar = async (page: import("@playwright/test").Page): Promise<void> => {
-    await page.locator(CALENDAR_TOGGLE).first().click();
+  const openCalendar = async (page: import("@playwright/test").Page, kind = "datepicker"): Promise<void> => {
+    await page.locator(calendarToggle(kind)).first().click();
     // The popup measures itself and is placed on the next frame; a shot taken before that is a shot
     // of a popup at the origin.
     await page.waitForTimeout(200);
@@ -221,13 +237,21 @@ export function declareVisualBaselines(fixture: MdyVisualFixture): void {
    * be removed from two renderers without a single image moving.
    */
   test.describe("with the calendar open", () => {
-    for (const theme of THEMES) {
-      test(`the docked calendar renders as it did under ${theme}`, async ({ page }) => {
-        await settle(page, theme);
-        await openCalendar(page);
-        await expect(page.locator(POPUP).first()).toBeVisible();
-        await expect(page.locator(POPUP).first()).toHaveScreenshot(`calendar-open-${theme}.png`);
-      });
+    for (const kind of CALENDAR_KINDS) {
+      for (const theme of THEMES) {
+        // The datepicker's images keep their original names so its baselines are not renamed into
+        // new files; the daterange's carry the kind, because they are new.
+        const shot = kind === "datepicker" ? `calendar-open-${theme}.png` : `calendar-open-${kind}-${theme}.png`;
+        test(`the ${kind} docked calendar renders as it did under ${theme}`, async ({ page }) => {
+          await settle(page, theme);
+          await openCalendar(page, kind);
+          const popup = page.locator(calendarPopup(kind)).first();
+          // Asserted before the shot: an unopened popup screenshots as an empty box, and a baseline
+          // recorded from one compares clean forever after.
+          await expect(popup).toBeVisible();
+          await expect(popup).toHaveScreenshot(shot);
+        });
+      }
     }
 
     if (fixture.forceModal) {
