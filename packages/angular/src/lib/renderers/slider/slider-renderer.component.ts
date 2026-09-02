@@ -29,11 +29,11 @@ import { inputText } from "../renderer-projection";
       [errorText]="inlineErrorText()"
     />
 
-    <div class="mdy-slider-container">
+    <div class="{{ cls.track }}">
       <input
         #rangeInput
         type="range"
-        class="mdy-slider"
+        class="{{ cls.control }}"
         [id]="fieldId"
         [attr.aria-label]="controlAriaLabel()"
         [value]="value() ?? effectiveMin()"
@@ -44,18 +44,18 @@ import { inputText } from "../renderer-projection";
         [mdyPart]="controlPart()"
       />
       @if (showValue()) {
-        <span class="mdy-slider-value">{{ value() }}</span>
+        <span class="{{ cls.value }}">{{ value() }}</span>
       }
     </div>
 
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
@@ -64,6 +64,21 @@ import { inputText } from "../renderer-projection";
 })
 export class MdySliderComponent extends MdyBaseControl<number> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.slider;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    control: this.widgetContract.parts.control.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    track: this.widgetContract.parts.track.classes.join(" "),
+    value: this.widgetContract.parts.value.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "slider" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   /**

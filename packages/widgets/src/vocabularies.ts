@@ -16,6 +16,7 @@
  * Adding a vocabulary is a line in this file. That is the point: a list somebody maintains by hand is
  * worse than a derivation *except* where the derivation has to guess, and here it does.
  */
+import { MDY_CLASS_DOORS } from "./class-doors.js";
 import { MDY_COLOR_PRESETS } from "./behavior/color.js";
 import { MDY_WIDGET_KINDS } from "./catalog/kinds.js";
 import { MDY_CSS_PROPERTIES, MDY_CSS_PROPERTY_NAMES } from "./css.js";
@@ -188,6 +189,8 @@ const CATALOGUES: MdyVocabulary[] = [
     describes: "who decides each of those conditions, and why the three that will never have a resolver do not owe one" },
   { name: "MDY_EVERY_TIME", shape: "data", value: MDY_EVERY_TIME, door: ".",
     describes: "the step a clock advances by when a document asks for no coarser one" },
+  { name: "MDY_CLASS_DOORS", shape: "list", value: MDY_CLASS_DOORS, door: ".",
+    describes: "every function that puts a class on an element, and how a reader of source turns one of its call sites into the classes it produces" },
 ];
 
 // The index holds its own entry. An index that omits itself publishes one collection it does not

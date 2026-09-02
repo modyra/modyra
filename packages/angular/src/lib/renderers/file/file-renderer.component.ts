@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, input, output, signal, viewChild } from "@angular/core";
-import { MDY_WIDGET_CONTRACTS, createFileFieldController } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, createFileFieldController, presentationClass } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -30,7 +30,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
     />
 
     <div
-      class="mdy-file-container"
+      class="{{ cls.dropzone }}"
       [class.mdy-file-container--dragover]="dragOver()"
       (dragover)="onDragOver($event)"
       (dragleave)="dragOver.set(false)"
@@ -39,7 +39,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       <input
         #fileInput
         type="file"
-        class="mdy-file-input"
+        class="{{ cls.control }}"
         [id]="fieldId"
         [attr.aria-label]="controlAriaLabel()"
         [accept]="accept()"
@@ -50,14 +50,14 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
         [mdyPart]="controlPart()"
       />
 
-      <div class="mdy-file-content">
+      <div class="{{ cls.content }}">
         <button
           type="button"
           class="mdy-button"
           (click)="fileInput.click()"
           [disabled]="cannotPick()"
         >
-          <svg viewBox="0 0 24 24" class="mdy-file-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" class="{{ cls.icon }}" aria-hidden="true">
             <path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/>
           </svg>
           {{ multiple() ? i18n.fileSelectMultiple : i18n.fileSelect }}
@@ -69,7 +69,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
              left. ADR 0171, ADR 0173. -->
         <button
           type="button"
-          class="mdy-file-clear"
+          class="{{ cls.clear }}"
           [class.mdy-file-clear--disabled]="cannotPick() || chosen().length === 0"
           (click)="clear()"
           [attr.aria-disabled]="cannotPick() || chosen().length === 0"
@@ -82,17 +82,17 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
                person says. -->
           <span aria-hidden="true">&times;</span>
         </button>
-        <div class="mdy-file-info">
+        <div class="{{ cls.info }}">
           @if (chosen().length > 0) {
-            <ul class="mdy-file-list">
+            <ul class="{{ cls.fileList }}">
               @for (file of chosen(); track file.name) {
-                <li class="mdy-file-item">
-                   <span class="mdy-file-name">{{ file.name }}</span>
+                <li class="{{ cls.fileItem }}">
+                   <span class="{{ cls.name }}">{{ file.name }}</span>
                 </li>
               }
             </ul>
           } @else {
-            <span class="mdy-file-placeholder">{{ i18n.fileNoneSelected }}</span>
+            <span class="{{ cls.placeholder }}">{{ i18n.fileNoneSelected }}</span>
           }
 
         </div>
@@ -103,13 +103,13 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
     </div>
 
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
@@ -118,6 +118,28 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
 })
 export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.file;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    clear: this.widgetContract.parts.clear.classes.join(" "),
+    content: this.widgetContract.parts.content.classes.join(" "),
+    control: this.widgetContract.parts.control.classes.join(" "),
+    dropzone: this.widgetContract.parts.dropzone.classes.join(" "),
+    fileItem: this.widgetContract.parts.fileItem.classes.join(" "),
+    fileList: this.widgetContract.parts.fileList.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    icon: presentationClass("file", "icon"),
+    info: presentationClass("file", "info"),
+    name: presentationClass("file", "name"),
+    placeholder: presentationClass("file", "placeholder"),
+  } as const;
   protected override readonly widgetKind = "file" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   /**

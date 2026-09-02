@@ -25,8 +25,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   overlayControlledId,
   projectOverlayOpenerA11y,
-  type MdyPartContract,
-} from "@modyra/widgets";
+  type MdyPartContract, presentationClass } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
@@ -66,7 +65,7 @@ import { MdyCalendarComponent } from "./calendar.component";
       [errorText]="inlineErrorText()"
     />
 
-    <div class="mdy-datepicker" #wrapper>
+    <div class="{{ cls.box }}" #wrapper>
       <div [class]="wrapperClasses()">
         @if (prefix(); as p) {
            <div class="mdy-input-prefix">
@@ -76,7 +75,7 @@ import { MdyCalendarComponent } from "./calendar.component";
         <input
           [id]="fieldId"
           type="text"
-          class="mdy-datepicker__input"
+          class="{{ cls.control }}"
           [mdyPart]="openerPart()"
           [placeholder]="placeholder()"
           [value]="displayValue()"
@@ -100,13 +99,13 @@ import { MdyCalendarComponent } from "./calendar.component";
            } @else {
              <button
                 type="button"
-                class="mdy-datepicker__toggle"
+                class="{{ cls.toggle }}"
                 [disabled]="isDisabled()"
                 (click)="toggleOverlay($event)"
                 [attr.aria-label]="i18n.datepickerToggleLabel"
                 [mdyPart]="openerButtonPart()"
               >
-                 <mdy-icon name="CALENDAR" class="mdy-datepicker__icon" />
+                 <mdy-icon name="CALENDAR" class="{{ cls.icon }}" />
               </button>
            }
         </div>
@@ -124,9 +123,9 @@ import { MdyCalendarComponent } from "./calendar.component";
         (close)="closeOverlay()"
       >
         @if (position() === 'overlay') {
-           <div class="mdy-datepicker__modal-header">
-              <span class="mdy-datepicker__modal-label">{{ label() || i18n.datepickerSelectFallback }}</span>
-              <span class="mdy-datepicker__modal-value">{{ modalDisplayValue() }}</span>
+           <div class="{{ cls.modalHeader }}">
+              <span class="{{ cls.modalLabel }}">{{ label() || i18n.datepickerSelectFallback }}</span>
+              <span class="{{ cls.modalValue }}">{{ modalDisplayValue() }}</span>
            </div>
         }
 
@@ -148,13 +147,13 @@ import { MdyCalendarComponent } from "./calendar.component";
     </div>
 
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
@@ -171,6 +170,25 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
   protected override readonly widgetKind = "datepicker" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.datepicker;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    control: this.widgetContract.parts.control.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    toggle: this.widgetContract.parts.toggle.classes.join(" "),
+    box: presentationClass("datepicker", "box"),
+    icon: presentationClass("datepicker", "icon"),
+    modalHeader: presentationClass("datepicker", "modalHeader"),
+    modalLabel: presentationClass("datepicker", "modalLabel"),
+    modalValue: presentationClass("datepicker", "modalValue"),
+  } as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("YYYY-MM-DD");
   readonly minDate = input<string | null>(null);

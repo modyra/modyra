@@ -72,18 +72,30 @@ import { inputNumber } from "../renderer-projection";
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
 export class MdyNumberComponent extends MdyBaseControl<number | null> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.number;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "number";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");

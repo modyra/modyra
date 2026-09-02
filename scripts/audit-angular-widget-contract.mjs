@@ -13,7 +13,8 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS, popupAlignmentClass, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { classesFromDoors, perimeterLine } from "./lib/class-doors-in-source.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = join(root, "packages/angular/src/lib");
@@ -36,33 +37,28 @@ const classes = new Set();
 const aria = new Set();
 const selectors = new Set();
 const rendererModifiers = new Set();
+// Door calls this scan could not answer from text. A gate that stays silent about them reports their
+// classes as absent, which is the failure the doors exist to end; a perimeter is a fact a reader can
+// act on, a silence is one they cannot see.
+const perimeter = new Map();
 const perFile = {};
 for (const file of files.sort()) {
   const source = readFileSync(file, "utf8");
-  // Classes a renderer takes from the contract instead of spelling out. The grep below only sees
-  // literals, so a renderer that moved onto `multiselectChipClasses` would look like one that
-  // stopped emitting the chip variants — and the golden would quietly lose the very classes it
-  // exists to protect. What the contract guarantees is asserted in `packages/widgets/test`.
-  const fromContract = source.includes("multiselectChipClasses")
-    // The option variants only: `mdy-chip--value` is the taken-value chip, which a renderer emits
-    // by asking for role "value" — this one does not.
-    ? ["mdy-chip", "mdy-chip--centered", "mdy-chip--counter", "mdy-chip--selected"]
-    : [];
-  // Same reason, for a popup's placement. A renderer that names it through the catalog reads to the
-  // grep as one that stopped emitting `--above`/`--overlay` — the classes are still on the element at
-  // runtime, computed rather than spelled. Ask the contract what the call produces for the kind the
-  // renderer passes, so the golden keeps guarding the names it exists to guard.
-  for (const [, kind] of source.matchAll(/popupPlacementClass\(\s*["'`]([a-z-]+)["'`]/g)) {
-    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
-    for (const placement of ["above", "overlay"]) {
-      const name = popupPlacementClass(kind, placement);
-      if (name) fromContract.push(name);
-    }
+  // Classes a renderer takes from the contract instead of spelling out. The grep below sees only
+  // literals, so a renderer that asks the contract for a name reads to it as one that stopped
+  // drawing the part — and the golden would lose the very classes it exists to guard. The doors are
+  // declared in the contract and read through the one reader every scanning gate shares, so a door
+  // added to the contract is seen by all of them at once rather than taught to each separately.
+  const fromDoors = classesFromDoors(source, MDY_CLASS_DOORS);
+  const fromContract = [...fromDoors.classes];
+  for (const entry of fromDoors.perimeter) {
+    const seen = perimeter.get(entry.door) ?? { door: entry.door, reason: entry.reason, calls: 0 };
+    seen.calls += entry.calls;
+    perimeter.set(entry.door, seen);
   }
-  // A part's classes reached through the component's own `widgetContract` field. Same reason as the
-  // two above, and the third spelling to need saying: a renderer that stops restating a name the
-  // catalogue holds reads to the grep as one that stopped drawing the part. The classes are on the
-  // element; only the literal is gone.
+  // A part's classes reached through the component's own `widgetContract` field. This is a property
+  // access, not a call, so no door describes it and the shared reader does not see it: a renderer
+  // that stops restating a name the catalogue holds would read as one that stopped drawing the part.
   const kindMatch = /widgetKind\s*=\s*["'`]([a-z-]+)["'`]/.exec(source);
   if (kindMatch) {
     const parts = MDY_WIDGET_CONTRACTS[kindMatch[1]]?.parts;
@@ -71,6 +67,23 @@ for (const file of files.sort()) {
         for (const name of parts[part]?.classes ?? []) fromContract.push(name);
       }
     }
+  }
+  // A popup's placement and alignment are named with a literal kind and a runtime position, and the
+  // shared reader answers a positional call only when every argument is a literal. The class is on
+  // the element whichever position wins, so the kind is read here and the two class-bearing
+  // positions asked for by name. This goes when the reader expands a positional argument over a
+  // declared domain, the way it already expands the keys of an object.
+  for (const [, kind] of source.matchAll(/popupPlacementClass\(\s*["'`]([a-z-]+)["'`]/g)) {
+    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
+    for (const placement of ["above", "overlay"]) {
+      const name = popupPlacementClass(kind, placement);
+      if (name) fromContract.push(name);
+    }
+  }
+  for (const [, kind] of source.matchAll(/popupAlignmentClass\(\s*["'`]([a-z-]+)["'`]/g)) {
+    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
+    const name = popupAlignmentClass(kind, "right");
+    if (name) fromContract.push(name);
   }
   // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
   // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name
@@ -88,6 +101,43 @@ for (const file of files.sort()) {
     };
   }
 }
+// Every `cls.x` a template reads must be a key the component declares.
+//
+// The `cls` record is typed as the wide `Readonly<Record<string, string>>` so that a component's
+// declared surface does not change each time its kind gains a part. That width is what makes this
+// check necessary: an unknown key is no longer a compiler error, it is `undefined` reaching the
+// page as the literal text `class="undefined"`. Caught here it is a name and a list of what the
+// component has, before anything ships.
+const clsProblems = [];
+for (const file of files) {
+  if (!file.endsWith(".ts")) continue;
+  const source = readFileSync(file, "utf8");
+  const declaration = /protected readonly cls(?:\s*:[^=]+)?=\s*\{([\s\S]*?)\n\s*\}\s*(?:as const\s*)?;/.exec(source);
+  if (!declaration) continue;
+  const declared = new Set(
+    [...declaration[1].matchAll(/^\s*([A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]),
+  );
+  // A template kept beside its component in a `.html` reads the same record.
+  const html = file.replace(/\.ts$/, ".html");
+  let markup = "";
+  try { markup = readFileSync(html, "utf8"); } catch { markup = ""; }
+  const used = new Set([...`${source}\n${markup}`.matchAll(/\bcls\.([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+  for (const name of [...used].sort()) {
+    if (declared.has(name)) continue;
+    clsProblems.push(
+      `${relative(root, file).split("\\").join("/")}: cls.${name} is read but not declared. `
+      + `Declared: ${[...declared].sort().join(", ") || "none"}.`,
+    );
+  }
+}
+if (clsProblems.length > 0) {
+  console.error(`Class record keys read but not declared (${clsProblems.length}):`);
+  for (const line of clsProblems) console.error(`  ${line}`);
+  process.exit(1);
+}
+
+const perimeterText = perimeterLine([...perimeter.values()]);
+if (perimeterText) console.log(perimeterText);
 const manifest = {
   schemaVersion: 1,
   // The contract this snapshot was taken against.

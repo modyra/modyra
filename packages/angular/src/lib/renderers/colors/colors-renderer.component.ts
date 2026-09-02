@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 
 import {
-  partSelector, MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
+  partSelector, MDY_OVERLAY_PORTAL_CLASS, presentationClass } from "@modyra/widgets";
 import { MDY_COLOR_PRESETS, MDY_WIDGET_CONTRACTS, createColorsFieldController, defaultWidgetIdFactory, colorPresetsOf, colorValueEquals, focusWhenShown, openPlatformChooser, keyBindingFor, rowRovingIndex, popupPlacementClass, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -52,21 +52,21 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       [errorText]="inlineErrorText()"
     />
 
-    <div class="mdy-colors" #wrapper [class.mdy-colors--open]="open()">
+    <div class="{{ cls.box }}" #wrapper [class.mdy-colors--open]="open()">
       <div [class]="wrapperClasses()">
 
         <!-- Color Preview -->
         <div class="mdy-input-wrapper__inliner">
           <button
             type="button"
-            class="mdy-colors__primary-picker"
+            class="{{ cls.nativePicker }}"
             [disabled]="isDisabled()"
             [mdyPart]="openerButtonPart()"
             [attr.aria-label]="i18n.selectColorPrefix"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
             <div
-              class="mdy-colors__preview-swatch"
+              class="{{ cls.preview }}"
               [style.background-color]="value() || '#4361ee'"
             ></div>
           </button>
@@ -88,7 +88,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [value]="value() || '#4361ee'"
             [disabled]="isDisabled()"
             (change)="onInput($event)"
-            class="mdy-colors__native-hidden"
+            class="{{ cls.control }}"
           />
 
           <!-- Input: HEX (accessible control) -->
@@ -107,7 +107,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             [attr.aria-readonly]="isReadonly() ? 'true' : null"
             (input)="onTextInput($event)"
             (blur)="onHexBlur($event)"
-            class="mdy-colors__hex-input"
+            class="{{ cls.hexInput }}"
             spellcheck="false"
           />
 
@@ -123,7 +123,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
             aria-hidden="true"
             (click)="toggleOverlay($event); $event.stopPropagation()"
           >
-            <mdy-icon name="CHEVRON_DOWN" class="mdy-select__arrow" [class.mdy-select__arrow--open]="open()" />
+            <mdy-icon name="CHEVRON_DOWN" class="{{ cls.arrow }}" [class.mdy-select__arrow--open]="open()" />
           </span>
         </div>
       </div>
@@ -143,9 +143,9 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
           [id]="popupId()"
           [ngClass]="placementClass()"
         >
-          <div class="mdy-colors__dropdown-header" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>
+          <div class="{{ cls.dropdownHeader }}" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>
           <div
-            class="mdy-colors__presets"
+            class="{{ cls.presets }}"
             role="listbox"
             [attr.aria-label]="i18n.colorPresetsHeader"
             (keydown)="onPresetKeydown($event)"
@@ -157,7 +157,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
               <button
                 type="button"
                 role="option"
-                class="mdy-color-swatch"
+                class="{{ cls.swatch }}"
                 [style.--color]="entry.value"
                 [class.mdy-color-swatch--active]="isActiveColor(entry.value)"
                 [attr.aria-selected]="isActiveColor(entry.value)"
@@ -181,11 +181,11 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
                here the colour is the content. -->
           <button
             type="button"
-            class="mdy-colors__custom-entry"
+            class="{{ cls.customEntry }}"
             (click)="openPlatformChooser()"
           >
             <span
-              class="mdy-colors__custom-tint"
+              class="{{ cls.customTint }}"
               [style.background-color]="customColour() ?? 'transparent'"
               aria-hidden="true"
             ></span>
@@ -204,13 +204,13 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `
 })
@@ -222,6 +222,29 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
   protected override readonly overlayKind = "colors" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.colors;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    control: this.widgetContract.parts.control.classes.join(" "),
+    customEntry: this.widgetContract.parts.customEntry.classes.join(" "),
+    customTint: this.widgetContract.parts.customTint.classes.join(" "),
+    hexInput: this.widgetContract.parts.hexInput.classes.join(" "),
+    nativePicker: this.widgetContract.parts.nativePicker.classes.join(" "),
+    presets: this.widgetContract.parts.presets.classes.join(" "),
+    preview: this.widgetContract.parts.preview.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    swatch: this.widgetContract.parts.swatch.classes.join(" "),
+    arrow: presentationClass("colors", "arrow"),
+    box: presentationClass("colors", "box"),
+    dropdownHeader: presentationClass("colors", "dropdownHeader"),
+  } as const;
   protected override readonly widgetKind = "colors" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 

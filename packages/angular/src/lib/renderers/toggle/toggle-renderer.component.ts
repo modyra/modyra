@@ -16,7 +16,7 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
     "[class.mdy-renderer]": "widgetHasRootClass",
   },
   template: `
-    <div class="mdy-toggle">
+    <div class="{{ cls.inputWrapper }}">
       <input
         type="checkbox"
         role="switch"
@@ -35,14 +35,14 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
            native input is hidden and the label is what forwards a press to it — a track outside one
            draws a switch nothing can operate. A toggle with no label still gets the element,
            carrying the track and nothing else. -->
-      <label class="mdy-toggle__label" [for]="fieldId">
-        <span class="mdy-toggle__track" aria-hidden="true">
-          <span class="mdy-toggle__thumb"></span>
+      <label class="{{ cls.label }}" [for]="fieldId">
+        <span class="{{ cls.track }}" aria-hidden="true">
+          <span class="{{ cls.thumb }}"></span>
         </span>
         @if (label()) {
           {{ label() }}
           @if (isRequired()) {
-            <span class="mdy-label__required" aria-hidden="true">*</span>
+            <span class="{{ cls.requiredMarker }}" aria-hidden="true">*</span>
           }
           @if (inlineErrorShown()) {
             <mdy-inline-error-icon [errorText]="inlineErrorText()" />
@@ -67,18 +67,35 @@ import { MdyInlineErrorIconComponent } from "../../control/inline-error-icon.com
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
 export class MdyToggleComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.toggle;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    inputWrapper: this.widgetContract.parts.inputWrapper.classes.join(" "),
+    label: this.widgetContract.parts.label.classes.join(" "),
+    requiredMarker: this.widgetContract.parts.requiredMarker.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    thumb: this.widgetContract.parts.thumb.classes.join(" "),
+    track: this.widgetContract.parts.track.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "toggle";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 

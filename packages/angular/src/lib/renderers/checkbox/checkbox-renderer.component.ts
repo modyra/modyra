@@ -15,7 +15,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
     "[class.mdy-renderer]": "widgetHasRootClass",
   },
   template: `
-    <div class="mdy-checkbox">
+    <div class="{{ cls.inputWrapper }}">
       <input
         type="checkbox"
         [class]="widgetContract.parts.control.classes.join(' ')"
@@ -31,7 +31,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
            becomes the word "null" and every checkbox without an error shows a tooltip saying so.
            The attribute binding removes the attribute instead. -->
       <label
-        class="mdy-label"
+        class="{{ cls.label }}"
         [class.mdy-label--has-error]="paintsAsInvalid()"
         [for]="fieldId"
         [attr.title]="inlineErrorShown() ? inlineErrorText() : null"
@@ -39,7 +39,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         <span [class]="widgetContract.parts.indicator.classes.join(' ')" aria-hidden="true"></span>
         {{ label() }}
         @if (label() && isRequired()) {
-          <span class="mdy-label__required" aria-hidden="true">*</span>
+          <span class="{{ cls.requiredMarker }}" aria-hidden="true">*</span>
         }
       </label>
       <!--
@@ -60,18 +60,33 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
 export class MdyCheckboxComponent extends MdyBaseControl<boolean> {
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.checkbox;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    inputWrapper: this.widgetContract.parts.inputWrapper.classes.join(" "),
+    label: this.widgetContract.parts.label.classes.join(" "),
+    requiredMarker: this.widgetContract.parts.requiredMarker.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "checkbox";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
 

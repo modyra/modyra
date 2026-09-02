@@ -17,8 +17,7 @@ import {
   viewChild,
 } from "@angular/core";
 import { capabilityOf, filterOptionsByQuery,
-  defaultWidgetIdFactory,
-} from "@modyra/widgets";
+  defaultWidgetIdFactory, presentationClass } from "@modyra/widgets";
 import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
@@ -69,7 +68,7 @@ import { MdyDropdownBase } from "../dropdown-base";
 
     @if (optionTpl() || searchable()) {
       <!-- Custom dropdown -->
-      <div class="mdy-select" #wrapper>
+      <div class="{{ cls.box }}" #wrapper>
         <div [class]="wrapperClasses()">
           @if (prefix(); as p) {
             <div class="mdy-input-prefix">
@@ -178,7 +177,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                       }"
                     />
                   } @else {
-                    <span class="mdy-select__option-label">{{ opt.label }}</span>
+                    <span class="{{ cls.optionLabel }}">{{ opt.label }}</span>
                   }
                 </li>
               }
@@ -195,7 +194,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               @if (filteredOptions().length === 0 && !showCreateOption()) {
                 <li class="{{ cls.empty }}" role="presentation">
                   @if (effectiveLoading()) {
-                    <div class="mdy-select__loading-content">
+                    <div class="{{ cls.loadingContent }}">
                       <mdy-icon name="LOADER" class="{{ cls.loading }}" />
                       <span>{{ loadingText() || i18n.loading }}</span>
                     </div>
@@ -279,13 +278,13 @@ import { MdyDropdownBase } from "../dropdown-base";
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
@@ -306,7 +305,15 @@ export class MdySelectComponent<TValue = string>
    * Spelled in the template, each of these is a second copy of a name the catalogue already holds,
    * and a copy is a place the two can disagree without either moving.
    */
-  protected readonly cls = {
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+    box: presentationClass("select", "box"),
+    loadingContent: presentationClass("select", "loadingContent"),
+    optionLabel: presentationClass("select", "optionLabel"),
     trigger: this.widgetContract.parts.trigger.classes.join(" "),
     value: this.widgetContract.parts.value.classes.join(" "),
     placeholder: this.widgetContract.parts.placeholder.classes.join(" "),

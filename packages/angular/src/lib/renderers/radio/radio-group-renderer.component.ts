@@ -32,7 +32,7 @@ import { MdySelectOption } from "../../core/types";
     />
 
     <div
-      class="mdy-radio-group"
+      class="{{ cls.group }}"
       [class.mdy-radio-group--horizontal]="layout() === 'horizontal'"
       role="radiogroup"
       [mdyPart]="controlPart()"
@@ -40,7 +40,7 @@ import { MdySelectOption } from "../../core/types";
       [attr.aria-label]="namedBy()['aria-label']"
     >
       @for (opt of options(); track opt.value) {
-        <label class="mdy-radio-item" [class.mdy-radio-item--disabled]="isDisabled()">
+        <label class="{{ cls.option }}" [class.mdy-radio-item--disabled]="isDisabled()">
           <input
             type="radio"
             [name]="groupName()"
@@ -50,8 +50,8 @@ import { MdySelectOption } from "../../core/types";
             (change)="onSelectionChange(opt.value)"
             (blur)="onBlur()"
           />
-          <span class="mdy-radio-circle"></span>
-          <span class="mdy-radio-label">{{ opt.label }}</span>
+          <span class="{{ cls.optionControl }}"></span>
+          <span class="{{ cls.optionLabel }}">{{ opt.label }}</span>
         </label>
       }
     </div>
@@ -64,13 +64,13 @@ import { MdySelectOption } from "../../core/types";
          alternative, a field that can fail lost its supporting text the moment the error container
          was reserved — and the reference to it went on naming an element no longer on the page. -->
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
   `,
 })
@@ -101,6 +101,22 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
   );
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.radio;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    group: this.widgetContract.parts.group.classes.join(" "),
+    option: this.widgetContract.parts.option.classes.join(" "),
+    optionControl: this.widgetContract.parts.optionControl.classes.join(" "),
+    optionLabel: this.widgetContract.parts.optionLabel.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);

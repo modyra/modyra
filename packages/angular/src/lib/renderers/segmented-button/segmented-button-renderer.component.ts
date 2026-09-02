@@ -41,7 +41,7 @@ import { MdySelectOption } from "../../core/types";
 
     <div
       #track
-      class="mdy-segmented"
+      class="{{ cls.group }}"
       role="radiogroup"
       [mdyPart]="controlPart()"
       [attr.aria-labelledby]="namedBy()['aria-labelledby']"
@@ -60,14 +60,14 @@ import { MdySelectOption } from "../../core/types";
           own checked state instead of a class the renderer has to remember to apply.
         -->
         <label
-          class="mdy-segmented__button"
+          class="{{ cls.option }}"
           [class.mdy-segmented__button--first]="first"
           [class.mdy-segmented__button--last]="last"
           [class.mdy-segmented__button--selected]="value() === opt.value"
         >
           <input
             type="radio"
-            class="mdy-segmented__control"
+            class="{{ cls.optionControl }}"
             [name]="groupName()"
             [value]="opt.value"
             [checked]="value() === opt.value"
@@ -80,23 +80,23 @@ import { MdySelectOption } from "../../core/types";
           />
           <mdy-icon
             name="CHECKMARK"
-            class="mdy-segmented__check"
+            class="{{ cls.optionCheck }}"
             [style.visibility]="value() === opt.value ? 'visible' : 'hidden'"
             [attr.aria-hidden]="value() !== opt.value"
           />
-          <span class="mdy-segmented__text" [attr.data-text]="opt.label">{{ opt.label }}</span>
+          <span class="{{ cls.optionText }}" [attr.data-text]="opt.label">{{ opt.label }}</span>
         </label>
       }
     </div>
 
     @if (projectedSupportingText(); as st) {
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">
         <ng-container [ngTemplateOutlet]="st.template" />
       </div>
     } @else if (supportingText(); as text) {
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
-      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
     }
     @if (errorsReserved()) {
       <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
@@ -130,6 +130,23 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   );
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.segmented;
+
+  /**
+   * The class every part and box wears, asked of the catalogue once. Spelled in the template it
+   * is a second copy of a name the catalogue holds, and a copy is where the two can disagree.
+   */
+  // Class names the catalogue owns, resolved once. The type is deliberately the wide record
+  // rather than the inferred shape: a component's declared surface must not change every time
+  // its kind gains a part, and a key that is not a part of this kind is refused by the gate
+  // that reads this file against the catalogue.
+  protected readonly cls: Readonly<Record<string, string>> = {
+    group: this.widgetContract.parts.group.classes.join(" "),
+    option: this.widgetContract.parts.option.classes.join(" "),
+    optionCheck: this.widgetContract.parts.optionCheck.classes.join(" "),
+    optionControl: this.widgetContract.parts.optionControl.classes.join(" "),
+    optionText: this.widgetContract.parts.optionText.classes.join(" "),
+    supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
