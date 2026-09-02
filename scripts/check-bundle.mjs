@@ -36,7 +36,26 @@ for (const f of files) {
   text += body;
 }
 
-// Selector/class strings that survive minification if the code is bundled.
+/**
+ * The component selectors that must not reach a core-only bundle.
+ *
+ * **Matched where the compiler writes them, not wherever they appear.** These names are element tags
+ * *and* CSS class names on the same components, so a bare substring search cannot tell a bundled
+ * component from a contract table that merely lists the class: adding `"mdy-dynamic-form"` to the
+ * shared class vocabulary put the string in the core bundle inside a frozen array, with no component,
+ * no selector and no import edge, and this check called it a leak.
+ *
+ * A component that is actually bundled carries its selector inside the definition Angular emits for
+ * it — `selectors:[["mdy-dynamic-form"]]` — and that shape survives minification because the runtime
+ * reads those property names. A string in a data table cannot produce it. The distinction is
+ * positional, which is the only thing that separates these two uses of one name.
+ *
+ * Both directions were measured rather than reasoned, by building this fixture with the dynamic form
+ * genuinely imported: the marker appears once, while the bare name appears three times — and against
+ * the frozen-table form it stays silent while the bare name matches.
+ */
+const marker = (selector) => `selectors:[["${selector}"]]`;
+
 const forbidden = [
   "mdy-control-select",
   "mdy-control-datepicker",
@@ -49,10 +68,14 @@ const forbidden = [
 ];
 
 let failed = false;
-for (const marker of forbidden) {
-  const present = text.includes(marker);
+for (const selector of forbidden) {
+  const present = text.includes(marker(selector));
   if (present) failed = true;
-  console.log(`${marker}: ${present ? "PRESENT ✗" : "absent ✓"}`);
+  // The bare name is reported beside the verdict when the two disagree, because that gap is exactly
+  // the case this check used to get wrong, and a reader deserves to see it rather than wonder.
+  const namedOnly = !present && text.includes(selector);
+  console.log(`${selector}: ${present ? "PRESENT ✗" : "absent ✓"}`
+    + (namedOnly ? "  (the name appears, but only as data — no component definition)" : ""));
 }
 // Reported, not gated.
 //
