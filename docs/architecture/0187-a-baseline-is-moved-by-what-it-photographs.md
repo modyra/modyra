@@ -60,6 +60,28 @@ land on a half pixel if something above it gains a fractional height, and the sa
 will follow. What changed is that it will follow a change to the bench, which is a change to what the
 suite is about.
 
+### The same family, outside images: a tool reporting its own spelling as a change
+
+This record is about a baseline moved by what it photographs. The type surface has the shape without
+a camera, and naming it here keeps a reader from meeting it twice as two problems.
+
+Its keys carry a member's type as text, so **renaming a type inside a signature moves the key while
+the signature means exactly what it meant**. Removing three aliases produced nine `major` lines: three
+were the removals, and six were signatures that now print `MdyDynamicBreakpoint` where they printed
+`MdyLayoutBreakpoint` — the same type, since one was an alias of the other.
+
+The verdict was right and six of its nine reasons were spelling. That is the dangerous arrangement:
+a correct classification supported by lines a reader must check individually to discover that most
+of them say nothing. It is not fixed here, and it is not the same as the `const->` key defect that
+was fixed — that one invented removals, this one describes real entries in a form that cannot
+distinguish a rename from a change.
+
+The instrument's own reformatting is the other half. When the key format changed, every constant read
+as removed-and-added until the baseline was rewritten; the rewrite was done by transforming the
+recorded file rather than rebuilding it, so "reformatted, not changed" is a property of the
+transformation instead of a claim about the result. That is the strongest form available for this
+class of change, and worth copying the next time a baseline's spelling moves.
+
 ## Alternatives rejected
 
 **Stay on the demo page and re-record the fourteen.** Fourteen images against 240 is a real
