@@ -42,6 +42,60 @@ function objectCallSites(code, name) {
   return sites;
 }
 
+/**
+ * The raw text of each positional argument at every call to one door.
+ *
+ * Split at depth zero: an argument that is itself a call — `this.position()` — carries parentheses,
+ * and a comma inside them belongs to it, not to the argument list.
+ */
+function positionalCallSites(code, name) {
+  const sites = [];
+  const opener = new RegExp(`\\b${name}\\s*\\(`, "g");
+  for (const match of code.matchAll(opener)) {
+    const start = match.index + match[0].length;
+    let depth = 1;
+    let current = "";
+    const args = [];
+    for (let i = start; i < code.length; i += 1) {
+      const ch = code[i];
+      if (ch === "(" || ch === "{" || ch === "[") depth += 1;
+      else if (ch === ")" || ch === "}" || ch === "]") {
+        depth -= 1;
+        if (depth === 0) { if (current.trim() !== "") args.push(current.trim()); break; }
+      }
+      if (ch === "," && depth === 1) { args.push(current.trim()); current = ""; continue; }
+      current += ch;
+    }
+    sites.push(args);
+  }
+  return sites;
+}
+
+/**
+ * Every argument list a call site stands for, given the domains its door declares per position.
+ *
+ * `argDomains: [null, ["above", "overlay"]]` says the first argument must be written as a literal
+ * and the second may be an expression varying over two values. The narrow domain is the point:
+ * `popupPlacementClass` answers with a class for `above` and `overlay` and with nothing for every
+ * other placement, so two entries cover what the door can put on a page. A domain is what the door
+ * *declares*, never what the reader infers — an inferred one would invent classes.
+ */
+function argumentListsFor(args, argDomains) {
+  let lists = [[]];
+  for (let i = 0; i < args.length; i += 1) {
+    const literal = args[i].match(/^(["'`])([^"'`]*)\1$/);
+    if (literal) {
+      lists = lists.map((list) => [...list, literal[2]]);
+      continue;
+    }
+    const domain = argDomains?.[i];
+    if (!Array.isArray(domain)) return null;
+    lists = lists.flatMap((list) => domain.map((value) => [...list, value]));
+    if (lists.length > COMBINATION_CAP) return null;
+  }
+  return lists;
+}
+
 /** How many argument combinations one call site may be expanded into before the reader stops. */
 const COMBINATION_CAP = 64;
 
@@ -140,9 +194,15 @@ export function classesFromDoors(source, doors) {
 
     let answered = 0;
     if (door.resolve) {
-      for (const site of literalSites) {
-        const args = [site[2], site[4]].filter((value) => value !== undefined);
-        for (const cls of door.resolve(args) ?? []) classes.add(cls);
+      // Positional arguments, each either written as a literal or expanded over the domain its door
+      // declares for that position. A door with no `argDomains` answers only fully literal calls,
+      // which is what every door did before: the declaration is what widens it, never a guess here.
+      for (const args of positionalCallSites(code, door.name)) {
+        const lists = argumentListsFor(args, door.argDomains);
+        if (!lists) continue;
+        for (const list of lists) {
+          for (const cls of door.resolve(list) ?? []) classes.add(cls);
+        }
         answered += 1;
       }
     }
