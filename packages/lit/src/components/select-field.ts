@@ -17,6 +17,8 @@ import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
  * followed the renderer. A name spelled in two places is a name that can disagree with itself.
  */
 const CLASS = {
+  box: presentationClass("select", "box"),
+  loadingContent: presentationClass("select", "loadingContent"),
   trigger: partClasses("select", "trigger").join(" "),
   value: partClasses("select", "value").join(" "),
   placeholder: partClasses("select", "placeholder").join(" "),
@@ -529,7 +531,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           ${filtered.length === 0 && !this.showCreateOption(state.query, filtered)
         ? html`<li class="${CLASS.empty}" role="presentation">
                 ${state.loading
-            ? html`<div class="mdy-select__loading-content">
+            ? html`<div class="${CLASS.loadingContent}">
                       ${mdyIcon("LOADER", CLASS.loading)}
                       <span>Loading…</span>
                     </div>`
@@ -542,7 +544,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
 
     return html`
       ${this.renderLabel(handle, trigger.id)}
-      <div class="mdy-select">
+      <div class="${CLASS.box}">
         <div class="${this.wrapperClass(handle)}">
           <div class="${MDY_FIELD_SHELL_CLASSES.prefix}"><slot name="prefix"></slot></div>
           <button

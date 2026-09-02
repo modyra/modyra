@@ -3,7 +3,10 @@ import {
   createColorsFieldController,
   type MdyColorsFieldController, capabilityOf, keyMeans,
   keyBindingFor,
-  MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex  } from "@modyra/widgets";
+  MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex,
+  partClasses,
+  presentationClass,
+} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
 import { applyOverlayIntent, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
@@ -14,6 +17,24 @@ import {
   POPUP_ANCHOR_STYLE,
   renderOverlayPanel,
 } from "./popup-styles.js";
+
+/**
+ * The class every part and box wears, asked of the contract once. A second copy of a name the
+ * catalogue holds is where the two come to disagree without either moving.
+ */
+const CLASS = {
+  control: partClasses("colors", "control").join(" "),
+  hexInput: partClasses("colors", "hexInput").join(" "),
+  nativePicker: partClasses("colors", "nativePicker").join(" "),
+  presets: partClasses("colors", "presets").join(" "),
+  preview: partClasses("colors", "preview").join(" "),
+  swatch: partClasses("colors", "swatch").join(" "),
+  toggle: partClasses("colors", "toggle").join(" "),
+  arrow: presentationClass("colors", "arrow"),
+  box: presentationClass("colors", "box"),
+  dropdownHeader: presentationClass("colors", "dropdownHeader"),
+} as const;
+
 
 // ─── Color & file ────────────────────────────────────────────────────────────
 
@@ -197,12 +218,12 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           this.moveThroughSwatches(e);
         }}
       >
-        <div class="mdy-colors__dropdown-header">${this.messages.colorPresetsHeader}</div>
-        <div class="mdy-colors__presets" role="listbox" aria-label=${this.messages.colorPresetsHeader}>
+        <div class="${CLASS.dropdownHeader}">${this.messages.colorPresetsHeader}</div>
+        <div class="${CLASS.presets}" role="listbox" aria-label=${this.messages.colorPresetsHeader}>
           ${colorPresetsOf(this.presets).map(
             ({ value: preset, label }) => html`<button
               type="button"
-              class="mdy-color-swatch ${handle.value() === preset ? "mdy-color-swatch--active" : ""}"
+              class="${CLASS.swatch} ${handle.value() === preset ? "mdy-color-swatch--active" : ""}"
               role="option"
               aria-selected=${handle.value() === preset ? "true" : "false"}
               aria-label=${label}
@@ -260,7 +281,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
       <div
-        class="mdy-colors ${this._open ? "mdy-colors--open" : ""}"
+        class="${CLASS.box} ${this._open ? "mdy-colors--open" : ""}"
         @keydown=${(e: KeyboardEvent) => {
           // The palette handles Escape inside itself and does not take focus when it opens, so from
           // the control the palette could be opened and not dismissed.
@@ -278,7 +299,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                  nowhere to go from it. -->
             <button
               type="button"
-              class="mdy-colors__primary-picker"
+              class="${CLASS.nativePicker}"
               ?disabled=${handle.disabled()}
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup=${this.popupPromise}
@@ -294,7 +315,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               }}
             >
               <div
-                class="mdy-colors__preview-swatch"
+                class="${CLASS.preview}"
                 style="background-color:${handle.value() ?? "#4361ee"}"
               ></div>
             </button>
@@ -308,7 +329,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                  machinery. Not tabbable, so hiding it strands nobody. -->
             <input
               type="color"
-              class="mdy-colors__native-hidden"
+              class="${CLASS.control}"
               ${mdyPart(this.controlPart(handle))}
               aria-hidden="true"
               tabindex="-1"
@@ -328,7 +349,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             <input
               id=${this.fieldId}
               type="text"
-              class="mdy-colors__hex-input"
+              class="${CLASS.hexInput}"
               spellcheck="false"
               .value=${handle.value() ?? ""}
               placeholder="#000000"
@@ -346,7 +367,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                  It still answers a press, because the area sits inside the field and a dead patch in
                  a live control reads as "sometimes it does not work". -->
             <span
-              class="mdy-colors__toggle-area mdy-input-suffix"
+              class="${CLASS.toggle} mdy-input-suffix"
               aria-hidden="true"
               @click=${(e: Event) => {
                 if (this._open) {
@@ -358,7 +379,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 }
               }}
             >
-              <span class="mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}">
+              <span class="${CLASS.arrow} ${this._open ? "mdy-select__arrow--open" : ""}">
                 ${mdyIcon("CHEVRON_DOWN", "")}
               </span>
             </span>

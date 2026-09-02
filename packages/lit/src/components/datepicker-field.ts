@@ -8,6 +8,7 @@ import { projectCalendarDayCellA11y, capabilityOf, keyMeans,
   partClasses,
   calendarViewOnToggle,
   subscribeController,
+  presentationClass,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -28,6 +29,17 @@ import {
  * the name is spelled twice and only one copy is authoritative.
  */
 const CLASS = {
+  box: presentationClass("datepicker", "box"),
+  headerLabel: presentationClass("datepicker", "headerLabel"),
+  headerNav: presentationClass("datepicker", "headerNav"),
+  icon: presentationClass("datepicker", "icon"),
+  modalHeader: presentationClass("datepicker", "modalHeader"),
+  modalLabel: presentationClass("datepicker", "modalLabel"),
+  modalValue: presentationClass("datepicker", "modalValue"),
+  navButton: presentationClass("datepicker", "navButton"),
+  title: presentationClass("datepicker", "title"),
+  viewIcon: presentationClass("datepicker", "viewIcon"),
+  viewToggle: presentationClass("datepicker", "viewToggle"),
   calendar: partClasses("datepicker", "calendar").join(" "),
   control: partClasses("datepicker", "control").join(" "),
   dialogHeader: partClasses("datepicker", "dialogHeader").join(" "),
@@ -461,9 +473,9 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     const modalHeader =
       this.overlay.state.position === "overlay"
         ? html`
-            <div class="mdy-datepicker__modal-header">
-              <span class="mdy-datepicker__modal-label">${this.label || this.messages.datepickerSelectFallback}</span>
-              <span class="mdy-datepicker__modal-value">${this.modalDisplayValue()}</span>
+            <div class="${CLASS.modalHeader}">
+              <span class="${CLASS.modalLabel}">${this.label || this.messages.datepickerSelectFallback}</span>
+              <span class="${CLASS.modalValue}">${this.modalDisplayValue()}</span>
             </div>
           `
         : nothing;
@@ -477,21 +489,21 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       >
         ${modalHeader}
         <div class="${CLASS.dialogHeader}">
-          <div class="mdy-datepicker__header-label">
+          <div class="${CLASS.headerLabel}">
             <button
               type="button"
-              class="mdy-datepicker__view-toggle"
+              class="${CLASS.viewToggle}"
               aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
               @click=${this.onToggleView}
             >
-              <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
-              ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
+              <span class="${CLASS.title}">${monthLabel} ${this.view.viewYear}</span>
+              ${mdyIcon("CHEVRON_DOWN", CLASS.viewIcon)}
             </button>
           </div>
-          <div class="mdy-datepicker__header-nav">
+          <div class="${CLASS.headerNav}">
             <button
               type="button"
-              class="mdy-datepicker__nav-btn"
+              class="${CLASS.navButton}"
               aria-label=${this.messages.datepickerPreviousMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(-1)}
@@ -500,7 +512,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             </button>
             <button
               type="button"
-              class="mdy-datepicker__nav-btn"
+              class="${CLASS.navButton}"
               aria-label=${this.messages.datepickerNextMonth}
               ?disabled=${this.view.viewMode !== "days"}
               @click=${() => this.navigateMonths(1)}
@@ -529,7 +541,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
   protected override renderControl(handle: MdyFieldHandle<string | null>): unknown {
     this.classList.toggle("mdy-renderer--open", this._open);
     return html`
-      <div class="mdy-datepicker">
+      <div class="${CLASS.box}">
         <input
           id=${this.fieldId}
           type="text"
@@ -578,7 +590,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
             aria-expanded=${this._open ? "true" : "false"}
             @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
           >
-            ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
+            ${mdyIcon("CALENDAR", CLASS.icon)}
           </button>
         </div>
         ${renderOverlayPanel(

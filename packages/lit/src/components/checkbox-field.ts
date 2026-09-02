@@ -1,7 +1,18 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
-import { createBooleanFieldController, submitFalsePart, type MdyBooleanFieldController, MDY_FIELD_STATE_CLASSES, shellStateClasses } from "@modyra/widgets";
+import { createBooleanFieldController, submitFalsePart, type MdyBooleanFieldController, MDY_FIELD_STATE_CLASSES, shellStateClasses,
+  partClasses,
+} from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
+
+/**
+ * The class every part and box wears, asked of the contract once. A second copy of a name the
+ * catalogue holds is where the two come to disagree without either moving.
+ */
+const CLASS = {
+  requiredMarker: partClasses("checkbox", "requiredMarker").join(" "),
+} as const;
+
 
 // ─── Boolean ─────────────────────────────────────────────────────────────────
 
@@ -69,7 +80,7 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
           <span class="${this.partClass("indicator")}" aria-hidden="true"></span>
           ${this.label}
           ${this.label && handle.required()
-            ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+            ? html`<span class="${CLASS.requiredMarker}" aria-hidden="true">*</span>`
             : nothing}
         </label>
         <!--

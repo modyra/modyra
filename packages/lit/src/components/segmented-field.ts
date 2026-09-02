@@ -2,9 +2,23 @@ import { mdyPart } from "../mdy-part.js";
 import { styleMap } from "lit/directives/style-map.js";
 import { html, nothing } from "lit";
 import { type MdySelectOption } from "@modyra/core";
-import { createOptionFieldController, defaultOptionKey, type MdyOptionFieldController } from "@modyra/widgets";
+import { createOptionFieldController, defaultOptionKey, type MdyOptionFieldController,
+  partClasses,
+  presentationClass,
+} from "@modyra/widgets";
 import { mdyIcon } from "../base.js";
 import { MdyOptionsFieldElement } from "./options-field.js";
+
+/**
+ * The class every part and box wears, asked of the contract once. A second copy of a name the
+ * catalogue holds is where the two come to disagree without either moving.
+ */
+const CLASS = {
+  option: partClasses("segmented", "option").join(" "),
+  firstButton: presentationClass("segmented", "firstButton"),
+  lastButton: presentationClass("segmented", "lastButton"),
+} as const;
+
 
 export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | null> {
   protected override readonly widgetKind = "segmented" as const;
@@ -59,9 +73,9 @@ export class MdySegmentedFieldElement extends MdyOptionsFieldElement<unknown | n
           const key = defaultOptionKey(option.value);
           const selected = this.isChosen(handle.value(), option.value);
           const classes = [
-            "mdy-segmented__button",
-            index === 0 ? "mdy-segmented__button--first" : "",
-            index === last ? "mdy-segmented__button--last" : "",
+            CLASS.option,
+            index === 0 ? CLASS.firstButton : "",
+            index === last ? CLASS.lastButton : "",
             selected ? "mdy-segmented__button--selected" : "",
           ].join(" ");
           // A label around its own radio, not a button carrying the role. The choice is then a real

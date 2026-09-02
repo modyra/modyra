@@ -1,8 +1,19 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
-import { createTextFieldController, type MdyTextFieldController } from "@modyra/widgets";
+import { createTextFieldController, type MdyTextFieldController,
+  presentationClass,
+} from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
+
+/**
+ * The class every part and box wears, asked of the contract once. A second copy of a name the
+ * catalogue holds is where the two come to disagree without either moving.
+ */
+const CLASS = {
+  spinner: presentationClass("number", "spinner"),
+} as const;
+
 
 export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   static override properties: PropertyDeclarations = {
@@ -67,7 +78,7 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   protected override renderControl(handle: MdyFieldHandle<number | null>): unknown {
     // The box and its two steppers share one positioning context, which is presentation and not a
     // part: nothing is announced by it and no contract member points at it.
-    return html`<span class="mdy-number-spinner">${this.renderBox(handle)}
+    return html`<span class="${CLASS.spinner}">${this.renderBox(handle)}
       <button
         type="button"
         class="${this.partClass("increment")}"

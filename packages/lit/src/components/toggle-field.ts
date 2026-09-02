@@ -1,7 +1,18 @@
 import { mdyPart } from "../mdy-part.js";
 import { html, nothing } from "lit";
-import { submitFalsePart, createBooleanFieldController, type MdyBooleanFieldController } from "@modyra/widgets";
+import { submitFalsePart, createBooleanFieldController, type MdyBooleanFieldController,
+  partClasses,
+} from "@modyra/widgets";
 import { MdyFieldElement } from "../base.js";
+
+/**
+ * The class every part and box wears, asked of the contract once. A second copy of a name the
+ * catalogue holds is where the two come to disagree without either moving.
+ */
+const CLASS = {
+  requiredMarker: partClasses("toggle", "requiredMarker").join(" "),
+} as const;
+
 
 export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
   protected override readonly widgetKind = "toggle" as const;
@@ -67,7 +78,7 @@ export class MdyToggleFieldElement extends MdyFieldElement<boolean> {
           </span>
           ${this.label ?? nothing}
           ${this.label && handle.required()
-            ? html`<span class="mdy-label__required" aria-hidden="true">*</span>`
+            ? html`<span class="${CLASS.requiredMarker}" aria-hidden="true">*</span>`
             : nothing}
         </label>
         <!--
