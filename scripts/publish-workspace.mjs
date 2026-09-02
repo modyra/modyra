@@ -47,10 +47,21 @@ for (const pkg of packages) {
   // A name npm has never seen has no settings page, so it can carry no trusted publisher, so the
   // workflow's identity authenticates against nothing: the registry answers 401. The first version
   // of a package is published by an authenticated maintainer; every later one comes from here.
-  if (!rehearsal && publishedVersion === null) {
-    console.log(`Skipping ${pkg.name}@${expectedVersion} (never published — needs a first publication by a maintainer)`);
+  //
+  // **The rehearsal reports this too, and that is the whole point of a rehearsal.** Detection runs
+  // on both paths; only the skip is real-run-only. Guarding the detection made the dry run the more
+  // optimistic of the two — it printed a plain success for a package the real run will decline to
+  // stage, so the one case that needs a human was the one case the rehearsal hid. A dry run that is
+  // cheerier than the thing it stands in for is worse than no dry run: it is trusted.
+  if (publishedVersion === null) {
     needsBootstrap.push(`${pkg.name}@${expectedVersion}`);
-    continue;
+    if (!rehearsal) {
+      console.log(`Skipping ${pkg.name}@${expectedVersion} (never published — needs a first publication by a maintainer)`);
+      continue;
+    }
+    console.log(`${pkg.name}@${expectedVersion}: the real run will skip this (never published — needs a first publication by a maintainer)`);
+    // Falls through: the pack itself is still worth exercising here, since that is the part a
+    // rehearsal can actually check.
   }
 
   // A release stages; it does not publish outright. The tarball and its provenance are uploaded
