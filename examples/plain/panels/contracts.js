@@ -405,6 +405,16 @@ export const contractsPanel = {
     //
     // The point is visible in the third column: a blank cell would read as "this is empty", and
     // "empty" is a claim. Several of these rows are legitimately absent, and each says which.
+    // What each door is asked on this page. A part for the one that takes a part, a presentation
+    // element for the one that takes a presentation element, an appearance for the one that takes an
+    // appearance: the doors do not share a signature and pretending they do shows nothing.
+    const SAMPLE_CALL = {
+      partClasses: ["select", "trigger"],
+      presentationClass: ["select", "box"],
+      popupPlacementClass: ["select", "above"],
+      popupAlignmentClass: ["select", "right"],
+      multiselectChipClasses: { role: "value" },
+    };
     // Every function that puts a class on an element, and what each answers for one kind.
     //
     // A renderer that spells `"mdy-select__trigger"` into its markup and one that asks the contract
@@ -423,12 +433,15 @@ export const contractsPanel = {
       const term = document.createElement("dt");
       term.textContent = door.name;
       const answer = document.createElement("dd");
+      // Each door is asked something it can answer: they take different arguments, and a door shown
+      // returning nothing because it was asked the wrong question teaches the opposite of the point.
+      const asked = SAMPLE_CALL[door.name];
       if (door.unresolvable) {
         answer.textContent = `dipende da un valore — ${door.unresolvable}`;
       } else if (door.resolveObject) {
-        answer.textContent = [...door.resolveObject({ role: "value" })].join(" ") || "nessuna classe";
+        answer.textContent = [...door.resolveObject(asked)].join(" ");
       } else {
-        answer.textContent = [...door.resolve(["select", "trigger"])].join(" ") || "nessuna classe per select/trigger";
+        answer.textContent = [...door.resolve(asked)].join(" ") || `nessuna, per ${asked.join("/")}`;
       }
       doorsList.append(term, answer);
     }
