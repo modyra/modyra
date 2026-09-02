@@ -71,6 +71,8 @@
     "mdy-calendar-grid",
     "mdy-calendar-header",
     "mdy-checkbox",
+    "mdy-checkbox__control",
+    "mdy-checkbox__indicator",
     "mdy-chip",
     "mdy-chip--centered",
     "mdy-chip--counter",
@@ -294,6 +296,7 @@
     "mdy-timepicker__input",
     "mdy-timepicker__toggle",
     "mdy-toggle",
+    "mdy-toggle__control",
     "mdy-toggle__label",
     "mdy-toggle__thumb",
     "mdy-toggle__track",
@@ -481,6 +484,8 @@
     "packages/angular/src/lib/renderers/checkbox/checkbox-renderer.component.ts": {
       "classes": [
         "mdy-checkbox",
+        "mdy-checkbox__control",
+        "mdy-checkbox__indicator",
         "mdy-control-checkbox",
         "mdy-error-list",
         "mdy-label",
@@ -1198,6 +1203,7 @@
         "mdy-renderer--toggle",
         "mdy-supporting-text",
         "mdy-toggle",
+        "mdy-toggle__control",
         "mdy-toggle__label",
         "mdy-toggle__thumb",
         "mdy-toggle__track"

@@ -78,7 +78,7 @@ import { MdyDropdownBase } from "../dropdown-base";
           }
           <button
             type="button"
-            class="mdy-select__trigger"
+            class="{{ cls.trigger }}"
             [mdyPart]="openerPart()"
             [id]="triggerId()"
             [disabled]="isDisabled()"
@@ -93,7 +93,7 @@ import { MdyDropdownBase } from "../dropdown-base";
             (blur)="onBlur($event)"
           >
             @if (selectedOption(); as sel) {
-              <span class="mdy-select__value">
+              <span class="{{ cls.value }}">
                 @if (optionTpl(); as tpl) {
                   <ng-container
                     [ngTemplateOutlet]="tpl"
@@ -104,7 +104,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                 }
               </span>
             } @else {
-              <span class="mdy-select__placeholder">{{ placeholder() || '&nbsp;' }}</span>
+              <span class="{{ cls.placeholder }}">{{ placeholder() || '&nbsp;' }}</span>
             }
             <!-- Inside the opener: the arrow says which way this control opens, so it belongs to
                  the control rather than being a second thing in the row, and the other two renderers
@@ -112,11 +112,11 @@ import { MdyDropdownBase } from "../dropdown-base";
                  go inside a native chooser — which is why the contract names the box both shapes
                  share. -->
             @if (effectiveLoading()) {
-              <mdy-icon name="LOADER" class="mdy-select__loader" />
+              <mdy-icon name="LOADER" class="{{ cls.loading }}" />
             } @else {
               <mdy-icon
                 name="CHEVRON_DOWN"
-                class="mdy-select__arrow"
+                class="{{ cls.arrow }}"
                 [class.mdy-select__arrow--open]="open()"
               />
             }
@@ -146,7 +146,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               <input
                 #searchInput
                 type="text"
-                class="mdy-select__search"
+                class="{{ cls.search }}"
                 [placeholder]="i18n.searchPlaceholder"
                 autocomplete="off"
                 [value]="searchQuery()"
@@ -154,7 +154,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               />
             }
             <ul
-              class="mdy-select__list"
+              class="{{ cls.options }}"
               [id]="popupId()"
               role="listbox"
               [attr.aria-labelledby]="triggerId()"
@@ -163,7 +163,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                 <li
                   [id]="optionId(opt)"
                   role="option"
-                  class="mdy-select__option"
+                  class="{{ cls.option }}"
                   [class.mdy-select__option--active]="activeIndex() === i"
                   [class.mdy-select__option--selected]="isChosen(opt.value)"
                   [attr.aria-selected]="opt.value == value()"
@@ -193,10 +193,10 @@ import { MdyDropdownBase } from "../dropdown-base";
                 </li>
               }
               @if (filteredOptions().length === 0 && !showCreateOption()) {
-                <li class="mdy-select__no-results" role="presentation">
+                <li class="{{ cls.empty }}" role="presentation">
                   @if (effectiveLoading()) {
                     <div class="mdy-select__loading-content">
-                      <mdy-icon name="LOADER" class="mdy-select__loader" />
+                      <mdy-icon name="LOADER" class="{{ cls.loading }}" />
                       <span>{{ loadingText() || i18n.loading }}</span>
                     </div>
                   } @else {
@@ -223,7 +223,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                above keeps it, being a button standing in for a chooser with nothing else to say
                it. -->
           <select
-            class="mdy-select__trigger"
+            class="{{ cls.trigger }}"
             [id]="fieldId"
             [value]="value() ?? ''"
             [disabled]="isDisabled()"
@@ -244,7 +244,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                    element declared nothing. With no option declaring itself selected the browser
                    rests on index 0 — this entry, which is disabled — and arrowing off an option that
                    cannot be chosen is not a move it makes, so the control answers no key at all. -->
-              <option class="mdy-select__placeholder" value="" disabled
+              <option class="{{ cls.placeholder }}" value="" disabled
                       [selected]="value() === null || value() === undefined"
                       [attr.selected]="value() === null || value() === undefined ? '' : null">
                 {{ placeholder() || ' ' }}
@@ -262,7 +262,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               </option>
             }
           </select>
-            <mdy-icon name="CHEVRON_DOWN" class="mdy-select__arrow" />
+            <mdy-icon name="CHEVRON_DOWN" class="{{ cls.arrow }}" />
           @if (suffix(); as s) {
             <div class="mdy-input-suffix">
               <ng-container [ngTemplateOutlet]="s.template" />
@@ -299,6 +299,24 @@ export class MdySelectComponent<TValue = string>
   protected override readonly overlayKind = "select" as const;
 
   protected readonly widgetContract = MDY_WIDGET_CONTRACTS.select;
+
+  /**
+   * The class every part wears, asked of the catalogue once.
+   *
+   * Spelled in the template, each of these is a second copy of a name the catalogue already holds,
+   * and a copy is a place the two can disagree without either moving.
+   */
+  protected readonly cls = {
+    trigger: this.widgetContract.parts.trigger.classes.join(" "),
+    value: this.widgetContract.parts.value.classes.join(" "),
+    placeholder: this.widgetContract.parts.placeholder.classes.join(" "),
+    arrow: this.widgetContract.parts.arrow.classes.join(" "),
+    search: this.widgetContract.parts.search.classes.join(" "),
+    options: this.widgetContract.parts.options.classes.join(" "),
+    option: this.widgetContract.parts.option.classes.join(" "),
+    loading: this.widgetContract.parts.loading.classes.join(" "),
+    empty: this.widgetContract.parts.empty.classes.join(" "),
+  } as const;
   protected override readonly widgetKind = "select" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");

@@ -59,6 +59,19 @@ for (const file of files.sort()) {
       if (name) fromContract.push(name);
     }
   }
+  // A part's classes reached through the component's own `widgetContract` field. Same reason as the
+  // two above, and the third spelling to need saying: a renderer that stops restating a name the
+  // catalogue holds reads to the grep as one that stopped drawing the part. The classes are on the
+  // element; only the literal is gone.
+  const kindMatch = /widgetKind\s*=\s*["'`]([a-z-]+)["'`]/.exec(source);
+  if (kindMatch) {
+    const parts = MDY_WIDGET_CONTRACTS[kindMatch[1]]?.parts;
+    if (parts) {
+      for (const [, part] of source.matchAll(/widgetContract\.parts\.([A-Za-z0-9_]+)\.classes/g)) {
+        for (const name of parts[part]?.classes ?? []) fromContract.push(name);
+      }
+    }
+  }
   // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
   // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name
   // preceded by a hyphen is the tail of `--mdy-…` or of `data-mdy-…`, and neither is a class.
