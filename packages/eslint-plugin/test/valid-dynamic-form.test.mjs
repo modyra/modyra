@@ -201,3 +201,38 @@ for (const [name, json] of [
     assert.deepEqual(codesOf(lint(`const form = ${json};`)), expected);
   });
 }
+
+/**
+ * A document is seen whatever number its version carries.
+ *
+ * The detector once listed the versions it would recognise — `1 || 2 || 3` — so a document at a
+ * version the language had since gained was not *rejected* but **unseen**: the rule returned before
+ * asking the parser anything, and a planted defect produced no report at all. Silence is the worst
+ * available answer from a tool that exists to break silence, and it arrives exactly when the
+ * contract moves.
+ *
+ * So the property asserted is not "these versions are supported" — that list would rot the same way.
+ * It is that **which number sits in `version` never decides whether the document is looked at**. The
+ * parser owns the vocabulary and answers for a version it does not support; this rule only decides
+ * whether to ask it.
+ *
+ * The range deliberately runs past what the contract has, so a version it gains later is already
+ * covered, and starts below what it still accepts, so a version it has dropped is too.
+ */
+for (const version of [1, 2, 3, 4, 5, 6, 7]) {
+  test(`a document carrying a defect is never silent at version ${version}`, () => {
+    const document = {
+      version,
+      fields: [{ name: "a", kind: "text" }, { name: "a", kind: "text" }],
+    };
+
+    const messages = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+    assert.ok(
+      messages.length > 0,
+      `version ${version} was not recognised as a document, so a planted duplicate name went unreported`,
+    );
+
+    // And what it says is the parser's answer, not this rule's opinion of the version.
+    assert.deepEqual(codesOf(messages), parseDynamicForm(document).diagnostics.map((d) => d.code));
+  });
+}

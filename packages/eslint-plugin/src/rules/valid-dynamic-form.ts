@@ -28,10 +28,16 @@ const asNode = (value: unknown): EsNode | undefined =>
 /**
  * Whether an object literal claims to be a form document.
  *
- * A version the parser knows, alongside one of the two slots that carry the form, is the document's
- * own self-description — which is what makes this cheap and parser-agnostic. A bare array of fields
- * is also a valid v1 document, and is deliberately not detected: every array literal in a codebase
- * would have to be treated as a candidate.
+ * A `version` that is a number, alongside one of the two slots that carry the form, is the
+ * document's own self-description — which is what makes this cheap and parser-agnostic. A bare array
+ * of fields is also a valid v1 document, and is deliberately not detected: every array literal in a
+ * codebase would have to be treated as a candidate.
+ *
+ * **Which numbers are versions is not decided here.** This once listed them — `1 || 2 || 3` — and a
+ * document at a version the language had since gained was not rejected but *unseen*: no diagnostic,
+ * no report, silence. A detector that remembers the version set goes mute exactly when the contract
+ * moves, which is when a linter is most worth having. The parser owns that vocabulary and says so
+ * for itself, including for a version it does not support; this only decides whether to ask.
  */
 const isFormDocument = (node: EsNode): boolean => {
   if (node.type !== "ObjectExpression") return false;
@@ -47,7 +53,7 @@ const isFormDocument = (node: EsNode): boolean => {
     if (key !== "version") continue;
     const value = asNode(property["value"]);
     const version = value ? unwrapTypeOnly(value) : undefined;
-    if (version?.type === "Literal" && (version["value"] === 1 || version["value"] === 2 || version["value"] === 3)) {
+    if (version?.type === "Literal" && typeof version["value"] === "number") {
       versioned = true;
     }
   }

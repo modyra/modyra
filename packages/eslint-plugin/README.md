@@ -48,8 +48,10 @@ surfaces them like any other rule.
 
 ### `modyra/valid-dynamic-form`
 
-Finds object literals that describe a form document — a `version` of 1, 2 or 3 alongside `fields` or
-`schema` — and reports what `parseDynamicForm` says about them. The diagnostic code travels with the
+Finds object literals that describe a form document — a numeric `version` alongside `fields` or
+`schema` — and reports what `parseDynamicForm` says about them. Which versions the contract supports
+is the parser's answer, not this rule's: a document at a version it does not know is reported as
+such, rather than going unseen. The diagnostic code travels with the
 message, so a finding here is searchable against the same finding in the console and in CI.
 
 ```ts
