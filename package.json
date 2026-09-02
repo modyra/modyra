@@ -82,6 +82,7 @@
     "test:plain-contract": "npm run build:plain && node scripts/audit-plain-full-catalog.mjs && node scripts/audit-plain-widget-contract.mjs",
     "test:import-cycles": "node scripts/audit-import-cycles.mjs",
     "test:contracts": "node scripts/run-contract-gates.mjs",
+    "audit:visual-debt": "node scripts/audit-visual-debt.mjs",
     "test:docs": "node scripts/audit-docs.mjs --check",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
