@@ -240,16 +240,6 @@
     ],
     "themes": []
   },
-  "mdy-select__loading-content": {
-    "kind": "drift",
-    "adapters": [
-      "angular",
-      "lit"
-    ],
-    "themes": [
-      "modyra-material.css"
-    ]
-  },
   "mdy-select__option--create": {
     "kind": "unstyled",
     "adapters": [

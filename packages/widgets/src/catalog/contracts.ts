@@ -90,7 +90,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // the chip grid's `group`. Declared here because the semantic is this kind's, not the name's.
       elements: { options: "listbox" } ,
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], options: ["open"], option: ["selected", "active", "hidden", "disabled"], popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-select", "mdy-select__option-label"] ,
+      presentation: ["mdy-select", "mdy-select__option-label", "mdy-select__loading-content"] ,
       // `options` is what the popup is for. A positioning box framing nothing is a coherent-looking
       // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
       // than a substitute for it.
