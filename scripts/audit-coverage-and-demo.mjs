@@ -203,7 +203,13 @@ for (const file of readdirSync(PANELS).filter((f) => f.endsWith(".js"))) {
   const id = source.match(/\bid:\s*"([^"]+)"/)?.[1] ?? file.replace(/\.js$/, "");
   const declared = [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
   const covered = suite.includes(`"${id}"`);
-  panelReport.push({ id, declared: declared.length, covered });
+  // How many of the declared names the panel's own body never mentions. A panel may exercise a name
+  // indirectly — it renders a select and the library touches the select's tokens without the panel
+  // writing them — so this is an **upper bound on the suspicion**, never a count of defects. It is
+  // measured because the alternative is a number that reads as "shown" while meaning "listed".
+  const body = source.replace(/exercises:\s*\[[^\]]*\]/, " ");
+  const unmentioned = declared.filter((name) => !body.includes(name)).length;
+  panelReport.push({ id, declared: declared.length, covered, unmentioned });
   if (covered) for (const name of declared) shownNames.add(name);
 }
 
@@ -352,6 +358,26 @@ if (constantKeys.length > 0) {
 }
 console.log(`  asserted somewhere: ${score.asserted} (was ${baseline.score.asserted})`);
 console.log(`  shown in a demo:    ${score.shown} of ${score.showable} that a page could show (was ${baseline.score.shown})`);
+// **What `shown` means here, printed with it.** A name counts as shown when a panel *declares* it in
+// `exercises` and that panel has a passing browser test. The declaration is a list somebody writes,
+// not a thing observed at run time — so a name can be listed and never touched, and this number
+// would not know. The gap below is the size of that doubt: an upper bound, since a panel can drive a
+// name indirectly without ever writing it.
+{
+  const declaredTotal = panelReport.reduce((n, p) => n + p.declared, 0);
+  const unmentionedTotal = panelReport.reduce((n, p) => n + (p.unmentioned ?? 0), 0);
+  console.log(
+    `  shown = declared in a panel's \`exercises\` list and covered by that panel's test — a`
+      + ` declaration, not an observation.\n`
+      + `    ${unmentionedTotal} of ${declaredTotal} declared names never appear in their panel's own`
+      + ` body: an upper bound on the doubt, since a panel can drive a name indirectly.`,
+  );
+  const worst = [...panelReport].sort((a, b) => (b.unmentioned ?? 0) - (a.unmentioned ?? 0)).slice(0, 3)
+    .filter((p) => (p.unmentioned ?? 0) > 0);
+  if (worst.length > 0) {
+    console.log(`    densest: ${worst.map((p) => `${p.id} ${p.unmentioned}/${p.declared}`).join(" · ")}`);
+  }
+}
 
 const recorded = new Set(baseline.uncovered.map((u) => u.name));
 const appeared = uncovered.filter((u) => !recorded.has(u.name));
