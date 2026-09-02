@@ -207,6 +207,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0190: A verdict that has not happened](0190-a-verdict-that-has-not-happened.md) — an asynchronous rule that has not answered is `unknown`, not valid and not invalid; a restore re-derives rather than installs; and a runtime that has not declared the capability is refused by name
 - [ADR 0191: A gate nobody runs](0191-a-gate-nobody-runs.md) — the conformance kit's browser half was in no workflow; its eleven findings against plain were all its own, and a probe that does not assert its focus landed cannot tell a press that went nowhere from a widget that ignored it
 - [ADR 0192: A debt that cannot be paid where it is incurred](0192-a-debt-that-cannot-be-paid-where-it-is-incurred.md) — linux baselines are recorded from a pushed head, so the commit-time check announces the debt and names the run instead of refusing the commit it cannot let through
+- [ADR 0193: A rewrite is not a deletion](0193-a-rewrite-is-not-a-deletion.md) — the filter matches by shape because a censor that names what it censors has published it, excluded names live in the ignore file that is not itself versioned, and a force-push removes an object from reachable history without deleting it from the remote
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
