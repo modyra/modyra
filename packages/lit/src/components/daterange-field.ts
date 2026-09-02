@@ -20,6 +20,26 @@ import {
   renderOverlayPanel,
 } from "./popup-styles.js";
 
+/**
+ * The class every part carries, asked of the catalogue once.
+ *
+ * Restating them here is how a renderer and the contract come to disagree without either moving:
+ * the name is spelled twice and only one copy is authoritative.
+ */
+const CLASS = {
+  calendar: partClasses("daterange", "calendar").join(" "),
+  dialogHeader: partClasses("daterange", "dialogHeader").join(" "),
+  grid: partClasses("daterange", "grid").join(" "),
+  gridcell: partClasses("daterange", "gridcell").join(" "),
+  root: partClasses("daterange", "root").join(" "),
+  row: partClasses("daterange", "row").join(" "),
+  separator: partClasses("daterange", "separator").join(" "),
+  toggle: partClasses("daterange", "toggle").join(" "),
+  weekday: partClasses("daterange", "weekday").join(" "),
+  weekdays: partClasses("daterange", "weekdays").join(" "),
+} as const;
+
+
 // ─── Date range ──────────────────────────────────────────────────────────────
 
 /** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
@@ -181,7 +201,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       const handle = this.field;
       if (handle) this.closePopup(handle);
     });
-    this.classList.add("mdy-renderer--datepicker");
+    this.classList.add(CLASS.root);
   }
 
   /** The host's choice if it made one, the locale's otherwise. */
@@ -469,18 +489,18 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
 
   private renderCalendarGrid(handle: MdyFieldHandle<MdyDateRange | null>): unknown {
     return html`
-      <div class="mdy-datepicker__weekdays" role="row">
+      <div class="${CLASS.weekdays}" role="row">
         ${this.weekdayNames().map(
-          (name) => html`<span class="mdy-datepicker__weekday" role="columnheader">${name}</span>`,
+          (name) => html`<span class="${CLASS.weekday}" role="columnheader">${name}</span>`,
         )}
       </div>
       ${this.rows().map(
-        (row) => html`<div class="mdy-datepicker__row" role="row">
+        (row) => html`<div class="${CLASS.row}" role="row">
           ${row.map((cell) => {
             const disabled = this.isCellDisabled(cell);
             const rangeEndpoint = this.isCellRangeEndpoint(cell);
             const classes = [
-              "mdy-datepicker__cell",
+              CLASS.gridcell,
               cell.inMonth ? "" : "mdy-datepicker__cell--outside",
               this.isCellToday(cell) ? "mdy-datepicker__cell--today" : "",
               rangeEndpoint ? "mdy-datepicker__cell--selected" : "",
@@ -545,13 +565,13 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     const actions = nothing;
     return html`
       <div
-        class="mdy-datepicker__calendar"
+        class="${CLASS.calendar}"
         role="dialog"
         aria-label=${this.label || this.messages.daterangeChooseRange}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         ${modalHeader}
-        <div class="mdy-datepicker__header">
+        <div class="${CLASS.dialogHeader}">
           <div class="mdy-datepicker__header-label">
             <button
               type="button"
@@ -586,7 +606,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         </div>
         ${this.view.viewMode === "days"
           ? html`<div
-              class="mdy-datepicker__grid"
+              class="${CLASS.grid}"
               role="grid"
               aria-label="${monthLabel} ${this.view.viewYear}"
             >
@@ -654,7 +674,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               }}
             />
           </span>
-          <span class="mdy-daterange__sep" aria-hidden="true">–</span>
+          <span class="${CLASS.separator}" aria-hidden="true">–</span>
           <span
             class="mdy-daterange__input-sizer"
             data-value=${range.end ?? this.endPlaceholder}
@@ -687,7 +707,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           <div class="mdy-input-suffix">
             <button
               type="button"
-              class="mdy-datepicker__toggle"
+              class="${CLASS.toggle}"
               ?disabled=${handle.disabled()}
               aria-label=${this.messages.daterangeChooseRange}
               aria-haspopup=${this.popupPromise}

@@ -11,6 +11,7 @@ import { capabilityOf, keyMeans,
   timepickerPlaceholder,
   type MdyUiCommand,
   timepickerEntryText,
+  partClasses,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -50,6 +51,29 @@ import {
   POPUP_ANCHOR_STYLE,
   renderOverlayPanel,
 } from "./popup-styles.js";
+
+/**
+ * The class every part carries, asked of the catalogue once.
+ *
+ * Restating them here is how a renderer and the contract come to disagree without either moving:
+ * the name is spelled twice and only one copy is authoritative.
+ */
+const CLASS = {
+  action: partClasses("timepicker", "action").join(" "),
+  actions: partClasses("timepicker", "actions").join(" "),
+  container: partClasses("timepicker", "container").join(" "),
+  content: partClasses("timepicker", "content").join(" "),
+  control: partClasses("timepicker", "control").join(" "),
+  dialFace: partClasses("timepicker", "dialFace").join(" "),
+  dialNumber: partClasses("timepicker", "dialNumber").join(" "),
+  dialUnavailable: partClasses("timepicker", "dialUnavailable").join(" "),
+  dialUnavailableArc: partClasses("timepicker", "dialUnavailableArc").join(" "),
+  header: partClasses("timepicker", "header").join(" "),
+  modeToggle: partClasses("timepicker", "modeToggle").join(" "),
+  period: partClasses("timepicker", "period").join(" "),
+  toggle: partClasses("timepicker", "toggle").join(" "),
+} as const;
+
 // ─── Time picker ─────────────────────────────────────────────────────────────
 
 type TimeField = "hour" | "minute";
@@ -595,7 +619,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
     const hourActive = this.view.focusedField === "hour";
     const minuteActive = this.view.focusedField === "minute";
     return html`
-      <div class="mdy-timepicker-header">
+      <div class="${CLASS.header}">
         <div class="mdy-timepicker-fields">
           <div class="${this.partClass("hour")} ${hourActive ? "mdy-timepicker-segment--active" : ""}">
             <input
@@ -652,7 +676,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
         ${this.format === "12h"
           ? html`
               <div
-                class="mdy-timepicker-period-toggle ${this.compact
+                class="${CLASS.period} ${this.compact
                   ? "mdy-timepicker-period-toggle--compact"
                   : ""}"
               >
@@ -696,7 +720,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                anyway in browse mode, announces a value, answers none of the keys it promises, and
                says the hour a second time after the box already has. ADR 0145. -->
           <div
-            class="mdy-timepicker-dial__face"
+            class="${CLASS.dialFace}"
             aria-hidden="true"
             @mousedown=${this.onDragStart}
             @touchstart=${this.onDragStart}
@@ -705,9 +729,9 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
                  hours at one direction, so one length leaves the two selections identical. -->
             <!-- Which stretches of the ring offer nothing, behind everything else on the face. -->
             ${this.showUnavailable
-              ? html`<div class="mdy-timepicker-dial__unavailable-layer" aria-hidden="true">
+              ? html`<div class="${CLASS.dialUnavailable}" aria-hidden="true">
                   ${(this.showUnavailable ? timepickerDialUnavailableArcs(field, this.format, this.stepsNow(), this.measuredHandLength()) : []).map((arc) => html`<div
-                    class="mdy-timepicker-dial__unavailable"
+                    class="${CLASS.dialUnavailableArc}"
                     style="--tp-arc-from: ${arc.from}deg; --tp-arc-span: ${arc.span}deg${arc.ring === "inner"
                       ? `; scale: ${MDY_TIMEPICKER_INNER_RING}`
                       : ""}"
@@ -734,7 +758,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
             ${numbers.map(
               (number) => html`
                 <div
-                  class="mdy-timepicker-dial__number ${number.value === selected
+                  class="${CLASS.dialNumber} ${number.value === selected
                     ? "mdy-timepicker-dial__number--selected"
                     : ""} ${number.ring === "inner" ? "mdy-timepicker-dial__number--inner" : ""}"
                   style="--index: ${number.index}"
@@ -781,7 +805,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
   private renderPopup(handle: MdyFieldHandle<string | null>): unknown {
     return html`
       <div
-        class="mdy-timepicker-container ${this.view.viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
+        class="${CLASS.container} ${this.view.viewMode === "dial" ? "mdy-timepicker--dial" : ""}"
         @keydown=${(e: KeyboardEvent) => {
           if (keyMeans(this.widgetKind, e, "cancel", true)) {
             e.preventDefault();
@@ -812,14 +836,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           if (e.key === "Tab") this.moveByTab(e);
         }}
       >
-        <div class="mdy-timepicker-content">
+        <div class="${CLASS.content}">
           ${this.renderHeader()}
           ${this.view.viewMode === "dial" ? this.renderDial() : nothing}
         </div>
-        <div class="mdy-timepicker-actions">
+        <div class="${CLASS.actions}">
           <button
             type="button"
-            class="mdy-timepicker-mode-toggle"
+            class="${CLASS.modeToggle}"
             aria-label=${this.view.viewMode === "input" ? "Switch to dial" : "Switch to input"}
             @click=${() => this.setViewMode(this.view.viewMode === "input" ? "dial" : "input")}
           >
@@ -840,14 +864,14 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="mdy-timepicker-spacer"></div>
           <button
             type="button"
-            class="mdy-timepicker-action-btn"
+            class="${CLASS.action}"
             @click=${() => this.closePopup(handle)}
           >
             Cancel
           </button>
           <button
             type="button"
-            class="mdy-timepicker-action-btn mdy-timepicker-action-btn--confirm"
+            class="${CLASS.action} mdy-timepicker-action-btn--confirm"
             @click=${() => this.confirm(handle)}
           >
             OK
@@ -888,7 +912,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <input
             id=${this.fieldId}
             type="text"
-            class="mdy-timepicker__input"
+            class="${CLASS.control}"
             placeholder=${this.effectivePlaceholder}
             .value=${this.view.display}
             ?disabled=${handle.disabled()}
@@ -917,7 +941,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
           <div class="mdy-input-suffix">
             <button
               type="button"
-              class="mdy-timepicker__toggle"
+              class="${CLASS.toggle}"
               ?disabled=${handle.disabled()}
               aria-label=${this.messages.timepickerOpenLabel}
               aria-expanded=${this._open ? "true" : "false"}

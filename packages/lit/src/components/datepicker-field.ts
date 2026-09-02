@@ -21,6 +21,24 @@ import {
   renderOverlayPanel,
 } from "./popup-styles.js";
 
+/**
+ * The class every part carries, asked of the catalogue once.
+ *
+ * Restating them here is how a renderer and the contract come to disagree without either moving:
+ * the name is spelled twice and only one copy is authoritative.
+ */
+const CLASS = {
+  calendar: partClasses("datepicker", "calendar").join(" "),
+  control: partClasses("datepicker", "control").join(" "),
+  dialogHeader: partClasses("datepicker", "dialogHeader").join(" "),
+  grid: partClasses("datepicker", "grid").join(" "),
+  row: partClasses("datepicker", "row").join(" "),
+  toggle: partClasses("datepicker", "toggle").join(" "),
+  weekday: partClasses("datepicker", "weekday").join(" "),
+  weekdays: partClasses("datepicker", "weekdays").join(" "),
+} as const;
+
+
 // ─── Date & time ─────────────────────────────────────────────────────────────
 
 /** Which view the calendar shows — the contract's vocabulary, not a second set of three strings. */
@@ -387,13 +405,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     const inRange = (iso: string): boolean =>
       (!this.earliest || iso >= this.earliest) && (!this.latest || iso <= this.latest);
     return html`
-      <div class="mdy-datepicker__weekdays" role="row">
+      <div class="${CLASS.weekdays}" role="row">
         ${this.weekdayNames().map(
-          (name) => html`<span class="mdy-datepicker__weekday" role="columnheader">${name}</span>`,
+          (name) => html`<span class="${CLASS.weekday}" role="columnheader">${name}</span>`,
         )}
       </div>
       ${this.rows().map(
-        (row) => html`<div class="mdy-datepicker__row" role="row">
+        (row) => html`<div class="${CLASS.row}" role="row">
           ${row.map((cell) => {
             const disabled = !inRange(cell.iso);
             // What a day announces and wears, from the contract rather than from six ternaries here.
@@ -452,13 +470,13 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     const actions = nothing;
     return html`
       <div
-        class="mdy-datepicker__calendar"
+        class="${CLASS.calendar}"
         role="dialog"
         aria-label=${this.label || this.messages.datepickerChooseDate}
         @keydown=${(e: KeyboardEvent) => this.onGridKeydown(e, handle)}
       >
         ${modalHeader}
-        <div class="mdy-datepicker__header">
+        <div class="${CLASS.dialogHeader}">
           <div class="mdy-datepicker__header-label">
             <button
               type="button"
@@ -493,7 +511,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         </div>
         ${this.view.viewMode === "days"
           ? html`<div
-              class="mdy-datepicker__grid"
+              class="${CLASS.grid}"
               role="grid"
               id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}
               aria-label="${monthLabel} ${this.view.viewYear}"
@@ -515,7 +533,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         <input
           id=${this.fieldId}
           type="text"
-          class="mdy-datepicker__input"
+          class="${CLASS.control}"
           placeholder=${this.placeholder}
           .value=${this.view.entryText
             ?? formatLocalizedDate(handle.value() ?? "", this.resolvedLocale)}
@@ -554,7 +572,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
         <div class="mdy-input-suffix">
           <button
             type="button"
-            class="mdy-datepicker__toggle"
+            class="${CLASS.toggle}"
             ?disabled=${handle.disabled()}
             aria-label=${this.messages.datepickerToggleLabel}
             aria-expanded=${this._open ? "true" : "false"}
