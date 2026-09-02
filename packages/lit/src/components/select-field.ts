@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stateClass, stepOutOfOverlay } from "@modyra/widgets";
+import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stepOutOfOverlay } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -37,16 +37,21 @@ const CLASS = {
  */
 
 /**
- * The "create a new one" affordance is this renderer's, not the contract's: no theme styles it and
- * no other renderer draws it. Declared here rather than left inline, so it is discretionary on
- * purpose instead of by omission.
+ * The "create a new one" affordance, spelled rather than derived — and the spelling is the point.
+ *
+ * The contract declares no `create` state on `option`, so there is nothing to ask it for: building
+ * the name from the part's base would produce a class the catalogue does not know, dressed as one it
+ * does. Spelled, it reads as what it is — a renderer's own affordance — and stays comparable with
+ * whoever else draws one.
  */
-const OPTION_CREATE = `${partClasses("select", "option").join(" ")}--create`;
+const OPTION_CREATE = "mdy-select__option--create";
 
-/** Modifiers, derived from the same base rather than spelled beside it. */
-const OPTION_SELECTED = stateClass(CLASS.option, "selected");
-const OPTION_ACTIVE = stateClass(CLASS.option, "active");
-const ARROW_OPEN = stateClass(CLASS.arrow, "open");
+/**
+ * A part's modifier is asked of the element, not built beside it: `partStateClass(part, state, on)`
+ * reads the part's own first class and returns nothing when the state is off, so it interpolates
+ * unguarded — and the parity audit recognises that spelling, where a modifier assembled from a local
+ * constant reads to it as a renderer that stopped emitting the class.
+ */
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
   MdyLitOverlayController,
@@ -506,9 +511,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           const selected = state.selectedKey === key;
           const active = state.activeKey === key;
           return html`<li
-              class="${CLASS.option} ${selected ? OPTION_SELECTED : ""} ${active
-              ? OPTION_ACTIVE
-              : ""}"
+              class="${CLASS.option} ${this.partStateClass("option", "selected", selected)} ${this.partStateClass("option", "active", active)}"
               id=${part.id}
               role="option"
               aria-selected=${selected ? "true" : "false"}
@@ -578,7 +581,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           <div class="${MDY_FIELD_SHELL_CLASSES.suffix}">
             ${state.loading
         ? mdyIcon("LOADER", CLASS.loading)
-        : mdyIcon("CHEVRON_DOWN", `${CLASS.arrow} ${this._open ? ARROW_OPEN : ""}`)}
+        : mdyIcon("CHEVRON_DOWN", `${CLASS.arrow} ${this.partStateClass("arrow", "open", this._open)}`)}
             <slot name="suffix"></slot>
           </div>
         </div>
