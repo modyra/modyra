@@ -155,7 +155,14 @@ if (debts.length === 0) {
   console.log(`\nVISUAL DEBT — ${debts.length}\n`);
   for (const debt of debts) console.log(`  - ${debt}`);
   console.log(
-    "\n  These images cannot be recorded where you are working: they are taken where the suite runs."
+    // Said here rather than learned again each time: the first real case surprised its own author
+    // ten minutes after they had written the demo that caused it.
+    "\n  **Most often this is expected rather than a mistake.** The lab page is both the showcase and"
+    + "\n  the photographed subject, so the demo the coverage gate asks for whenever a public name"
+    + "\n  lands changes the very page these baselines are of. Demo -> visual debt is a cycle, not an"
+    + "\n  accident: if a coverage demo went in with this change, this paragraph is routine and the"
+    + "\n  only thing owed is the recorder run below.\n"
+    + "\n  These images cannot be recorded where you are working: they are taken where the suite runs."
     + "\n  Push the change, then run the recorder against the published head:"
     + "\n\n      gh workflow run visual-baselines.yml --ref main"
     + "\n\n  and commit the `-linux.png` files from its artifact. Until then CI is red on those"
