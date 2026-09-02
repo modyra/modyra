@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, stepOutOfOverlay } from "@modyra/widgets";
+import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stateClass, stepOutOfOverlay } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -8,6 +8,45 @@ import {
   optionsWithUnrecognizedValue,
   selectKeyboardAction, listboxNextIndex, focusWhenShown } from "@modyra/widgets";
 import { MdyLitSelectAdapter } from "../widget-runtime/index.js";
+
+/**
+ * The class every part carries, asked of the contract once.
+ *
+ * Written out in the template, this file restated eighteen names the catalogue already answers —
+ * and one of them, the empty state, had drifted from what the catalogue said while the themes
+ * followed the renderer. A name spelled in two places is a name that can disagree with itself.
+ */
+const CLASS = {
+  trigger: partClasses("select", "trigger").join(" "),
+  value: partClasses("select", "value").join(" "),
+  placeholder: partClasses("select", "placeholder").join(" "),
+  arrow: partClasses("select", "arrow").join(" "),
+  search: partClasses("select", "search").join(" "),
+  options: partClasses("select", "options").join(" "),
+  option: partClasses("select", "option").join(" "),
+  loading: partClasses("select", "loading").join(" "),
+  empty: partClasses("select", "empty").join(" "),
+} as const;
+
+/**
+ * `mdy-select__option-label` is deliberately not here. The catalogue holds it — inside
+ * `presentationClasses`, a flat array — but names no part for it, so the only way to reach it is by
+ * position, and a selector that chooses by index encodes the order of the moment. A literal that
+ * says what it is beats an index that says where it sits; when the catalogue names the part, this
+ * line joins the others.
+ */
+
+/**
+ * The "create a new one" affordance is this renderer's, not the contract's: no theme styles it and
+ * no other renderer draws it. Declared here rather than left inline, so it is discretionary on
+ * purpose instead of by omission.
+ */
+const OPTION_CREATE = `${partClasses("select", "option").join(" ")}--create`;
+
+/** Modifiers, derived from the same base rather than spelled beside it. */
+const OPTION_SELECTED = stateClass(CLASS.option, "selected");
+const OPTION_ACTIVE = stateClass(CLASS.option, "active");
+const ARROW_OPEN = stateClass(CLASS.arrow, "open");
 import { MdyDropdownFieldElement } from "./dropdown-field.js";
 import {
   MdyLitOverlayController,
@@ -327,7 +366,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const offersEmpty = empty || this.placeholder !== "";
     return html`<select
       id=${this.fieldId}
-      class="mdy-select__trigger"
+      class="${CLASS.trigger}"
       ?disabled=${handle.disabled()}
       aria-invalid=${this.showErrors(handle) ? "true" : "false"}
       aria-readonly=${handle.readonly() ? "true" : nothing}
@@ -374,7 +413,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
          them looks like one form, and a kind that removes an affordance owes one back. This shape
          drew neither: the field had nothing at its trailing edge saying it opens, while the four
          other kinds in this renderer draw theirs. -->
-    ${mdyIcon("CHEVRON_DOWN", "mdy-select__arrow")}`;
+    ${mdyIcon("CHEVRON_DOWN", CLASS.arrow)}`;
   }
 
   /**
@@ -436,7 +475,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     const showBlockErrors = !this.inlineErrors && this.showErrors(handle);
 
     this.syncStateClasses(handle);
-    this.classList.toggle("mdy-renderer--open", this._open);
+    this.classList.toggle(MDY_FIELD_STATE_CLASSES.rendererOpen, this._open);
 
     const position = this.overlay.state.position;
     const alignment = this.overlay.state.alignment;
@@ -448,7 +487,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         ${this.searchable
         ? html`<input
               type="text"
-              class="mdy-select__search"
+              class="${CLASS.search}"
               aria-label=${this.nameOfPart("select.search")}
               .value=${state.query}
               @input=${this.onSearchInput}
@@ -456,7 +495,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             />`
         : nothing}
         <ul
-          class="mdy-select__list"
+          class="${CLASS.options}"
           id=${listbox.id}
           role="listbox"
           aria-labelledby=${trigger.id}
@@ -467,8 +506,8 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
           const selected = state.selectedKey === key;
           const active = state.activeKey === key;
           return html`<li
-              class="mdy-select__option ${selected ? "mdy-select__option--selected" : ""} ${active
-              ? "mdy-select__option--active"
+              class="${CLASS.option} ${selected ? OPTION_SELECTED : ""} ${active
+              ? OPTION_ACTIVE
               : ""}"
               id=${part.id}
               role="option"
@@ -484,7 +523,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
         })}
           ${this.showCreateOption(state.query, filtered)
         ? html`<li
-                class="mdy-select__option mdy-select__option--create"
+                class="${CLASS.option} ${OPTION_CREATE}"
                 role="option"
                 @click=${() => this.onCreateOption(state.query)}
               >
@@ -492,10 +531,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
               </li>`
         : nothing}
           ${filtered.length === 0 && !this.showCreateOption(state.query, filtered)
-        ? html`<li class="mdy-select__no-results" role="presentation">
+        ? html`<li class="${CLASS.empty}" role="presentation">
                 ${state.loading
             ? html`<div class="mdy-select__loading-content">
-                      ${mdyIcon("LOADER", "mdy-select__loader")}
+                      ${mdyIcon("LOADER", CLASS.loading)}
                       <span>Loading…</span>
                     </div>`
             : html`${this.messages.noResults}`}
@@ -509,10 +548,10 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       ${this.renderLabel(handle, trigger.id)}
       <div class="mdy-select">
         <div class="${this.wrapperClass(handle)}">
-          <div class="mdy-input-prefix"><slot name="prefix"></slot></div>
+          <div class="${MDY_FIELD_SHELL_CLASSES.prefix}"><slot name="prefix"></slot></div>
           <button
             type="button"
-            class="mdy-select__trigger ${trigger.classes.slice(1).join(" ")}"
+            class="${trigger.classes.join(" ")}"
             id=${trigger.id}
             aria-haspopup=${trigger.attributes["aria-haspopup"]}
             aria-expanded=${trigger.attributes["aria-expanded"] === "true" ? "true" : "false"}
@@ -533,13 +572,13 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             @keydown=${(e: KeyboardEvent) => this.onKeydown(e, handle)}
           >
             ${text
-        ? html`<span class="mdy-select__value">${text}</span>`
-        : html`<span class="mdy-select__placeholder">${this.placeholder || "\u00A0"}</span>`}
+        ? html`<span class="${CLASS.value}">${text}</span>`
+        : html`<span class="${CLASS.placeholder}">${this.placeholder || "\u00A0"}</span>`}
           </button>
-          <div class="mdy-input-suffix">
+          <div class="${MDY_FIELD_SHELL_CLASSES.suffix}">
             ${state.loading
-        ? mdyIcon("LOADER", "mdy-select__loader")
-        : mdyIcon("CHEVRON_DOWN", `mdy-select__arrow ${this._open ? "mdy-select__arrow--open" : ""}`)}
+        ? mdyIcon("LOADER", CLASS.loading)
+        : mdyIcon("CHEVRON_DOWN", `${CLASS.arrow} ${this._open ? ARROW_OPEN : ""}`)}
             <slot name="suffix"></slot>
           </div>
         </div>

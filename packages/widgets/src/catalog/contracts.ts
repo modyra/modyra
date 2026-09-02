@@ -81,7 +81,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       required: ["option", "optionControl", "optionCheck", "optionText"] }),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "options", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { options: "popup" },
-      classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], search: ["mdy-select__search"], options: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__empty"] },
+      classes: { trigger: ["mdy-select__trigger"], value: ["mdy-select__value"], placeholder: ["mdy-select__placeholder"], arrow: ["mdy-select__arrow"], popup: ["mdy-select__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], search: ["mdy-select__search"], options: ["mdy-select__list"], option: ["mdy-select__option"], loading: ["mdy-select__loader"], empty: ["mdy-select__no-results"] },
       // `selected` is the value; `active` is where the keyboard is. They are genuinely different —
       // arrowing through a list moves `active` without changing what is chosen — and a renderer that
       // conflated them would make the list unnavigable for anyone not using a pointer.
