@@ -89,11 +89,9 @@ const CATEGORIES = [
  * would score. Without coverage beside it, "0 literal" reads as praise for the packages that have not
  * been written yet.
  */
-const KINDS = JSON.parse(
-  execFileSync(process.execPath, ["--input-type=module", "-e",
-    'import {MDY_WIDGET_CONTRACTS} from "./packages/widgets/dist/index.js";'
-    + ' process.stdout.write(JSON.stringify(Object.keys(MDY_WIDGET_CONTRACTS)))'],
-    { cwd: ROOT, encoding: "utf8" }));
+const KINDS = fromContractOrEnv("MDY_AUDIT_KINDS",
+  'import {MDY_WIDGET_CONTRACTS} from "./packages/widgets/dist/index.js";'
+  + ' process.stdout.write(JSON.stringify(Object.keys(MDY_WIDGET_CONTRACTS)))');
 
 /**
  * The public answer to each category, read from the built package rather than listed here.
@@ -119,11 +117,9 @@ const ANSWERS = {
   validators: /^errorsVisible$|Errors(?:Of)?$|^showsAsInvalid$|^fieldCanBeInvalid$/,
 };
 
-const PUBLIC = JSON.parse(
-  execFileSync(process.execPath, ["--input-type=module", "-e",
-    'import * as W from "./packages/widgets/dist/index.js";'
-    + ' process.stdout.write(JSON.stringify(Object.keys(W)))'],
-    { cwd: ROOT, encoding: "utf8" }));
+const PUBLIC = fromContractOrEnv("MDY_AUDIT_PUBLIC",
+  'import * as W from "./packages/widgets/dist/index.js";'
+  + ' process.stdout.write(JSON.stringify(Object.keys(W)))');
 
 /** A reference to a catalogue or a contract export: the derived half of the ratio. */
 const DERIVED = /\bMDY_[A-Z_]+|\bmdy[A-Z][A-Za-z]*\(|@modyra\/(?:widgets|core)/g;
@@ -144,6 +140,24 @@ function sourceFilesOf(pkg) {
   };
   walk(base);
   return out;
+}
+
+/**
+ * The contract's vocabulary — read from the built package, or supplied.
+ *
+ * Supplying it is what makes a *trend* measurable. Reading a past source tree with that tree's own
+ * vocabulary compares two things at once: the code moved and so did the list it is measured against,
+ * and a category that gained a public door would look like consumers that stopped duplicating. One
+ * vocabulary, held fixed, is the only way the direction means anything — and the direction is the
+ * threshold, not the number.
+ *
+ * It also lets the instrument run where the package is not installed, which is every past checkout.
+ */
+function fromContractOrEnv(variable, program) {
+  const supplied = process.env[variable];
+  if (supplied) return JSON.parse(supplied);
+  return JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", program],
+    { cwd: ROOT, encoding: "utf8" }));
 }
 
 const report = [];
