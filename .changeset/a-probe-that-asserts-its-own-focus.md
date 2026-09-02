@@ -1,5 +1,5 @@
 ---
-"@modyra/widgets": patch
+"@modyra/widgets": minor
 ---
 
 The conformance kit measures what it claims to measure
@@ -18,3 +18,8 @@ This changes what a consuming renderer is asked. A renderer that passed because 
 found, or that reported a nameless element it was right to hide, will be measured for the first time —
 the keyboard section reaches bindings it had been silently skipping, and its "unreachable" count is
 now about the renderer rather than about the kit.
+
+Minor rather than patch, and the reason is the one a consumer cares about: the type surface is
+unchanged, so a surface diff calls this a patch and is silent on the only dimension that moves. An
+external renderer that updates can go from green to red without having touched anything, and that
+deserves the line that announces it beforehand.
