@@ -39,7 +39,7 @@ battle(
   async (ctx) => {
     const parts = TIMEPICKER.parts;
     const named = Object.entries(parts).find(([, part]) => part.classes.includes(OPTION_CLASS));
-    const presentation = TIMEPICKER.presentationClasses ?? [];
+    const presentation = Object.values(TIMEPICKER.presentationClasses ?? {});
 
     ctx.log.note("what the catalogue says about the period", {
       partsMentioningTheClass: named ? named[0] : null,

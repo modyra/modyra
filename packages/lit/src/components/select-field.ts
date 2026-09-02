@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stepOutOfOverlay } from "@modyra/widgets";
+import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, presentationClass, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stepOutOfOverlay } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -26,15 +26,8 @@ const CLASS = {
   option: partClasses("select", "option").join(" "),
   loading: partClasses("select", "loading").join(" "),
   empty: partClasses("select", "empty").join(" "),
+  optionLabel: presentationClass("select", "optionLabel"),
 } as const;
-
-/**
- * `mdy-select__option-label` is deliberately not here. The catalogue holds it — inside
- * `presentationClasses`, a flat array — but names no part for it, so the only way to reach it is by
- * position, and a selector that chooses by index encodes the order of the moment. A literal that
- * says what it is beats an index that says where it sits; when the catalogue names the part, this
- * line joins the others.
- */
 
 /**
  * The "create a new one" affordance, spelled rather than derived — and the spelling is the point.
@@ -521,7 +514,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
               if (!option.disabled) this.pick(handle, option.value);
             }}
             >
-              <span class="mdy-select__option-label">${option.label}</span>
+              <span class="${CLASS.optionLabel}">${option.label}</span>
             </li>`;
         })}
           ${this.showCreateOption(state.query, filtered)

@@ -315,5 +315,16 @@
       "angular"
     ],
     "themes": []
+  },
+  "mdy-dynamic-form": {
+    "kind": "drift",
+    "adapters": [
+      "angular",
+      "plain"
+    ],
+    "themes": [
+      "modyra",
+      "modyra-material"
+    ]
   }
 }
