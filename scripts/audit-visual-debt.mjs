@@ -91,23 +91,35 @@ const renderers = readdirSync(join(ROOT, "e2e"), { withFileTypes: true })
   .filter((name) => existsSync(join(ROOT, "e2e", name, "visual.spec.ts")))
   .filter((name) => existsSync(join(ROOT, "examples", name)));
 
-const debts = [];
+const debts = [...parityFindings()];
 const rows = [];
 
-/** Snapshot names, stripped of the platform suffix, grouped by the platforms that carry them. */
-function twinsOf(renderer) {
-  const dir = join("e2e", renderer, "visual.spec.ts-snapshots");
-  const tracked = git("ls-files", "--", `:(glob)${dir}/*.png`).split("\n").filter(Boolean);
-  const byName = new Map();
-  for (const file of tracked) {
-    const base = file.split("/").pop();
-    const match = base.match(/^(.*)-(darwin|linux)\.png$/);
-    if (!match) continue;
-    const [, name, platform] = match;
-    byName.set(name, { ...(byName.get(name) ?? {}), [platform]: true });
+/**
+ * The other half of the question, asked by the script that already owns it.
+ *
+ * `audit-baseline-parity.mjs` answers "does every shot exist for both platforms", which is the
+ * commonest form of this debt and the one the commit-comparison below cannot see: a *new* shot is
+ * declared in a spec, not under `examples/`, so a suite that gained a subject and recorded only the
+ * platform at hand reads as perfectly current.
+ *
+ * It is delegated rather than reimplemented — this file had a copy of it for one commit, written
+ * without noticing the original, which is how a repository grows two answers that drift. What is
+ * added here is *when* it is asked: that audit runs inside `test:e2e`, so it never speaks until CI
+ * gets that far, and three heads in a row it did not. Asking it at commit time is the whole
+ * contribution.
+ */
+function parityFindings() {
+  try {
+    execFileSync(process.execPath, ["scripts/audit-baseline-parity.mjs"], { cwd: ROOT, encoding: "utf8" });
+    return [];
+  } catch (failure) {
+    // Its own report is printed above, in its words. Repeating the file list here would give a
+    // reader two copies to reconcile, so this line only says which question failed.
+    process.stdout.write(`${failure.stdout ?? ""}${failure.stderr ?? ""}`);
+    return ["baseline parity: a shot exists for one platform and not the other (listed above)"];
   }
-  return byName;
 }
+
 
 for (const renderer of renderers) {
   const snapshots = join("e2e", renderer, "visual.spec.ts-snapshots");
@@ -124,18 +136,6 @@ for (const renderer of renderers) {
       + (linux === null ? " (none was ever recorded)" : " (they were recorded and then removed)"));
     continue;
   }
-  const twins = twinsOf(renderer);
-  const darwinOnly = [...twins].filter(([, on]) => on.darwin && !on.linux).map(([name]) => name);
-  const linuxOnly = [...twins].filter(([, on]) => on.linux && !on.darwin).map(([name]) => name);
-  if (darwinOnly.length > 0) {
-    debts.push(`${renderer}: ${darwinOnly.length} image(s) recorded on darwin with no linux twin `
-      + `(e.g. ${darwinOnly.slice(0, 2).join(", ")})`);
-  }
-  if (linuxOnly.length > 0) {
-    debts.push(`${renderer}: ${linuxOnly.length} image(s) recorded on linux with no darwin twin `
-      + `(e.g. ${linuxOnly.slice(0, 2).join(", ")})`);
-  }
-
   const current = isAncestor(pages, linux);
   rows.push(`  ${renderer.padEnd(10)} ${String(recorded).padStart(3)} linux image(s)  `
     + `pages ${pages.slice(0, 8)}  linux ${linux.slice(0, 8)}  ${current ? "current" : "BEHIND"}`);
