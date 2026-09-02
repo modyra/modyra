@@ -150,6 +150,16 @@ jobs:
       # an implicit `success()`, so a condition naming only the build outcomes would still be skipped
       # by the very earlier failure it exists to survive — the change would read correct and do
       # nothing. A cancelled run still stops: someone asked it to.
+      #
+      # The expression is wrapped in `${{ }}` because a bare `!` opens a YAML tag: unquoted, the
+      # parser reads `!cancelled()` as a type annotation and hands GitHub a condition with that
+      # clause silently gone — the same change, the same review, and the implicit `success()` back
+      # in force. It was caught by re-parsing this file, not by reading the diff.
+      #
+      # **How to tell whether this works, since a green run cannot say.** The condition only takes
+      # effect when an earlier step fails, so every all-green run looks identical with or without it.
+      # The test is a run that goes red *before* these steps: if they report `skipped` there, this is
+      # not doing what it says. Until such a run has been read, it is unproven.
       - name: Browser smoke test (chromium, pull requests)
         if: ${{ !cancelled() && steps.build_packages.outcome == 'success' && steps.build_angular.outcome == 'success' && github.event_name == 'pull_request' }}
         run: |
