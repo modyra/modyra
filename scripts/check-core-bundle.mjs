@@ -11,7 +11,8 @@
  */
 import { execFileSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -62,6 +63,41 @@ function measure(label, entry) {
   return { min, gz };
 }
 
+/**
+ * Whether the artefact these figures are taken from was built from the source now on disk.
+ *
+ * The measurement reads `packages/core/dist`, never `src`, and a build directory is the one thing in
+ * a shared tree that can be somebody else's: a figure taken while another build sat in `dist` is a
+ * measurement of source that is not on this branch, and it reads exactly like a step change. That
+ * happened while this check was being written — the same whole-entry figure came out 47.0 KB three
+ * times and 46.9 KB three times, with `dist/index.js` byte-identical across both, because the files
+ * beside it were not.
+ *
+ * Timestamps rather than content: there is nothing to compare a bundle against, and "the build is
+ * older than the source" is the whole question.
+ */
+function newest(dir) {
+  let latest = 0;
+  const walk = (at) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      const path = join(at, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else latest = Math.max(latest, statSync(path).mtimeMs);
+    }
+  };
+  walk(dir);
+  return latest;
+}
+
+const src = newest("packages/core/src");
+const dist = newest("packages/core/dist");
+console.log(`Measured from packages/core/dist, built ${new Date(dist).toISOString().slice(0, 19).replace("T", " ")}`
+  + ` — not from source, and not from a tarball.`);
+if (src > dist) {
+  console.log("  packages/core/src is NEWER than that build: these figures are of source that is no"
+    + "\n  longer what you have. Run `npm run build:core` and measure again.");
+}
+
 const whole = measure("whole", "packages/core/dist/index.js");
 const surface = measure("surface", surfaceEntry);
 
@@ -78,3 +114,63 @@ console.log(`@modyra/core realistic surface:  ${surface.min.toFixed(1)} KB min, 
 // What a re-imported satellite module would actually do is show up here as a step change. Watching
 // for that is a reader's job, and a reader can see it in this output.
 console.log("Reported, not gated — see the note in this file for why these numbers do not fail a build.");
+
+/**
+ * What the guide says these numbers are, so the two can be seen to disagree.
+ *
+ * The guide's table is the published claim; this script is the measurement behind it, and until now
+ * neither knew about the other. That is the shape that produced the drift the guide itself
+ * describes: "between 2026-08-10 and 2026-08-20 the realistic surface went from 13.4 KB gzip to
+ * 26.3 KB, and nothing noticed". Reporting without gating is a deliberate decision — a budget raised
+ * whenever a legitimate feature crosses it records past sizes instead of limiting future ones — but
+ * *silence* was not part of that decision. A reader was expected to watch for a step change, and a
+ * reader cannot see a step change against a figure printed in another file.
+ *
+ * So the divergence is stated, in both numbers, with the date the guide claims for its own. The
+ * guide stays the declaration; this stays the measurement; neither is quietly corrected into the
+ * other.
+ */
+const GUIDE = "docs/guides/comparison-form-libraries.md";
+function published() {
+  const doc = readFileSync(join(fileURLToPath(new URL("..", import.meta.url)), GUIDE), "utf8");
+  const row = (label) => {
+    const found = doc.match(new RegExp(`\\|\\s*${label}\\s*\\|[^|]*\\|\\s*\\*{0,2}([0-9.]+) KB`));
+    return found ? Number(found[1]) : null;
+  };
+  const measured = doc.match(/^### Modyra, measured (\S+)/m);
+  return { whole: row("Whole entry"), surface: row("Realistic surface"), on: measured?.[1] ?? "an unstated date" };
+}
+
+const claim = published();
+if (claim.whole === null || claim.surface === null) {
+  console.log(`\n${GUIDE} no longer states both figures in the shape this reads — the two cannot be`
+    + " compared, which is a defect in this check rather than a clean result.");
+} else {
+  // The tolerance is one published step, and it is the guide's precision that sets it.
+  //
+  // The guide states one decimal, so it cannot express a difference below 0.1 KB and a comparison
+  // finer than that is measuring the rounding. Worse, it is not stable: this bundle compresses to
+  // 46.932 KB after `npm run build:core` and to 46.967 KB after another build of the same source —
+  // identical length, different bytes — which straddles the boundary between `46.9` and `47.0`. A
+  // 0.05 threshold would call that a drift on one build and agreement on the next, and the flap
+  // would carry no information about the library at all.
+  //
+  // So: a difference of at least one full step is a divergence, and the measurement is printed to
+  // two decimals when one is reported, because a reader looking at 0.1 KB needs to see whether it is
+  // a real move or a boundary.
+  const STEP = 0.1;
+  const drift = (label, mine, theirs) =>
+    Math.abs(mine - theirs) < STEP ? null
+      : `${label}: measured ${mine.toFixed(2)} KB, the guide publishes ${theirs.toFixed(1)} KB `
+        + `(${mine > theirs ? "+" : ""}${(mine - theirs).toFixed(2)} KB since ${claim.on})`;
+  const found = [drift("whole entry", whole.gz, claim.whole), drift("realistic surface", surface.gz, claim.surface)]
+    .filter(Boolean);
+  if (found.length === 0) {
+    console.log(`${GUIDE} publishes the same two figures within its own 0.1 KB precision, measured ${claim.on}.`);
+  } else {
+    console.log(`\n${GUIDE} publishes figures this run does not reproduce:`);
+    for (const one of found) console.log(`  ${one}`);
+    console.log("  Neither number is wrong on its own. Update the guide's table, or explain the step"
+      + "\n  change beside it — the guide is where a reader looks, and it is the one that is stale.");
+  }
+}

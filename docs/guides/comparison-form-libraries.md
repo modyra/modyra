@@ -21,6 +21,9 @@ everything on the same day before quoting an ordering.
 above is the one a reader has most reason to trust — it names its script, and anyone can run it. It
 is also the one that moved: between 2026-08-10 and 2026-08-20 the realistic surface went from 13.4 KB
 gzip to 26.3 KB, and nothing noticed, because `npm run test:core-bundle` reports and does not gate.
+It still does not gate — a budget raised whenever a legitimate feature crosses it records past sizes
+instead of limiting future ones. What it does now is read this table and print the difference, so a
+figure that has drifted is stated by the command rather than discovered by a reader comparing files.
 By 2026-08-22 it had moved again, to 27.0 KB. A number with a command behind it drifts exactly as
 quietly as one without, unless something re-runs the command. Treat every figure here as of its
 stated date, this page's own included.
@@ -45,14 +48,14 @@ final-form-arrays **4.0.1** · vee-validate **4.15.1** · zod **4.4.3** · @angu
 
 ## Bundle weight
 
-### Modyra, measured 2026-08-28
+### Modyra, measured 2026-09-03
 
-`@modyra/core@2.4.0`, esbuild + `gzip -9`, via `npm run test:core-bundle`:
+`@modyra/core@2.5.0`, esbuild + `gzip -9`, via `npm run test:core-bundle`:
 
 | Surface | Minified | Gzipped |
 | --- | --- | --- |
-| Whole entry | 155.4 KB | **45.3 KB** |
-| Realistic surface | 95.3 KB | **27.0 KB** |
+| Whole entry | 160.2 KB | **46.9 KB** |
+| Realistic surface | 98.6 KB | **28.1 KB** |
 
 The realistic surface is `createForm`, `field`, `group`, `array` plus `required`, `email`, `min`,
 `minLength`, `maxLength`, `pattern`, `crossField`, `serverValidator`, `oneOf` and `eachOneOf` — and
@@ -66,7 +69,8 @@ which most of the table below does not ship at all.
 | 0.4.0 | 10.6 KB | 14.1 KB |
 | 2.0.0 (2026-08-10) | 13.4 KB | 19.8 KB |
 | 2.1.2 (2026-08-20) | 26.3 KB | 43.1 KB |
-| 2.4.0 (2026-08-28) | **27.0 KB** | **45.3 KB** |
+| 2.4.0 (2026-08-28) | 27.0 KB | 45.3 KB |
+| 2.5.0 (2026-09-03) | **28.1 KB** | **46.9 KB** |
 
 Ten days doubled it. The scope, lifecycle and typed-error machinery is always linked, so it lands in
 every bundle rather than tree-shaking away — and that was already the explanation for the first
@@ -75,7 +79,7 @@ measurement artifact**: the script has not been touched since before the 2026-08
 while `packages/core/src` grew from 44 files to 55 underneath it.
 
 **Where that leaves Modyra in this table.** Modyra's figures are esbuild, so compare them with the
-esbuild column below. At 27.0 KB gzip realistic it is the heaviest entry on this page — above
+esbuild column below. At 28.1 KB gzip realistic it is the heaviest entry on this page — above
 `@angular/forms` at 18.1 KB, which is a whole framework package, and more than twice
 react-hook-form's 12.5 KB. The page still declines to rank, because the other figures are a month
 older and a re-measure could move them too; it does not decline to say which way its own number went.
