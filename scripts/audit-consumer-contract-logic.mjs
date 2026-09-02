@@ -181,9 +181,19 @@ for (const pkg of CONSUMERS) {
   /** Custom element tags: the same spelling as a class, and permanent — they are the published API. */
   const ELEMENT_TAG = /["'`]mdy-(?:[a-z]+-field|form-errors|dynamic-form)["'`]/g;
 
+  /**
+   * The developer-tools panel, which is not a widget and answers to no contract.
+   *
+   * Declared here and printed in the report rather than filtered upstream, for the reason the
+   * daterange calendar taught: an exclusion that lives outside the report is a decision the next
+   * reader relitigates or never sees. Its classes are counted, named, and subtracted in the open.
+   */
+  const OUTSIDE_PERIMETER = /["'`]mdy-(?:devtools-overlay|forms-devtools)[a-z0-9_-]*/g;
+
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c.key, 0]));
   let inComments = 0;
   let elementNames = 0;
+  let outsidePerimeter = 0;
   const sites = Object.fromEntries(CATEGORIES.map((c) => [c.key, []]));
   let derived = 0;
   let lines = 0;
@@ -194,6 +204,7 @@ for (const pkg of CONSUMERS) {
     lines += text.split("\n").length;
     derived += (bare.match(DERIVED) ?? []).length;
     elementNames += (bare.match(ELEMENT_TAG) ?? []).length;
+    outsidePerimeter += (bare.match(OUTSIDE_PERIMETER) ?? []).length;
     for (const category of CATEGORIES) {
       const found = bare.match(category.pattern) ?? [];
       inComments += (text.match(category.pattern) ?? []).length - found.length;
@@ -233,7 +244,7 @@ for (const pkg of CONSUMERS) {
     // renderer that handles every kind as handling fifteen.
     || new RegExp(`(?:^|[{,\\s])${kind}\\s*:`, "m").test(code)
     || new RegExp(`(?:^|[/-])${kind}[-./]`, "m").test(named));
-  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered, doorsUsed, inComments, elementNames });
+  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered, doorsUsed, inComments, elementNames, outsidePerimeter });
 }
 
 console.log("# Contract logic written inside consumers\n");
@@ -275,9 +286,13 @@ console.log("upper bound on what is missing, and its coverage as a lower bound o
 
 const floor = report.reduce((a, r) => a + (r.elementNames ?? 0), 0);
 const comments = report.reduce((a, r) => a + (r.inComments ?? 0), 0);
+const outside = report.reduce((a, r) => a + (r.outsidePerimeter ?? 0), 0);
 console.log(`\n\`floor\` counts custom element tags — published API, spelled exactly like a class. They`);
 console.log(`will never fall: the ratchet aims at ${floor} across the consumers, not at 0. A further`);
-console.log(`${comments} literal(s) sit inside comments and are not counted at all; prose is not code.\n`);
+console.log(`${comments} literal(s) sit inside comments and are not counted at all; prose is not code.`);
+console.log(`${outside} literal(s) name the developer-tools panel, which is not a widget and answers to`);
+console.log(`no contract. They are inside the counts above and named here rather than filtered away,`);
+console.log(`because an exclusion that lives outside the report is one the next reader cannot see.\n`);
 
 console.log("\n## Which bucket the duplication falls in\n");
 console.log("For each category: how many public doors answer it, and how many this package calls.");
