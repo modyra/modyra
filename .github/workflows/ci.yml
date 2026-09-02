@@ -37,6 +37,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
+        id: build_packages
         run: pnpm run build:packages
 
       - name: Core tests
@@ -53,6 +54,7 @@ jobs:
       # `dist/fesm2022/modyra-angular.mjs`. Run after the gates it fails to load the config at all,
       # and the run says the config is broken rather than that nothing had built it yet.
       - name: Build Angular library
+        id: build_angular
         run: pnpm run build:angular
 
       # One gate for the UI contract: the golden Angular surface, the completeness evidence,
@@ -133,8 +135,23 @@ jobs:
       # both documented load-sensitive families live and where two thirds of the pipeline's wall
       # time went, and an engine-specific regression is rare enough that finding it at merge — with
       # the release still guarded by the full run — costs less than paying the matrix on every push.
+      # **These run even when an earlier gate is red, and that is the point.** Steps are sequential, so
+      # one failure used to skip everything below it: three heads in a row went red on a two-line
+      # class defect, and the browser matrix, the conformance kit and 24 freshly recorded linux
+      # baselines were never exercised at all. "CI failed" then says nothing about how much was
+      # checked — the same red covers a run that verified three steps and one that verified every
+      # one. It is the skipped-report this project demands everywhere, applied to the pipeline.
+      #
+      # Guarded on the builds rather than on `always()`: these answer an independent question, but
+      # they cannot answer it without something to run against, and a red caused by a missing build
+      # is the build's red diagnosed twice.
+      #
+      # `!cancelled()` is load-bearing and not decoration. An `if:` carrying no status function gets
+      # an implicit `success()`, so a condition naming only the build outcomes would still be skipped
+      # by the very earlier failure it exists to survive — the change would read correct and do
+      # nothing. A cancelled run still stops: someone asked it to.
       - name: Browser smoke test (chromium, pull requests)
-        if: github.event_name == 'pull_request'
+        if: ${{ !cancelled() && steps.build_packages.outcome == 'success' && steps.build_angular.outcome == 'success' && github.event_name == 'pull_request' }}
         run: |
           npx playwright install --with-deps chromium
           node scripts/audit-baseline-parity.mjs
@@ -143,7 +160,7 @@ jobs:
           npx playwright test --project=angular --project=plain --project=lit
 
       - name: Browser smoke test (full matrix, main)
-        if: github.event_name != 'pull_request'
+        if: ${{ !cancelled() && steps.build_packages.outcome == 'success' && steps.build_angular.outcome == 'success' && github.event_name != 'pull_request' }}
         run: |
           npx playwright install --with-deps chromium firefox webkit
           pnpm run test:e2e
@@ -158,7 +175,7 @@ jobs:
       #
       # Placed after the smoke step because that one installs the browsers, and this needs one.
       - name: The conformance kit in a browser
-        if: github.event_name != 'pull_request'
+        if: ${{ !cancelled() && steps.build_packages.outcome == 'success' && steps.build_angular.outcome == 'success' && github.event_name != 'pull_request' }}
         run: pnpm run test:conformance-browser
 
       # A failed visual comparison is only actionable if the actual and diff images can be read.
