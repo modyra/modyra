@@ -19,20 +19,42 @@ npm install @modyra/react
 
 ```tsx
 import { useMdyForm, useMdyField, field, required } from "@modyra/react";
+import { projectFieldShellA11y } from "@modyra/widgets";
 
 function Signup() {
   const form = useMdyForm(() => ({ email: field("", [required()]) }));
   const email = useMdyField(form.f.email);
+
+  // The contract answers what the markup should say; this component binds and draws.
+  const parts = projectFieldShellA11y(
+    { disabled: email.disabled, required: true },
+    email.errors,
+    { widgetId: "signup-email", label: "Email", errorsVisible: email.touched },
+  );
+
   return (
-    <input
-      value={email.value}
-      onChange={(e) => email.set(e.target.value)}
-      onBlur={email.markAsTouched}
-      aria-invalid={!email.valid}
-    />
+    <label id={parts.label.id} className={parts.label.classes.join(" ")}>
+      Email
+      <input
+        {...parts.control.attributes}
+        value={email.value}
+        onChange={(e) => email.set(e.target.value)}
+        onBlur={email.markAsTouched}
+      />
+    </label>
   );
 }
 ```
+
+**Do not write `aria-invalid={!email.valid}`.** It is the obvious line and it is a different rule
+from the one every rendering adapter follows: whether a control announces itself as failing depends
+on whether the person is *being told yet* — a field they have not reached does not accuse them, and a
+disabled field states no verdict at all. `projectFieldShellA11y` answers that once, and hands back four parts: the
+control's eleven attributes — `aria-invalid`, `aria-required`, `aria-describedby`, `aria-disabled`,
+`aria-readonly` and the constraint attributes — plus the ids and classes the label, description and
+error list carry. Written out at each call site instead, nine
+of them decided it separately and one told a person their field was required before they had reached
+it.
 
 ## What's included
 
