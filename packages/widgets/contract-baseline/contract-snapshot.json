@@ -4542,6 +4542,7 @@
       "mdy-button",
       "mdy-control__inline-errors-icon",
       "mdy-control__inline-errors-tooltip",
+      "mdy-dynamic-form",
       "mdy-floating-label",
       "mdy-glass-effect",
       "mdy-glass-effect--medium",

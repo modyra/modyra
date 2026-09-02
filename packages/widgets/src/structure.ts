@@ -630,11 +630,11 @@ export const MDY_SHARED_UI_CLASSES = Object.freeze([
   // which is the asymmetry an undeclared shared name produces: a promise the stylesheets already
   // keep, from a vocabulary that never named it.
   "mdy-floating-label",
-  // `mdy-dynamic-form` belongs here by the rule — two themes select on it, it is no kind's anatomy —
-  // and is deliberately absent. The name is a class *and* an element tag on the same component, so
-  // the tree-shaking check cannot tell a contract table that mentions it from a component that was
-  // bundled: declaring it here put the string in the core-only bundle and the check read that as the
-  // feature leaking. The marker has to stop being ambiguous before the class can be declared.
+  // Set on the element a whole document renders itself into. It belongs to no kind because it holds
+  // all of them — and it is the one name here that is also a component's element tag, which is why
+  // the tree-shaking check reads the *position* a bundler emits rather than the bare string: a
+  // component that shipped writes it into a component definition, a table like this one cannot.
+  "mdy-dynamic-form",
 ]);
 
 /**
