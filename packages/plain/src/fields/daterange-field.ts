@@ -24,6 +24,7 @@ import { fieldAccessibleName, applySubmissionNames,
   type MdyI18nMessages,
   keyBindingFor,
   MDY_PART_NAMES,
+  presentationClass,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -31,6 +32,19 @@ import { withControls, type MdyMountedField } from "../field-controls.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
 import { buildCalendarGrid, fillCalendar } from "./calendar.js";
+
+/**
+ * The class every part and box wears, asked of the contract once.
+ *
+ * Spelled here too, each of these is a second copy of a name the catalogue holds — and the copy is
+ * where the two come to disagree without either moving.
+ */
+const CLASS = {
+  box: presentationClass("daterange", "box"),
+  headerLabel: presentationClass("daterange", "headerLabel"),
+  navButton: presentationClass("daterange", "navButton"),
+} as const;
+
 
 export function renderDaterangeField(
   container: HTMLElement,
@@ -85,7 +99,7 @@ export function renderDaterangeField(
   if (typeof f.label === "string" && f.label.trim() !== "") {
     shell.wrapper.setAttribute("aria-label", f.label);
   }
-  const wrapper = el("div", "mdy-datepicker");
+  const wrapper = el("div", CLASS.box);
   const startInput = el("input", definition.parts.startControl.classes.join(" ")) as HTMLInputElement;
   startInput.type = "text";
   startInput.autocomplete = "off";
@@ -120,12 +134,12 @@ export function renderDaterangeField(
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", popup.id);
   const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
-  const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
+  const prevButton = el("button", CLASS.navButton) as HTMLButtonElement;
   prevButton.type = "button";
   prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   setIcon(prevButton, "CHEVRON_LEFT");
-  const monthLabel = el("span", "mdy-datepicker__header-label");
-  const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
+  const monthLabel = el("span", CLASS.headerLabel);
+  const nextButton = el("button", CLASS.navButton) as HTMLButtonElement;
   nextButton.type = "button";
   nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   setIcon(nextButton, "CHEVRON_RIGHT");

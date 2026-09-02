@@ -22,6 +22,7 @@ import { fieldAccessibleName, keyMeans, applySubmissionNames,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   keyBindingFor,
+  presentationClass,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -30,6 +31,22 @@ import { buildCalendarGrid, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
+
+/**
+ * The class every part and box wears, asked of the contract once.
+ *
+ * Spelled here too, each of these is a second copy of a name the catalogue holds — and the copy is
+ * where the two come to disagree without either moving.
+ */
+const CLASS = {
+  control: partClasses("datepicker", "control").join(" "),
+  dialogHeader: partClasses("datepicker", "dialogHeader").join(" "),
+  toggle: partClasses("datepicker", "toggle").join(" "),
+  box: presentationClass("datepicker", "box"),
+  headerLabel: presentationClass("datepicker", "headerLabel"),
+  navButton: presentationClass("datepicker", "navButton"),
+} as const;
+
 
 export function renderDatepickerField(
   container: HTMLElement,
@@ -66,10 +83,10 @@ export function renderDatepickerField(
   const shell = buildFieldShell(f.label, "datepicker", {}, f.ariaLabel, f.name, f.supportingText);
   // The catalogue's datepicker anatomy: a typeable input plus a toggle button that opens the
   // calendar, rather than one button doing both jobs.
-  const control = el("input", "mdy-datepicker__input") as HTMLInputElement;
+  const control = el("input", CLASS.control) as HTMLInputElement;
   control.type = "text";
   if (f.placeholder) control.placeholder = f.placeholder;
-  const toggle = el("button", "mdy-datepicker__toggle") as HTMLButtonElement;
+  const toggle = el("button", CLASS.toggle) as HTMLButtonElement;
   setIcon(toggle, "CALENDAR");
   toggle.type = "button";
   toggle.setAttribute("aria-label", messages.datepickerToggleLabel);
@@ -77,17 +94,17 @@ export function renderDatepickerField(
   // style (`mdy-datepicker__popup` positions and frames the panel, `__header` lays out the
   // month nav) — the controller only names the trigger and the grid.
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
-  const header = el("div", "mdy-datepicker__header") as HTMLDivElement;
-  const prevButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
+  const header = el("div", CLASS.dialogHeader) as HTMLDivElement;
+  const prevButton = el("button", CLASS.navButton) as HTMLButtonElement;
   prevButton.type = "button";
   setIcon(prevButton, "CHEVRON_LEFT");
   prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   // The header label opens the month view, which opens the year view: paging a month at a time put
   // a birth date thirty clicks away, and the other two renderers had grown this and this one had
   // not. Nobody decided that — see the calendar view contract.
-  const monthLabel = el("button", "mdy-datepicker__header-label") as HTMLButtonElement;
+  const monthLabel = el("button", CLASS.headerLabel) as HTMLButtonElement;
   monthLabel.type = "button";
-  const nextButton = el("button", "mdy-datepicker__nav-btn") as HTMLButtonElement;
+  const nextButton = el("button", CLASS.navButton) as HTMLButtonElement;
   nextButton.type = "button";
   setIcon(nextButton, "CHEVRON_RIGHT");
   nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
@@ -116,7 +133,7 @@ export function renderDatepickerField(
   calendar.append(header, grid, monthPicker, yearPicker);
   popup.append(calendar);
 
-  const wrapper = el("div", "mdy-datepicker");
+  const wrapper = el("div", CLASS.box);
   wrapper.append(control, toggle, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);

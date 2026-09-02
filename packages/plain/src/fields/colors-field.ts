@@ -22,11 +22,24 @@ import {
   visibleErrorsOf,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  presentationClass,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, trackOverlay } from "../overlay.js";
+
+/**
+ * The class every part and box wears, asked of the contract once.
+ *
+ * Spelled here too, each of these is a second copy of a name the catalogue holds — and the copy is
+ * where the two come to disagree without either moving.
+ */
+const CLASS = {
+  arrow: presentationClass("colors", "arrow"),
+  box: presentationClass("colors", "box"),
+} as const;
+
 
 
 
@@ -70,7 +83,7 @@ export function renderColorsField(
   // The themes lay this control out from the outside in — `.mdy-colors` *contains* the input
   // wrapper (`.mdy-colors .mdy-input-wrapper` is a flex row with no padding), which is how the
   // contract nests it that way too. Building it the other way round collapses the row to nothing.
-  const wrapper = el("div", "mdy-colors") as HTMLDivElement;
+  const wrapper = el("div", CLASS.box) as HTMLDivElement;
   shell.root.insertBefore(wrapper, shell.wrapper);
   wrapper.append(shell.wrapper);
 
@@ -132,7 +145,7 @@ export function renderColorsField(
   toggle.setAttribute("aria-hidden", "true");
   // The themes draw the caret on `.mdy-select__arrow`, which is where the contract nests it
   // inside this toggle — an empty button would have no size at all.
-  const toggleArrow = el("span", "mdy-select__arrow");
+  const toggleArrow = el("span", CLASS.arrow);
   setIcon(toggleArrow, "CHEVRON_DOWN");
   toggleArrow.setAttribute("aria-hidden", "true");
   toggle.append(toggleArrow);

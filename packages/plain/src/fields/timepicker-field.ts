@@ -41,12 +41,28 @@ import { keyMeans, applySubmissionNames,
   MDY_TIMEPICKER_DEFAULT_FORMAT,
   timepickerPlaceholder,
   type MdyUiCommand,
+  presentationClass,
 } from "@modyra/widgets";
 import { runCommands } from "../command-runtime.js";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, reflectOverlayOpen, releaseOverlayPlacement, trackOverlay } from "../overlay.js";
+
+/**
+ * The class every part and box wears, asked of the contract once.
+ *
+ * Spelled here too, each of these is a second copy of a name the catalogue holds — and the copy is
+ * where the two come to disagree without either moving.
+ */
+const CLASS = {
+  box: presentationClass("timepicker", "box"),
+  dialVariant: presentationClass("timepicker", "dialVariant"),
+  fields: presentationClass("timepicker", "fields"),
+  separator: presentationClass("timepicker", "separator"),
+  spacer: presentationClass("timepicker", "spacer"),
+} as const;
+
 
 export function renderTimepickerField(
   container: HTMLElement,
@@ -117,13 +133,13 @@ export function renderTimepickerField(
   // style — which is what makes every renderer look alike rather than merely
   // behave alike.
   const header = el("div", parts.header.classes.join(" "));
-  const fields = el("div", "mdy-timepicker-fields");
+  const fields = el("div", CLASS.fields);
   const hourSegment = el("div", parts.hour.classes.join(" "));
   const hourInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
   hourInput.type = "number";
   hourInput.setAttribute("aria-label", messages.timepickerHourLabel);
   hourSegment.appendChild(hourInput);
-  const separator = el("span", "mdy-timepicker-separator");
+  const separator = el("span", CLASS.separator);
   setText(separator, ":");
   const minuteSegment = el("div", parts.minute.classes.join(" "));
   const minuteInput = el("input", parts.hourControl.classes.join(" ")) as HTMLInputElement;
@@ -185,7 +201,7 @@ export function renderTimepickerField(
   const actions = el("div", parts.actions.classes.join(" "));
   const modeToggle = el("button", parts.modeToggle.classes.join(" ")) as HTMLButtonElement;
   modeToggle.type = "button";
-  const spacer = el("div", "mdy-timepicker-spacer");
+  const spacer = el("div", CLASS.spacer);
   const confirmButton = el("button", `${parts.action.classes.join(" ")} mdy-timepicker-action-btn--confirm`) as HTMLButtonElement;
   confirmButton.type = "button";
   setText(confirmButton, messages.timepickerConfirm);
@@ -200,7 +216,7 @@ export function renderTimepickerField(
   dialogContainer.append(content, actions);
   dialog.appendChild(dialogContainer);
 
-  const wrapper = el("div", "mdy-timepicker");
+  const wrapper = el("div", CLASS.box);
   wrapper.append(control, toggle, dialog);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
@@ -601,7 +617,7 @@ export function renderTimepickerField(
 
     // ── The clock face ──────────────────────────────────────────────────────────────────────
     const onDial = state.viewMode === "dial";
-    dialogContainer.classList.toggle("mdy-timepicker--dial", onDial);
+    dialogContainer.classList.toggle(CLASS.dialVariant, onDial);
     clock.hidden = !onDial;
     modeToggle.setAttribute("aria-label", onDial ? "Enter the time" : "Pick on the clock");
     // Geometry, not a character: an emoji renders in the reader's emoji font, at its size and its

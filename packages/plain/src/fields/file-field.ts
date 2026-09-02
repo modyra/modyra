@@ -19,9 +19,24 @@ import {
   type MdyFileCandidate,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
+  presentationClass,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText } from "../dom.js";
 import { buildFieldShell } from "../field-shell.js";
+
+/**
+ * The class every part and box wears, asked of the contract once.
+ *
+ * Spelled here too, each of these is a second copy of a name the catalogue holds — and the copy is
+ * where the two come to disagree without either moving.
+ */
+const CLASS = {
+  info: presentationClass("file", "info"),
+  meta: presentationClass("file", "meta"),
+  name: presentationClass("file", "name"),
+  placeholder: presentationClass("file", "placeholder"),
+} as const;
+
 
 const DRAGOVER_CLASS = "mdy-file-container--dragover";
 
@@ -69,7 +84,7 @@ export function renderFileField(
   setText(browse, messages.fileSelect);
   const fileList = el("ul") as HTMLUListElement;
   applyPart(fileList, definition.parts.fileList);
-  const placeholder = el("span", "mdy-file-placeholder");
+  const placeholder = el("span", CLASS.placeholder);
   setText(placeholder, messages.fileNoneSelected);
   const rejected = el("div") as HTMLDivElement;
   applyPart(rejected, definition.parts.rejected);
@@ -77,7 +92,7 @@ export function renderFileField(
   applyPart(clear, definition.parts.clear);
   clear.type = "button";
   setText(clear, messages.fileClearSelection);
-  const info = el("div", "mdy-file-info") as HTMLDivElement;
+  const info = el("div", CLASS.info) as HTMLDivElement;
   info.append(fileList, placeholder, rejected);
   // The clear stands with the control that picks, not under the list: below it, its place is the
   // number of files chosen and it moves every time one arrives or leaves. ADR 0173.
@@ -192,9 +207,9 @@ export function renderFileField(
     for (const file of files) {
       const item = el("li") as HTMLLIElement;
       applyPart(item, definition.parts.fileItem);
-      const name = el("span", "mdy-file-name");
+      const name = el("span", CLASS.name);
       setText(name, file.name);
-      const meta = el("span", "mdy-file-meta");
+      const meta = el("span", CLASS.meta);
       setText(meta, describe(file));
       item.append(name, meta);
       fileList.appendChild(item);
