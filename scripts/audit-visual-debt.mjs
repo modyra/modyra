@@ -126,7 +126,18 @@ for (const renderer of renderers) {
   const pages = lastCommitTouching([join("examples", renderer)]);
   // Pathspecs rather than a glob the shell would expand: the platform is in the file name, so this
   // asks git for exactly the linux half and nothing else.
-  const linux = lastCommitTouching([`:(glob)${snapshots}/*-linux.png`]);
+  // **A confirmation counts as a recording, and it has to.** When a page changes in a part the shots
+  // do not frame, the recorder produces images identical to the committed ones — nothing to commit,
+  // and under a pure ancestry rule the debt could never be cleared again: the images would stay
+  // forever older than the last change to the pages. So a run that confirmed them is itself
+  // committable, in a file that lives with the images and moves the same date this reads.
+  //
+  // It is not a formality that can be filled in from a chair: it says which head a recorder ran
+  // against and that its output matched, which is exactly the evidence a new image would have been.
+  const linux = lastCommitTouching([
+    `:(glob)${snapshots}/*-linux.png`,
+    `${snapshots}/CONFIRMED-LINUX`,
+  ]);
   const recorded = git("ls-files", "--", `:(glob)${snapshots}/*-linux.png`)
     .split("\n").filter(Boolean).length;
 
@@ -165,9 +176,20 @@ if (debts.length === 0) {
     + "\n  These images cannot be recorded where you are working: they are taken where the suite runs."
     + "\n  Push the change, then run the recorder against the published head:"
     + "\n\n      gh workflow run visual-baselines.yml --ref main"
-    + "\n\n  and commit the `-linux.png` files from its artifact. Until then CI is red on those"
-    + "\n  images and on nothing else — say so in the commit body so the next reader is told rather"
-    + "\n  than left to diagnose it.",
+    + "\n\n  Then one of two things is true, and they are not the same debt:"
+    + "\n"
+    + "\n  - **the images differ** — commit the `-linux.png` files from the artifact. Until they land,"
+    + "\n    CI is red on exactly those images;"
+    + "\n  - **the images are identical** — the page moved in a part the shots do not frame, so there"
+    + "\n    is nothing to commit and CI will not go red at all. Record that the run happened instead:"
+    + "\n"
+    + `\n        echo "<the head the recorder ran against>" > e2e/<renderer>/visual.spec.ts-snapshots/CONFIRMED-LINUX`
+    + "\n"
+    + "\n    and commit it. Without that, the debt can never be cleared: the images stay older than"
+    + "\n    the last change to the pages for good."
+    + "\n"
+    + "\n  Say which of the two it was in the commit body — a reader who is told \"CI is red on those"
+    + "\n  images\" and then finds it green has been handed a wrong diagnosis to chase.",
   );
   if (CHECK) process.exit(1);
 }
