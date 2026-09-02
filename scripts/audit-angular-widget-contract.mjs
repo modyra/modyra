@@ -13,7 +13,7 @@
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS, popupAlignmentClass, popupPlacementClass } from "../packages/widgets/dist/index.js";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_CONTRACTS } from "../packages/widgets/dist/index.js";
 import { classesFromDoors, perimeterLine } from "./lib/class-doors-in-source.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -67,23 +67,6 @@ for (const file of files.sort()) {
         for (const name of parts[part]?.classes ?? []) fromContract.push(name);
       }
     }
-  }
-  // A popup's placement and alignment are named with a literal kind and a runtime position, and the
-  // shared reader answers a positional call only when every argument is a literal. The class is on
-  // the element whichever position wins, so the kind is read here and the two class-bearing
-  // positions asked for by name. This goes when the reader expands a positional argument over a
-  // declared domain, the way it already expands the keys of an object.
-  for (const [, kind] of source.matchAll(/popupPlacementClass\(\s*["'`]([a-z-]+)["'`]/g)) {
-    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
-    for (const placement of ["above", "overlay"]) {
-      const name = popupPlacementClass(kind, placement);
-      if (name) fromContract.push(name);
-    }
-  }
-  for (const [, kind] of source.matchAll(/popupAlignmentClass\(\s*["'`]([a-z-]+)["'`]/g)) {
-    if (!MDY_WIDGET_CONTRACTS[kind]?.parts.popup) continue;
-    const name = popupAlignmentClass(kind, "right");
-    if (name) fromContract.push(name);
   }
   // `\b` treats the `y` in `--mdy-slider-fill-pct` as a word boundary, so a custom property lands in
   // a manifest of *classes* looking exactly like one. Four did. The lookbehind drops them: a name

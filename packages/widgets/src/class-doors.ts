@@ -53,6 +53,15 @@ export interface MdyClassDoor {
    */
   readonly domains?: Readonly<Record<string, readonly unknown[]>>;
   /** Why a door has no resolver, in the words a reader of a gate's output needs. */
+  /**
+   * For a positional call, what each argument may hold.
+   *
+   * `null` in a position means the argument has to be a literal for the call to be answered at all;
+   * an array is the domain an expression in that position is expanded over. A door that declares
+   * none is answered only when every argument is written out, which is the safe reading: the reader
+   * never infers a domain, because a domain it invented would claim classes no call site can emit.
+   */
+  readonly argDomains?: readonly (readonly unknown[] | null)[];
   readonly unresolvable?: string;
 }
 
@@ -79,8 +88,20 @@ export const MDY_CLASS_DOORS: readonly MdyClassDoor[] = Object.freeze([
   // Narrower than a widget kind: these answer only for a kind that has a popup. A kind without one
   // is refused at runtime and adds no class, which is the same answer as asking for a part a kind
   // does not have — so the cast is safe in the direction that matters and the guard proves it.
-  { name: "popupPlacementClass", resolve: forKind((k, p) => popupPlacementClass(k as never, p as never)) },
-  { name: "popupAlignmentClass", resolve: forKind((k, a) => popupAlignmentClass(k as never, a as never)) },
+  // A popup's position is decided at runtime, so a call site names the kind and leaves the rest to
+  // the moment. The class is on the element whichever position wins, and only these values carry
+  // one — every other position is the ordinary case and wears nothing. Declaring the two is what
+  // lets a reader answer the call without inventing the values it could not see.
+  {
+    name: "popupPlacementClass",
+    resolve: forKind((k, p) => popupPlacementClass(k as never, p as never)),
+    argDomains: [null, ["above", "overlay"]],
+  },
+  {
+    name: "popupAlignmentClass",
+    resolve: forKind((k, a) => popupAlignmentClass(k as never, a as never)),
+    argDomains: [null, ["right"]],
+  },
   {
     name: "multiselectChipClasses",
     resolveObject: (record: Record<string, unknown>) => multiselectChipClasses(record as MdyChipAppearance),

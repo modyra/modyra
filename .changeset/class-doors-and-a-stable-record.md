@@ -17,6 +17,12 @@ key the call omits is left out of the record so the signature's own default appl
 is what keeps the expansion honest: expanding every key would claim `mdy-chip--removable` on call
 sites that never pass `removable`.
 
+A positional door declares `argDomains`: `null` where the argument must be written out, and the
+domain to expand over where it is decided at runtime. A popup's placement is the case — a call names
+the kind and leaves the position to the moment, and only two positions carry a class at all. No
+domain is ever inferred; a door that declares none is answered only when every argument is a
+literal, because an invented domain would claim classes no call site can emit.
+
 The Angular renderers take their class names from the catalogue through a `cls` record typed
 `Readonly<Record<string, string>>`. The wide type is deliberate: a component's declared surface must
 not change every time its kind gains a part, which is what an inferred shape does. The width is paid

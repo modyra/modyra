@@ -3282,6 +3282,7 @@
     "\"value\""
   ],
   "widgets:MdyClassDoor": [
+    "argDomains?: readonly (readonly unknown[] | null)[]",
     "domains?: Readonly<Record<string, readonly unknown[]>>",
     "name: string",
     "resolve?: (args: readonly string[]) => readonly string[]",
