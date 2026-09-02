@@ -33,8 +33,24 @@ dispose(); // unmounts every field, destroys controllers, deactivates the form
 
 `fields` is the same `MdyDynamicField[]` shape `useMdyDynamicForm` in
 `@modyra/react` and `<mdy-dynamic-form>` in `@modyra/angular` already
-consume — parse it from JSON yourself with `parseDynamicForm()`
-(`@modyra/core`) if it comes from a CMS or a Studio-compiled Contract.
+consume.
+
+When the whole thing arrives as a document — from a CMS, a server, or a
+Studio-compiled Contract — `mountDynamicForm` takes it directly:
+
+```ts
+import { mountDynamicForm } from "@modyra/plain";
+
+const { form, dispose } = mountDynamicForm(host, await response.json(), {
+  onSubmit: (value) => api.save(value),
+});
+```
+
+It parses strictly, refuses a document that lost a declaration rather than
+drawing it without one, and applies everything the document declares — fields,
+layout, rules, collections. Parse it yourself with `parseDynamicForm()`
+(`@modyra/core`) when you want the diagnostics instead of the exception, or
+lenient mode for an editor preview.
 
 ## Field kind coverage
 

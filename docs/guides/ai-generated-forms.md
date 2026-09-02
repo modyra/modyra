@@ -33,8 +33,16 @@ The parser accepts a bounded set of field kinds, validator options, layout nodes
 ## The JSON contract
 
 Either a bare array of fields, or a versioned envelope
-(`{ "version": 4, "fields": [...] }` — versions 2, 3 and 4 are accepted;
-anything else, including a declared version 1, is rejected wholesale).
+(`{ "version": 5, "fields": [...] }`). Version 5 is the current one; 2, 3 and 4
+still parse, and a declared version 1 is rejected wholesale.
+
+**Do not copy that list into a prompt or a validator.** It is written here for a
+reader and it goes stale the moment the contract gains a word — which has now
+happened three times. The parser is the authority and says so in its own
+refusal: a document at a version it does not know is named, with the set it
+does. `MDY_DYNAMIC_MEMBER_ARRIVALS` (`@modyra/core`) records which member
+arrived with which version, so a generator that wants to target the oldest
+version carrying the members it needs can read it rather than guess.
 
 Common field properties:
 

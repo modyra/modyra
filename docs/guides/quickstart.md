@@ -41,15 +41,31 @@ rendering layer. Validation, drafts, undo and submission all live here, before a
 
 ## A form from data
 
-When the form is a JSON document — from a server, a CMS, or Studio — parse it first. TypeScript
-types do not validate runtime data:
+When the form is a JSON document — from a server, a CMS, or Studio — mount it in one call.
+TypeScript types do not validate runtime data, so the document is checked before anything is drawn:
+
+```ts
+import { mountDynamicForm } from "@modyra/plain";
+
+const { form, dispose } = mountDynamicForm(document.querySelector("#form"), await response.json(), {
+  onSubmit: (value) => api.save(value),
+});
+```
+
+The document is parsed strictly and refused if anything is wrong, and everything it declares —
+fields, layout, rules, collections — is applied. Threading those through by hand is the older shape
+and the reason this call exists: a document that declared a layout and was mounted without it drew a
+form nobody asked for, and nothing said so.
+
+Reach for the longer form when you want the diagnostics rather than the exception, or when you want
+lenient mode — an editor preview keeps what parsed and reports the rest:
 
 ```ts
 import { parseDynamicForm } from "@modyra/core";
 import { mountMdyForm } from "@modyra/plain";
 
-const result = parseDynamicForm(await response.json(), { mode: "strict" });
-if (!result.ok) return report(result.diagnostics);
+const result = parseDynamicForm(await response.json(), { mode: "lenient" });
+report(result.diagnostics);
 
 const { form, dispose } = mountMdyForm(document.querySelector("#form"), result.fields, {
   layout: result.layout,

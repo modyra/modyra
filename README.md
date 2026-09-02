@@ -77,18 +77,28 @@ A service or a visual editor produces the contract; the frontend receives it as 
 validates it strictly, and builds the form from it.
 
 ```ts
-import { parseDynamicForm } from "@modyra/core";
+import { mountDynamicForm } from "@modyra/plain";
 
-const result = parseDynamicForm(await response.json(), { mode: "strict" });
-if (!result.ok) {
-  // every finding carries a code, a severity and the path that produced it
-  return report(result.diagnostics);
-}
+const { form, dispose } = mountDynamicForm(host, await response.json(), {
+  onSubmit: (value) => api.save(value),
+});
 ```
 
-Strict mode returns no form at all when anything is wrong — a partially valid document is never
-accepted. Lenient mode keeps what parsed and reports the rest, which is what an editor preview
-wants.
+One call: the document is validated strictly and refused if anything is wrong, and everything it
+declares — fields, layout, rules, collections — is applied. A partially valid document is never
+accepted.
+
+When the diagnostics are what you want rather than the exception, ask for them:
+
+```ts
+import { parseDynamicForm } from "@modyra/core";
+
+const result = parseDynamicForm(await response.json(), { mode: "lenient" });
+// every finding carries a code, a severity and the path that produced it
+report(result.diagnostics);
+```
+
+Lenient mode keeps what parsed and reports the rest, which is what an editor preview wants.
 
 **Three packages build a form from a contract today:** `@modyra/angular` and `@modyra/plain` render
 one directly, and `@modyra/react` builds the form state for markup you supply. The contract can be
