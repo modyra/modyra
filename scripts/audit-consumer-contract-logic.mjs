@@ -17,6 +17,19 @@
  * has reimplemented it. Reading the sites is what turns a candidate into a finding, and the report
  * prints file and line for exactly that.
  *
+ * **Two things are named rather than subtracted, and one is genuinely removed.**
+ *
+ * *Named:* a custom element's tag reads exactly like a class — `"mdy-text-field"` is both shapes at
+ * once — and those tags are the elements a package publishes, so they are API and will never fall.
+ * They are reported as a **floor** instead of being filtered out, because a pattern that excludes
+ * tags will one day exclude a class shaped like a tag, and a printed floor is a fact every reader
+ * sees while a narrowed regex is a decision buried where nobody looks. The ratchet aims at the floor,
+ * not at zero.
+ *
+ * *Removed:* a literal inside a comment. That is not a policy call — prose is not code, and a
+ * comment quoting `aria-expanded` to explain it is the opposite of duplicating it. The count it used
+ * to add is printed too, so the correction is visible rather than a silent drop between two runs.
+ *
  * Excluded: tests, stories, and type declaration files. A test naming `aria-expanded` is asserting
  * the contract, which is the opposite of duplicating it, and counting it inverts the measurement.
  */
@@ -165,20 +178,28 @@ for (const pkg of CONSUMERS) {
   const files = sourceFilesOf(pkg);
   if (files.length === 0) { report.push({ pkg, missing: true }); continue; }
 
+  /** Custom element tags: the same spelling as a class, and permanent — they are the published API. */
+  const ELEMENT_TAG = /["'`]mdy-(?:[a-z]+-field|form-errors|dynamic-form)["'`]/g;
+
   const counts = Object.fromEntries(CATEGORIES.map((c) => [c.key, 0]));
+  let inComments = 0;
+  let elementNames = 0;
   const sites = Object.fromEntries(CATEGORIES.map((c) => [c.key, []]));
   let derived = 0;
   let lines = 0;
 
   for (const file of files) {
     const text = readFileSync(file, "utf8");
+    const bare = text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
     lines += text.split("\n").length;
-    derived += (text.match(DERIVED) ?? []).length;
+    derived += (bare.match(DERIVED) ?? []).length;
+    elementNames += (bare.match(ELEMENT_TAG) ?? []).length;
     for (const category of CATEGORIES) {
-      const found = text.match(category.pattern) ?? [];
+      const found = bare.match(category.pattern) ?? [];
+      inComments += (text.match(category.pattern) ?? []).length - found.length;
       counts[category.key] += found.length;
       if (found.length > 0) {
-        const line = text.slice(0, text.search(category.pattern)).split("\n").length;
+        const line = bare.slice(0, bare.search(category.pattern)).split("\n").length;
         sites[category.key].push(`${relative(ROOT, file)}:${line}`);
       }
     }
@@ -212,14 +233,14 @@ for (const pkg of CONSUMERS) {
     // renderer that handles every kind as handling fifteen.
     || new RegExp(`(?:^|[{,\\s])${kind}\\s*:`, "m").test(code)
     || new RegExp(`(?:^|[/-])${kind}[-./]`, "m").test(named));
-  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered, doorsUsed });
+  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered, doorsUsed, inComments, elementNames });
 }
 
 console.log("# Contract logic written inside consumers\n");
 console.log("Literal = an answer the contract owns, re-answered here. Derived = a reference to the");
 console.log("catalogues that hold those answers. Both are candidates: the sites are printed to be read.\n");
 
-const head = ["package", "kinds", "lines", ...CATEGORIES.map((c) => c.key), "literal", "derived", "lit/kind"];
+const head = ["package", "kinds", "lines", ...CATEGORIES.map((c) => c.key), "literal", "derived", "lit/kind", "floor"];
 console.log(head.map((h, i) => h.padEnd(i === 0 ? 9 : 9)).join(""));
 for (const row of report) {
   if (row.missing) { console.log(`${row.pkg.padEnd(9)}(no src)`); continue; }
@@ -232,6 +253,7 @@ for (const row of report) {
     String(row.literal).padEnd(9),
     String(row.derived).padEnd(9),
     perKind.padEnd(9),
+    String(row.elementNames).padEnd(9),
   ];
   console.log(cells.join(""));
 }
@@ -250,6 +272,12 @@ console.log("\nThe absent list undercounts wherever one file serves several kind
 console.log("`boolean-field` renders checkbox and toggle, `option-field` renders radio and segmented,");
 console.log("and neither kind appears anywhere in the source. Read a small package's absences as an");
 console.log("upper bound on what is missing, and its coverage as a lower bound on what is there.");
+
+const floor = report.reduce((a, r) => a + (r.elementNames ?? 0), 0);
+const comments = report.reduce((a, r) => a + (r.inComments ?? 0), 0);
+console.log(`\n\`floor\` counts custom element tags — published API, spelled exactly like a class. They`);
+console.log(`will never fall: the ratchet aims at ${floor} across the consumers, not at 0. A further`);
+console.log(`${comments} literal(s) sit inside comments and are not counted at all; prose is not code.\n`);
 
 console.log("\n## Which bucket the duplication falls in\n");
 console.log("For each category: how many public doors answer it, and how many this package calls.");
