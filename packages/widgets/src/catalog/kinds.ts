@@ -86,7 +86,13 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
   readonly parts: Readonly<Record<TPart, MdyPartContract>>;
   readonly structure: MdyWidgetStructure<TPart | "root">;
   /** Classes this kind's renderers may carry that are not parts. See `MdyWidgetShape.presentation`. */
-  readonly presentationClasses: readonly string[];
+  /**
+   * Classes the widget draws that are not parts: boxes and decorations the contract names so a
+   * renderer can ask for them, keyed rather than listed. A list is reachable only by index, which
+   * makes every entry a position rather than a thing — and a renderer that asked by position would
+   * depend on the order of the moment.
+   */
+  readonly presentationClasses: Readonly<Record<string, string>>;
   /**
    * Anatomy that depends on configuration, keyed by the config value that decides it.
    *

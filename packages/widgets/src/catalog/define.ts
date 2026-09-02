@@ -167,7 +167,7 @@ interface MdyWidgetShape<TPart extends string = string> {
    * Claiming that for a visual container would freeze the DOM well past what has to be shared,
    * which is the one thing this contract sets out not to do.
    */
-  readonly presentation?: readonly string[];
+  readonly presentation?: Readonly<Record<string, string>>;
   /**
    * Anatomy that depends on how the kind is configured, keyed by the value that decides it.
    *
@@ -539,7 +539,7 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
     ...(shape.concealed === undefined ? {} : { concealed: shape.concealed }),
-    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze([...(shape.presentation ?? [])]), variants, valueSlot: VALUE_SLOTS[kind], capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze({ ...(shape.presentation ?? {}) }), variants, valueSlot: VALUE_SLOTS[kind], capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.

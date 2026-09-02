@@ -4489,7 +4489,7 @@
     "controlType?: string",
     "kind: MdyWidgetKind",
     "parts: Readonly<Record<TPart, MdyPartContract>>",
-    "presentationClasses: readonly string[]",
+    "presentationClasses: Readonly<Record<string, string>>",
     "rootClasses: readonly string[]",
     "structure: MdyWidgetStructure<TPart | \"root\">",
     "valueSlot: MdyValueSlot",
@@ -5368,6 +5368,11 @@
   "widgets:portalRootFor": [
     "(0) widgetRoot: Element",
     "-> returns: Element | null"
+  ],
+  "widgets:presentationClass": [
+    "(0) kind: K",
+    "(1) name: string",
+    "-> returns: string"
   ],
   "widgets:processWidgetCommands": [
     "(0) commands: readonly MdyUiCommand[] | null | undefined",

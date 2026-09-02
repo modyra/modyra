@@ -38,7 +38,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
     { classes: { increment: ["mdy-spin-btn", "mdy-spin-btn-up"], decrement: ["mdy-spin-btn", "mdy-spin-btn-down"] },
       // The box and its two steppers need one positioning context between them, and it is not a part:
       // nothing is announced by it and no contract member points at it.
-      presentation: ["mdy-number-spinner"] ,
+      presentation: { spinner: "mdy-number-spinner" } ,
       elements: { increment: "button", decrement: "button" } }),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { value: "track" },
@@ -77,7 +77,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       elements: { option: "label", optionControl: "radio" },
       roles: { group: "radiogroup" } ,
       states: { option: ["selected"] } ,
-      presentation: ["mdy-segmented__button--first", "mdy-segmented__button--last"] ,
+      presentation: { firstButton: "mdy-segmented__button--first", lastButton: "mdy-segmented__button--last" } ,
       required: ["option", "optionControl", "optionCheck", "optionText"] }),
   select: define("select", ["mdy-renderer", "mdy-renderer--select"], ["root", "label", "requiredMarker", "inputWrapper", "trigger", "value", "placeholder", "arrow", "popup", "search", "options", "option", "loading", "empty", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { parents: { options: "popup" },
@@ -90,7 +90,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // the chip grid's `group`. Declared here because the semantic is this kind's, not the name's.
       elements: { options: "listbox" } ,
       states: { arrow: ["open"], trigger: ["open", "disabled", "readonly", "invalid", "loading"], options: ["open"], option: ["selected", "active", "hidden", "disabled"], popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-select", "mdy-select__option-label", "mdy-select__loading-content"] ,
+      presentation: { box: "mdy-select", optionLabel: "mdy-select__option-label", loadingContent: "mdy-select__loading-content" } ,
       // `options` is what the popup is for. A positioning box framing nothing is a coherent-looking
       // widget with nothing in it to choose from, and `empty` is a message *inside* the list rather
       // than a substitute for it.
@@ -208,7 +208,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       classes: { box: ["mdy-multiselect"], trigger: ["mdy-multiselect__trigger"], arrow: ["mdy-multiselect__arrow"], options: ["mdy-multiselect__options", "mdy-multiselect-overlay__grid"], optionWrapper: [MDY_CHIP_CLASSES.wrapper], option: [MDY_CHIP_CLASSES.block], optionCheck: [MDY_CHIP_CLASSES.check], optionLabel: [MDY_CHIP_CLASSES.label], optionCount: [MDY_CHIP_CLASSES.count], optionStep: [MDY_CHIP_CLASSES.step], chips: ["mdy-multiselect__chips"], chipRow: ["mdy-multiselect__chip-row"], chip: [MDY_CHIP_CLASSES.block, MDY_CHIP_CLASSES.value], chipRemove: [MDY_CHIP_CLASSES.remove], chipMove: [MDY_CHIP_CLASSES.move], chipTooltip: ["mdy-chip__tooltip"], announcement: ["mdy-multiselect__announcement"], clearAll: ["mdy-multiselect__clear-all"], overflowCount: ["mdy-multiselect__overflow"], wayBackAction: ["mdy-multiselect__way-back-action"], placeholder: ["mdy-multiselect__placeholder"], popup: ["mdy-multiselect__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-multiselect-overlay__panel"], search: ["mdy-multiselect-overlay__input"], loading: ["mdy-select__loader"], empty: ["mdy-multiselect-overlay__empty"] } ,
       // The two mode markers a chip carries. `--centered` reserves the width its tick will need in
       // toggle mode; `--counter` is the bag mode, whose chip has step buttons instead of a tick.
-      presentation: ["mdy-chip--centered", "mdy-chip--counter"] ,
+      presentation: { centeredChip: "mdy-chip--centered", counterChip: "mdy-chip--counter" } ,
       // `optionCheck` is toggle mode's: a counter chip has a count between two steppers and no tick
       // to draw, so requiring it would ask every counter-mode renderer for an element that means
       // nothing there.
@@ -246,7 +246,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // and the thing inside it are one.
       roles: { calendar: "dialog", grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, monthCell: CALENDAR_PERIOD_CELL_STATES, yearCell: CALENDAR_PERIOD_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-datepicker__year-grid", "mdy-datepicker__modal-header", "mdy-datepicker__modal-label", "mdy-datepicker__modal-value"] ,
+      presentation: { box: "mdy-datepicker", headerLabel: "mdy-datepicker__header-label", headerNav: "mdy-datepicker__header-nav", icon: "mdy-datepicker__icon", navButton: "mdy-datepicker__nav-btn", title: "mdy-datepicker__title", viewIcon: "mdy-datepicker__view-icon", viewToggle: "mdy-datepicker__view-toggle", yearGrid: "mdy-datepicker__year-grid", modalHeader: "mdy-datepicker__modal-header", modalLabel: "mdy-datepicker__modal-label", modalValue: "mdy-datepicker__modal-value" } ,
       required: ["toggle", "calendar"] }),
   daterange: define("daterange", ["mdy-renderer", "mdy-renderer--datepicker", "mdy-renderer--daterange"], ["root", "label", "requiredMarker", "inputWrapper", "startControl", "separator", "endControl", "toggle", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "monthPicker", "monthCell", "yearPicker", "yearCell", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     { classes: { startControl: ["mdy-datepicker__input", "mdy-daterange__input", "mdy-daterange__input--start"], endControl: ["mdy-datepicker__input", "mdy-daterange__input", "mdy-daterange__input--end"], separator: ["mdy-daterange__sep"], toggle: ["mdy-datepicker__toggle"], popup: ["mdy-datepicker__popup", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS, "mdy-datepicker__popup--range"], calendar: ["mdy-datepicker__calendar"], dialogHeader: ["mdy-datepicker__header"], grid: ["mdy-datepicker__grid"], weekdays: ["mdy-datepicker__weekdays"], weekday: ["mdy-datepicker__weekday"], row: ["mdy-datepicker__row"], gridcell: ["mdy-datepicker__cell"], monthPicker: ["mdy-datepicker__month-picker"], monthCell: ["mdy-datepicker__month-cell"], yearPicker: ["mdy-datepicker__year-picker"], yearCell: ["mdy-datepicker__year-cell"] },
@@ -258,7 +258,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // and the thing inside it are one.
       roles: { calendar: "dialog", grid: "grid", row: "row", weekdays: "row", weekday: "columnheader", gridcell: "gridcell", monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell" } ,
       states: { gridcell: CALENDAR_CELL_STATES, monthCell: CALENDAR_PERIOD_CELL_STATES, yearCell: CALENDAR_PERIOD_CELL_STATES, popup: POPUP_PLACEMENT_STATES } ,
-      presentation: ["mdy-datepicker", "mdy-datepicker__header-label", "mdy-datepicker__header-nav", "mdy-datepicker__icon", "mdy-datepicker__nav-btn", "mdy-datepicker__title", "mdy-datepicker__view-icon", "mdy-datepicker__view-toggle", "mdy-daterange__group", "mdy-daterange__hint", "mdy-daterange__input-sizer", "mdy-datepicker__modal-header", "mdy-datepicker__modal-label", "mdy-datepicker__modal-value"] ,
+      presentation: { box: "mdy-datepicker", headerLabel: "mdy-datepicker__header-label", headerNav: "mdy-datepicker__header-nav", icon: "mdy-datepicker__icon", navButton: "mdy-datepicker__nav-btn", title: "mdy-datepicker__title", viewIcon: "mdy-datepicker__view-icon", viewToggle: "mdy-datepicker__view-toggle", group: "mdy-daterange__group", hint: "mdy-daterange__hint", inputSizer: "mdy-daterange__input-sizer", modalHeader: "mdy-datepicker__modal-header", modalLabel: "mdy-datepicker__modal-label", modalValue: "mdy-datepicker__modal-value" } ,
       required: ["separator", "toggle", "calendar"] }),
   // The clock is the picker, and its anatomy is named here down to the hand and the numbers on the
   // face: a renderer that drew its own dial would be a different widget wearing the same classes,
@@ -286,7 +286,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
          the card. Dressing the popup as well puts a bordered box around a bordered box — the wrapper
          the surface split exists to remove — and gives the same content two scroll contexts. */
       classes: { control: ["mdy-timepicker__input"], toggle: ["mdy-timepicker__toggle"], popup: ["mdy-timepicker__popup", MDY_POPUP_CLASS], dialog: ["mdy-timepicker__dialog"], container: ["mdy-timepicker-container"], content: ["mdy-timepicker-content"], header: ["mdy-timepicker-header"], hour: ["mdy-timepicker-segment", "mdy-timepicker-segment--hour"], hourControl: ["mdy-timepicker-segment-input"], minute: ["mdy-timepicker-segment", "mdy-timepicker-segment--minute"], minuteControl: ["mdy-timepicker-segment-input"], period: ["mdy-timepicker-period-toggle"], periodOption: ["mdy-timepicker-period-btn"], clock: ["mdy-timepicker-dial"], dialFace: ["mdy-timepicker-dial__face"], dialHand: ["mdy-timepicker-dial__hand"], dialNumber: ["mdy-timepicker-dial__number"], dialUnavailable: ["mdy-timepicker-dial__unavailable-layer"], dialUnavailableArc: ["mdy-timepicker-dial__unavailable"], modeToggle: ["mdy-timepicker-mode-toggle"], actions: ["mdy-timepicker-actions"], action: ["mdy-timepicker-action-btn"] } ,
-      presentation: ["mdy-timepicker", "mdy-timepicker--dial", "mdy-timepicker__icon", "mdy-timepicker-dial-variant", "mdy-timepicker-fields", "mdy-timepicker-segment-input--readonly", "mdy-timepicker-separator", "mdy-timepicker-spacer", "mdy-timepicker-segment-label"] ,
+      presentation: { box: "mdy-timepicker", dialVariant: "mdy-timepicker--dial", icon: "mdy-timepicker__icon", dialVariantBox: "mdy-timepicker-dial-variant", fields: "mdy-timepicker-fields", readonlySegment: "mdy-timepicker-segment-input--readonly", separator: "mdy-timepicker-separator", spacer: "mdy-timepicker-spacer", segmentLabel: "mdy-timepicker-segment-label" } ,
       // `container`, not `dialog`: the popup must frame the thing that holds the clock, and that is
       // the element both renderers build. Where the `dialog` role itself belongs is not settled —
       // one renderer puts it on the popup, the other on this container — so requiring the `dialog`
@@ -306,7 +306,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // empties the field and there is one of it. A renderer that dressed the per-file crosses in
       // `clear`'s class had the contract's word for one control on a row of another, and no clear at
       // all. Presentation until the contract declares the per-file act, which is its own decision.
-      presentation: ["mdy-file-icon", "mdy-file-info", "mdy-file-placeholder", "mdy-file-name", "mdy-file-meta", "mdy-file-remove"] ,
+      presentation: { icon: "mdy-file-icon", info: "mdy-file-info", placeholder: "mdy-file-placeholder", name: "mdy-file-name", meta: "mdy-file-meta", remove: "mdy-file-remove" } ,
       // `clear` too: always drawn, unavailable only sometimes. ADR 0171.
       //
       // Before the list rather than after it: the list is as long as the value, so a control below it
@@ -352,7 +352,7 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       roles: { presets: "listbox", swatch: "option" } ,
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], customTint: ["mdy-colors__custom-tint"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
-      presentation: ["mdy-colors", "mdy-colors__dropdown-header", "mdy-select__arrow"] ,
+      presentation: { box: "mdy-colors", dropdownHeader: "mdy-colors__dropdown-header", arrow: "mdy-select__arrow" } ,
       required: ["hexInput", "nativePicker", "preview", "toggle", "presets"] }),
 });
 

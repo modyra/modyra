@@ -129,7 +129,8 @@ export * from "./field/index.js";
 export { beginChipReorder, chipDropIndex, chosenKeyOrder, elementByDataKey, MDY_CHIP_DRAG_THRESHOLD, chipFocusAfterRemoval, chipActionName, quantityAnnouncement, settledVoice, chipStripWheelDelta, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, scrollChipStripByWheel, chipMovedAnnouncement, wayBackSentence, wayBackActionName, MDY_CHIP_CLASSES, multiselectAnnouncement, multiselectChipClasses, type MdyChipAppearance, type MdyChipPart, type MdyChipRole } from "./chip.js";
 export { stateClass, type MdyPartState, type MdyStateName } from "./state.js";
 export { MDY_CSS_PROPERTIES, type MdyOverlayProperty } from "./css.js";
-export { partClasses, partSelector, partStates, widgetStateClasses } from "./part-classes.js";
+export { partClasses,
+  presentationClass, partSelector, partStates, widgetStateClasses } from "./part-classes.js";
 export { MDY_LAYOUT_BREAKPOINTS, MDY_LAYOUT_CLASSES, MDY_LAYOUT_COLUMN_COUNT_PROPERTIES, MDY_LAYOUT_COLUMN_COUNT_PROPERTY, MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES, MDY_LAYOUT_COLUMN_START_PROPERTIES, layoutNodeAttributes, layoutSlotStyle, type MdyLayoutColumnCounts, type MdyLayoutPart } from "./layout.js";
 export { anchorOverlay, overlayAnchoringFor, overlayStyleProperties, popupAlignmentClass, popupPlacementClass, MDY_OVERLAY_GAP, type MdyAnchorRect, type MdyOpenModality, type MdyOverlayAlignment, type MdyOverlayAnchorOptions, type MdyOverlayAnchoring, type MdyOverlayCoords, type MdyOverlayPlacement, type MdyOverlayPlacementResult, type MdyViewportSize } from "./overlay.js";
 export { applyOverlayProperties, inlineDirectionOf, MDY_BACKDROP_ATTRIBUTE, measureOverlayContent, setOverlayOpen, stepOutOfOverlay, syncOverlayBackdrop, trackAnchoredOverlay, viewportSize } from "./overlay-dom.js";

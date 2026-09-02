@@ -266,7 +266,7 @@ function canonicalClasses(kind: MdyWidgetKind): ReadonlySet<string> {
     S.rendererOpen,
     // Structure the themes style that the kind declares but does not make a part of its anatomy,
     // and the classes that belong to no single widget.
-    ...definition.presentationClasses,
+    ...Object.values(definition.presentationClasses),
     ...MDY_SHARED_UI_CLASSES,
   ]);
 }

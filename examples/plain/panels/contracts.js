@@ -16,11 +16,12 @@ import {
 import { renderField } from "@modyra/plain";
 import {
   drawReadings,
+  reading,
   readAccessibleName,
   readPartAttribute,
   readPartPresence,
 } from "@modyra/widgets/testing";
-import { MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed, presentationClass } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -151,6 +152,7 @@ export const contractsPanel = {
     "MDY_VALIDATOR_FACTS",
     "MDY_VALUE_CONTRACTS",
     "MDY_WIDGET_CONTRACTS",
+    "presentationClass",
     "MDY_WIDGET_CONTRACT_VERSION",
     "MDY_WIDGET_KEYBOARD",
     "MDY_WIDGET_KINDS",
@@ -487,6 +489,20 @@ export const contractsPanel = {
         ...(label ? [{ label: "label present", reading: readPartPresence(subject, label, facts) }] : []),
         ...(errors ? [{ label: "errors present", reading: readPartPresence(subject, errors, facts) }] : []),
         { label: "a part nobody probes", reading: readPartAttribute(subject, { name: `${kind}.absent`, selector: ".mdy-not-drawn" }, "id") },
+        // The third door, read the way a renderer would: by name. What it answers is a class the
+        // page is wearing, so a reader can look for it — and asking for one this kind does not
+        // declare is refused rather than answered with nothing, which is what the reading shows.
+        {
+          label: "a presentation class, by name",
+          reading: reading(
+            { source: `presentationClass("${kind}", …)`, at: kind, method: "contract" },
+            () => {
+              const named = Object.keys(CONTRACTS[kind]?.presentationClasses ?? {});
+              if (named.length === 0) return undefined;
+              return `${named[0]} → ${presentationClass(kind, named[0])}`;
+            },
+          ),
+        },
       ], (value) => (typeof value === "object" && value !== null
         ? ("verdict" in value ? `${value.verdict}${value.presentWhen ? ` (${value.presentWhen})` : ""}`
           : `${value.name || "(no name)"} — ${value.mechanism}`)

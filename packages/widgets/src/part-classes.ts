@@ -133,3 +133,34 @@ export function partSelector<K extends MdyWidgetKind>(
   if (classes.length === 0) return null;
   return classes.map((name) => `.${escapeForSelector(name)}`).join("");
 }
+
+/**
+ * The class of one of a widget's presentation elements.
+ *
+ * The third door of the class contract, and the one that answers for what a widget draws that is not
+ * a part: a box, a decoration, a sizer. A part carries a semantic — the contract says which element
+ * it admits and refuses one with no opinion — and these carry none, which is exactly why they are
+ * declared apart rather than promoted.
+ *
+ * Keyed rather than listed, and that is the whole of the change this accessor exists for: reached by
+ * index, every entry was a position instead of a thing, and a renderer asking for one would have
+ * depended on the order of a literal it did not write. A name says what the class is; an index says
+ * where it happened to sit.
+ */
+export function presentationClass<K extends MdyWidgetKind>(kind: K, name: string): string {
+  const declared = MDY_WIDGET_CONTRACTS[kind]?.presentationClasses;
+  if (declared === undefined) {
+    throw new RangeError(`[modyra] No widget "${kind}" — its presentation classes cannot be asked for.`);
+  }
+  const found = declared[name];
+  if (found === undefined) {
+    // Named rather than empty: a renderer asking for a presentation element the kind does not have
+    // is a renderer drawing something the contract has not agreed to, and an empty string would put
+    // it on the page with no class and no complaint.
+    throw new RangeError(
+      `[modyra] Widget "${kind}" declares no presentation element "${name}". It has: ` +
+      `${Object.keys(declared).join(", ") || "none"}.`,
+    );
+  }
+  return found;
+}
