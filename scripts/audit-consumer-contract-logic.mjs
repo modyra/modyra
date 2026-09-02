@@ -1,0 +1,211 @@
+/**
+ * How much contract logic each consumer writes for itself.
+ *
+ * The framework's claim is that a renderer derives from the contract: the catalogues say which parts
+ * a kind has, which ARIA a part carries, which keys open it, how an id is built. A consumer that
+ * *asks* is a derivation. A consumer that *writes the same answer as a literal* is a second copy of
+ * something the contract owns, and a second copy diverges the moment the first one moves — this is
+ * the shape behind 28 of lit's 45 reds, every one of them a parallel copy of state the contract
+ * already held.
+ *
+ * So the measure is not "how much code". It is **literal versus derived**, per category, per package.
+ *
+ * Every count here is a *candidate*, not a verdict. A literal can be legitimate — a framework
+ * genuinely needs `role` in a template it writes, and a wrapper may name a class it owns. What the
+ * numbers support is comparison: between consumers, and between one consumer and its own past. A
+ * package whose derived count is high and literal count low has learned the contract; the reverse
+ * has reimplemented it. Reading the sites is what turns a candidate into a finding, and the report
+ * prints file and line for exactly that.
+ *
+ * Excluded: tests, stories, and type declaration files. A test naming `aria-expanded` is asserting
+ * the contract, which is the opposite of duplicating it, and counting it inverts the measurement.
+ */
+import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
+import { dirname, extname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const CONSUMERS = ["plain", "lit", "angular", "react", "preact", "solid", "svelte", "vue"];
+const SOURCE = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".vue", ".svelte"]);
+// Matched against the path *inside the package*, never the absolute one. The absolute path carries
+// the checkout's own directory names, and a machine whose working directory happens to sit under a
+// folder called "test" would classify every file in the repository as a test — measuring the layout
+// of the disk instead of the subject, and reporting a confident, entirely empty zero.
+const SKIP = /(\.spec\.|\.test\.|\.d\.ts$|(?:^|\/)tests?\/|__tests__|\.stories\.)/;
+
+/**
+ * What the contract owns, and the literal that means someone re-answered it here.
+ *
+ * Each pattern is written to match a *written answer*, not a mention: `aria-expanded` as a string
+ * being set, a key being compared, an id being built. The `derived` counter opposite them counts
+ * references to the catalogues that hold the same answers.
+ */
+const CATEGORIES = [
+  {
+    key: "aria",
+    what: "ARIA attribute names written as literals",
+    owns: "MDY_WIDGET_CONTRACTS / the part catalogue",
+    pattern: /["'`]aria-[a-z]+["'`]|\baria-[a-z]+=/g,
+  },
+  {
+    key: "role",
+    what: "role values written as literals",
+    owns: "the part catalogue's role per part",
+    pattern: /\brole\s*[=:]\s*["'`][a-z]+["'`]|["'`]role["'`]\s*,\s*["'`][a-z]+["'`]/g,
+  },
+  {
+    key: "keys",
+    what: "keyboard key names compared as literals",
+    owns: "MDY_WIDGET_KEYBOARD",
+    pattern: /["'`](?:ArrowDown|ArrowUp|ArrowLeft|ArrowRight|Enter|Escape|Home|End|PageUp|PageDown|Tab)["'`]/g,
+  },
+  {
+    key: "ids",
+    what: "element ids assembled from parts",
+    owns: "the projection, which already emits them",
+    pattern: /`[^`]*\$\{[^`]*\}__[a-z]+/g,
+  },
+  {
+    key: "classes",
+    what: "mdy- class names written as literals",
+    owns: "@modyra/styles and the class helpers",
+    pattern: /["'`]mdy-[a-z0-9_-]+/g,
+  },
+  {
+    key: "validators",
+    what: "validator names branched on by hand",
+    owns: "MDY_VALUE_CONTRACTS and the validator API",
+    pattern: /["'`](?:required|minLength|maxLength|pattern|email|min|max)["'`]\s*(?:===|==|:|\))/g,
+  },
+];
+
+/**
+ * The kinds the contract defines, read from the built contract rather than listed here.
+ *
+ * This column is what stops the literal counts from being read backwards. A consumer that renders
+ * nothing has nothing to duplicate, so it scores a perfect zero — the same zero a flawless derivation
+ * would score. Without coverage beside it, "0 literal" reads as praise for the packages that have not
+ * been written yet.
+ */
+const KINDS = JSON.parse(
+  execFileSync(process.execPath, ["--input-type=module", "-e",
+    'import {MDY_WIDGET_CONTRACTS} from "./packages/widgets/dist/index.js";'
+    + ' process.stdout.write(JSON.stringify(Object.keys(MDY_WIDGET_CONTRACTS)))'],
+    { cwd: ROOT, encoding: "utf8" }));
+
+/** A reference to a catalogue or a contract export: the derived half of the ratio. */
+const DERIVED = /\bMDY_[A-Z_]+|\bmdy[A-Z][A-Za-z]*\(|@modyra\/(?:widgets|core)/g;
+
+const base_of = (pkg) => join(ROOT, "packages", pkg, "src");
+
+function sourceFilesOf(pkg) {
+  const base = base_of(pkg);
+  const out = [];
+  const walk = (dir) => {
+    let entries;
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (SOURCE.has(extname(entry.name)) && !SKIP.test(relative(base, full))) out.push(full);
+    }
+  };
+  walk(base);
+  return out;
+}
+
+const report = [];
+for (const pkg of CONSUMERS) {
+  const files = sourceFilesOf(pkg);
+  if (files.length === 0) { report.push({ pkg, missing: true }); continue; }
+
+  const counts = Object.fromEntries(CATEGORIES.map((c) => [c.key, 0]));
+  const sites = Object.fromEntries(CATEGORIES.map((c) => [c.key, []]));
+  let derived = 0;
+  let lines = 0;
+
+  for (const file of files) {
+    const text = readFileSync(file, "utf8");
+    lines += text.split("\n").length;
+    derived += (text.match(DERIVED) ?? []).length;
+    for (const category of CATEGORIES) {
+      const found = text.match(category.pattern) ?? [];
+      counts[category.key] += found.length;
+      if (found.length > 0) {
+        const line = text.slice(0, text.search(category.pattern)).split("\n").length;
+        sites[category.key].push(`${relative(ROOT, file)}:${line}`);
+      }
+    }
+  }
+  const literal = Object.values(counts).reduce((a, b) => a + b, 0);
+  // A kind counts as rendered where the package dispatches on it: the kind as a quoted literal in
+  // code, or a source file named for it. Comments are stripped first, and that is not a detail — the
+  // first form of this check matched `email` inside a doc comment reading `form.f.email.value()` and
+  // reported two kinds rendered for a package that renders none. A prose mention is the cheapest
+  // possible false positive and it lands on the side that flatters the subject.
+  const code = files
+    .map((f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " "))
+    .join("\n");
+  const named = files.map((f) => relative(base_of(pkg), f)).join("\n");
+  const rendered = KINDS.filter((kind) =>
+    new RegExp(`["'\`]${kind}["'\`]`).test(code)
+    // An unquoted object key is the other way a dispatch table is written, and the commonest:
+    // `email: "mdy-text-field"` maps the kind without ever quoting it. Missing this form reported a
+    // renderer that handles every kind as handling fifteen.
+    || new RegExp(`(?:^|[{,\\s])${kind}\\s*:`, "m").test(code)
+    || new RegExp(`(?:^|[/-])${kind}[-./]`, "m").test(named));
+  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered });
+}
+
+console.log("# Contract logic written inside consumers\n");
+console.log("Literal = an answer the contract owns, re-answered here. Derived = a reference to the");
+console.log("catalogues that hold those answers. Both are candidates: the sites are printed to be read.\n");
+
+const head = ["package", "kinds", "lines", ...CATEGORIES.map((c) => c.key), "literal", "derived", "lit/kind"];
+console.log(head.map((h, i) => h.padEnd(i === 0 ? 9 : 9)).join(""));
+for (const row of report) {
+  if (row.missing) { console.log(`${row.pkg.padEnd(9)}(no src)`); continue; }
+  const perKind = row.rendered.length === 0 ? "n/a" : (row.literal / row.rendered.length).toFixed(1);
+  const cells = [
+    row.pkg.padEnd(9),
+    `${row.rendered.length}/${KINDS.length}`.padEnd(9),
+    String(row.lines).padEnd(9),
+    ...CATEGORIES.map((c) => String(row.counts[c.key]).padEnd(9)),
+    String(row.literal).padEnd(9),
+    String(row.derived).padEnd(9),
+    perKind.padEnd(9),
+  ];
+  console.log(cells.join(""));
+}
+
+console.log("\n`kinds` is coverage and it is the column that decides how the rest is read: a package");
+console.log("rendering 0 of 17 scores 0 literals for the same reason it scores nothing else. `lit/kind`");
+console.log("is the load per kind actually rendered, which is the number that compares unlike packages.\n");
+
+for (const row of report) {
+  if (row.missing || row.rendered.length === KINDS.length || row.rendered.length === 0) continue;
+  const absent = KINDS.filter((k) => !row.rendered.includes(k));
+  console.log(`  ${row.pkg.padEnd(9)} does not render: ${absent.join(", ")}`);
+}
+
+console.log("\nThe absent list undercounts wherever one file serves several kinds without naming them:");
+console.log("`boolean-field` renders checkbox and toggle, `option-field` renders radio and segmented,");
+console.log("and neither kind appears anywhere in the source. Read a small package's absences as an");
+console.log("upper bound on what is missing, and its coverage as a lower bound on what is there.");
+
+console.log("\n## What each column is, and who owns the answer\n");
+for (const category of CATEGORIES) {
+  console.log(`  ${category.key.padEnd(11)} ${category.what}`);
+  console.log(`  ${" ".repeat(11)} owned by: ${category.owns}`);
+}
+
+console.log("\n## Where to read first — the densest site per category per package\n");
+for (const row of report) {
+  if (row.missing || row.literal === 0) continue;
+  const worst = CATEGORIES
+    .filter((c) => row.counts[c.key] > 0)
+    .sort((a, b) => row.counts[b.key] - row.counts[a.key])[0];
+  console.log(`  ${row.pkg.padEnd(9)} ${worst.key.padEnd(11)} ${row.counts[worst.key]} occurrence(s), first at ${row.sites[worst.key][0]}`);
+}

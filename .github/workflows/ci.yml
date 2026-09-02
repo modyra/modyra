@@ -109,6 +109,16 @@ jobs:
 
       # Known Lit parity gaps are allowlisted in
       # scripts/theme-parity-allowlist.json; new regressions fail the check.
+      # **Two suites that existed and that no workflow reached.** 32 assertions over the stylesheet
+      # package and 34 over the examples printed in the guides — the ones a reader copies out of the
+      # documentation and runs. Both were green when first executed here, which is the good case and
+      # not the reassuring one: nothing had been keeping them green, and a guide whose example stops
+      # compiling is a page that lies to whoever follows it.
+      - name: Stylesheet package and guide examples
+        run: |
+          pnpm run test:styles
+          pnpm run test:guides
+
       - name: Theme class parity
         run: pnpm run test:themes
 

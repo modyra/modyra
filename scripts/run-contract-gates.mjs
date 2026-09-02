@@ -43,6 +43,7 @@ const GATES = [
   "npm run test:contract-coverage",
   "npm run test:conformance-manifest",
   "npm run test:contract-snapshot",
+  "npm run audit:unrun-checks",
   "npm run test:type-surface",
   "npm run test:public-doors",
   "npm run test:commit-affordance",
