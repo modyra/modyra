@@ -95,6 +95,36 @@ const KINDS = JSON.parse(
     + ' process.stdout.write(JSON.stringify(Object.keys(MDY_WIDGET_CONTRACTS)))'],
     { cwd: ROOT, encoding: "utf8" }));
 
+/**
+ * The public answer to each category, read from the built package rather than listed here.
+ *
+ * This is what separates three repairs whose costs differ by an order of magnitude. A literal in a
+ * consumer means one of:
+ *
+ *   1. **the answer exists and is public** — the repair is a README line, not an extraction. A piece
+ *      of contract nobody knows how to call is indistinguishable from one that is missing, and it
+ *      fails the same way: react's README taught `aria-invalid={!valid}`, wrong in two states out of
+ *      three, while the correct door was exported all along;
+ *   2. **the answer exists and is not reachable** — a surface decision;
+ *   3. **the answer does not exist** — a real descent into widgets.
+ *
+ * Only the third is construction. Reading 1 as 3 builds an extraction where a sentence would do.
+ */
+const ANSWERS = {
+  aria: /A11y$|Aria$|^MDY_WIDGET_CONTRACTS$/,
+  role: /A11y$|^MDY_WIDGET_CONTRACTS$|^partClasses$/,
+  keys: /^MDY_WIDGET_KEYBOARD$|Key(?:board)?(?:Intent|Guide|Order|Action|Target)?$|^keyBindingFor$|^keyMeans$|^matchesKeyGesture$/,
+  ids: /PartIds$|^idSafeKey$|^isValidWidgetId$/,
+  classes: /Classes$|^MDY_[A-Z_]*CLASS(?:ES)?$|^stateClass$|^partClasses$/,
+  validators: /^errorsVisible$|Errors(?:Of)?$|^showsAsInvalid$|^fieldCanBeInvalid$/,
+};
+
+const PUBLIC = JSON.parse(
+  execFileSync(process.execPath, ["--input-type=module", "-e",
+    'import * as W from "./packages/widgets/dist/index.js";'
+    + ' process.stdout.write(JSON.stringify(Object.keys(W)))'],
+    { cwd: ROOT, encoding: "utf8" }));
+
 /** A reference to a catalogue or a contract export: the derived half of the ratio. */
 const DERIVED = /\bMDY_[A-Z_]+|\bmdy[A-Z][A-Za-z]*\(|@modyra\/(?:widgets|core)/g;
 
@@ -139,6 +169,18 @@ for (const pkg of CONSUMERS) {
       }
     }
   }
+  // How many of the public doors that answer this category the package actually calls. A category
+  // with public answers and zero calls is bucket 1 — the door exists and nobody knocked.
+  const doorsUsed = {};
+  for (const category of CATEGORIES) {
+    const doors = PUBLIC.filter((name) => ANSWERS[category.key].test(name));
+    doorsUsed[category.key] = {
+      available: doors.length,
+      called: doors.filter((name) => new RegExp(`\\b${name}\\b`).test(
+        files.map((f) => readFileSync(f, "utf8")).join("\n"))).length,
+    };
+  }
+
   const literal = Object.values(counts).reduce((a, b) => a + b, 0);
   // A kind counts as rendered where the package dispatches on it: the kind as a quoted literal in
   // code, or a source file named for it. Comments are stripped first, and that is not a detail — the
@@ -156,7 +198,7 @@ for (const pkg of CONSUMERS) {
     // renderer that handles every kind as handling fifteen.
     || new RegExp(`(?:^|[{,\\s])${kind}\\s*:`, "m").test(code)
     || new RegExp(`(?:^|[/-])${kind}[-./]`, "m").test(named));
-  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered });
+  report.push({ pkg, files: files.length, lines, counts, sites, literal, derived, rendered, doorsUsed });
 }
 
 console.log("# Contract logic written inside consumers\n");
@@ -194,6 +236,33 @@ console.log("\nThe absent list undercounts wherever one file serves several kind
 console.log("`boolean-field` renders checkbox and toggle, `option-field` renders radio and segmented,");
 console.log("and neither kind appears anywhere in the source. Read a small package's absences as an");
 console.log("upper bound on what is missing, and its coverage as a lower bound on what is there.");
+
+console.log("\n## Which bucket the duplication falls in\n");
+console.log("For each category: how many public doors answer it, and how many this package calls.");
+console.log("Literals beside called doors are partial adoption; literals beside zero called doors are");
+console.log("a door nobody knocked on. A category with no public door at all would be a real descent.\n");
+console.log(`  ${"package".padEnd(9)}${CATEGORIES.map((c) => c.key.padEnd(11)).join("")}`);
+for (const row of report) {
+  if (row.missing) continue;
+  const cells = CATEGORIES.map((c) => {
+    const d = row.doorsUsed[c.key];
+    return `${d.called}/${d.available}`.padEnd(11);
+  });
+  console.log(`  ${row.pkg.padEnd(9)}${cells.join("")}`);
+}
+const noDoor = CATEGORIES.filter((c) => PUBLIC.filter((n) => ANSWERS[c.key].test(n)).length === 0);
+console.log(`\n  Categories with NO public answer (a real descent): ${noDoor.length === 0 ? "none" : noDoor.map((c) => c.key).join(", ")}`);
+
+console.log("\n## The void — what the thin adapters do not cover at all\n");
+const full = report.filter((r) => !r.missing && r.rendered.length === KINDS.length);
+const thin = report.filter((r) => !r.missing && r.rendered.length < KINDS.length);
+for (const row of thin) {
+  const silent = CATEGORIES.filter((c) => row.counts[c.key] === 0 && row.doorsUsed[c.key].called === 0);
+  console.log(`  ${row.pkg.padEnd(9)} says nothing about: ${silent.map((c) => c.key).join(", ") || "(nothing)"}`);
+}
+console.log("\n  A thin adapter showing neither the right way nor the wrong one is worse than one showing");
+console.log("  the wrong one: whoever writes the next consumer starts here and guesses. The three full");
+console.log(`  renderers cover all ${CATEGORIES.length} categories; that gap is the teaching debt.`);
 
 console.log("\n## What each column is, and who owns the answer\n");
 for (const category of CATEGORIES) {
