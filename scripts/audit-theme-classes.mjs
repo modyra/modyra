@@ -2,9 +2,13 @@
 /**
  * Theme class-contract audit.
  *
- * Compares the class vocabulary emitted by Angular renderers (including
- * subcomponents) with the class vocabulary emitted by Lit elements and the
- * classes styled by the shipped themes.
+ * Compares the class vocabulary each renderer *writes in its source* — Angular components and their
+ * subcomponents against Lit elements — with the classes styled by the shipped themes.
+ *
+ * **Written, not emitted, and the difference is the whole caveat.** A class a renderer asks the
+ * contract for at runtime is on the element and invisible to a scanner reading text. The report says
+ * so in its own output rather than only here, because a reader who takes these counts for what the
+ * page carries will read a successful migration as a renderer losing classes.
  *
  * Usage:
  *   node scripts/audit-theme-classes.mjs         # report
@@ -634,7 +638,7 @@ function buildMatrix(angularVocab, litVocab, themeVocab, allowlist) {
     const aStale = [...allowed].filter((c) => !aOwn.includes(c)).sort();
     const b = defectsB(lit, angular, themeVocab.all);
     const c = defectsC(themeVocab.all, angular, lit);
-    matrix.push({ kind, a, aContract, aPending, aStale, b, c });
+    matrix.push({ kind, a, aContract, aPending, aStale, b, c, seen: { angular: angular.size, lit: lit.size } });
   }
   return matrix;
 }
@@ -682,6 +686,29 @@ function printMatrix(matrix) {
       console.log("  No (a)/(b) defects.");
     }
     console.log();
+  }
+  // **What this audit read, said in the report rather than only in its code.**
+  //
+  // It scans source text, so it sees a class only where a renderer *writes* one. A class the
+  // renderer asks the contract for at runtime is on the element and invisible here — which is not a
+  // corner case but the direction the migration is going, so these numbers fall as the work
+  // succeeds. They are counts of classes written recognisably, never of classes emitted.
+  //
+  // A kind where one side yields nothing is the shape worth stopping on: a renderer that draws no
+  // classes at all is unlikely, a spelling this scanner does not know is likelier, and that is
+  // exactly how four classes went missing from this audit while sitting on the element.
+  const silent = matrix.filter((row) => row.seen.angular === 0 || row.seen.lit === 0);
+  console.log(
+    `Read from source: ${matrix.reduce((n, r) => n + r.seen.angular, 0)} class(es) written in Angular, `
+      + `${matrix.reduce((n, r) => n + r.seen.lit, 0)} in Lit — written, not emitted: a class asked of `
+      + `the contract at runtime reaches the element and not this scanner.`,
+  );
+  if (silent.length > 0) {
+    console.log(
+      `  ${silent.length} kind(s) where one renderer yielded no classes at all — `
+        + `${silent.map((r) => r.kind).join(", ")}. A renderer that draws nothing is unlikely; a `
+        + "spelling this scanner does not recognise is likelier.",
+    );
   }
   console.log(
     `Totals: (a) ${totalA}, (b) ${totalB}, (c) ${totalC}` +
