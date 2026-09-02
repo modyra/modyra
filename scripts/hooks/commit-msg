@@ -1,0 +1,12 @@
+#!/bin/sh
+# Strip generated attribution trailers from every commit message, whoever commits.
+#
+# The patterns are deliberately broader than the trailers actually seen: any session trailer, any
+# co-author line, any "generated with" line. A filter that enumerates the specific things it removes
+# is a list of those things, written into the repository it was meant to keep them out of — so it
+# matches by shape instead. The cost is that a genuine human co-author line would be stripped too;
+# this repository has one author, and the broad form is chosen knowing that.
+tmp="$1.tmp"
+grep -v -i -E '^[[:space:]]*([A-Za-z-]+-Session:|Co-Authored-By:|.*Generated with)' "$1" > "$tmp" || true
+mv "$tmp" "$1"
+exit 0

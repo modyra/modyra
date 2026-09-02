@@ -58,9 +58,17 @@ and pushes anyway, and CI is red exactly as before — with the difference that 
 before the push rather than diagnosed after it. That is the accepted limit, and it is the price of not
 being bypassable.
 
-The commit-time half lives in `.git/hooks/pre-commit`, which is not versioned, so it reaches nobody
-else's checkout. The reasoning and the measurement are in `scripts/audit-visual-debt.mjs`, which is —
-the hook is three lines calling it. `npm run audit:visual-debt` is the form that always works.
+The commit-time half is a hook, and git does not version `.git/hooks`. So the hook bodies are kept in
+`scripts/hooks/` and copied in by `scripts/install-hooks.sh`, which **a person runs**: a hook that
+installed itself from `postinstall` would be a hook nobody chose, and one of the two here rewrites
+commit messages. That also closes a gap that had nothing to do with baselines — the `commit-msg` hook
+enforcing this repository's attribution rule existed on one machine and in no checkout, so the rule
+was one `rm -rf node_modules` away from being unenforced and nobody would have noticed.
+
+An uninstalled hook is silent, which is the failure mode to know about: this announces nothing in a
+checkout where the installer was never run. `npm run audit:visual-debt` is the form that always
+works, and the reasoning and the measurement live in `scripts/audit-visual-debt.mjs` — the hook is
+three lines calling it.
 
 It cannot see a page moved by something outside `examples/<renderer>/`: a theme file, a widget's own
 CSS, a shared stylesheet. Those move the images too and this will call the renderer current. It

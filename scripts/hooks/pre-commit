@@ -1,0 +1,7 @@
+#!/bin/sh
+# Say, at the moment the author can still act, whether this tree owes linux baselines.
+# It never refuses: the images are recorded from a pushed head, so the debt is legitimate until then.
+# Versioned copy of this hook's reasoning lives in scripts/audit-visual-debt.mjs.
+node "$(git rev-parse --show-toplevel)/scripts/audit-visual-debt.mjs" 2>/dev/null \
+  | sed -n '/^VISUAL DEBT/,$p'
+exit 0
