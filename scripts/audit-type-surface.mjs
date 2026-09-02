@@ -128,6 +128,56 @@ function splitTopLevel(text, separator) {
  * form**, so a widened return type or a new object member is still reported: what stops being reported
  * is the same members in a different sequence.
  */
+/**
+ * An object-literal type as its members, or `null` when the text is not one.
+ *
+ * **Why the shape matters and the text does not.** A type written `{ readonly a: string; readonly
+ * b: string }` that gains a key is additive: every consumer reading `a` still reads `a`. Compared as
+ * a string it is simply *different*, and different was reported `major` — the fourth false major of
+ * this family, after unions reshuffled by order, `ɵcmp` rewritten by an optional input, and a
+ * reworded doc comment. Each was additive; each spent the attention the real one will need.
+ *
+ * Split at depth zero, not on every `;`: a nested object or a generic carries its own separators, and
+ * a naive split would tear one member into two and report both halves as changed.
+ */
+function objectMembers(text) {
+  const body = text.trim();
+  if (!body.startsWith("{") || !body.endsWith("}")) return null;
+  const inner = body.slice(1, -1);
+  const members = new Map();
+  let depth = 0;
+  let current = "";
+  const flush = () => {
+    const part = current.trim();
+    current = "";
+    if (part === "") return;
+    const colon = splitAtTopLevelColon(part);
+    if (colon === -1) return members.set(part, "");
+    const key = part.slice(0, colon).replace(/^readonly\s+/, "").replace(/\?$/, "").trim();
+    members.set(key, part.slice(colon + 1).trim());
+  };
+  for (const ch of inner) {
+    if (ch === "{" || ch === "(" || ch === "[" || ch === "<") depth += 1;
+    else if (ch === "}" || ch === ")" || ch === "]" || ch === ">") depth -= 1;
+    if ((ch === ";" || ch === ",") && depth === 0) { flush(); continue; }
+    current += ch;
+  }
+  flush();
+  return members.size === 0 ? null : members;
+}
+
+/** The first `:` that separates a member's name from its type, ignoring any inside brackets. */
+function splitAtTopLevelColon(part) {
+  let depth = 0;
+  for (let i = 0; i < part.length; i += 1) {
+    const ch = part[i];
+    if (ch === "{" || ch === "(" || ch === "[" || ch === "<") depth += 1;
+    else if (ch === "}" || ch === ")" || ch === "]" || ch === ">") depth -= 1;
+    else if (ch === ":" && depth === 0) return i;
+  }
+  return -1;
+}
+
 function normaliseType(text) {
   // Documentation is not surface. A doc comment sits inside an inline object type in the emitted
   // declaration, so rewording one changed the compared string and was reported **major** on a type
@@ -625,6 +675,24 @@ for (const name of Object.keys(baseline)) {
     if (!before.optional && after.optional) changes.push(["minor", `${name}.${member} is now optional`]);
     // Compared after normalising order, so the same members in a different sequence are the same type.
     if (normaliseType(before.type) !== normaliseType(after.type)) {
+      // Two object-literal types are compared by their members, because that is what a consumer
+      // reads. Keys gained break nobody; keys lost or retyped break everyone who read them.
+      const wasMembers = objectMembers(before.type);
+      const nowMembers = objectMembers(after.type);
+      if (wasMembers && nowMembers) {
+        const gone = [...wasMembers.keys()].filter((key) => !nowMembers.has(key));
+        const retyped = [...wasMembers.entries()]
+          .filter(([key, type]) => nowMembers.has(key) && normaliseType(nowMembers.get(key)) !== normaliseType(type))
+          .map(([key]) => key);
+        const gained = [...nowMembers.keys()].filter((key) => !wasMembers.has(key));
+        if (gone.length > 0 || retyped.length > 0) {
+          changes.push(["major", `${name}.${member} lost or retyped ${[...gone, ...retyped].join(", ")}`
+            + ` — is now \`${after.type}\`, was \`${before.type}\``]);
+        } else if (gained.length > 0) {
+          changes.push(["minor", `${name}.${member} gained ${gained.join(", ")}`]);
+        }
+        continue;
+      }
       changes.push(["major", `${name}.${member} is now \`${after.type}\`, was \`${before.type}\``]);
     }
   }
