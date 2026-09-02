@@ -168,9 +168,10 @@ function recordsFor(keys, domains) {
  *
  * @param {string} source
  * @param {readonly {name: string, resolve?: (args: readonly string[]) => readonly string[], unresolvable?: string}[]} doors
+ * @param {{kind?: string}} [context] the widget the caller is scanning, when it knows one
  * @returns {{classes: Set<string>, resolved: number, perimeter: {door: string, reason: string, calls: number}[]}}
  */
-export function classesFromDoors(source, doors) {
+export function classesFromDoors(source, doors, { kind } = {}) {
   const code = source
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/^\s*\/\/.*$/gm, " ");
@@ -178,6 +179,37 @@ export function classesFromDoors(source, doors) {
   const classes = new Set();
   const perimeter = [];
   let resolved = 0;
+
+  // A door can also be *read* rather than called: `widgetContract.parts.trigger.classes` puts the
+  // same classes on an element as a call would, and no regex over call syntax will ever see it.
+  //
+  // The path is declared in two ends — `{ root: "parts", leaf: "classes" }` — and never as a string
+  // with a wildcard in it. A wildcard written into a string is a domain the reader would have to
+  // interpret, which is the inference this module refuses everywhere else: the door says the two
+  // ends, the segment between them is what the source names, and the contract answers for it.
+  //
+  // The kind comes from the caller because the caller knows it: a gate scanning one renderer's file
+  // knows which widget it is reading, and a reader guessing from a path would be inferring again.
+  for (const door of doors.filter((entry) => entry.readPath && entry.resolvePath)) {
+    const { root, leaf } = door.readPath;
+    const reads = new RegExp(`\\b${root}\\s*\\.\\s*([A-Za-z0-9_$]+)\\s*\\.\\s*${leaf}\\b`, "g");
+    for (const match of code.matchAll(reads)) {
+      if (kind === undefined) {
+        // Grouped rather than one entry per site: a perimeter is meant to be read, and eleven
+        // identical lines say the same thing eleven times while hiding how many doors are in it.
+        const already = perimeter.find((entry) => entry.door === `${root}.*.${leaf}`);
+        if (already) already.calls += 1;
+        else perimeter.push({
+          door: `${root}.*.${leaf}`,
+          reason: "read without a kind in hand: the caller did not say which widget it was scanning",
+          calls: 1,
+        });
+        continue;
+      }
+      for (const cls of door.resolvePath(kind, match[1]) ?? []) classes.add(cls);
+      resolved += 1;
+    }
+  }
 
   for (const door of doors) {
     // Literal arguments only, and that is the contract of this reader rather than a limitation it
