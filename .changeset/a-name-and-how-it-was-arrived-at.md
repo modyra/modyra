@@ -19,3 +19,5 @@ would actually hear, rather than describing a page nobody experiences.
 The reading declares `method: "own-implementation"`. No browser exposes its own name computation to
 a page, so this is a derivation and says so — a panel that borrowed authority it does not have would
 be worse than one that abstained, because a reader would stop checking.
+
+On `@modyra/widgets/testing`: `readAccessibleName`, returning an `MdyAccessibleName` — the name and the mechanism that produced it.

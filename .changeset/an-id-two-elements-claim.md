@@ -17,3 +17,5 @@ Shown able to see the defect rather than assumed to be: two forms mounted from o
 id twice, because plain scopes them — and with a duplicate planted in that same page the collector
 names it and its count. A green from the first measurement alone would have proved only that the
 page was clean, never that anything was looking.
+
+On `@modyra/widgets/testing`: `readIdClaims`, returning `MdyIdClaim` per id.

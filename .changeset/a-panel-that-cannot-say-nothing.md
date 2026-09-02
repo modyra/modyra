@@ -19,3 +19,5 @@ makes, visible in one table rather than in two runs.
 selector from the part's classes, and `control` has none — so it matched nothing, and the table said
 `(not read) — absent-probe: control answered nothing` instead of showing a blank. A panel that drew
 bare values would have shown an empty cell and been believed.
+
+On `@modyra/widgets/testing`: `drawReadings`, which builds no DOM of its own and takes the element vocabulary as an `MdyReadingHost`.

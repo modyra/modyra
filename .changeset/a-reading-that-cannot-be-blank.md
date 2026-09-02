@@ -21,3 +21,5 @@ The layer is checked by planting rather than by reading, which is what ADR 0188 
 it is worth building: make an unread render as an empty string and the guard goes red; make the
 wrapper test truthiness instead of `undefined` and `false`, `0` and `""` are reported as unread —
 the same defect inverted, and the one that passes for prudence.
+
+On `@modyra/widgets/testing`: `reading`, `readingOf`, `unread`, `readingText`, `readPartAttribute`, the `MDY_NOT_READ` phrase every surface says, and the `MdyReading` a collector returns.

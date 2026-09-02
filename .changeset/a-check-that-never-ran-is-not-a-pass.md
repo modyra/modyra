@@ -22,3 +22,5 @@ what is new is being able to see which conformance it bought out of.
 Printed rather than asserted: which capabilities an adapter has is its own business, and a threshold
 would be the suite having an opinion about that. What is not negotiable is that the difference is
 visible.
+
+On `@modyra/core`: `reactivityContractLedger` and `resetReactivityContractLedger`.

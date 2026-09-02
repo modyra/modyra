@@ -20,3 +20,5 @@ dangling; once the field fails, the container fills and nothing is dangling then
 With no document to resolve against, the collector reports that it could not look. Reporting every id
 as dangling would be it turning its own missing context into a finding about the page — the direction
 that confirms, which is the one worth guarding against.
+
+On `@modyra/widgets/testing`: `readReferenceTargets`, returning `MdyReferenceTargets` with an `MdyResolvedReference` per id.
