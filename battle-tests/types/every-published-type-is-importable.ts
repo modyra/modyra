@@ -36,6 +36,7 @@ import type {
   MdyChipAppearance,
   MdyChipPart,
   MdyChipRole,
+  MdyClassDoor,
   MdyColorValueIntent,
   MdyColorValueTransition,
   MdyColorsFieldController,
@@ -908,3 +909,6 @@ void held283;
 
 declare const held284: MdyServerVerdict;
 void held284;
+
+declare const held285: MdyClassDoor;
+void held285;

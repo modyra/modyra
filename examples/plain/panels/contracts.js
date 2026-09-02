@@ -21,7 +21,7 @@ import {
   readPartAttribute,
   readPartPresence,
 } from "@modyra/widgets/testing";
-import { MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed, presentationClass } from "@modyra/widgets";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed, presentationClass } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -81,6 +81,7 @@ export const contractsPanel = {
     "MDY_BACKDROP_ATTRIBUTE",
     "MDY_CALENDAR_VIEW_MODES",
     "MDY_CHIP_CLASSES",
+    "MDY_CLASS_DOORS",
     "MDY_CHIP_DRAG_THRESHOLD",
     "MDY_COLOR_PRESETS",
     "MDY_CONTRACT_VOCABULARIES",
@@ -404,6 +405,36 @@ export const contractsPanel = {
     //
     // The point is visible in the third column: a blank cell would read as "this is empty", and
     // "empty" is a claim. Several of these rows are legitimately absent, and each says which.
+    // Every function that puts a class on an element, and what each answers for one kind.
+    //
+    // A renderer that spells `"mdy-select__trigger"` into its markup and one that asks the contract
+    // for it produce the same page, and only the second stays correct when the name changes. The
+    // doors are what a renderer asks; the rows below are what they answer, resolved here at runtime
+    // rather than described. A door whose answer depends on a value says so instead of showing a
+    // class it cannot know.
+    const doors = document.createElement("section");
+    doors.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
+    const doorsHeading = document.createElement("h3");
+    doorsHeading.textContent = "Le porte che mettono una classe su un elemento";
+    doors.append(doorsHeading);
+    const doorsList = document.createElement("dl");
+    doorsList.dataset.classDoors = "";
+    for (const door of MDY_CLASS_DOORS) {
+      const term = document.createElement("dt");
+      term.textContent = door.name;
+      const answer = document.createElement("dd");
+      if (door.unresolvable) {
+        answer.textContent = `dipende da un valore — ${door.unresolvable}`;
+      } else if (door.resolveObject) {
+        answer.textContent = [...door.resolveObject({ role: "value" })].join(" ") || "nessuna classe";
+      } else {
+        answer.textContent = [...door.resolve(["select", "trigger"])].join(" ") || "nessuna classe per select/trigger";
+      }
+      doorsList.append(term, answer);
+    }
+    doors.append(doorsList);
+    work.append(doors);
+
     const inspection = document.createElement("section");
     inspection.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
     const inspectionHeading = document.createElement("h3");
