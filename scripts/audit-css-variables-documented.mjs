@@ -28,6 +28,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
+import { scaleStepNames } from "./lib/scale-steps.mjs";
 import { join, relative, resolve } from "node:path";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
@@ -273,7 +274,18 @@ for (const name of inCss.keys()) {
 }
 
 const classified = new Map();
+const scaleSteps = new Set(scaleStepNames());
+
 for (const name of untiered) {
+  // Asked before who reads it, because for these the question does not apply. A scale step is
+  // surface a consumer **sets**: nothing here has to consume `--mdy-space-7` for it to be public,
+  // and the release differ already treats a step that stops answering as a break. Classified by
+  // readers alone, the same names came out "no reader here", and that reading — true about what it
+  // measured — is what put seven settable properties one commit away from deletion as dead.
+  if (scaleSteps.has(name)) {
+    classified.set(name, "declared as a scale step — a consumer sets these, so no reader here proves nothing");
+    continue;
+  }
   const who = readBy.get(name);
   if (who === undefined) {
     // Read by nothing here — which is not read by nothing anywhere. These sheets are published, and

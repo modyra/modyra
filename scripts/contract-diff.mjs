@@ -22,6 +22,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { scaleStepNames } from "./lib/scale-steps.mjs";
 import { relative, resolve } from "node:path";
 import {
   MDY_FORM_SHELL_CLASSES, MDY_LAYOUT_CLASSES,
@@ -173,13 +174,8 @@ function sharedClassNames() {
  * — so recording values would report every theme as a contract change. What a consumer cannot survive
  * is a name that stops answering.
  */
-function scaleTokens() {
-  const sheet = readFileSync(resolve(root, "packages/styles/src/modyra-scale.css"), "utf8");
-  // Declarations only: a `var(--mdy-…)` reading a step is a use, not a definition, and counting it
-  // would make the snapshot depend on which rules happen to consume which step.
-  const declared = [...sheet.matchAll(/^\s*(--mdy-[a-z0-9-]+)\s*:/gm)].map((m) => m[1]);
-  return [...new Set(declared)].sort();
-}
+const scaleTokens = scaleStepNames;
+
 
 /** `major` breaks a consumer, `minor` gives it something new, `patch` changes nothing it can see. */
 const SEVERITY = { patch: 0, minor: 1, major: 2 };
