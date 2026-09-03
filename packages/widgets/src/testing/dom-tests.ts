@@ -13,6 +13,8 @@ import { MDY_ARIA_DISABLED_PARTS } from "../structure.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
 import { overlayOnlyParts } from "../widget-states.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
+import { findPartElements } from "./part-lookup.js";
+import { submissionNames } from "../submission.js";
 import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./semantic-elements.js";
 
 // Re-exported from where they were declared until now, so every path that reached them through this
@@ -20,6 +22,7 @@ import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./semantic-eleme
 export { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith };
 
 export type MdyDomContractIssueCode =
+  | "SUBMISSION_PART"
   | "EXEMPTION_ACTIVE"
   | "ROOT_CLASS_MISSING"
   | "ABSENT_PART_NOT_OPTIONAL"
@@ -881,6 +884,45 @@ export function inspectWidgetDom(
         if (canonical.has(className) || isModifierOf(className, canonical, declared)) continue;
         issues.push({ code: "INVENTED_CLASS", part: "root", message: `${className} is not part of the ${kind} contract` });
       }
+    }
+  }
+
+  // The element that carries the field's name is the one the submission table declares.
+  //
+  // `SUBMISSION` already says which part puts a kind's value into a form's payload, and nothing
+  // checked it against a page: its own spec asserts the table against itself, so a kind whose
+  // declared part was not the element carrying the name passed for as long as both statements
+  // existed side by side.
+  //
+  // Resolved with the part lookup, and which resolution is used *is* the check. Reading `resolved`
+  // reports the harness — a caller-supplied part is never looked up again, so a harness mapping a
+  // repeated part to one of its elements makes the others read as undeclared. Resolving by class
+  // alone reports the shell — a native kind's control carries no class of its own, so nothing is
+  // found and every named element looks undeclared. The lookup does both: the selector where there
+  // is one, the declared semantic where there is not.
+  const submissionParts = Object.keys(submissionNames(kind, "x"));
+  if (submissionParts.length > 0) {
+    const declaredElements = new Set(submissionParts.flatMap(
+      (part) => findPartElements(root, kind, part, { portalRoots: [...portalRoots] }),
+    ));
+    // The controls that submit, not everything wearing a `name`. HTML spends that attribute on
+    // several unrelated things — a `<slot name>` is a shadow-DOM slot and has nothing to do with a
+    // payload — and a check reading the attribute alone accuses a renderer of submitting through
+    // its own layout. What a submit builds for itself is skipped by its mark instead: those inputs
+    // are made at submit time, and the table says of that shape that no part carries them.
+    const named = searchScope
+      .flatMap((container) => Array.from(container.querySelectorAll("input[name], select[name], textarea[name], button[name]")))
+      .filter((element) => (element.getAttribute("name") ?? "") !== "")
+      .filter((element) => !element.hasAttribute("data-mdy-submit"));
+    for (const element of named) {
+      if (declaredElements.has(element)) continue;
+      issues.push({
+        code: "SUBMISSION_PART",
+        part: submissionParts.join(" or "),
+        message: `<${element.tagName.toLowerCase()}> carries the field's name and is not `
+          + `${submissionParts.join(" or ")}, which is the part this kind declares as its submitted `
+          + "control — so the value reaches a form through an element the contract does not name",
+      });
     }
   }
 
