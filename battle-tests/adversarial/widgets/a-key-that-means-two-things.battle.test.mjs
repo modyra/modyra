@@ -28,7 +28,7 @@
  * on the same control at once. Treating it as a discriminator would let the table declare exactly
  * the ambiguity this refuses.
  */
-import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_KEYBOARD, matchesKeyGesture } from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
@@ -53,13 +53,29 @@ battle(
       detail: JSON.stringify(Object.keys(MDY_WIDGET_KEYBOARD)),
     });
 
+    // The gestures a keyboard can produce for one key, as this contract distinguishes them: pressed
+    // alone, or pressed with the primary modifier. `modifier: "any"` accepts both, which is why a
+    // binding declaring it collides with either of the others rather than with neither.
+    const GESTURES = [
+      { ctrlKey: false, metaKey: false, altKey: false, shiftKey: false },
+      { ctrlKey: true, metaKey: false, altKey: false, shiftKey: false },
+    ];
+
     const collisions = [];
     for (const [kind, list] of byKind) {
       for (let i = 0; i < list.length; i += 1) {
         for (let j = i + 1; j < list.length; j += 1) {
           const a = list[i];
           const b = list[j];
-          if (a.key !== b.key) continue;
+          // Asked of the rule that resolves a press, not of the key's name.
+          //
+          // Comparing `a.key !== b.key` reads `modifier` nowhere, so `ArrowUp` bare and `ArrowUp`
+          // with the primary modifier looked like one key meaning two things — and the datepicker's
+          // view binding, which is correct, was failed for it. What a person performs is a gesture,
+          // and `matchesKeyGesture` is what decides which binding a gesture reaches: two bindings
+          // collide when some gesture reaches both, and not otherwise.
+          if (!GESTURES.some((gesture) => matchesKeyGesture(a, { ...gesture, key: a.key })
+            && matchesKeyGesture(b, { ...gesture, key: a.key }))) continue;
           if (!overlaps(a.when, b.when)) continue;
           if (!overlaps(a.on, b.on)) continue;
           collisions.push(
