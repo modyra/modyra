@@ -637,17 +637,28 @@ for (const { title, findings, note } of sections) {
 // precisely where a renderer is most likely to diverge unnoticed.
 const skipped = sections.filter((section) => section.findings === null);
 const ran = sections.length - skipped.length;
-const verdict = failed > 0
-  ? `NOT CONFORMANT — ${failed} finding(s)`
-  : skipped.length === 0
-    ? "CONFORMANT"
-    : "CONFORMANT WHERE CHECKED";
+// The same argument as the paragraph above, one step further out: a run over no kinds has established
+// nothing at all, and every section it reports a tick for was ticked without a widget in front of it.
+// Saying "conformant" there is the most reassuring sentence this file can print and the least earned
+// — a config whose renderer does not exist yet reads as a renderer that passed. The exit code has to
+// agree, because that is the half a CI reads.
+const measuredNothing = kinds.length === 0;
+const verdict = measuredNothing
+  ? "NOTHING MEASURED — the config declares no kinds"
+  : failed > 0
+    ? `NOT CONFORMANT — ${failed} finding(s)`
+    : skipped.length === 0
+      ? "CONFORMANT"
+      : "CONFORMANT WHERE CHECKED";
 
 console.log(
   `\n${verdict}  ·  ${kinds.length} kind(s)  ·  ${ran} of ${sections.length} section(s) run\n`
-  + (skipped.length === 0
+  + (measuredNothing
+    ? "  A kind joins `kinds` in the commit that makes it mountable, so an empty list is a renderer\n"
+      + "  that is unwritten rather than one that passed.\n"
+    : skipped.length === 0
     ? ""
     : `  Not established: ${skipped.map((section) => section.title).join(", ")}.\n`
       + "  Run the browser suites for these; this exit code does not cover them.\n"),
 );
-process.exit(failed === 0 ? 0 : 1);
+process.exit(failed === 0 && !measuredNothing ? 0 : 1);
