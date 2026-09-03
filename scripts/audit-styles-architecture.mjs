@@ -24,11 +24,57 @@ import { join, resolve } from "node:path";
 const ROOT = resolve(import.meta.dirname, "..");
 const SRC = join(ROOT, "packages/styles/src");
 
-// The foundation proper. `modyra-base.css` is deliberately absent: it is the brand token tier
-// (`--mdy-ref-*`), and reference tokens are exactly the raw brand values a foundation must not
-// contain but something has to declare.
-const FOUNDATION = ["modyra.css"];
-const THEMES = ["modyra-modern.css", "modyra-material.css", "modyra-ios.css", "modyra-ionic.css"];
+/**
+ * What a consumer can load, taken from the package's own `exports`, and what each sheet is.
+ *
+ * The roster used to be four theme names written here. `@modyra/styles` publishes eight CSS
+ * subpaths, so three of them — the default theme, the foundation a consumer actually imports, and
+ * the salience theme — were never asked a single one of these questions, and the audit reported
+ * clean. A frozen list is the same defect as a frozen file check: what it does not name, it excuses,
+ * and it excuses it silently.
+ *
+ * So the roster is the manifest, and every published sheet must be classified below. A sheet added
+ * to `exports` with no entry here fails, because the alternative is that publishing a new theme is
+ * how you stop being audited.
+ */
+const ROLES = {
+  // The foundation a consumer imports, and the half it imports in turn. Both decide how a control
+  // works, so both are held to what a foundation may not assume.
+  "foundation.css": "foundation",
+  // Not published on its own; loaded by the sheet above. Kept in the roster because the rules are
+  // about the tier, not about which file a consumer names.
+  "modyra.css": "foundation",
+  // The brand token tier (`--mdy-ref-*`). Reference tokens are exactly the raw brand values a
+  // foundation must not contain and something has to declare, so this one is neither.
+  "base.css": "neither",
+  "default.css": "theme",
+  "modern.css": "theme",
+  "material.css": "theme",
+  "ios.css": "theme",
+  "salience.css": "theme",
+  "ionic.css": "theme",
+};
+
+/** The file each published subpath resolves to, read from the manifest rather than guessed. */
+function publishedSheets() {
+  const manifest = JSON.parse(readFileSync(join(ROOT, "packages/styles/package.json"), "utf8"));
+  const sheets = new Map();
+  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
+    const file = typeof target === "string" ? target : target?.default;
+    if (typeof file !== "string" || !file.endsWith(".css")) continue;
+    sheets.set(subpath.replace(/^\.\//, ""), file.replace(/^.*\//, ""));
+  }
+  return sheets;
+}
+
+const SHEETS = publishedSheets();
+const unclassified = [...SHEETS.keys()].filter((subpath) => !(subpath in ROLES));
+const roleOf = (name) => ROLES[[...SHEETS].find(([, file]) => file === name)?.[0] ?? name];
+
+const FOUNDATION = Object.keys(ROLES)
+  .filter((key) => ROLES[key] === "foundation")
+  .map((key) => SHEETS.get(key) ?? key);
+const THEMES = [...SHEETS].filter(([subpath]) => ROLES[subpath] === "theme").map(([, file]) => file);
 
 /**
  * Accepted debt, each with the reason it is still here. The audit asserts every entry is still a
@@ -122,10 +168,23 @@ function checkFieldHeight(css) {
  * So the import is what has to hold, and it is what this checks. Themes remain free to load the
  * tier or not; nothing here assumes on their behalf.
  */
-function checkTokenTierIsLoaded(css) {
-  if (/@import\s+["']\.\/modyra-base\.css["']/.test(css)) return [];
+function checkTokenTierIsLoaded(css, name) {
+  // Followed through the imports rather than asked of one file. The foundation a consumer names is
+  // `modyra-foundation.css`, and it loads the tier through `modyra.css`; a direct-import rule reads
+  // that as a missing tier and reports a hole in the sheet everybody actually imports. What has to
+  // hold is that the tier is loaded by the time this sheet is, not which line loads it.
+  const seen = new Set();
+  const loads = (from) => {
+    if (seen.has(from)) return false;
+    seen.add(from);
+    let css;
+    try { css = strip(read(from)); } catch { return false; }
+    if (/@import\s+["']\.\/modyra-base\.css["']/.test(css)) return true;
+    return [...css.matchAll(/@import\s+["']\.\/([\w.-]+\.css)["']/g)].some((m) => loads(m[1]));
+  };
+  if (loads(name)) return [];
   return [
-    "does not import modyra-base.css; without the token tier every --mdy-sys-* and --mdy-comp-* reference drops the declaration it is in",
+    "does not import modyra-base.css, directly or through anything it imports; without the token tier every --mdy-sys-* and --mdy-comp-* reference drops the declaration it is in",
   ];
 }
 
@@ -206,7 +265,7 @@ for (const name of FOUNDATION) {
     if (!context.includes("var(")) defects.push(`${name}: carries the literal colour ${match[0].trim()}`);
   }
   for (const defect of checkFieldHeight(css)) defects.push(`${name}: ${defect}`);
-  for (const defect of checkTokenTierIsLoaded(css)) defects.push(`${name}: ${defect}`);
+  for (const defect of checkTokenTierIsLoaded(css, name)) defects.push(`${name}: ${defect}`);
   for (const defect of checkMotion(css, name)) defects.push(defect);
   for (const defect of checkAffordanceGeometry(css, name)) defects.push(defect);
   for (const debt of DEBT) if (debt.matches(name, css)) debtSeen.add(debt.id);
@@ -220,10 +279,17 @@ for (const name of THEMES) {
   for (const defect of checkAffordanceGeometry(css, name)) defects.push(defect);
 }
 
+for (const subpath of unclassified) {
+  defects.push(`packages/styles publishes ./${subpath} and this audit does not say what it is; `
+    + "classify it as a theme, a foundation or neither, with the reason");
+}
+
 const stale = DEBT.filter((debt) => !debtSeen.has(debt.id));
 
 process.stdout.write("# Styles architecture audit\n\n");
-process.stdout.write(`Foundation: ${FOUNDATION.join(", ")}\nThemes: ${THEMES.join(", ")}\n\n`);
+process.stdout.write(`Read from packages/styles/package.json: ${SHEETS.size} published sheet(s).\n`);
+process.stdout.write(`Foundation: ${FOUNDATION.join(", ")}\nThemes: ${THEMES.join(", ")}\n`);
+process.stdout.write(`Neither: ${Object.keys(ROLES).filter((k) => ROLES[k] === "neither").join(", ") || "(none)"}\n\n`);
 for (const debt of DEBT) {
   if (debtSeen.has(debt.id)) process.stdout.write(`  debt: ${debt.id} — ${debt.reason}\n`);
 }
