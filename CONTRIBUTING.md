@@ -63,6 +63,23 @@ For the project motivation and development approach, see [Project background](do
 - Versioning is [changesets](https://github.com/changesets/changesets)-driven:
   any user-facing change adds a file under `.changeset/` (`pnpm changeset`).
 
+### Three questions before a report
+
+Three ways a report has actually gone wrong in this repository. Each is
+answerable in a line, and they belong in any report that proposes a
+direction rather than only stating an outcome.
+
+- **Which existing question did I look for before building an instrument?**
+  Two tools that learn the same fact separately disagree eventually, and on
+  the day they do, nobody can say which is right. Look for the declaration
+  both sides should be reading before writing a second reader.
+- **What did I try to write before declaring it missing?** A gap reported
+  without an attempt is a guess about difficulty. Write the smallest
+  failing thing first: often the gap is elsewhere, and sometimes it closes.
+- **Which part of this sentence is measured, and which is inferred?** Both
+  are allowed. What causes damage is inference *dressed as a report* — it
+  arrives already dressed, so the reader's own check passes it.
+
 ### Comments and documentation
 
 - **Comments say what the code does, not how it came to be.** No change
