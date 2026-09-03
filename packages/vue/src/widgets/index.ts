@@ -16,5 +16,6 @@ export type {
   UseMdyFieldOptions,
 } from "./field.js";
 export { MdyTextField } from "./text-field.js";
-export { partProps, type MdyVuePartProps } from "./part.js";
+export { partProps, drawDeclaredUnder, type MdyVuePartProps } from "./part.js";
 export { MdyBooleanField } from "./boolean-field.js";
+export { MdySliderField } from "./slider-field.js";

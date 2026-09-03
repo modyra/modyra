@@ -30,3 +30,35 @@ export function partProps(part: MdyPartContract | undefined, extra: MdyVuePartPr
     class: [...(part.classes ?? []), ...(typeof extra.class === "string" ? [extra.class] : [])].join(" ") || undefined,
   };
 }
+
+/** What a declared element is drawn as, where the contract does not mean a real control. */
+const TAG_FOR_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
+  group: "span", presentation: "span", container: "div", text: "span",
+});
+
+/**
+ * The parts a structure declares under one parent, drawn as declared.
+ *
+ * Required only: an optional part is one a renderer may leave out, and drawing every declared node
+ * would put a required marker on a field that has none and an inline error where there is no error.
+ * Recursive, because the declaration is a tree — a toggle's thumb sits inside its track, and
+ * flattening the two draws a shape the contract does not describe.
+ *
+ * `except` is for the parts a component places itself: the control goes where its projection and its
+ * handlers can reach it, and drawing it twice would give a field two inputs.
+ */
+export function drawDeclaredUnder(
+  contract: { structure: { nodes: readonly { part: string; parent?: string; optional?: boolean; element?: string }[] };
+    parts: Readonly<Record<string, { classes: readonly string[] }>> },
+  parent: string,
+  render: (tag: string, props: MdyVuePartProps, children: unknown[]) => unknown,
+  except: ReadonlySet<string> = new Set(),
+): unknown[] {
+  return contract.structure.nodes
+    .filter((node) => node.parent === parent && node.optional !== true && !except.has(node.part))
+    .map((node) => render(
+      TAG_FOR_ELEMENT[String(node.element)] ?? "span",
+      { class: contract.parts[node.part]?.classes.join(" ") },
+      drawDeclaredUnder(contract, node.part, render, except),
+    ));
+}
