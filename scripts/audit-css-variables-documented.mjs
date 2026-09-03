@@ -140,6 +140,70 @@ const undocumented = [...inCss.keys()].filter((name) => isPublic(name) && !inDoc
 const phantom = [...inDocs.keys()].filter((name) => !inCss.has(name) && !NOT_OURS.has(name)).sort();
 const untiered = [...inCss.keys()].filter((name) => !isTiered(name)).sort();
 
+/**
+ * What reads each property, so an untiered one can be classified by evidence instead of by choice.
+ *
+ * Read from every written file in the repository — never from a built one. A stylesheet vendored
+ * into an example reads our own properties back at us, and counting it made 317 of these look like
+ * consumer surface when six are. What tells the two apart is version control, not the path.
+ */
+function readers() {
+  const found = new Map();
+  const note = (name, where) => {
+    if (!found.has(name)) found.set(name, new Set());
+    found.get(name).add(where);
+  };
+  const walk = (dir, where) => {
+    for (const entry of readdirSync(dir)) {
+      if (["node_modules", "dist", ".astro", ".styles", ".git"].includes(entry)) continue;
+      const path = join(dir, entry);
+      if (statSync(path).isDirectory()) { walk(path, where); continue; }
+      if (!/\.(ts|js|mjs|css|html|astro)$/.test(entry)) continue;
+      if (isGenerated(path)) continue;
+      const source = readFileSync(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+      for (const [, name] of source.matchAll(/var\(\s*(--mdy-[a-z0-9-]+)/g)) note(name, where);
+    }
+  };
+  for (const [dir, where] of [
+    [join(ROOT, "packages/styles/src"), "a stylesheet"],
+    [join(ROOT, "packages/plain/src"), "a renderer"],
+    [join(ROOT, "packages/lit/src"), "a renderer"],
+    [join(ROOT, "packages/angular/src"), "a renderer"],
+    [join(ROOT, "examples"), "an example or app"],
+    [join(ROOT, "apps"), "an example or app"],
+    [join(ROOT, "site/src"), "an example or app"],
+  ]) {
+    if (existsSync(dir)) walk(dir, where);
+  }
+  return found;
+}
+
+const readBy = readers();
+const family = (name) => name.replace(/-[a-z0-9]+$/, "");
+const familyOf = new Map();
+for (const name of inCss.keys()) {
+  const key = family(name);
+  if (!familyOf.has(key)) familyOf.set(key, []);
+  familyOf.get(key).push(name);
+}
+
+const classified = new Map();
+for (const name of untiered) {
+  const who = readBy.get(name);
+  if (who === undefined) {
+    // Read by nothing here — which is not read by nothing anywhere. These sheets are published, and
+    // a user's own theme can read one in its own CSS where no scan of ours will ever see it. Whether
+    // a property with no reader here is dead or is surface nobody has exercised is a question the
+    // repository cannot answer, so it is reported and never failed on.
+    const siblings = (familyOf.get(family(name)) ?? []).filter((s) => s !== name && readBy.has(s));
+    classified.set(name, siblings.length > 0 ? "no reader here — a step of a scale whose siblings are read" : "no reader here — alone in its family");
+    continue;
+  }
+  if (who.has("an example or app")) classified.set(name, "read by an example or app");
+  else if (who.has("a renderer")) classified.set(name, "read by a renderer");
+  else classified.set(name, "read only between stylesheets");
+}
+
 console.log("# CSS custom properties against the documents that name them\n");
 console.log(`Tiers declared by modyra-base.css: ${[...tiers.keys()].map((t) => `--mdy-${t}-*`).join(", ")}`);
 for (const [tier, description] of tiers) {
@@ -155,8 +219,18 @@ console.log(`\n## phantom — a document names it and no stylesheet declares it:
 for (const name of phantom) console.log(`  ${name.padEnd(42)} ${inDocs.get(name)}`);
 
 console.log(`\n## untiered — declared, and in none of the tiers above: ${untiered.length}`);
-for (const name of untiered.slice(0, 6)) console.log(`  ${name.padEnd(42)} ${inCss.get(name)}`);
-if (untiered.length > 6) console.log(`  … and ${untiered.length - 6} more`);
+console.log("  Classified by what reads each one, which is evidence rather than a choice:");
+const groups = new Map();
+for (const [name, kind] of classified) {
+  if (!groups.has(kind)) groups.set(kind, []);
+  groups.get(kind).push(name);
+}
+for (const [kind, list] of [...groups].sort((a, b) => b[1].length - a[1].length)) {
+  console.log(`  ${String(list.length).padStart(4)}  ${kind}`);
+  console.log(`        e.g. ${list.slice(0, 3).join(", ")}`);
+}
+console.log("  A property read only between stylesheets is plumbing; one an example reads is surface");
+console.log("  somebody has exercised. Neither is owed documentation until the header names its tier.");
 console.log("  These cannot be called public or internal from any declaration, so this audit does");
 console.log("  not count them as owed documentation. That is a gap in the tier header, not in the docs.");
 

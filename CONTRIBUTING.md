@@ -87,6 +87,14 @@ direction rather than only stating an outcome.
   On a one-person checkout the two coincide, which is why the habit does not
   form on its own.
 
+  The same question one level out: when a tool walks a tree, **which of these
+  files are written and which are built?** A generated mirror, a vendored copy
+  of our own stylesheet, a `dist/` — each reads back what we wrote and looks
+  like independent evidence. Counting them once made 317 properties look like
+  consumer surface where six are, and once reported a build artefact's
+  staleness as a documentation defect. Version control tells the two apart;
+  the path does not.
+
 ### Comments and documentation
 
 - **Comments say what the code does, not how it came to be.** No change
