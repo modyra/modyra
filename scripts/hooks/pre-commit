@@ -2,6 +2,17 @@
 # Say, at the moment the author can still act, whether this tree owes linux baselines.
 # It never refuses: the images are recorded from a pushed head, so the debt is legitimate until then.
 # Versioned copy of this hook's reasoning lives in scripts/audit-visual-debt.mjs.
-node "$(git rev-parse --show-toplevel)/scripts/audit-visual-debt.mjs" 2>/dev/null \
-  | sed -n '/^VISUAL DEBT/,$p'
+root="$(git rev-parse --show-toplevel)"
+node "$root/scripts/audit-visual-debt.mjs" 2>/dev/null | sed -n '/^VISUAL DEBT/,$p'
+
+# And which checks this change can break that `npm run test` will not run.
+#
+# Not `--staged`: commits here are made with `git commit -- <paths>` on a shared tree, which stages
+# nothing, so the index is empty at the moment this runs and a check reading it would print a
+# confident "nothing to run". The default reading — everything ahead of origin/main plus the working
+# tree — is wider than this one commit and is the question a push actually asks.
+#
+# Announced, never refused: the commands it names take minutes, and which of them is worth running
+# is the author's judgement.
+node "$root/scripts/audit-unwatched-changes.mjs" 2>/dev/null | sed -n '/^Run these/,$p'
 exit 0

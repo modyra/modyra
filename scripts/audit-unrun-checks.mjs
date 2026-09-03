@@ -24,16 +24,9 @@
  * legitimate, which is why the exemption list below carries a reason per entry rather than a name —
  * an exemption that does not say why is a silence with a comment on it.
  */
-import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { IS_A_CHECK, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK = process.argv.includes("--check");
-
-/** A script whose name says it verifies something. These are the ones a workflow ought to reach. */
-const IS_A_CHECK = /^(test|battle|audit|contract):/;
 
 /**
  * Checks knowingly outside every workflow, each with the reason it is outside.
@@ -48,54 +41,16 @@ const DELIBERATELY_OUTSIDE = new Map([
   ["contract:snapshot", "writes the committed snapshot rather than checking it - running it in CI would make the gate agree with whatever it had just recorded"],
   ["audit:visual-debt", "answers about baselines that can only be recorded after a push, so a red in CI would be a red on a state that is allowed to be true"],
   ["contract:diff", "the same script as `test:contract-snapshot` without `--check`, plus a build: it classifies a change for the person deciding a release, while the detection that a change happened is the `--check` form, which is in the gate list CI runs"],
+  ["audit:unwatched-changes", "asks which checks a change can break before it is pushed, which is a question about a working tree; in CI the change is already pushed and every check it names is running anyway"],
   ["test:perf", "asserts absolute wall-clock thresholds, the tightest at 20ms - a number calibrated on a developer machine, which on a shared runner measures the runner's load rather than this code"],
 ]);
 
-const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
-const scripts = pkg.scripts ?? {};
-
-/** Every `npm run X` / `pnpm run X` in a blob of shell, whatever flags sit between. */
-function scriptsInvokedBy(text) {
-  const found = new Set();
-  for (const match of text.matchAll(/\b(?:npm|pnpm|yarn)\s+(?:(?:-w|--filter[= ][^\s]+|--silent|-s|run-script)\s+)*run\s+(?:-s\s+|--silent\s+)*([\w:.-]+)/g)) {
-    found.add(match[1]);
-  }
-  return found;
-}
-
-/**
- * The contract gate runner names its gates as commands in its own source. They are real edges and
- * they are invisible to anything that reads only `package.json`.
- */
-function gatesOfTheContractRunner() {
-  const source = readFileSync(join(ROOT, "scripts/run-contract-gates.mjs"), "utf8");
-  const start = source.indexOf("const GATES");
-  if (start === -1) return new Set();
-  const block = source.slice(start, source.indexOf("\n];", start));
-  return scriptsInvokedBy(block);
-}
-
-const edges = new Map();
-for (const [name, body] of Object.entries(scripts)) edges.set(name, scriptsInvokedBy(body));
-edges.set("test:contracts", new Set([...(edges.get("test:contracts") ?? []), ...gatesOfTheContractRunner()]));
+const { scripts, edges } = scriptGraph();
 
 /** Workflow steps are the roots: what CI actually asks for. */
-const workflowDir = join(ROOT, ".github/workflows");
-const roots = new Set();
-const rootsByFile = new Map();
-for (const file of readdirSync(workflowDir).filter((n) => /\.ya?ml$/.test(n))) {
-  const named = scriptsInvokedBy(readFileSync(join(workflowDir, file), "utf8"));
-  rootsByFile.set(file, named);
-  for (const name of named) roots.add(name);
-}
-
-const reached = new Set();
-const walk = (name) => {
-  if (reached.has(name)) return;
-  reached.add(name);
-  for (const next of edges.get(name) ?? []) walk(next);
-};
-for (const root of roots) walk(root);
+const rootsByFile = workflowRoots();
+const roots = new Set([...rootsByFile.values()].flatMap((named) => [...named]));
+const reached = reachableFrom(edges, roots);
 
 const checks = Object.keys(scripts).filter((name) => IS_A_CHECK.test(name));
 const unrun = checks.filter((name) => !reached.has(name));
