@@ -13,7 +13,18 @@
 import { readFileSync } from "node:fs";
 import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KINDS } from "../packages/widgets/dist/index.js";
 
-const read = (path) => readFileSync(`packages/lit/src/${path}`, "utf8");
+/**
+ * Source with its comments removed.
+ *
+ * Every question below is `does this file contain this name`, and a name written in a doc block
+ * answers yes while the renderer does nothing of the kind. That is the whole failure mode of a
+ * presence check: prose satisfies it, silently, and the gate reports a renderer as consuming a
+ * controller it only mentions. The checks that read the other way — a class that must *not* appear —
+ * gain the same thing from the other side, since a class named in a comment is not emitted.
+ */
+const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+
+const read = (path) => strip(readFileSync(`packages/lit/src/${path}`, "utf8"));
 const failures = [];
 
 // The anatomy this audit was written against. A bump means parts moved, so the audit is re-read
@@ -97,4 +108,5 @@ console.log(`contractVersion: ${MDY_WIDGET_CONTRACT_VERSION}`);
 console.log(`kinds: ${MDY_WIDGET_KINDS.length}`);
 console.log(`consuming files: ${Object.keys(CONSUMES).length}`);
 console.log(`recorded gaps: ${Object.keys(KNOWN_GAPS).length}`);
+console.log("Read from source with its comments removed: which names each renderer's code contains,\n  never what it renders — a mention would answer a presence check that no behaviour backs.");
 for (const [key, reason] of Object.entries(KNOWN_GAPS)) console.log(`  ${key} — ${reason}`);

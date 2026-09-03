@@ -6,7 +6,18 @@
 import { readFileSync } from "node:fs";
 import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KINDS } from "../packages/widgets/dist/index.js";
 
-const read = (path) => readFileSync(`packages/plain/src/${path}`, "utf8");
+/**
+ * Source with its comments removed.
+ *
+ * Every question below is `does this file contain this name`, and a name written in a doc block
+ * answers yes while the renderer does nothing of the kind. That is the whole failure mode of a
+ * presence check: prose satisfies it, silently, and the gate reports a renderer as consuming a
+ * controller it only mentions. The checks that read the other way — a class that must *not* appear —
+ * gain the same thing from the other side, since a class named in a comment is not emitted.
+ */
+const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+
+const read = (path) => strip(readFileSync(`packages/plain/src/${path}`, "utf8"));
 const failures = [];
 
 // The anatomy this audit was written against. A bump means parts moved, so the audit is re-read
@@ -33,15 +44,17 @@ const CONTROLLERS = {
   "fields/text-field.ts": "createTextFieldController",
   "fields/boolean-field.ts": "createBooleanFieldController",
   "fields/option-field.ts": "createOptionFieldController",
-  "fields/select-field.ts": "createSelectController",
+  "fields/select-field.ts": "createSelectFieldController",
   "fields/multiselect-field.ts": "createMultiselectFieldController",
   "fields/datepicker-field.ts": "createDatepickerFieldController",
   "fields/timepicker-field.ts": "createTimepickerFieldController",
   // The kind's controller is the stronger claim than the transition it wraps: it owns the draft,
-  // the preview and which cells fall between the ends.
+  // the preview and which cells fall between the ends. Three rows here named a transition or an
+  // older factory instead, and each of those names survived in a doc block after the renderer had
+  // moved on — so the row went on passing against a claim that had stopped being true.
   "fields/daterange-field.ts": "createDaterangeFieldController",
-  "fields/file-field.ts": "fileSelectionTransition",
-  "fields/colors-field.ts": "colorValueTransition",
+  "fields/file-field.ts": "createFileFieldController",
+  "fields/colors-field.ts": "createColorsFieldController",
 };
 for (const [file, controller] of Object.entries(CONTROLLERS)) {
   if (!read(file).includes(controller)) failures.push(`${file} does not consume ${controller}`);
@@ -63,3 +76,4 @@ console.log("PLAIN WIDGET CONTRACT COMPLETE");
 console.log(`contractVersion: ${MDY_WIDGET_CONTRACT_VERSION}`);
 console.log(`kinds: ${MDY_WIDGET_KINDS.length}`);
 console.log(`controller families: ${Object.keys(CONTROLLERS).length}`);
+console.log("Read from source with its comments removed: which names each renderer's code contains,\n  never what it renders — a mention would answer a presence check that no behaviour backs.");
