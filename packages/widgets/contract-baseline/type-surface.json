@@ -263,7 +263,7 @@
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
     "protected walkPanelStops(0) event: KeyboardEvent,-> returns: boolean",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"preview\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -339,7 +339,7 @@
     "protected parsedSelectedDate: _angular_core.Signal<CalendarDate | null>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"row\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"datepicker\"",
     "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
@@ -359,7 +359,7 @@
     "protected endId: _angular_core.Signal<string>",
     "protected forceModalPlacement-> returns: boolean",
     "protected i18n: _modyra_widgets.MdyI18nMessages",
-    "protected lastFocused: _angular_core.WritableSignal<\"end\" | \"start\">",
+    "protected lastFocused: _angular_core.WritableSignal<\"start\" | \"end\">",
     "protected modalDisplayValue: _angular_core.Signal<string>",
     "protected onBeforeOpen-> returns: void",
     "protected onEndpointBlur(0) event: FocusEvent,(1) endpoint: \"start\" | \"end\",-> returns: void",
@@ -374,7 +374,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected startId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"row\" | \"label\" | \"toggle\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"row\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"daterange\"",
     "startPlaceholder: _angular_core.InputSignal<string>",
@@ -499,7 +499,7 @@
     "protected onDrop(0) event: DragEvent,-> returns: void",
     "protected onFileChange(0) event: Event,-> returns: void",
     "protected rejectedNames: _angular_core.WritableSignal<readonly string[]>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"clear\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"clear\" | \"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"file\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFileComponent, \"mdy-control-file\", never, { \"accept\": { \"alias\": \"accept\"; \"required\": false; \"isSignal\": true; }; \"multiple\": { \"alias\": \"multiple\"; \"required\": false; \"isSignal\": true; }; \"maxFileSize\": { \"alias\": \"maxFileSize\"; \"required\": false; \"isSignal\": true; }; \"maxFiles\": { \"alias\": \"maxFiles\"; \"required\": false; \"isSignal\": true; }; }, { \"fileSelected\": \"fileSelected\"; \"filesRejected\": \"filesRejected\"; }, never, never, true, never>",
@@ -776,7 +776,7 @@
     "protected overlayKind: \"multiselect\"",
     "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
     "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
-    "protected parts: Readonly<Record<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
+    "protected parts: Readonly<Record<\"search\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
@@ -789,7 +789,7 @@
     "protected valueChipClasses-> returns: string",
     "protected wayBack: _angular_core.Signal<_modyra_widgets.MdyMultiselectWayBack | null>",
     "protected wayBackName: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"optionLabel\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCheck\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"search\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"optionLabel\" | \"optionCheck\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
     "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
@@ -804,7 +804,7 @@
     "protected cls: Readonly<Record<string, string>>",
     "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"control\" | \"increment\" | \"decrement\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"increment\" | \"decrement\" | \"errors\" | \"root\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"inlineError\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "showSpinButtons: _angular_core.InputSignal<boolean>",
@@ -1044,7 +1044,7 @@
     "protected selectedOption: _angular_core.Signal<MdySelectOption<TValue> | null>",
     "protected showCreateOption: _angular_core.Signal<boolean>",
     "protected triggerId-> returns: string",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"value\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"search\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"search\" | \"value\" | \"errors\" | \"option\" | \"root\" | \"loading\" | \"label\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"select\"",
     "resetSelection-> returns: void",
@@ -1131,7 +1131,7 @@
     "protected send(0) intent: MdyTimepickerFieldIntent,-> returns: void",
     "protected shownField: _angular_core.Signal<\"hour\" | \"minute\">",
     "protected shownViewMode: _angular_core.Signal<MdyTimepickerViewMode$1>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"dialog\" | \"header\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"popup\" | \"inlineError\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errors\" | \"root\" | \"dialog\" | \"header\" | \"label\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"content\" | \"popup\" | \"inlineError\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"timepicker\"",
     "showUnavailable: _angular_core.InputSignal<boolean>",
@@ -1366,7 +1366,10 @@
     "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
   "core:MdyAnyRowDescriptor": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyAnyArrayDescriptor",
+    "variant of an unnamed shape: MdyAnyFieldDescriptor",
+    "variant of an unnamed shape: MdyAnyGroupDescriptor",
+    "variant of an unnamed shape: MdyAnyRecordDescriptor"
   ],
   "core:MdyArrayDescriptor": [
     "initial: ReadonlyArray<unknown>",
@@ -1550,7 +1553,14 @@
     "severity: \"warning\" | \"error\""
   ],
   "core:MdyDynamicField": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyDynamicBooleanField",
+    "variant of an unnamed shape: MdyDynamicColorsField",
+    "variant of an unnamed shape: MdyDynamicDateField",
+    "variant of an unnamed shape: MdyDynamicDaterangeField",
+    "variant of an unnamed shape: MdyDynamicFileField",
+    "variant of an unnamed shape: MdyDynamicNumberField",
+    "variant of an unnamed shape: MdyDynamicOptionsField",
+    "variant of an unnamed shape: MdyDynamicTextField"
   ],
   "core:MdyDynamicFieldNode": [
     "asyncWhen?: MdyDynamicCondition",
@@ -1583,7 +1593,10 @@
     "version: 3"
   ],
   "core:MdyDynamicFormDocument": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyDynamicFormConfigV2",
+    "variant of an unnamed shape: MdyDynamicFormConfigV3",
+    "variant of an unnamed shape: MdyDynamicFormConfigV4",
+    "variant of an unnamed shape: MdyDynamicFormConfigV5"
   ],
   "core:MdyDynamicFormParseResult": [
     "acceptedCount: number",
@@ -1604,17 +1617,23 @@
     "when?: MdyDynamicCondition"
   ],
   "core:MdyDynamicLayoutChild": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyDynamicLayoutNode",
+    "variant of an unnamed shape: MdyDynamicLayoutSlot",
+    "variant of an unnamed shape: string"
   ],
   "core:MdyDynamicLayoutNode": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyDynamicColumns",
+    "variant of an unnamed shape: MdyDynamicSection"
   ],
   "core:MdyDynamicLayoutSlot": [
     "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>",
     "ref: string"
   ],
   "core:MdyDynamicNode": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyDynamicArrayNode",
+    "variant of an unnamed shape: MdyDynamicFieldNode",
+    "variant of an unnamed shape: MdyDynamicGroupNode",
+    "variant of an unnamed shape: MdyDynamicRecordNode"
   ],
   "core:MdyDynamicNumberField": [
     "kind: \"number\" | \"slider\"",
@@ -1967,7 +1986,11 @@
     "(opaque)"
   ],
   "core:MdyGranularityProblem": [
-    "(opaque)"
+    "variant of index+member+other+reason: { readonly member: \"windows\"; readonly reason: \"overlap\"; readonly index: number; readonly other: number; }",
+    "variant of index+member+reason+unit+value: { readonly member: \"windows\"; readonly reason: \"must-divide\"; readonly index: number; readonly unit: number; readonly value: number; }",
+    "variant of index+member+reason+value: { readonly member: \"windows\"; readonly reason: \"unreadable-time\"; readonly index: number; readonly value: string; }",
+    "variant of index+member+reason: { readonly member: \"windows\"; readonly reason: \"empty-range\"; readonly index: number; }",
+    "variant of member+reason+unit+value: { readonly member: \"minuteStep\" | \"hourStep\"; readonly reason: \"must-divide\"; readonly unit: number; readonly value: number; }"
   ],
   "core:MdyGroupDescriptor": [
     "children: TChildren",
@@ -2000,7 +2023,15 @@
     "(opaque)"
   ],
   "core:MdyOperand": [
-    "(opaque)"
+    "null",
+    "variant of an unnamed shape: MdyContextRef",
+    "variant of an unnamed shape: MdyExpression",
+    "variant of an unnamed shape: MdyPathRef",
+    "variant of an unnamed shape: MdyRootRef",
+    "variant of an unnamed shape: MdySelfRef",
+    "variant of an unnamed shape: boolean",
+    "variant of an unnamed shape: number",
+    "variant of an unnamed shape: string"
   ],
   "core:MdyPathGate": [
     "isOpen?: boolean",
@@ -2075,7 +2106,8 @@
     "\"text\""
   ],
   "core:MdySanitizer": [
-    "(opaque)"
+    "variant of an unnamed shape: MdySanitizeProfile",
+    "variant of value: ((value: unknown) => unknown)"
   ],
   "core:MdyScopeOptions": [
     "debugName?: string",
@@ -3183,7 +3215,10 @@
     "widgetId: string"
   ],
   "widgets:MdyBooleanFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"check\": { readonly type: \"check\"; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; }",
+    "variant \"uncheck\": { readonly type: \"uncheck\"; }"
   ],
   "widgets:MdyBooleanFieldState": [
     "checked: boolean",
@@ -3270,7 +3305,10 @@
     "value: unknown"
   ],
   "widgets:MdyCatalogWidgetIntent": [
-    "(opaque)"
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"disable\": { readonly type: \"disable\"; readonly disabled: boolean; }",
+    "variant \"focus\": { readonly type: \"focus\"; readonly part: string; }",
+    "variant \"open\": { readonly type: \"open\"; }"
   ],
   "widgets:MdyCatalogWidgetState": [
     "activePart: string | null",
@@ -3301,7 +3339,9 @@
     "unresolvable?: string"
   ],
   "widgets:MdyColorValueIntent": [
-    "(opaque)"
+    "variant \"native\": { readonly type: \"native\"; readonly value: string; }",
+    "variant \"preset\": { readonly type: \"preset\"; readonly value: string; }",
+    "variant \"text\": { readonly type: \"text\"; readonly value: string; }"
   ],
   "widgets:MdyColorValueTransition": [
     "close: boolean",
@@ -3319,7 +3359,13 @@
     "widgetId: string"
   ],
   "widgets:MdyColorsFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"native\": { readonly type: \"native\"; readonly value: string; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"preset\": { readonly type: \"preset\"; readonly value: string; }",
+    "variant \"text\": { readonly type: \"text\"; readonly value: string; }"
   ],
   "widgets:MdyColorsFieldPreset": [
     "selected: boolean",
@@ -3357,7 +3403,10 @@
     "(opaque)"
   ],
   "widgets:MdyDateDraftIntent": [
-    "(opaque)"
+    "variant \"cancel\": { readonly type: \"cancel\"; }",
+    "variant \"confirm\": { readonly type: \"confirm\"; }",
+    "variant \"open\": { readonly type: \"open\"; readonly committed: string | null; }",
+    "variant \"select\": { readonly type: \"select\"; readonly iso: string; }"
   ],
   "widgets:MdyDateDraftState": [
     "committed: string | null",
@@ -3370,7 +3419,10 @@
     "state: MdyDateDraftState"
   ],
   "widgets:MdyDateRangeDraftIntent": [
-    "(opaque)"
+    "variant \"cancel\": { readonly type: \"cancel\"; }",
+    "variant \"confirm\": { readonly type: \"confirm\"; }",
+    "variant \"open\": { readonly type: \"open\"; readonly committed: MdyDateRangeValue; }",
+    "variant \"select\": { readonly type: \"select\"; readonly value: MdyDateRangeValue; }"
   ],
   "widgets:MdyDateRangeDraftState": [
     "committed: MdyDateRangeValue",
@@ -3387,7 +3439,8 @@
     "start: string | null"
   ],
   "widgets:MdyDateValueIntent": [
-    "(opaque)"
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"select\": { readonly type: \"select\"; readonly iso: string; }"
   ],
   "widgets:MdyDatepickerFieldA11yOptions": [
     "descriptionVisible?: boolean",
@@ -3417,7 +3470,18 @@
     "widgetId: string"
   ],
   "widgets:MdyDatepickerFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"keydown\": { readonly type: \"keydown\"; readonly key: string; readonly shiftKey?: boolean; /** * Whether the platform's accelerator was held with the press. * * Carried because the calendar decides what a key does, and without this it decided as though * every press were bare: `Cmd`+ArrowDown reaches the end of a document and `Cmd`+Enter submits * a form in half the products people use, and both also moved or committed a date. A gesture * that *adds* something does not answer a press that may have been aimed elsewhere; `Escape` * does, because refusing a dismissal leaves somebody inside a panel with the way out shut. */ readonly ctrlKey?: boolean; readonly metaKey?: boolean; }",
+    "variant \"navigate-month\": { readonly type: \"navigate-month\"; readonly delta: number; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"select-date\": { readonly type: \"select-date\"; readonly iso: string; }",
+    "variant \"select-month\": { readonly type: \"select-month\"; readonly month: number; }",
+    "variant \"select-year\": { readonly type: \"select-year\"; readonly year: number; }",
+    "variant \"set-view-mode\": { readonly type: \"set-view-mode\"; readonly mode: MdyCalendarViewMode; }",
+    "variant \"type\": { readonly type: \"type\"; readonly text: string; }"
   ],
   "widgets:MdyDatepickerFieldState": [
     "cells: ReadonlyArray<MdyDatepickerFieldCell>",
@@ -3472,7 +3536,21 @@
     "widgetId: string"
   ],
   "widgets:MdyDaterangeFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"cancel\": { readonly type: \"cancel\"; readonly restoreFocus?: boolean; }",
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"confirm\": { readonly type: \"confirm\"; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"keydown\": { readonly type: \"keydown\"; readonly key: string; readonly shiftKey?: boolean; /** * Whether the platform's accelerator was held with the press. * * Carried because the calendar decides what a key does, and without this it decided as though * every press were bare: `Cmd`+ArrowDown reaches the end of a document and `Cmd`+Enter submits * a form in half the products people use, and both also moved or committed a date. A gesture * that *adds* something does not answer a press that may have been aimed elsewhere; `Escape` * does, because refusing a dismissal leaves somebody inside a panel with the way out shut. */ readonly ctrlKey?: boolean; readonly metaKey?: boolean; }",
+    "variant \"navigate-month\": { readonly type: \"navigate-month\"; readonly delta: number; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"preview\": { readonly type: \"preview\"; readonly iso: string | null; }",
+    "variant \"select-date\": { readonly type: \"select-date\"; readonly iso: string; }",
+    "variant \"select-month\": { readonly type: \"select-month\"; readonly month: number; }",
+    "variant \"select-year\": { readonly type: \"select-year\"; readonly year: number; }",
+    "variant \"set-view-mode\": { readonly type: \"set-view-mode\"; readonly mode: MdyCalendarViewMode; }",
+    "variant \"type\": { readonly type: \"type\"; readonly end: \"start\" | \"end\"; readonly text: string; }"
   ],
   "widgets:MdyDaterangeFieldState": [
     "cells: ReadonlyArray<MdyDaterangeFieldCell>",
@@ -3633,7 +3711,11 @@
     "widgetId: string"
   ],
   "widgets:MdyFileFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"dragover\": { readonly type: \"dragover\"; readonly over: boolean; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"select\": { readonly type: \"select\"; readonly files: readonly TFile[]; }"
   ],
   "widgets:MdyFileFieldState": [
     "dirty: boolean",
@@ -3780,7 +3862,8 @@
     "when?: MdyOverlayPhase"
   ],
   "widgets:MdyKeyOrPress": [
-    "(opaque)"
+    "variant of altKey+ctrlKey+key+metaKey+shiftKey: { readonly key: string; readonly ctrlKey?: boolean; readonly metaKey?: boolean; readonly altKey?: boolean; readonly shiftKey?: boolean; }",
+    "variant of an unnamed shape: string"
   ],
   "widgets:MdyLayoutColumnCounts": [
     "-> Partial"
@@ -3840,7 +3923,21 @@
     "widgetId: string"
   ],
   "widgets:MdyMultiselectFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"decrement\": { readonly type: \"decrement\"; readonly optionKey: string; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"increment\": { readonly type: \"increment\"; readonly optionKey: string; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"move-selected\": { readonly type: \"move-selected\"; readonly optionKey: string; readonly to: number; }",
+    "variant \"open\": { readonly type: \"open\"; readonly by?: MdyOpenModality; }",
+    "variant \"search\": { readonly type: \"search\"; readonly query: string; }",
+    "variant \"select\": { readonly type: \"select\"; readonly optionKey?: string; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; readonly optionKey: string; }",
+    "variant \"toggleOpen\": { readonly type: \"toggleOpen\"; readonly by?: MdyOpenModality; }",
+    "variant \"typeahead\": { readonly type: \"typeahead\"; readonly character: string; }",
+    "variant \"undo\": { readonly type: \"undo\"; }"
   ],
   "widgets:MdyMultiselectFieldState": [
     "activeKey: string | null",
@@ -3861,10 +3958,18 @@
     "wayBack: MdyMultiselectWayBack | null"
   ],
   "widgets:MdyMultiselectOverlayAction": [
-    "(opaque)"
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus: boolean; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: MdyOptionNavigationTarget; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"search\": { readonly type: \"search\"; readonly query: string; }",
+    "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }",
+    "variant \"step\": { readonly type: \"step\"; readonly optionKey: string; readonly by: -1 | 1; }"
   ],
   "widgets:MdyMultiselectValueIntent": [
-    "(opaque)"
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"decrement\": { readonly type: \"decrement\"; readonly value: T; }",
+    "variant \"increment\": { readonly type: \"increment\"; readonly value: T; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; readonly value: T; }"
   ],
   "widgets:MdyMultiselectWayBack": [
     "act: \"remove\" | \"move\" | \"clear\"",
@@ -3907,7 +4012,10 @@
     "widgetId: string"
   ],
   "widgets:MdyOptionFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }"
   ],
   "widgets:MdyOptionFieldState": [
     "dirty: boolean",
@@ -4000,7 +4108,12 @@
     "viewportWidth: number"
   ],
   "widgets:MdyOverlayLifecycleIntent": [
-    "(opaque)"
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"destroy\": { readonly type: \"destroy\"; }",
+    "variant \"escape\": { readonly type: \"escape\"; }",
+    "variant \"open\": { readonly type: \"open\"; readonly disabled: boolean; readonly available: boolean; }",
+    "variant \"outside\": { readonly type: \"outside\"; readonly outside: boolean; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; readonly disabled: boolean; readonly available: boolean; }"
   ],
   "widgets:MdyOverlayLifecycleState": [
     "open: boolean"
@@ -4094,7 +4207,8 @@
     "(opaque)"
   ],
   "widgets:MdyReading": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyValueRead<T>",
+    "variant of an unnamed shape: MdyValueUnread"
   ],
   "widgets:MdyReadingHost": [
     "cell: unknown",
@@ -4184,10 +4298,21 @@
     "widgetId: string"
   ],
   "widgets:MdySelectIntent": [
-    "(opaque)"
+    "variant \"activate\": { readonly type: \"activate\"; readonly optionKey: string; }",
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus: boolean; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"open\": { readonly type: \"open\"; readonly source: \"keyboard\" | \"pointer\"; }",
+    "variant \"search\": { readonly type: \"search\"; readonly query: string; }",
+    "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }"
   ],
   "widgets:MdySelectKeyboardAction": [
-    "(opaque)"
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus: boolean; }",
+    "variant \"create\": { readonly type: \"create\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: MdyOptionNavigationTarget; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }"
   ],
   "widgets:MdySelectMoveTarget": [
     "\"first\"",
@@ -4281,7 +4406,11 @@
     "part: string"
   ],
   "widgets:MdySubmissionShape": [
-    "(opaque)"
+    "variant of companion+form+part: { readonly form: \"boolean\"; readonly part: string; readonly companion: string; }",
+    "variant of form+part+parts+suffix: { readonly form: \"split\"; readonly parts: readonly { readonly part: string; readonly suffix: string; }[]; }",
+    "variant of form+part: { readonly form: \"shared\"; readonly part: string; }",
+    "variant of form+part: { readonly form: \"single\"; readonly part: string; }",
+    "variant of form+repeats: { readonly form: \"hidden\"; readonly repeats: boolean; }"
   ],
   "widgets:MdyTestingVocabulary": [
     "door: \"./testing\"",
@@ -4316,13 +4445,21 @@
     "widgetId: string"
   ],
   "widgets:MdyTextFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"input\": { readonly type: \"input\"; readonly value: TValue; }"
   ],
   "widgets:MdyTimeClockIntent": [
-    "(opaque)"
+    "variant \"dial\": { readonly type: \"dial\"; readonly field: \"hour\" | \"minute\"; readonly angle: number; }",
+    "variant \"hour\": { readonly type: \"hour\"; readonly value: number; readonly format: MdyTimeFormat; }",
+    "variant \"minute\": { readonly type: \"minute\"; readonly value: number; }",
+    "variant \"period\": { readonly type: \"period\"; readonly value: \"AM\" | \"PM\"; }"
   ],
   "widgets:MdyTimeDraftIntent": [
-    "(opaque)"
+    "variant \"cancel\": { readonly type: \"cancel\"; }",
+    "variant \"confirm\": { readonly type: \"confirm\"; }",
+    "variant \"open\": { readonly type: \"open\"; readonly committed: string | null; readonly fallback: string; }",
+    "variant \"select\": { readonly type: \"select\"; readonly value: string; }"
   ],
   "widgets:MdyTimeDraftState": [
     "committed: string | null",
@@ -4335,7 +4472,8 @@
     "state: MdyTimeDraftState"
   ],
   "widgets:MdyTimeEntry": [
-    "(opaque)"
+    "variant \"accepted\": { readonly type: \"accepted\"; readonly value: number; }",
+    "variant \"rejected\": { readonly type: \"rejected\"; readonly reason: MdyTimeRejection; readonly bounds: MdyTimeFieldBounds; }"
   ],
   "widgets:MdyTimeField": [
     "\"hour\"",
@@ -4403,7 +4541,22 @@
     "widgetId: string"
   ],
   "widgets:MdyTimepickerFieldIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"cancel\": { readonly type: \"cancel\"; }",
+    "variant \"clear\": { readonly type: \"clear\"; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus?: boolean; }",
+    "variant \"confirm\": { readonly type: \"confirm\"; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"focus-field\": { readonly type: \"focus-field\"; readonly field: \"hour\" | \"minute\"; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"set-from-angle\": { readonly type: \"set-from-angle\"; readonly field: \"hour\" | \"minute\"; readonly angle: number; /** * Which ring of the face was touched. Absent means the outer one, which is the only ring a * 12-hour face has — so a caller written before the 24-hour face existed keeps working. * * The angle alone cannot name the hour on a two-ring face: the same direction is 3 outside and * 15 inside, and half the numbers the face draws had no way to be asked for. */ readonly ring?: \"outer\" | \"inner\"; /** * Where this position falls in the gesture that produced it. * * `\"move\"` while a pointer is travelling, `\"end\"` when it is released. Absent is a position with * no gesture around it — a tap, or a host that reports only the result. * * The hour hands over to the minute when a gesture **ends after moving**, and never on a tap. * A tap is where a person starts: they touch roughly the right number and then drag to the one * they meant, and a face that advanced on the touch took the dial away mid-gesture and left them * adjusting minutes they had not asked for. A release after movement is where they stop. */ readonly phase?: \"move\" | \"end\"; }",
+    "variant \"set-hour\": { readonly type: \"set-hour\"; readonly hour: number; }",
+    "variant \"set-minute\": { readonly type: \"set-minute\"; readonly minute: number; }",
+    "variant \"set-period\": { readonly type: \"set-period\"; readonly period: \"AM\" | \"PM\"; }",
+    "variant \"set-time\": { readonly type: \"set-time\"; readonly time: string; }",
+    "variant \"set-view-mode\": { readonly type: \"set-view-mode\"; readonly mode: MdyTimepickerViewMode; }",
+    "variant \"type\": { readonly type: \"type\"; readonly text: string; }",
+    "variant \"type-segment\": { readonly type: \"type-segment\"; readonly field: \"hour\" | \"minute\"; readonly text: string; }"
   ],
   "widgets:MdyTimepickerFieldState": [
     "dirty: boolean",
@@ -4425,7 +4578,9 @@
     "viewMode: MdyTimepickerViewMode"
   ],
   "widgets:MdyTransitionTrigger": [
-    "(opaque)"
+    "variant \"key\": { readonly type: \"key\"; readonly key: string; }",
+    "variant \"outside\": { readonly type: \"outside\"; }",
+    "variant \"pointer\": { readonly type: \"pointer\"; readonly part: string; }"
   ],
   "widgets:MdyTypeahead": [
     "clear: () => void",
@@ -4440,7 +4595,15 @@
     "parts: Readonly<Record<TPart, MdyPartContract>>"
   ],
   "widgets:MdyUiCommand": [
-    "(opaque)"
+    "variant \"announce\": { readonly type: \"announce\"; readonly message: string; }",
+    "variant \"close-overlay\": { readonly type: \"close-overlay\"; }",
+    "variant \"emit-change\": { readonly type: \"emit-change\"; }",
+    "variant \"focus\": { readonly type: \"focus\"; readonly target: MdyElementTarget; }",
+    "variant \"mark-dirty\": { readonly type: \"mark-dirty\"; }",
+    "variant \"mark-touched\": { readonly type: \"mark-touched\"; }",
+    "variant \"open-overlay\": { readonly type: \"open-overlay\"; readonly anchor: MdyElementTarget; }",
+    "variant \"restore-focus\": { readonly type: \"restore-focus\"; readonly target: MdyElementTarget; }",
+    "variant \"scroll-into-view\": { readonly type: \"scroll-into-view\"; readonly target: MdyElementTarget; }"
   ],
   "widgets:MdyUnmountObservation": [
     "document: Document",
@@ -4464,7 +4627,13 @@
     "value: T"
   ],
   "widgets:MdyValueWidgetIntent": [
-    "(opaque)"
+    "variant \"blur\": { readonly type: \"blur\"; }",
+    "variant \"decrement\": { readonly type: \"decrement\"; readonly step?: number; readonly min?: number | null; }",
+    "variant \"focus\": { readonly type: \"focus\"; }",
+    "variant \"increment\": { readonly type: \"increment\"; readonly step?: number; readonly max?: number | null; }",
+    "variant \"input\": { readonly type: \"input\"; readonly value: T; }",
+    "variant \"select\": { readonly type: \"select\"; readonly value: T; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; }"
   ],
   "widgets:MdyValueWidgetState": [
     "dirty: boolean",
@@ -4533,7 +4702,20 @@
     "part: string"
   ],
   "widgets:MdyWidgetKeyIntent": [
-    "(opaque)"
+    "variant \"cancel\": { readonly type: \"cancel\"; readonly restoreFocus: boolean; }",
+    "variant \"close\": { readonly type: \"close\"; readonly restoreFocus: boolean; }",
+    "variant \"commit\": { readonly type: \"commit\"; }",
+    "variant \"decrement\": { readonly type: \"decrement\"; }",
+    "variant \"grab\": { readonly type: \"grab\"; }",
+    "variant \"increment\": { readonly type: \"increment\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"open\": { readonly type: \"open\"; }",
+    "variant \"remove\": { readonly type: \"remove\"; }",
+    "variant \"reorder\": { readonly type: \"reorder\"; readonly by: -1 | 1; }",
+    "variant \"toggle\": { readonly type: \"toggle\"; }",
+    "variant \"typeahead\": { readonly type: \"typeahead\"; readonly character: string; }",
+    "variant \"undo\": { readonly type: \"undo\"; }",
+    "variant \"view\": { readonly type: \"view\"; readonly by: -1 | 1; }"
   ],
   "widgets:MdyWidgetKind": [
     "\"checkbox\"",
@@ -4632,7 +4814,8 @@
     "trigger: MdyTransitionTrigger"
   ],
   "widgets:MdyWidgetVariant": [
-    "(opaque)"
+    "variant of an unnamed shape: MdyMultiselectMode",
+    "variant of an unnamed shape: MdySelectPresentation"
   ],
   "widgets:MdyWidgetViewContract": [
     "parts: Readonly<Record<TPart, MdyPartContract>>",

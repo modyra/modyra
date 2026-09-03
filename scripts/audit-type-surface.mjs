@@ -356,6 +356,11 @@ function membersOf(node) {
  * object types, or an alias of another type entirely — records `["(opaque)"]`: enough for the alias
  * being withdrawn to fail, and no claim about what is inside it.
  */
+/** One line, single spaces: a declaration reflowed by a printer is not a changed declaration. */
+function normaliseSpacing(text) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
 function unionMembersOf(type, sourceFile) {
   // `(typeof SOME_TUPLE)[number]` — a union derived from the array that declares it rather than
   // written out beside it. Read as syntax it is an indexed access and nothing else, so the members
@@ -379,8 +384,33 @@ function unionMembersOf(type, sourceFile) {
   if (!ts.isUnionTypeNode(type)) return ["(opaque)"];
   const members = [];
   for (const member of type.types) {
-    if (!ts.isLiteralTypeNode(member)) return ["(opaque)"];
-    members.push(member.literal.getText?.() ?? String(member.literal.text));
+    if (ts.isLiteralTypeNode(member)) {
+      members.push(member.literal.getText?.() ?? String(member.literal.text));
+      continue;
+    }
+    // An arm that is not a literal is recorded as its own text rather than collapsing the whole
+    // union to `(opaque)`.
+    //
+    // Collapsing lost everything: `MdyMultiselectOverlayAction` was stored as the single string
+    // "(opaque)", so a variant added to it compared "(opaque)" against "(opaque)" and passed without
+    // a line — and so would a variant **removed**, which is major. Seventy-seven exported types were
+    // recorded that way. The text of an arm is not a resolved type and this does not pretend it is:
+    // it is what a reader of the `.d.ts` sees, which is the standard the rest of this file holds to.
+    const text = normaliseSpacing(member.getText?.() ?? "(unreadable)");
+    // Keyed by its discriminant, because the comparison splits an entry at its first `": "` and an
+    // arm carries colons of its own — recorded raw, `{ readonly type: "step"; … }` became the member
+    // *name* `{ readonly type`, and the rest became its type.
+    //
+    // The discriminant is what a consumer switches on, so it is also the identity that matters: an
+    // arm whose shape changes under the same discriminant is a retype, an arm that disappears is a
+    // removal. Where there is none, the member names stand in — stable under reordering, which the
+    // text is not.
+    const discriminant = text.match(/\btype\s*:\s*("[^"]*"|'[^']*')/)?.[1];
+    const shape = [...text.matchAll(/(?:readonly\s+)?([A-Za-z_$][\w$]*)\s*\??\s*:/g)].map(([, key]) => key).sort();
+    const key = discriminant !== undefined
+      ? `variant ${discriminant}`
+      : `variant of ${shape.join("+") || "an unnamed shape"}`;
+    members.push(`${key}: ${text}`);
   }
   return members.sort();
 }
@@ -662,6 +692,16 @@ for (const name of Object.keys(baseline)) {
   }
   const was = parseMembers(baseline[name]);
   const now = parseMembers(current[name]);
+
+  // A type the baseline recorded as `(opaque)` and this run reads as members has not changed: the
+  // snapshot learned to look inside it. Reporting that as a removal plus a dozen additions describes
+  // the instrument and reads as a contract change — and the verdict travels into a changeset, where
+  // nobody can tell afterwards. It is the one moment the tool knows it is the cause, so it says so.
+  const wasOpaque = was.size === 1 && was.has("(opaque)");
+  if (wasOpaque && now.size > 0 && !now.has("(opaque)")) {
+    changes.push(["minor", `${name}: ${now.size} member(s) now recorded — new to this snapshot, not to the type`]);
+    continue;
+  }
 
   for (const [member, before] of was) {
     const after = now.get(member);
