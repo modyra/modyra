@@ -22,7 +22,6 @@ import {
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
-import { filterOptionsByQuery } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
@@ -136,7 +135,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this.fieldController = createMultiselectFieldController<unknown>({
       widgetId: this.fieldId,
       handle: handle as never,
-      options: this.options,
+      options: this.filteredOptions(handle as never),
       mode: this.mode,
     });
   }
@@ -154,7 +153,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     if (handle) closeOverlayOutOfPlay(this, handle.interactivity(), () => this.overlay.close());
     // The option list is a property and can be replaced; the controller is told rather than
     // rebuilt, so the query it is holding survives a list that changes beneath it.
-    if (changed.has("options")) this.fieldController?.setOptions(this.options);
+    // `filterFn` narrows the same list, so a rule that changes which values may be offered has to
+    // reach the controller the same way the list itself does.
+    if ((changed.has("options") || changed.has("filterFn")) && handle) {
+      this.fieldController?.setOptions(this.filteredOptions(handle));
+    }
   }
 
   constructor() {
@@ -243,7 +246,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // toggle mode, `aria-pressed` — both unreachable for a list that removes what was taken. It also
     // made the strip's overflow affordance a lie, because the values it says are out of sight are
     // exactly the ones such a list omits.
-    return filterOptionsByQuery(this.filteredOptions(handle), this._query);
+    //
+    // The narrowing is the controller's answer rather than a second one. Deriving it here as well
+    // gave a value the field holds two fates — the widening for a held value the list does not carry
+    // runs on both sides of `filterFn`, so a filter that rejects such a value removed it here and
+    // the controller put it back — and left the cursor stepping a list this panel is not drawing.
+    // ADR 0196.
+    return this.fieldController?.filteredOptions() ?? this.filteredOptions(handle);
   }
 
   /**
@@ -398,6 +407,11 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
 
   private onSearchInput(e: Event): void {
     this._query = (e.target as HTMLInputElement).value;
+    // Told to the controller, not only kept here. The cursor is the controller's and it steps
+    // through the options the controller believes are visible: a query it never hears leaves the
+    // keyboard walking the whole list while the panel draws a slice of it, and
+    // `aria-activedescendant` then names an option nobody can see.
+    this.fieldController?.dispatch({ type: "search", query: this._query });
   }
 
   protected override onKeydown(
