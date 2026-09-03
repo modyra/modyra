@@ -13,30 +13,57 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 
 installDomGlobals();
 
+const { createApp, h } = await import("vue");
+const { MdyTextField } = await import("./dist/index.js");
+const { createVueForm, field } = await import("./dist/index.js");
+
 export const name = "@modyra/vue";
 
 /**
- * The kinds this adapter draws, which is none of them yet.
+ * The kinds this adapter draws.
  *
- * Declared as an empty list rather than as the seventeen it will eventually answer, because a config
- * naming a kind it cannot mount reports a renderer that is broken rather than one that is unwritten
- * — and those need opposite work. A kind joins this list in the commit that makes it mountable.
+ * A kind joins this list in the commit that makes it mountable, never before: a config naming a kind
+ * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
+ * need opposite work.
  */
-export const kinds = [];
+export const kinds = ["text"];
 
 /**
- * Mounting one widget, which nothing here can do yet.
+ * Mounting one widget, ready for the kit to inspect.
  *
- * Named and refusing rather than absent: a missing export is reported by the kit as a config defect,
- * and this is not one — it is the renderer that is missing, and the message says so. The shape below
- * is the shape a real mount owes, kept here as the specification the first kind has to satisfy:
- * `root`, `parts`, `drive`, `settle`, `dispose`, plus `control`, `value` and `press` where the
- * adapter can answer them.
+ * `root`, `parts`, `drive`, `settle` and `dispose` are owed. `drive` answers `false` for every state
+ * this adapter cannot reach yet, which is the honest word for it: the kit skips what a renderer says
+ * it cannot do and reports a state silently unreachable as conformance.
  */
 export const mount = async (kind) => {
-  throw new Error(
-    `@modyra/vue draws no widgets yet, so ${kind} cannot be mounted. This config exists before the `
-    + "renderer on purpose: it is the bench the skeleton is built against, and `kinds` is empty until "
-    + "a kind can be drawn and inspected.",
-  );
+  if (kind !== "text") {
+    throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
+  }
+  const host = document.createElement("div");
+  document.body.append(host);
+  const form = createVueForm({ value: field("") });
+  const app = createApp({
+    render: () => h(MdyTextField, { field: form.f.value, label: "Given", widgetId: "vue-text" }),
+  });
+  app.mount(host);
+
+  const root = () => host.firstElementChild;
+  return {
+    root: root(),
+    parts: () => ({
+      root: root(),
+      label: host.querySelector(".mdy-label"),
+      inputWrapper: host.querySelector(".mdy-input-wrapper"),
+      control: host.querySelector("input"),
+      supportingText: host.querySelector(".mdy-supporting-text"),
+      errors: host.querySelector(".mdy-control__errors"),
+    }),
+    // Nothing yet: the states the kit drives arrive with the units that make them reachable, and
+    // saying so is what keeps a state nobody can reach out of the conformance count.
+    drive: () => false,
+    settle: async () => { await new Promise((resolve) => setTimeout(resolve, 0)); },
+    dispose: () => { app.unmount(); host.remove(); },
+    control: () => host.querySelector("input"),
+    value: () => host.querySelector("input")?.value ?? "",
+  };
 };

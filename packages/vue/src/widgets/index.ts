@@ -15,3 +15,5 @@ export type {
   MdyVueFieldApi,
   UseMdyFieldOptions,
 } from "./field.js";
+export { MdyTextField } from "./text-field.js";
+export { partProps, type MdyVuePartProps } from "./part.js";
