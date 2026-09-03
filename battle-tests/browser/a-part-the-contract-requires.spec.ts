@@ -74,16 +74,17 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   const nodes = Object.values(CONTRACTS).flatMap((kind) => kind.structure.nodes);
   // Pinned in both directions on purpose: a part removed and a part added are both reasons to
   // re-read the two paragraphs above, which describe this anatomy by number. It has done that job
-  // twice — the chip strip gained a row when it became a grid, and two kinds gained a part that
+  // several times — the chip strip gained a row when it became a grid; two kinds gained a part that
   // sends `false` when their box is not ticked, so that a receiver can tell "the person said no"
-  // from "that field was not in this form"; and the multiselect's way back stopped being a row of its
+  // from "that field was not in this form"; the multiselect's way back stopped being a row of its
   // own and became a command in the cluster at the field's trailing edge, which is one part fewer
-  // because the row it lived in no longer exists. The three statements below were re-read against the
-  // new anatomy each time and still hold.
+  // because the row it lived in no longer exists; and a radio's operable element and its drawn ring
+  // became two parts rather than one name covering both. The three statements below were re-read
+  // against the new anatomy each time and still hold.
   //
   // Every declared part has a structure node and every node a part: the two counts are the same
   // number, which is what makes this one number able to describe the whole anatomy.
-  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(264);
+  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(265);
 
   // Optionality is where the contract keeps it: on the structure node, not on the part record. Every
   // node has it, so a part that does not say `optional: true` is one the contract requires.
