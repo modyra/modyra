@@ -2,6 +2,17 @@
 import type { MdyMultiselectMode } from "@modyra/core";
 import type { MdyOptionNavigationTarget } from "./keys.js";
 import { keyBindingFor, type MdyKeyOrPress } from "../transitions.js";
+import { MDY_WIDGET_CONTRACTS } from "../catalog/contracts.js";
+
+/**
+ * Whether a variant of this kind draws the named part.
+ *
+ * Read from the variant's own `required` list, which is where the difference between the two modes
+ * is already stated. A policy that named the mode instead would be a second statement of it.
+ */
+function variantRequires(mode: MdyMultiselectMode, part: string): boolean {
+  return MDY_WIDGET_CONTRACTS.multiselect.variants[mode]?.required?.includes(part) === true;
+}
 export type MdyMultiselectValueIntent<T> =
   | { readonly type: "toggle"; readonly value: T }
   | { readonly type: "increment"; readonly value: T }
@@ -32,7 +43,8 @@ export type MdyMultiselectOverlayAction =
   | { readonly type: "close"; readonly restoreFocus: boolean }
   | { readonly type: "search"; readonly query: string }
   | { readonly type: "select"; readonly optionKey: string }
-  | { readonly type: "move"; readonly target: MdyOptionNavigationTarget };
+  | { readonly type: "move"; readonly target: MdyOptionNavigationTarget }
+  | { readonly type: "step"; readonly optionKey: string; readonly by: -1 | 1 };
 
 /** Canonical multiselect overlay policy. The host only supplies event facts and executes the action. */
 export function multiselectOverlayAction(input: {
@@ -48,6 +60,16 @@ export function multiselectOverlayAction(input: {
    */
   readonly query: string;
   readonly activeKey: string | null;
+  /**
+   * Which variant of the kind is drawn, where the caller knows.
+   *
+   * Absent, a key that steps a quantity is left unclaimed. The option of one variant holds a number
+   * and the option of the other is a plain choice, so without knowing which is on screen this policy
+   * cannot tell a press that changes something from a press that changes nothing — and a key
+   * answered with an action that does nothing is worse than a key nothing claims, because the
+   * caller prevents the platform's own meaning on the strength of the answer.
+   */
+  readonly mode?: MdyMultiselectMode;
 }): MdyMultiselectOverlayAction | null {
   const { open, activeKey } = input;
   // A press with the platform's accelerator held is the platform's — `Cmd+Space` switches the input
@@ -89,6 +111,22 @@ export function multiselectOverlayAction(input: {
     // not on screen, and opening on them would be inventing an intent the contract does not declare.
     if (!open) return key === "ArrowDown" || key === "ArrowUp" ? { type: "open" } : null;
     return { type: "move", target };
+  }
+  // The quantity on the option the cursor is on.
+  //
+  // Which keys, and which way each one goes, are read from the kind's declaration rather than named
+  // here: the pair is `on: "option"` with `intent: "step"`, and a second copy of the key names in
+  // this file is the copy that stops moving when the declaration does.
+  //
+  // Whether the option carries a quantity at all is read from the same place — `optionStep` is
+  // required by one variant and absent from the other, so the mode's own declaration decides, and no
+  // clause here has to be remembered when a variant changes.
+  const step = open && activeKey !== null && input.mode !== undefined
+    ? keyBindingFor("multiselect", input.key, open, "option")
+    : null;
+  if (step?.intent === "step" && step.by !== undefined
+    && variantRequires(input.mode as MdyMultiselectMode, "optionStep")) {
+    return { type: "step", optionKey: activeKey as string, by: step.by };
   }
   // Tab closes and lets focus go where it was headed. A list left open follows the user to the next
   // field, and focus pulled back traps them in the one they just left.

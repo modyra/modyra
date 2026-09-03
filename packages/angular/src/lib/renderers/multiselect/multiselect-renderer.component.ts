@@ -326,6 +326,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
           class="mdy-multiselect__options mdy-multiselect-overlay__grid"
           [attr.role]="optionsRole"
           [attr.aria-label]="controlAriaLabel()"
+          (keydown)="onOverlayKeydown($event)"
         >
           @for (opt of searchResults(); track opt.value; let i = $index) {
             <div [class]="chip.wrapper" [attr.data-option-key]="optionKey(opt.value)">
@@ -535,6 +536,7 @@ export class MdyMultiselectComponent<TValue = string>
       open: this.open(),
       query: this.searchQuery(),
       activeKey: this.activeOverlayKey(),
+      mode: this.mode(),
     });
     // A letter typed at an open list without a filter box moves the cursor to the first match. Only
     // without one: a searchable popup already answers typing by narrowing the list.
@@ -565,6 +567,16 @@ export class MdyMultiselectComponent<TValue = string>
       // meaning "choose this one" had no target, which this renderer answered from the trigger.
       // ADR 0179.
       this.controller()?.dispatch({ type: "open", by: "keyboard" });
+      this.followCursor();
+      return;
+    }
+    // The quantity on the option the cursor is on. The `±` buttons drawn in each option are
+    // `tabindex="-1"` pointer affordances, so without this the number on a row can be changed with a
+    // mouse and with nothing else.
+    if (action.type === "step") {
+      this.controller()?.dispatch(action.by === 1
+        ? { type: "increment", optionKey: action.optionKey }
+        : { type: "decrement", optionKey: action.optionKey });
       this.followCursor();
       return;
     }

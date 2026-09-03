@@ -916,6 +916,7 @@ export function renderMultiselectField(
       open: state.open,
       query: search.value,
       activeKey: state.activeKey,
+      mode,
     });
     // A letter typed at an open list without a filter box moves the cursor to the first match. Only
     // without one: the two would compete for the same keystrokes, and a searchable popup already
@@ -929,6 +930,14 @@ export function renderMultiselectField(
     if (!action) return;
     // Tab keeps its native meaning: the list closes and focus carries on to the next control.
     if (event.key !== "Tab") event.preventDefault();
+    // The quantity on the option the cursor is on. The `±` buttons drawn in each option are
+    // `tabindex="-1"` pointer affordances, so without this the number on a row can be changed with a
+    // mouse and with nothing else.
+    if (action.type === "step") {
+      dispatch(action.by === 1 ? { type: "increment", optionKey: action.optionKey } : { type: "decrement", optionKey: action.optionKey });
+      followCursor();
+      return;
+    }
     // This handler is a keydown, so a panel it opens is about to be given a keypress and opens with
     // somewhere for that press to land. ADR 0179.
     dispatch(action.type === "open" ? { ...action, by: "keyboard" } : action);

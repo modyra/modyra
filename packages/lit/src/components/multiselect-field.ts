@@ -482,6 +482,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       open: this._open,
       query: this._query,
       activeKey: this.fieldController?.state().activeKey ?? null,
+      mode: this.mode,
     });
     // A letter typed at an open list without a filter box moves the cursor to the first match. Only
     // without one: a searchable popup already answers typing by narrowing the list, and the two
@@ -497,6 +498,17 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     }
     if (!action || action.type === "close" || action.type === "open") return;
     e.preventDefault();
+    // The quantity on the option the cursor is on. The `±` buttons drawn in each option are
+    // `tabindex="-1"` pointer affordances, so without this the number on a row can be changed with a
+    // mouse and with nothing else.
+    if (action.type === "step") {
+      this.fieldController?.dispatch(action.by === 1
+        ? { type: "increment", optionKey: action.optionKey }
+        : { type: "decrement", optionKey: action.optionKey });
+      this.requestUpdate();
+      this.followCursor();
+      return;
+    }
     this.fieldController?.dispatch(action as never);
     if (action.type === "move") { this.requestUpdate(); this.followCursor(); }
   }
