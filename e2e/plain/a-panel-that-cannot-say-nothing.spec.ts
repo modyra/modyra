@@ -36,3 +36,33 @@ test("a probe with nothing to read says so, beside one that read something", asy
   const idRow = table.locator("tr", { has: page.getByText("control id") });
   await expect(idRow.locator("td").nth(1)).not.toHaveText(/not read/);
 });
+
+/**
+ * Every door on the page answers with what it puts on an element.
+ *
+ * The door list is drawn from `MDY_CLASS_DOORS`, and the sample arguments each door is asked with
+ * are written by hand on the page — so the door added tomorrow is exactly the one that arrives
+ * without a sample. Its row says so, in words, and until now nobody read those words: the page was
+ * honest and unenforced, which is a state that lasts until someone happens to look.
+ *
+ * The failure this catches is not a crash. It is a row that would otherwise teach the opposite of
+ * what the page exists to show — a door reading as one that puts no class on anything.
+ */
+test("no door on the page is missing the example it is asked with", async ({ page }) => {
+  await page.goto("/lab.html#contracts");
+  const doors = page.locator("dl[data-class-doors]");
+  await expect(doors).toBeVisible();
+
+  const terms = doors.locator("dt");
+  const answers = doors.locator("dd");
+  const count = await terms.count();
+  expect(count, "no doors were listed, so this test is measuring nothing").toBeGreaterThan(4);
+
+  for (let at = 0; at < count; at += 1) {
+    const name = (await terms.nth(at).textContent())?.trim() ?? "";
+    const said = (await answers.nth(at).textContent())?.trim() ?? "";
+    expect(said, `the ${name} row is blank`).not.toBe("");
+    expect(said, `${name} has no sample on the page, so its row cannot say what it puts on an element`)
+      .not.toContain("non ha ancora un esempio");
+  }
+});
