@@ -738,9 +738,16 @@ if (process.argv.includes("--check")) {
     );
   }
   if (totalStale > 0) {
+    // Failed, not warned. A stale entry is a claim about the code that stopped being true — it says
+    // a parity gap is accepted where parity has since been reached — and every sibling gate in this
+    // repository fails on exactly that: audit-contract-style-coverage says so in its own usage line,
+    // import-cycles fails on a closed cycle still recorded, styles-architecture on debt that is no
+    // longer a finding. A warning here was the odd one out, and a warning nobody must act on is how
+    // an allowlist grows into an absolution.
     process.stderr.write(
-      `Warning: ${totalStale} stale allowlist entr(y/ies) — parity reached, prune scripts/theme-parity-allowlist.json\n`,
+      `${totalStale} stale allowlist entr(y/ies) — parity reached, prune scripts/theme-parity-allowlist.json\n`,
     );
+    process.exit(1);
   }
 }
 

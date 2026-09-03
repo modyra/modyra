@@ -496,6 +496,51 @@ function abandonedStatusPhrasings() {
   return problems;
 }
 
+/**
+ * Claims CONTRIBUTING.md forbids, read from CONTRIBUTING.md.
+ *
+ * The rule has existed in prose alone: "**Do not write these claims.** Each one is either
+ * unverifiable or false here", followed by seven of them. Nothing checked it, which makes it a
+ * warning — and a warning is a defect somebody decided to route around, kept alive by looking like
+ * treatment. The claims are the kind that get added by someone writing a landing page in a hurry,
+ * which is exactly when nobody is rereading the contributor guide.
+ *
+ * The list is **read from the document that argues it**, never restated here. A copy would be a
+ * second declaration that stops agreeing with the first in silence, and the whole value of the rule
+ * is that a reader can find out why each phrase is forbidden. Editing the blockquote edits the
+ * check; deleting it removes the check and says so, rather than leaving one that enforces a rule
+ * nobody stands behind.
+ */
+function forbiddenClaims() {
+  const guide = readFileSync(join(ROOT, "CONTRIBUTING.md"), "utf8");
+  const declared = guide.match(/\*\*Do not write these claims\.\*\*[^>]*>\s*([\s\S]*?)\n\n/);
+  if (!declared) {
+    return ["CONTRIBUTING.md no longer states the forbidden claims in the shape this reads, so the "
+      + "check cannot run — a defect in this check rather than a clean result"];
+  }
+  const claims = declared[1]
+    .split(/·|\n>/)
+    .map((claim) => claim.replace(/^>\s*/, "").trim())
+    // "production-ready, applied to any package below 1.0" carries its own condition, which this
+    // cannot evaluate: a phrase with a qualifier attached is not a phrase to grep for.
+    .filter((claim) => claim !== "" && !claim.includes(","));
+  const problems = [];
+  for (const file of markdown(ROOT)) {
+    if (isIgnored(file)) continue;
+    if (/CONTRIBUTING\.md$/.test(file) || /\/docs\/architecture\//.test(file)) continue;
+    const source = readFileSync(file, "utf8").toLowerCase();
+    for (const claim of claims) {
+      if (source.includes(claim.toLowerCase())) {
+        problems.push(`${relative(ROOT, file)} claims "${claim}" — CONTRIBUTING.md § Ground rules `
+          + "lists it as unverifiable or false here");
+      }
+    }
+  }
+  return problems;
+}
+
+const claimProblems = forbiddenClaims();
+
 const abandonedStatus = abandonedStatusPhrasings();
 
 // ─── Report ──────────────────────────────────────────────────────────────────
@@ -529,8 +574,11 @@ for (const problem of unlisted) console.log(`  ${problem}`);
 console.log(`\nAbandoned status phrasings (ADR 0028): ${abandonedStatus.length}`);
 for (const problem of abandonedStatus) console.log(`  ${problem}`);
 
+console.log(`\nClaims CONTRIBUTING.md forbids: ${claimProblems.length}`);
+for (const problem of claimProblems) console.log(`  ${problem}`);
+
 if (!check) process.exit(0);
-if (brokenLinks.length || gapProblems.length || missingCitations.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length || abandonedStatus.length) {
+if (brokenLinks.length || gapProblems.length || missingCitations.length || orphans.length || inverted.length || unlicensed.length || adrs.length || unlisted.length || abandonedStatus.length || claimProblems.length) {
   console.error("\nDOCUMENTATION CHECKS FAILED");
   process.exit(1);
 }
