@@ -114,6 +114,8 @@ function snapshot() {
           b.modifier === undefined ? "" : ` mod=${b.modifier}`,
           b.by === undefined ? "" : ` by=${b.by}`,
           b.toEnd === true ? " toEnd" : "",
+          b.page === true ? " page" : "",
+          b.longStride === true ? " longStride" : "",
           b.restoresFocus === undefined ? "" : ` focus=${b.restoresFocus}`,
           b.requires === undefined ? "" : ` requires=${b.requires}`,
           b.awaits === undefined ? "" : ` awaits=${b.awaits}`,
@@ -308,6 +310,44 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
   }
 }
 
+/**
+ * The vocabularies a consumer reads, taken across every kind rather than the one being compared.
+ *
+ * **Which side of a change a consumer sits on decides its size.** A binding added to a kind grants
+ * a gesture, and nobody who never pressed it loses anything — additive, and that is what this
+ * reported for every one. But a binding whose *intent* is new to the contract grows a vocabulary
+ * consumers read back: `binding.intent` is what a renderer switches on to decide what a press does,
+ * and an exhaustive switch over the old set has no arm for the new value. The gesture is a gift to
+ * whoever presses it and a break for whoever reads it, and the reader is the one who ships code.
+ *
+ * Taken contract-wide because the vocabulary is: an intent already declared by another kind is one
+ * a consumer's switch has an arm for, whichever kind it turns up on next.
+ */
+const intentsOf = (contract) => new Set(
+  Object.values(contract.kinds).flatMap((kind) => (kind.keyboard ?? []).map(
+    (entry) => entry.split(" ")[0].split(":").slice(1).join(":"))));
+const knownIntents = intentsOf(baseline);
+
+/**
+ * Which binding attributes the baseline records at all — so a field this tool learned to write is
+ * not reported as a contract that changed.
+ *
+ * The first snapshot after a field enters the record has it on no entry, so every binding that
+ * declares it reads as a binding whose behaviour was retyped. That verdict travels into a changeset
+ * and nobody can tell afterwards that the tool was the cause. Discriminated by the shape of the
+ * absence: a field missing from *every* baseline entry is one the snapshot never carried, while a
+ * field the baseline has elsewhere and this binding lost is a real withdrawal.
+ */
+const attributeNames = (contract) => new Set(
+  Object.values(contract.kinds).flatMap((kind) => (kind.keyboard ?? []).flatMap(
+    (entry) => entry.split(" ").slice(1).map((part) => part.split("=")[0]))));
+const recordedAttributes = attributeNames(baseline);
+const bindingFieldsNewToTheSnapshot = [...attributeNames(current)].filter((name) => !recordedAttributes.has(name));
+if (bindingFieldsNewToTheSnapshot.length > 0) {
+  record("minor", "keyboard", `${bindingFieldsNewToTheSnapshot.join(", ")} now recorded — `
+    + "new to this snapshot, not to the contract");
+}
+
 for (const kind of Object.keys(baseline.kinds)) {
   if (!current.kinds[kind]) record("major", kind, "kind removed");
 }
@@ -443,7 +483,11 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
    * entry exists to prevent. So membership is asked of the gesture, and what it *does* is compared
    * separately.
    */
-  const gestureOf = (entry) => entry.split(" ").filter((part) => !part.includes("=") && part !== "toEnd").join(" ");
+  // The first token and nothing else. Listing what to exclude — "no equals sign, and not `toEnd`" —
+  // makes every boolean flag added later a part of the gesture's *identity* by default, so a binding
+  // that declares one reads as a gesture removed and a different one added. The identity is the
+  // thing that was always identity: key, phase, intent.
+  const gestureOf = (entry) => entry.split(" ")[0];
   const attributesOf = (entry) => entry.slice(gestureOf(entry).length).trim();
   const wasByGesture = new Map(was.keyboard.map((entry) => [gestureOf(entry), entry]));
   const recordsNoAttributes = was.keyboard.every((entry) => attributesOf(entry) === "");
@@ -473,11 +517,18 @@ for (const kind of Object.keys(current.kinds).filter((k) => baseline.kinds[k])) 
   }
   for (const [gesture, entry] of nowByGesture) {
     if (!wasByGesture.has(gesture)) {
-      record("minor", kind, `key declared: ${entry}`);
+      const intent = gesture.split(":").slice(1).join(":");
+      record(knownIntents.has(intent) ? "minor" : "major", kind,
+        knownIntents.has(intent)
+          ? `key declared: ${entry}`
+          : `key declared with an intent no consumer has read before: ${entry} — `
+            + `"${intent}" is new to the vocabulary a renderer switches on`);
       continue;
     }
-    const before = attributesOf(wasByGesture.get(gesture));
-    const after = attributesOf(entry);
+    const withoutNewFields = (attributes) => attributes.split(" ")
+      .filter((part) => part !== "" && !bindingFieldsNewToTheSnapshot.includes(part.split("=")[0])).join(" ");
+    const before = withoutNewFields(attributesOf(wasByGesture.get(gesture)));
+    const after = withoutNewFields(attributesOf(entry));
     if (before === after) continue;
     // A snapshot taken before a binding's attributes were recorded has none for any of them, and an
     // absence there means "not written down", not "declared nothing". Compared raw it reports every

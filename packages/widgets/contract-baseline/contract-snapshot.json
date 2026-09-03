@@ -3090,8 +3090,8 @@
         "Enter@open:commit",
         "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "PageDown@open:move by=1",
-        "PageUp@open:move by=-1",
+        "PageDown@open:move by=1 page longStride",
+        "PageUp@open:move by=-1 page longStride",
         "Space@open:commit on=gridcell",
         "Tab@open:cancel focus=false"
       ]
@@ -3499,8 +3499,8 @@
         "Enter@open:commit",
         "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
-        "PageDown@open:move by=1",
-        "PageUp@open:move by=-1",
+        "PageDown@open:move by=1 page longStride",
+        "PageUp@open:move by=-1 page longStride",
         "Space@closed:open on=toggle",
         "Space@open:commit on=gridcell",
         "Tab@open:cancel focus=false"
