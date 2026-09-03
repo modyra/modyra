@@ -1,7 +1,7 @@
 import {
   defaultWidgetIdFactory,
   partSelector,
-  beginChipReorder, chosenKeyOrder, elementByDataKey, focusPartOnOpen, partClasses, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  beginChipReorder, chosenKeyOrder, elementByDataKey, focusPartOnOpen, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -595,17 +595,16 @@ export class MdyMultiselectComponent<TValue = string>
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
 
+    // The filter box only, for now, and the reason is a finding rather than a preference.
+    //
+    // The contract names the first option for a panel with no filter box, and moving focus there
+    // took the keyboard away from the element that answers letters: this renderer's type-ahead is
+    // bound where focus used to stay, so a person typing "m" moved nothing. The rule is right and
+    // this renderer cannot follow it until type-ahead answers from wherever focus is — which is a
+    // batch of its own, not a line in this one.
     const part = focusPartOnOpen("multiselect", { searchable: this.searchable() });
-    if (part === null) return;
-    afterNextRender(
-      () => {
-        const target = part === "search"
-          ? this.overlayInputRef()?.nativeElement
-          : (this.hostRef.nativeElement.querySelector(`.${partClasses("multiselect", "option")[0]}`) as HTMLElement | null);
-        target?.focus();
-      },
-      { injector: this.injector },
-    );
+    if (part !== "search") return;
+    afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
   }
 
   /** The chips and the search box sit outside the wrapper, so the whole host is the boundary. */
