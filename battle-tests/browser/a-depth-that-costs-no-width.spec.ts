@@ -43,7 +43,7 @@ import { MDY_LAYOUT_MAX_DEPTH } from "@modyra/core";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { kind: "section"; id: string; label: string; children: unknown[] };
+interface Node { kind: "section"; id: string; label: string; children: unknown[] }
 
 /** Hosts whose harness could not build the nesting, named so their silence is visible. */
 const unjudged: string[] = [];

@@ -25,7 +25,7 @@ import { expect, test } from "@playwright/test";
 import { became, HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Paint = { track: string | null; thumb: string | null; opacity: string | null };
+interface Paint { track: string | null; thumb: string | null; opacity: string | null }
 
 for (const host of HOSTS) {
   test(`a switch that is on is not painted like one nobody can change, ${host.name}`, async ({ page }) => {

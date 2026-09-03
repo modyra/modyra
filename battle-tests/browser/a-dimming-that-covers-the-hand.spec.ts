@@ -13,8 +13,10 @@
  * **That they are behind.** The stylesheet says what the layer is for:
  *
  *     .mdy-timepicker-dial__unavailable-layer
- *     /* The layer the dimmed stretches sit in. Behind the numbers, which is what `z-index: 0` on
- *        the slices does not achieve on its own once the hand is positioned. *​/
+ *
+ * and says why, in its own comment beside that selector: the layer is what the dimmed stretches sit
+ * in, behind the numbers — which is what `z-index: 0` on the slices does not achieve on its own once
+ * the hand is positioned.
  *
  * Neither `__hand` nor `__number` carries a `z-index` and the slices carry `z-index: 0`, so positioned
  * siblings paint in **document order**. Being behind is a fact about where the layer is appended and

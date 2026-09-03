@@ -52,7 +52,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyP
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { part: string; optional?: boolean };
+interface Node { part: string; optional?: boolean }
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, {
   parts: Record<string, { classes: string[] }>;

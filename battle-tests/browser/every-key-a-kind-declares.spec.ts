@@ -41,7 +41,7 @@ import { MDY_ANY_PRINTABLE_KEY, MDY_WIDGET_CONTRACTS as CONTRACTS, MDY_WIDGET_KE
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { became, HOSTS, stops } from "./bench";
+import { became, HOSTS } from "./bench";
 
 /** Three, so "first", "next" and "last" are three different places to be. */
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }, { value: "c", label: "C" }];

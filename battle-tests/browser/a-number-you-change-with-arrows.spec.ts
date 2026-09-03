@@ -65,7 +65,10 @@ for (const host of HOSTS) {
     const openers = page.locator('[data-form="t"] button');
     let opened = false;
     for (let index = 0; index < await openers.count(); index += 1) {
-      await openers.nth(index).click({ timeout: 3000 }).catch(() => {});
+      await openers.nth(index).click({ timeout: 3000 }).catch(() => {
+        // One candidate of several, and most are not the opener. Which one was is decided by the
+        // check after this loop, so a press that does not land is a step of the sweep, not a fault.
+      });
       await page.waitForTimeout(220);
       if (await page.locator(".mdy-timepicker-dial").count() > 0) { opened = true; break; }
     }

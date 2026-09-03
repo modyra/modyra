@@ -161,7 +161,7 @@ function repeatedClasses(kind: string): string[] {
  * are recorded as an open defect rather than as an exemption, because calling them exempt would be
  * the guardian granting itself the decision it was told to ask for.
  */
-type PanelAction = { readonly at: string; readonly reachableBy: string | null; readonly why: string };
+interface PanelAction { readonly at: string; readonly reachableBy: string | null; readonly why: string }
 
 const RECORDED: Record<string, PanelAction[]> = {
   plain: [

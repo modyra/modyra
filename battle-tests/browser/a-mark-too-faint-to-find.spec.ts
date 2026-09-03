@@ -39,7 +39,7 @@ const selectorFor = (part: string) => (partClasses("multiselect", part) as strin
 const OPTIONS = [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }, { value: "c", label: "Gamma" }];
 
 for (const host of HOSTS) {
-  test(`every mark on a trailing control carries its own contrast, ${host.name}`, async ({ page, browser }) => {
+  test(`every mark on a trailing control carries its own contrast, ${host.name}`, async ({ browser }) => {
     test.setTimeout(180_000);
     const shot = await browser.newContext({ deviceScaleFactor: SCALE });
     const paper = await shot.newPage();

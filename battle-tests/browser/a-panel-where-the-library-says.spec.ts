@@ -56,7 +56,7 @@ import {
 import { HOSTS, stops } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = { parts: Record<string, { classes: string[] }>; capabilities?: { overlay?: boolean } };
+interface Contract { parts: Record<string, { classes: string[] }>; capabilities?: { overlay?: boolean } }
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 const OVERLAY_KINDS = Object.keys(CONTRACTS).filter((kind) => CONTRACTS[kind].capabilities?.overlay === true);
@@ -105,7 +105,7 @@ for (const host of HOSTS) {
         // Still, not merely opened. A panel is placed over one or two frames and a fixed wait measures
         // how fast this machine is: the same field read twice minutes apart gave two verdicts, which
         // is a flake reporting a renderer. Read when the box stops moving.
-        await stops(() => page.evaluate(({ selector, popupClass }) => {
+        await stops(() => page.evaluate(({ popupClass }) => {
           const panel = (Array.from(document.querySelectorAll(`.${popupClass}`)) as HTMLElement[])
             .find((one) => one.getBoundingClientRect().width >= 1);
           if (panel === undefined) return "";

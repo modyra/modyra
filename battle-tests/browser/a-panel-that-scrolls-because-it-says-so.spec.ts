@@ -37,10 +37,10 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = {
+interface Contract {
   parts: Record<string, { classes: string[] }>;
   capabilities?: { overlay?: boolean; overlayScrolls?: boolean };
-};
+}
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 const OVERLAY_KINDS = Object.keys(CONTRACTS).filter((kind) => CONTRACTS[kind].capabilities?.overlay === true);

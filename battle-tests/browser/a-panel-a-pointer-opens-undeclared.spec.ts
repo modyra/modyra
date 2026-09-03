@@ -57,7 +57,6 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
   const unclickable: string[] = [];
   /** A part the kind declares a pointer opens it from, pressed, and the panel stayed shut. */
   const silent: string[] = [];
-  let clicked = 0;
   let opened = 0;
 
   for (const host of [only]) {
@@ -134,7 +133,7 @@ test(`a panel a pointer opens undeclared, ${only.name}`, async ({ page }) => {
         if (attempt === "non-clickable") { unclickable.push(`${kind}.${part} in ${host.name}`); continue; }
         const isDeclared = attempt.startsWith("declared:");
         const before = isDeclared ? attempt.slice("declared:".length) : attempt;
-        if (isDeclared) opened += 1; else clicked += 1;
+        if (isDeclared) opened += 1;
         await page.waitForTimeout(200);
         const after = await page.evaluate((id) =>
           document.querySelector(`[data-form="${id}"]`)?.querySelector("[aria-expanded]")?.getAttribute("aria-expanded") ?? "-", mountId);

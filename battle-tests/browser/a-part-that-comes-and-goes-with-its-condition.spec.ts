@@ -28,13 +28,13 @@
  * Claims under attack: UI-009, A11Y-004.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { MDY_PRESENCE_RESOLUTION, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partIsOwed, variantOf } from "@modyra/widgets";
 
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { part: string; presentWhen?: string; optional?: boolean };
+interface Node { part: string; presentWhen?: string; optional?: boolean }
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, {
   parts: Record<string, { classes: string[] }>;

@@ -47,7 +47,10 @@ for (const host of HOSTS) {
     const openers = page.locator('[data-form="p"] button');
     let opened = false;
     for (let index = 0; index < await openers.count(); index += 1) {
-      await openers.nth(index).click({ timeout: 3000 }).catch(() => {});
+      await openers.nth(index).click({ timeout: 3000 }).catch(() => {
+        // One candidate of several, and most are not the opener. Which one was is decided by the
+        // check after this loop, so a press that does not land is a step of the sweep, not a fault.
+      });
       await page.waitForTimeout(230);
       if (await page.locator('[role="gridcell"]').count() > 6) { opened = true; break; }
     }
@@ -71,7 +74,10 @@ for (const host of HOSTS) {
     // which is right — the field is out of play. What is wrong is that it is still there to click.
     const cell = page.locator('[role="gridcell"] button, button[role="gridcell"]').nth(10);
     if (await cell.count() > 0) {
-      await cell.click({ timeout: 3000, force: true }).catch(() => {});
+      await cell.click({ timeout: 3000, force: true }).catch(() => {
+        // The cell may not be reachable in the month on show. What the page holds afterwards is
+        // read either way, and that reading is the finding rather than this press.
+      });
       await page.waitForTimeout(300);
     }
     const held = await page.evaluate(({ api }) => (window as never as Api)[api].valueOf("p").when, { api: host.api });

@@ -22,7 +22,7 @@
 import { expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-export type BenchHost = { name: string; page: string; ready: string; api: string };
+export interface BenchHost { name: string; page: string; ready: string; api: string }
 
 export const HOSTS: BenchHost[] = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },

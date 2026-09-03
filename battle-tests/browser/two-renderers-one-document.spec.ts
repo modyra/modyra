@@ -40,12 +40,6 @@ const KINDS: ReadonlyArray<readonly [string, unknown, unknown]> = [
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const NEEDS_OPTIONS = new Set(["select", "multiselect", "radio", "segmented"]);
 
-const settled = async (page: Page) => {
-  await page.evaluate(
-    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(null)))),
-  );
-};
-
 /** Drive one kind through the sequence on one host, and report what the form says at each step. */
 async function traceOn(page: Page, api: "battle" | "battleLit", kind: string, good: unknown, bad: unknown) {
   return page.evaluate(

@@ -39,12 +39,12 @@ import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
-type Contract = {
+interface Contract {
   readonly parts: Record<string, { readonly classes?: readonly string[] }>;
   readonly structure: {
     readonly nodes: ReadonlyArray<{ readonly part: string; readonly parent?: string; readonly optional: boolean }>;
   };
-};
+}
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 

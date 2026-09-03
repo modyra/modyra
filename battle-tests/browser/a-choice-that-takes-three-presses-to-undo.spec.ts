@@ -47,10 +47,6 @@ import { HOSTS } from "./bench";
 const PARTS = MDY_WIDGET_CONTRACTS.multiselect.parts as Record<string, { classes: string[] }>;
 const CHIP = PARTS.chip.classes[0]!;
 const STRIP = PARTS.chips.classes[0]!;
-// Distributed, not joined: `.a, .b [title]` binds the attribute to `.b` alone, so the first list is
-// matched bare and the click waits forever on a container that was never going to be a button.
-const optionIn = (inner: string) => PARTS.options.classes.map((one) => `.${one} ${inner}`).join(", ");
-
 const OPTIONS = [
   { value: "a", label: "A" },
   { value: "b", label: "B" },

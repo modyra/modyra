@@ -52,7 +52,7 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses } from "@modyra/wid
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { part: string; parent?: string };
+interface Node { part: string; parent?: string }
 
 const OPTIONS = [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }];
 

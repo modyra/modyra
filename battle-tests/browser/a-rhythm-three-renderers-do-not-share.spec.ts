@@ -38,12 +38,12 @@ const HOSTS = [
 const SHEETS = ["./modyra.css", "./modyra-modern.css", "./modyra-material.css", "./modyra-ios.css", "./modyra-ionic.css"];
 const OPTIONS = [{ value: "x", label: "Roma" }, { value: "y", label: "Milano" }];
 
-type Layout = {
+interface Layout {
   boxes: { left: number; right: number; top: number; height: number }[];
   labels: number[];
   gaps: number[];
   primary: string;
-};
+}
 
 async function layoutOf(page: import("@playwright/test").Page, host: typeof HOSTS[number], sheet: string): Promise<Layout> {
   await page.goto(host.page);

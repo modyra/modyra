@@ -21,7 +21,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 /**
  * The kinds whose popup Tab moves *inside* rather than out of — read from the binding that says so.

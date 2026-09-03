@@ -40,10 +40,10 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = {
+interface Contract {
   parts: Record<string, { classes: string[] }>;
   capabilities?: { overlay?: boolean; dismissOnFocusOutside?: boolean; dismissOnOutsidePointer?: unknown };
-};
+}
 
 /** What the kind says a pointer landing outside does. Anything but `false` is a dismissal. */
 const dismissesOnPointer = (kind: string): boolean =>

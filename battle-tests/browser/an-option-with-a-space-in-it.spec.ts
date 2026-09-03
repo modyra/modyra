@@ -46,12 +46,15 @@ const pointing = (page: import("@playwright/test").Page) =>
       // the selector a consumer would write**, which is a stronger question than resolving: two of
       // the characters that survive `getElementById` make `querySelector` throw.
       parts: active === null ? [] : active.split(/\s+/).map((id) => {
-        let reached = false;
-        try {
-          reached = document.querySelector(`#${id}`) !== null;
-        } catch {
-          reached = false;
-        }
+        const reached = (() => {
+          try {
+            return document.querySelector(`#${id}`) !== null;
+          } catch {
+            // Two of the characters `getElementById` accepts make `querySelector` throw, and a
+            // selector that throws is a selector a consumer cannot write. That is the finding.
+            return false;
+          }
+        })();
         return { id, resolves: document.getElementById(id) !== null, reached };
       }),
       // The label of whatever the combobox is pointing at, which is what makes an assertion about

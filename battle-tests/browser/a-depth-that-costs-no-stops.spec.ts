@@ -34,7 +34,7 @@ import { MDY_LAYOUT_MAX_DEPTH } from "@modyra/core";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { kind: "section"; id: string; label: string; children: unknown[] };
+interface Node { kind: "section"; id: string; label: string; children: unknown[] }
 
 /** One field at the given depth, every section named. */
 const nestedTo = (depth: number, field: string): Node[] => {

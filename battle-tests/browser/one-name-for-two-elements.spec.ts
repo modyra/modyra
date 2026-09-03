@@ -31,7 +31,7 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, partClasses } from "@modyra/wid
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Node = { part: string; repeated?: boolean };
+interface Node { part: string; repeated?: boolean }
 
 const OPTIONS = [{ value: "a", label: "Alfa" }, { value: "b", label: "Beta" }];
 

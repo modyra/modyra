@@ -54,7 +54,10 @@ async function mountWith(
   await page.waitForTimeout(300);
   const trigger = page.locator(`[data-form="${id}"] button, [data-form="${id}"] [role="combobox"]`).first();
   if (await trigger.count() > 0) {
-    await trigger.click({ timeout: 4000 }).catch(() => {});
+    await trigger.click({ timeout: 4000 }).catch(() => {
+      // A kind without this control has nothing to press. The read below reports what is on the
+      // page, so a press that finds nothing leaves the finding to it.
+    });
     await page.waitForTimeout(300);
   }
   // Options may be portalled outside the form, so the read is not scoped to it — which is why each

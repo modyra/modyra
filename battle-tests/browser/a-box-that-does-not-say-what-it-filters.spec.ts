@@ -68,7 +68,10 @@ for (const host of HOSTS) {
 
     const openers = page.locator('[data-form="m"] button, [data-form="m"] [role="combobox"]');
     for (let index = 0; index < Math.min(await openers.count(), 4); index += 1) {
-      await openers.nth(index).click({ timeout: 2500 }).catch(() => {});
+      await openers.nth(index).click({ timeout: 2500 }).catch(() => {
+        // One candidate of several, and most are not the opener. Which one was is decided by the
+        // check after this loop, so a press that does not land is a step of the sweep, not a fault.
+      });
       await page.waitForTimeout(200);
       if (await page.locator(SEARCH).count() > 0) break;
     }

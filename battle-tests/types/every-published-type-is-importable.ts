@@ -14,7 +14,7 @@
  * Generated from the names the coverage audit reports as asserted by nothing; regenerate rather than
  * edit by hand.
  */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+ 
 
 import type {
   MdyAccessibleNameSource,

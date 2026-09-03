@@ -33,8 +33,6 @@ import { expect, test } from "@playwright/test";
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
 import { HOSTS } from "./bench";
 
-const HAND = ".mdy-timepicker-dial__hand";
-
 for (const host of HOSTS) {
   test(`the hand is shorter on the inner ring, ${host.name}`, async ({ page }) => {
     test.setTimeout(150_000);

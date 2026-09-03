@@ -23,7 +23,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@m
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Binding = { key: string; when?: string; intent?: string; on?: string; modifier?: string };
+interface Binding { key: string; when?: string; intent?: string; on?: string; modifier?: string }
 
 const OPENERS = MDY_POPUP_OPENERS as unknown as Record<string, { opener?: string } | undefined>;
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, { parts: Record<string, { classes: string[] }> }>;

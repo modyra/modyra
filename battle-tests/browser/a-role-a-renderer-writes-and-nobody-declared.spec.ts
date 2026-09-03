@@ -32,10 +32,10 @@ import {
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = {
+interface Contract {
   parts: Record<string, { role?: string }>;
   structure: { nodes: { part: string; element?: string }[] };
-};
+}
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 const OPENERS = MDY_POPUP_OPENERS as unknown as Record<string, { role?: string | null; promises?: string | null }>;
 const SHELL = MDY_FORM_SHELL_STRUCTURE as unknown as { nodes: { element?: string }[] };

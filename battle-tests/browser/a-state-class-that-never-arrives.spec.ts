@@ -56,9 +56,6 @@ const WRAPPER = MDY_FIELD_STATE_CLASSES.control;
 const LABEL = MDY_FIELD_STATE_CLASSES.label;
 const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 
-/** The tags a person can focus and then leave, which is what "the field was left" means here. */
-const FOCUSABLE = ["input", "textarea", "select", "button"];
-
 for (const host of HOSTS) {
   test(`${host.name}: a refused field wears the state class its kind declares`, async ({ page }) => {
     test.setTimeout(150_000);

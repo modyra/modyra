@@ -53,14 +53,11 @@ for (const host of HOSTS) {
       // Touch it the way a user does: arrive, then leave without filling it in. The wait is for the
       // control to exist, bounded: a kind that draws nothing focusable is counted as not invalid
       // below, which is the same answer either way.
-      // **Not `input:first`.** A field may carry a hidden input beside its visible control so that a
-      // native submit sends the value, and that one comes first in the document. Focusing it touches
-      // nothing, so the field was never left and never reported itself wrong — a whole renderer read
-      // as silent because the spec had arrived at the wrong element.
-      const control = page.locator(
-        `[data-form="${id}"] [aria-invalid], [data-form="${id}"] input:not([type="hidden"]), [data-form="${id}"] select`,
-      ).first();
-      // An act on the value, not a visit: a field only looked at has nothing to report.
+      // An act on the value, not a visit: a field only looked at has nothing to report. Which
+      // element receives the act is `madeToSpeak`'s to decide, and it excludes hidden inputs —
+      // a field may carry one beside its visible control so a native submit sends the value, it
+      // comes first in the document, and focusing it leaves the field never entered and never
+      // reported wrong.
       await madeToSpeak(page, `[data-form="${id}"]`, host.api);
 
       // The refusal is the premise of the whole reading; the missing message is the finding, and a

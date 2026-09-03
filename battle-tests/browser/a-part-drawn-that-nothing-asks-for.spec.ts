@@ -25,10 +25,10 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyParts } from "@modyr
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = {
+interface Contract {
   parts: Record<string, { classes: string[] }>;
   structure: { nodes: { part: string; optional?: boolean; presentWhen?: string }[] };
-};
+}
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 
 /** The parts this asks about: optional, and with nothing anywhere saying when they are owed. */

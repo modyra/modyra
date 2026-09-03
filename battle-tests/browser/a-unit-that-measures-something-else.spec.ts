@@ -77,8 +77,8 @@ for (const host of HOSTS) {
           rulesSeen += 1;
           const style = (rule as CSSStyleRule).style as CSSStyleDeclaration | undefined;
           if (style !== undefined && style !== null) {
-            for (let at = 0; at < style.length; at += 1) {
-              if (wanted.test(style.getPropertyValue(style[at]!))) {
+            for (const property of Array.from(style)) {
+              if (wanted.test(style.getPropertyValue(property))) {
                 const selector = (rule as CSSStyleRule).selectorText;
                 if (selector !== undefined && selector !== "") selectors.add(selector);
               }

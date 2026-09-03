@@ -42,7 +42,7 @@ import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
-type Contract = { controlType?: string; concealed?: boolean };
+interface Contract { controlType?: string; concealed?: boolean }
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, Contract>;
 const TYPED_KINDS = Object.keys(CONTRACTS).filter((kind) => typeof CONTRACTS[kind].controlType === "string");

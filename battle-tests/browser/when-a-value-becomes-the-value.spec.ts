@@ -38,7 +38,10 @@ type Api = Record<string, {
 async function openCalendar(page: import("@playwright/test").Page, id: string) {
   const openers = page.locator(`[data-form="${id}"] button`);
   for (let index = 0; index < await openers.count(); index += 1) {
-    await openers.nth(index).click({ timeout: 3000 }).catch(() => {});
+    await openers.nth(index).click({ timeout: 3000 }).catch(() => {
+        // One candidate of several, and most are not the opener. Which one was is decided by the
+        // check after this loop, so a press that does not land is a step of the sweep, not a fault.
+      });
     await page.waitForTimeout(220);
     if (await page.locator('[role="gridcell"]').count() > 6) return true;
   }
@@ -125,7 +128,10 @@ test("a timepicker changes only on confirmation, plain", async ({ page }) => {
   const open = async () => {
     const openers = page.locator('[data-form="t"] button');
     for (let index = 0; index < await openers.count(); index += 1) {
-      await openers.nth(index).click({ timeout: 3000 }).catch(() => {});
+      await openers.nth(index).click({ timeout: 3000 }).catch(() => {
+        // One candidate of several, and most are not the opener. Which one was is decided by the
+        // check after this loop, so a press that does not land is a step of the sweep, not a fault.
+      });
       await page.waitForTimeout(220);
       if (await page.locator(".mdy-timepicker-dial").count() > 0) return true;
     }

@@ -37,12 +37,12 @@ import { MDY_LAYOUT_MAX_DEPTH } from "@modyra/core";
 
 import { HOSTS } from "./bench";
 
-type Bench = {
+interface Bench {
   mountFields(id: string, fields: unknown[], options?: unknown): unknown;
   mountDocument(id: string, envelope: unknown): unknown;
   dispose?(id: string): unknown;
-};
-type Node = { kind: "section"; id: string; label: string; children: unknown[] };
+}
+interface Node { kind: "section"; id: string; label: string; children: unknown[] }
 
 const nestedTo = (depth: number, field: string): Node[] => {
   let node: Node = { kind: "section", id: `s${depth}`, label: `Livello ${depth}`, children: [field] };

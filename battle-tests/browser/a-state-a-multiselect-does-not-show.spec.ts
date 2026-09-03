@@ -30,7 +30,7 @@
  */
 
 import { expect, test } from "@playwright/test";
-import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 
 // **Every renderer, from the shared list.** This file kept a list of its own with plain and lit in
 // it, and the renderer it left out is the one that fails: Angular's value chips carry

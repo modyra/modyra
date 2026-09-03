@@ -31,9 +31,9 @@ import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, overlayOnlyParts, staticParts }
  * Claims under attack: UI-009.
  */
 
-type PartContract = { classes: string[]; attributes: Record<string, unknown>; states: string[]; role?: string };
-type StructureNode = { part: string; element: string; parent?: string; order: number; optional: boolean; repeated: boolean };
-type KindContract = { rootClasses: string[]; parts: Record<string, PartContract>; structure: { nodes: StructureNode[] } };
+interface PartContract { classes: string[]; attributes: Record<string, unknown>; states: string[]; role?: string }
+interface StructureNode { part: string; element: string; parent?: string; order: number; optional: boolean; repeated: boolean }
+interface KindContract { rootClasses: string[]; parts: Record<string, PartContract>; structure: { nodes: StructureNode[] } }
 
 const CONTRACTS = MDY_WIDGET_CONTRACTS as unknown as Record<string, KindContract>;
 

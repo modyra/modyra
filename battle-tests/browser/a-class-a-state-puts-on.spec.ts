@@ -35,9 +35,6 @@ const VALUE: Record<string, unknown> = {
   datepicker: "2026-01-02", timepicker: "10:30", colors: "#ff0000",
 };
 
-/** The classes this compares: the ones a state puts on a field's caption. */
-const OF_A_LABEL = (one: string) => one.startsWith("mdy-label--");
-
 test("a class a state puts on is the same class in every renderer", async ({ page }) => {
   test.setTimeout(900_000);
 
