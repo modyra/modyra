@@ -33,6 +33,8 @@ import {
   optionsWithUnrecognizedValues,
   type MdyMultiselectFieldController,
   type MdyPartContract,
+  focusPartOnOpen,
+  focusWhenShown,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { mdyIcon } from "../base.js";
@@ -138,6 +140,26 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       options: this.filteredOptions(handle as never),
       mode: this.mode,
     });
+  }
+
+  /**
+   * Where a person lands when the panel opens: the part the contract names for this kind.
+   *
+   * Focus stayed on the trigger here while every other panel in the library put it on the thing the
+   * panel was opened to operate — a filter box, a day, an hour, a swatch. Both are patterns a
+   * combobox may follow, and that is the problem: a person met one of them in this renderer and the
+   * other in the two beside it. ADR 0197.
+   *
+   * Through `focusWhenShown` because the panel is portalled: the frame this runs in may be the one
+   * before it is drawn, and a `focus()` there is a no-op that reports nothing.
+   */
+  protected override onOpened(): void {
+    const part = focusPartOnOpen("multiselect", { searchable: this.searchable });
+    if (part === null) return;
+    focusWhenShown(
+      () => this.querySelector<HTMLElement>(`.${this.partClass(part)}`),
+      { still: () => this._open },
+    );
   }
 
   protected override updated(changed: Map<string, unknown>): void {
@@ -355,6 +377,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     this._open = this.fieldController?.state().open ?? !this._open;
     if (this._open) {
       this.overlay.open();
+      // This override does not reach the base's lifecycle, so the hook the base calls on opening has
+      // to be called here: without it the panel opens and nothing tells the subclass, which is how
+      // focus stayed on the trigger while every other panel put it on what the person opened it for.
+      this.onOpened();
     } else {
       this.overlay.close();
     }

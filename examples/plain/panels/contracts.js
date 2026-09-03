@@ -21,7 +21,7 @@ import {
   readPartAttribute,
   readPartPresence,
 } from "@modyra/widgets/testing";
-import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, answerDoor, partIsOwed, presentationClass } from "@modyra/widgets";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, answerDoor, focusPartOnOpen, partIsOwed, presentationClass } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -83,6 +83,7 @@ export const contractsPanel = {
     "MDY_CHIP_CLASSES",
     "MDY_CLASS_DOORS",
     "answerDoor",
+    "focusPartOnOpen",
     "MDY_CHIP_DRAG_THRESHOLD",
     "MDY_COLOR_PRESETS",
     "MDY_CONTRACT_VOCABULARIES",
@@ -424,6 +425,37 @@ export const contractsPanel = {
     // doors are what a renderer asks; the rows below are what they answer, resolved here at runtime
     // rather than described. A door whose answer depends on a value says so instead of showing a
     // class it cannot know.
+    // Where a person lands when a panel opens, asked of the contract for every kind that opens one.
+    //
+    // Shown beside the doors because it is the same shape of question: a fact a renderer used to hold
+    // privately, and held differently in each — the multiselect had three answers across three
+    // adapters before this was declared. ADR 0197.
+    const landing = document.createElement("section");
+    landing.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
+    const landingHeading = document.createElement("h3");
+    landingHeading.textContent = "Dove atterra il fuoco quando un pannello si apre";
+    landing.append(landingHeading);
+    const landingList = document.createElement("dl");
+    landingList.dataset.focusOnOpen = "";
+    for (const [kind, options] of [
+      ["select", { searchable: true }],
+      ["multiselect", { searchable: true }],
+      ["multiselect", {}],
+      ["datepicker", {}],
+      ["daterange", {}],
+      ["timepicker", {}],
+      ["colors", {}],
+    ]) {
+      const term = document.createElement("dt");
+      term.textContent = options.searchable ? `${kind} (con filtro)` : kind;
+      const answer = document.createElement("dd");
+      const part = focusPartOnOpen(kind, options);
+      answer.textContent = part === null ? "nessun pannello suo" : part;
+      landingList.append(term, answer);
+    }
+    landing.append(landingList);
+    work.append(landing);
+
     const doors = document.createElement("section");
     doors.style.cssText = "margin-top:2rem;padding-top:1rem;border-top:1px solid var(--mdy-outline-variant,#ccc)";
     const doorsHeading = document.createElement("h3");

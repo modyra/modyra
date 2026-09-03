@@ -1,7 +1,7 @@
 import {
   defaultWidgetIdFactory,
   partSelector,
-  beginChipReorder, chosenKeyOrder, elementByDataKey, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  beginChipReorder, chosenKeyOrder, elementByDataKey, focusPartOnOpen, partClasses, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -585,10 +585,27 @@ export class MdyMultiselectComponent<TValue = string>
     return this.controller() as MdyOverlayOwner | undefined;
   }
 
+  /**
+   * Where a person lands when the panel opens: the part the contract names for this kind.
+   *
+   * The filter box when there is one, the first option when there is not. It used to be the filter
+   * box or nothing — so a multiselect without one opened with focus still on the trigger, while
+   * every other panel in the library put it on the thing the panel was opened to operate. ADR 0197.
+   */
   protected override onBeforeOpen(): void {
     super.onBeforeOpen();
 
-    afterNextRender(() => this.overlayInputRef()?.nativeElement.focus(), { injector: this.injector });
+    const part = focusPartOnOpen("multiselect", { searchable: this.searchable() });
+    if (part === null) return;
+    afterNextRender(
+      () => {
+        const target = part === "search"
+          ? this.overlayInputRef()?.nativeElement
+          : (this.hostRef.nativeElement.querySelector(`.${partClasses("multiselect", "option")[0]}`) as HTMLElement | null);
+        target?.focus();
+      },
+      { injector: this.injector },
+    );
   }
 
   /** The chips and the search box sit outside the wrapper, so the whole host is the boundary. */
