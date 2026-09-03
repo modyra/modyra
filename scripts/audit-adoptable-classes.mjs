@@ -31,8 +31,15 @@ const { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, MDY_FIELD_STATE
 /** Every class the doors can put on an element, expanded over the domains they declare. */
 function producibleClasses() {
   const classes = new Set();
+  /** For each producible class, one call that produces it — so a batch has the replacement, not just the target. */
+  const madeBy = new Map();
   const perimeter = [];
-  const add = (values) => { for (const c of values ?? []) classes.add(c); };
+  const add = (values, how) => {
+    for (const c of values ?? []) {
+      classes.add(c);
+      if (how && !madeBy.has(c)) madeBy.set(c, how);
+    }
+  };
   const partsOf = (kind) => Object.keys(MDY_WIDGET_CONTRACTS[kind]?.parts ?? {});
   const presentationsOf = (kind) => Object.keys(MDY_WIDGET_CONTRACTS[kind]?.presentationClasses ?? {});
 
@@ -54,7 +61,7 @@ function producibleClasses() {
     // returns `mdy-label--undefined`, a class that cannot exist, because "has-error" is already the
     // modifier. One word, two things, and it produced a phantom in the producible set on the first
     // attempt — the exact over-production this measure must not commit.
-    for (const modifier of modifiers ?? []) classes.add(`${base}--${modifier}`);
+    for (const modifier of modifiers ?? []) add([`${base}--${modifier}`], `"${base}--${modifier}" — declared by MDY_FIELD_STATE_CLASSES`);
   }
 
   for (const door of MDY_CLASS_DOORS) {
@@ -63,7 +70,7 @@ function producibleClasses() {
       continue;
     }
     if (door.resolvePath) {
-      for (const kind of MDY_WIDGET_KINDS) for (const part of partsOf(kind)) add(door.resolvePath(kind, part));
+      for (const kind of MDY_WIDGET_KINDS) for (const part of partsOf(kind)) add(door.resolvePath(kind, part), `${door.name}(<kind>, "${part}")`);
       continue;
     }
     if (door.resolveObject) {
@@ -72,7 +79,7 @@ function producibleClasses() {
         (acc, key) => acc.flatMap((record) => domains[key].map((value) => ({ ...record, [key]: value }))),
         [{}],
       );
-      for (const record of records) add(door.resolveObject(record));
+      for (const record of records) add(door.resolveObject(record), `${door.name}(${JSON.stringify(record)})`);
       continue;
     }
     if (!door.resolve) { perimeter.push(`${door.name} — a shape this reader has not been taught`); continue; }
@@ -83,14 +90,14 @@ function producibleClasses() {
     for (const kind of MDY_WIDGET_KINDS) {
       const second = declared ?? [...partsOf(kind), ...presentationsOf(kind)];
       for (const value of second) {
-        try { add(door.resolve([kind, value])); } catch { /* the door refuses what the kind does not have */ }
+        try { add(door.resolve([kind, value]), `${door.name}(<kind>, "${value}")`); } catch { /* the door refuses what the kind does not have */ }
       }
     }
   }
-  return { classes, perimeter };
+  return { classes, perimeter, madeBy };
 }
 
-const { classes: producible, perimeter } = producibleClasses();
+const { classes: producible, perimeter, madeBy } = producibleClasses();
 
 const CLASS_LITERAL = /["'`](mdy-[a-z0-9_-]+)/g;
 const ELEMENT_TAG = /["'`](mdy-[a-z]+(?:-[a-z]+)*)["'`]\s*[,)\]]/g;
@@ -134,12 +141,28 @@ for (const pkg of PACKAGES) {
   totalAdoptable += adoptable.size;
   console.log(`${pkg.padEnd(9)} ${String(adoptable.size).padStart(4)} distinct class(es) a door produces`
     + `  ·  ${String(own.size).padStart(4)} no door offers`);
-  for (const [name, where] of [...adoptable].slice(0, 8)) console.log(`    ${name.padEnd(38)} ${where}`);
+  const shown = process.argv.includes("--all") ? [...adoptable] : [...adoptable].slice(0, 8);
+  for (const [name, where] of shown) {
+    console.log(`    ${name.padEnd(34)} ${(madeBy.get(name) ?? "?").padEnd(46)} ${where}`);
+  }
   if (process.argv.includes("--own")) for (const n of [...own].slice(0, 10)) console.log(`    (no door) ${n}`);
-  if (adoptable.size > 8) console.log(`    … and ${adoptable.size - 8} more`);
+  if (adoptable.size > shown.length) console.log(`    … and ${adoptable.size - shown.length} more (--all to list them)`);
 }
 
 console.log(`\nAdoptable across the three renderers: ${totalAdoptable} distinct class name(s).`);
+// The kind is written `<kind>` on purpose, and the reason is a defect waiting to be committed.
+//
+// A part's answer is not always the same across kinds: `partClasses(kind, "label")` gives
+// `mdy-label` for sixteen kinds and **`mdy-toggle__label`** for toggle. So a batch that pasted the
+// kind this tool happened to enumerate first would write `partClasses("text", "label")` into a
+// toggle renderer and change the class it emits — a defect that reads as clean adoption in the diff,
+// because the line it replaced was correct only where the contract does not differentiate.
+//
+// The part is the transferable half; the kind belongs to the call site.
+console.log("The kind is shown as `<kind>`: it is the site's own, never the one enumerated here. A");
+console.log("part does not always answer the same across kinds — partClasses(kind, \"label\") is");
+console.log("mdy-label for sixteen and mdy-toggle__label for toggle — so pasting a kind from this");
+console.log("report would change what a renderer emits while looking like adoption.");
 console.log("This is a LOWER bound. `stateClass` is expanded only over the base-to-states pairings");
 console.log("the contract publishes, so a state modifier on any other base — a calendar cell, a");
 console.log("swatch — is counted as un-adoptable even where stateClass would produce it. Widening");
