@@ -9,7 +9,7 @@
     "const: InjectionToken<string | null>"
   ],
   "angular:MDY_FLOATING_LABELS": [
-    "const: InjectionToken<_modyra_angular.MdyFloatingLabelsDirective>"
+    "const: InjectionToken<MdyFloatingLabelsSource>"
   ],
   "angular:MDY_FLOATING_LABELS_DEFAULT": [
     "const: InjectionToken<boolean>"
@@ -505,6 +505,9 @@
     "mdyFloatingLabelsDensity: _angular_core.InputSignal<number>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyFloatingLabelsDirective, \"mdy-form[mdyFloatingLabels], form[mdyFloatingLabels]\", never, { \"mdyFloatingLabels\": { \"alias\": \"mdyFloatingLabels\"; \"required\": false; \"isSignal\": true; }; \"mdyFloatingLabelsDensity\": { \"alias\": \"mdyFloatingLabelsDensity\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFloatingLabelsDirective, never>"
+  ],
+  "angular:MdyFloatingLabelsSource": [
+    "mdyFloatingLabels: Signal<boolean>"
   ],
   "angular:MdyFormAdapter": [
     "errorsFor: Signal<ReadonlyArray<MdyFormError>>",

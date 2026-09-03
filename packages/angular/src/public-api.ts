@@ -135,7 +135,7 @@ export { MdyLoadOptionsDirective } from "./lib/core/directives/load-options.dire
 export type { MdyOptionsLoader } from "./lib/core/directives/load-options.directive";
 export { MdyOptionsOverlayControl } from "./lib/core/options-overlay-control.directive";
 export { MdyOverlayControl } from "./lib/core/overlay-control.directive";
-export { MDY_FLOATING_LABELS } from "./lib/core/tokens";
+export { MDY_FLOATING_LABELS, type MdyFloatingLabelsSource } from "./lib/core/tokens";
 export { MdyFloatingLabelsDirective } from "./lib/form/mdy-floating-labels.directive";
 
 // ─── Built-in renderer components ────────────────────────────────────────────

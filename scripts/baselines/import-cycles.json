@@ -1,5 +1,3 @@
 {
-  "cycles": {
-    "packages/angular/src/lib/core/tokens.ts -> packages/angular/src/lib/form/mdy-floating-labels.directive.ts": "type-only, and invisible until this audit learned to read an extensionless specifier and an inline import() type. The token declares its own type as the directive that provides it, so the ring costs nothing at runtime and survives compilation \u2014 which is the shape this ratchet exists to name rather than tolerate. Breaking it means either restating the directive's public shape in the token's file or moving the token into the directive's, and that choice belongs to the package's owner: recorded so the count cannot grow while it is being made."
-  }
+  "cycles": {}
 }

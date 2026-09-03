@@ -1,4 +1,4 @@
-import { InjectionToken } from "@angular/core";
+import { InjectionToken, type Signal } from "@angular/core";
 import type { MdyDeclarativeRegistry } from "./declarative-form-adapter";
 import { MdyFormAdapter, MdyOptionsControl } from "./types";
 
@@ -27,11 +27,29 @@ export const MDY_OPTIONS_CONTROL = new InjectionToken<MdyOptionsControl<unknown>
 );
 
 /**
+ * What a provider of {@link MDY_FLOATING_LABELS} answers.
+ *
+ * The contract rather than the class that satisfies it. A token typed as its own provider makes the
+ * two files name each other — the token needs the directive's type, the directive needs the token to
+ * provide itself — and a type-only ring compiles, ships, and objects to nothing until somebody tries
+ * to move one of the two. Named here, the direction is the one it should be: the directive derives
+ * from what the token promises, and an injector reads only what is promised.
+ */
+export interface MdyFloatingLabelsSource {
+  /**
+   * Whether descendants float their labels.
+   *
+   * The only thing anything asks this token, and so the whole of what it promises. Density is the
+   * provider's own business: it is applied to the host element as a custom property and inherits
+   * from there, so nothing injects it and nothing needs it declared.
+   */
+  readonly mdyFloatingLabels: Signal<boolean>;
+}
+
+/**
  * Provided by MdyFloatingLabelsDirective to enable floating labels globally on a form.
  */
-export const MDY_FLOATING_LABELS = new InjectionToken<
-  import("../form/mdy-floating-labels.directive").MdyFloatingLabelsDirective
->("MDY_FLOATING_LABELS");
+export const MDY_FLOATING_LABELS = new InjectionToken<MdyFloatingLabelsSource>("MDY_FLOATING_LABELS");
 
 /**
  * Global default for whether floating labels are enabled.

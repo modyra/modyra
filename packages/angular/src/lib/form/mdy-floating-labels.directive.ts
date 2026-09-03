@@ -1,5 +1,10 @@
 import { Directive, effect, ElementRef, forwardRef, inject, input } from "@angular/core";
-import { MDY_FLOATING_LABELS, MDY_FLOATING_LABELS_DEFAULT, MDY_FLOATING_LABELS_DENSITY_DEFAULT } from "../core/tokens";
+import {
+  MDY_FLOATING_LABELS,
+  MDY_FLOATING_LABELS_DEFAULT,
+  MDY_FLOATING_LABELS_DENSITY_DEFAULT,
+  type MdyFloatingLabelsSource,
+} from "../core/tokens";
 
 /**
  * Opt-in directive to enable Material-style floating labels for all descendant
@@ -22,7 +27,7 @@ import { MDY_FLOATING_LABELS, MDY_FLOATING_LABELS_DEFAULT, MDY_FLOATING_LABELS_D
     },
   ],
 })
-export class MdyFloatingLabelsDirective {
+export class MdyFloatingLabelsDirective implements MdyFloatingLabelsSource {
   /** Enables or disables floating labels for descendants. Defaults to the value of `MDY_FLOATING_LABELS_DEFAULT`. */
   readonly mdyFloatingLabels = input<boolean>(inject(MDY_FLOATING_LABELS_DEFAULT));
 
