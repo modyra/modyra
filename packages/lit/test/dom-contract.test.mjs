@@ -60,7 +60,7 @@ function partsOf(root, kind) {
     case "segmented":
       return kind === "segmented"
         ? { ...shell, group: q(".mdy-segmented"), option: q(".mdy-segmented__button"), optionCheck: q(".mdy-segmented__check"), optionText: q(".mdy-segmented__text") }
-        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
+        : { ...shell, group: q(".mdy-radio-group"), option: q(".mdy-radio-item"), optionControl: q(".mdy-radio-input"), optionCheck: q(".mdy-radio-circle"), optionLabel: q(".mdy-radio-label") };
     // The overlay kinds. Without these they fell through to the text-field default, so the trigger,
     // the toggle and the search button — the parts the contract names as openers — were left to be
     // resolved by class alone, and a fixture cannot assert what it never named.

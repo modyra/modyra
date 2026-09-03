@@ -177,6 +177,7 @@
         "group",
         "option",
         "optionControl",
+        "optionCheck",
         "optionLabel",
         "supportingText",
         "errors",

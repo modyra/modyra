@@ -1536,11 +1536,24 @@
         },
         "optionControl": {
           "order": 5,
-          "element": "presentation",
+          "element": "radio",
           "parent": "option",
           "optional": false,
           "presentWhen": null,
           "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-radio-input"
+          ],
+          "states": []
+        },
+        "optionCheck": {
+          "order": 6,
+          "element": "presentation",
+          "parent": "option",
+          "optional": false,
+          "presentWhen": null,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-radio-circle"
@@ -1548,7 +1561,7 @@
           "states": []
         },
         "optionLabel": {
-          "order": 6,
+          "order": 7,
           "element": "text",
           "parent": "option",
           "optional": false,
@@ -1561,7 +1574,7 @@
           "states": []
         },
         "supportingText": {
-          "order": 7,
+          "order": 8,
           "element": "text",
           "parent": "root",
           "optional": true,
@@ -1574,7 +1587,7 @@
           "states": []
         },
         "errors": {
-          "order": 8,
+          "order": 9,
           "element": "status",
           "parent": "root",
           "optional": true,
@@ -1587,7 +1600,7 @@
           "states": []
         },
         "errorItem": {
-          "order": 9,
+          "order": 10,
           "element": "status",
           "parent": "errors",
           "optional": true,

@@ -45,6 +45,7 @@ import { MdySelectOption } from "../../core/types";
         <label class="{{ cls.option }}" [class.mdy-radio-item--disabled]="isDisabled()">
           <input
             type="radio"
+            [class]="cls.optionControl"
             [name]="groupName()"
             [value]="opt.value"
             [checked]="value() === opt.value"
@@ -52,7 +53,7 @@ import { MdySelectOption } from "../../core/types";
             (change)="onSelectionChange(opt.value)"
             (blur)="onBlur()"
           />
-          <span class="{{ cls.optionControl }}"></span>
+          <span class="{{ cls.optionCheck }}"></span>
           <span class="{{ cls.optionLabel }}">{{ opt.label }}</span>
         </label>
       }
@@ -131,6 +132,7 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
     group: this.widgetContract.parts.group.classes.join(" "),
     option: this.widgetContract.parts.option.classes.join(" "),
     optionControl: this.widgetContract.parts.optionControl.classes.join(" "),
+    optionCheck: this.widgetContract.parts.optionCheck.classes.join(" "),
     optionLabel: this.widgetContract.parts.optionLabel.classes.join(" "),
     supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
   } as const;

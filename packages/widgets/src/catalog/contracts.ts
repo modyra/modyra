@@ -67,15 +67,22 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       roles: { control: "switch" } ,
       required: ["thumb"],
       controlType: "checkbox" }),
-  radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
-    { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
+  radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionCheck", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
+    { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-input"], optionCheck: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
+      // `optionControl` is the radio, and `optionCheck` is the circle drawn to stand for it — the
+      // same split `segmented` already declares, and the same words: naming both is what lets the
+      // rule bite, because a container alone can be anything.
+      //
+      // They were one name until now, and it named the circle: the element a person actually
+      // operates, and the one the submission table calls this kind's submitted control, was covered
+      // by no part at all. A theme keeps the class it paints; what moved is which part carries it.
       // A native chooser renders each choice as a <label> around its own <input type=radio>. That
       // is the accessible pattern and what every adapter emits; the ARIA `option` role belongs to a
       // listbox, which this is not.
-      elements: { option: "label" },
+      elements: { option: "label", optionControl: "radio" },
       roles: { group: "radiogroup" } ,
       states: { group: ["horizontal"], option: ["disabled"] } ,
-      required: ["option", "optionControl", "optionLabel"] }),
+      required: ["option", "optionControl", "optionCheck", "optionLabel"] }),
   segmented: define("segmented", ["mdy-renderer", "mdy-renderer--segmented"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionCheck", "optionText", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-segmented"], option: ["mdy-segmented__button"], optionControl: ["mdy-segmented__control"], optionCheck: ["mdy-segmented__check"], optionText: ["mdy-segmented__text"] },
       // The same anatomy as `radio`, because it is the same control: a choice in a radiogroup. What

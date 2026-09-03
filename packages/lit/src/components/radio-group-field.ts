@@ -81,6 +81,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
             >
               <input
                 type="radio"
+                class="${this.partClass("optionControl")}"
                 .value=${String(key)}
                 .checked=${this.isChosen(handle.value(), option.value)}
                 ?disabled=${handle.disabled() || option.disabled === true}
@@ -98,7 +99,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
                     ? this.fieldController.dispatch({ type: "blur" })
                     : handle.markAsTouched()}
               />
-              <span class="${this.partClass("optionControl")}"></span>
+              <span class="${this.partClass("optionCheck")}"></span>
               <span class="${this.partClass("optionLabel")}">${option.label}</span>
             </label>`;
           },

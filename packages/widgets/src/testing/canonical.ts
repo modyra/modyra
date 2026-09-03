@@ -506,7 +506,9 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       focusOwner: null,
     }),
     radio: Object.freeze({
-      parts: Object.freeze(["root", "label", "group", "option", "optionControl", "optionLabel"]),
+      // `optionControl` is the radio itself and `optionCheck` the circle drawn for it: the same two
+      // the segmented control names, because it is the same choice in the same radiogroup.
+      parts: Object.freeze(["root", "label", "group", "option", "optionControl", "optionCheck", "optionLabel"]),
       optional: Object.freeze(["supportingText", "requiredMarker", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "group", attribute: "aria-labelledby", to: "label" },
