@@ -68,8 +68,13 @@ for (const root of RENDERERS) walk(resolve(ROOT, root));
 
 // A file draws a confirmation for a live kind when it names both. Crude on purpose: the aim is to
 // notice, and a renderer that legitimately draws one for the timepicker names the timepicker.
+let excused = 0;
 for (const file of files) {
-  const source = readFileSync(file, "utf8");
+  // Comments removed first: every question below is "does this file name this", and a class or a
+  // kind written in a doc block answers yes for code that draws nothing.
+  const source = readFileSync(file, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
   const drawn = [...confirmationClasses].filter((cls) => source.includes(cls));
   if (drawn.length === 0) continue;
   // The kind has to be *named* — quoted, or reached through the catalogue — not merely appear
@@ -81,7 +86,11 @@ for (const file of files) {
   const confirms = MDY_WIDGET_KINDS.some(
     (kind) => MDY_VALUE_CONTRACTS[kind]?.commit === "confirm" && namesKind(kind),
   );
-  if (confirms) continue;
+  // The escape hatch, and it is counted rather than silent. A file that names a confirming kind is
+  // excused whole — which is right for a per-kind renderer and wrong for a shared one, where the
+  // timepicker's presence would excuse a confirmation drawn for a live kind in the same file. A
+  // number here is what tells a reader how much of the tree this check stopped looking at.
+  if (confirms) { excused += 1; continue; }
   const live = liveKinds.filter(namesKind);
   if (live.length === 0) continue;
   failures.push(
@@ -90,6 +99,10 @@ for (const file of files) {
 }
 
 console.log(`Kinds committing live: ${liveKinds.length} · confirmation classes: ${confirmationClasses.size}`);
+console.log(`Read from renderer source with its comments removed: ${files.length} file(s) — which names`
+  + " a file contains, never what it paints. " + `${excused} file(s) name a kind that legitimately`
+  + " confirms and were excused whole, so a confirmation drawn for a live kind in one of those is not"
+  + " asked about.");
 if (failures.length > 0) {
   console.error("\nA LIVE KIND OFFERS A CONFIRMATION");
   for (const failure of failures) console.error(`- ${failure}`);
