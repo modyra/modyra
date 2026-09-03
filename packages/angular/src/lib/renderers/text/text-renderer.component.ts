@@ -28,6 +28,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
   template: `
     <mdy-control-label
       [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

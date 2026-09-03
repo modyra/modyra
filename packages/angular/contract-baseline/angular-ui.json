@@ -181,6 +181,7 @@
     "mdy-label",
     "mdy-label--filled",
     "mdy-label--has-error",
+    "mdy-label--unwritten",
     "mdy-label__required",
     "mdy-label__required--filled",
     "mdy-month-picker",
@@ -431,6 +432,7 @@
         "mdy-label",
         "mdy-label--filled",
         "mdy-label--has-error",
+        "mdy-label--unwritten",
         "mdy-label__required",
         "mdy-label__required--filled"
       ],

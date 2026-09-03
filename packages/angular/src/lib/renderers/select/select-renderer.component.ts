@@ -58,6 +58,7 @@ import { MdyDropdownBase } from "../dropdown-base";
   template: `
     <mdy-control-label
       [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
       [forId]="searchable() || optionTpl() ? triggerId() : fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

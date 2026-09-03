@@ -287,10 +287,13 @@
     "label: _angular_core.InputSignal<string>",
     "labelId: _angular_core.InputSignal<string>",
     "protected renderedId: _angular_core.Signal<string | null>",
+    "protected shown: _angular_core.Signal<boolean>",
+    "protected shownText: _angular_core.Signal<string>",
     "required: _angular_core.InputSignal<boolean>",
     "showInlineError: _angular_core.InputSignal<boolean>",
     "widgetId: _angular_core.InputSignal<string>",
-    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyControlLabelComponent, \"mdy-control-label\", never, { \"label\": { \"alias\": \"label\"; \"required\": false; \"isSignal\": true; }; \"hasError\": { \"alias\": \"hasError\"; \"required\": false; \"isSignal\": true; }; \"forId\": { \"alias\": \"forId\"; \"required\": false; \"isSignal\": true; }; \"labelId\": { \"alias\": \"labelId\"; \"required\": false; \"isSignal\": true; }; \"widgetId\": { \"alias\": \"widgetId\"; \"required\": false; \"isSignal\": true; }; \"showInlineError\": { \"alias\": \"showInlineError\"; \"required\": false; \"isSignal\": true; }; \"errorText\": { \"alias\": \"errorText\"; \"required\": false; \"isSignal\": true; }; \"required\": { \"alias\": \"required\"; \"required\": false; \"isSignal\": true; }; \"filled\": { \"alias\": \"filled\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
+    "words: _angular_core.InputSignal<string>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyControlLabelComponent, \"mdy-control-label\", never, { \"label\": { \"alias\": \"label\"; \"required\": false; \"isSignal\": true; }; \"words\": { \"alias\": \"words\"; \"required\": false; \"isSignal\": true; }; \"hasError\": { \"alias\": \"hasError\"; \"required\": false; \"isSignal\": true; }; \"forId\": { \"alias\": \"forId\"; \"required\": false; \"isSignal\": true; }; \"labelId\": { \"alias\": \"labelId\"; \"required\": false; \"isSignal\": true; }; \"widgetId\": { \"alias\": \"widgetId\"; \"required\": false; \"isSignal\": true; }; \"showInlineError\": { \"alias\": \"showInlineError\"; \"required\": false; \"isSignal\": true; }; \"errorText\": { \"alias\": \"errorText\"; \"required\": false; \"isSignal\": true; }; \"required\": { \"alias\": \"required\"; \"required\": false; \"isSignal\": true; }; \"filled\": { \"alias\": \"filled\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyControlLabelComponent, never>"
   ],
   "angular:MdyControlRendererConfig": [

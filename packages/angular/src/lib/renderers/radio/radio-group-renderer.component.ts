@@ -23,6 +23,7 @@ import { MdySelectOption } from "../../core/types";
          gets a real id and no [for] (there is no single input to point to, B33). -->
     <mdy-control-label
       [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
       [labelId]="labelId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

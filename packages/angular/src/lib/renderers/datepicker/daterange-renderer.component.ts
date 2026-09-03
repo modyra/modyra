@@ -66,6 +66,7 @@ import { inputText, isoDateText } from "../renderer-projection";
     @if (label()) {
       <mdy-control-label
         [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
         [forId]="startId()"
         [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"

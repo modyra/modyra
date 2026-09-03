@@ -24,19 +24,20 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: "display: contents" },
   template: `
-    @if (label()) {
+    @if (shown()) {
       <label
         [for]="forId()"
         [attr.id]="renderedId()"
         class="mdy-label"
         [class.mdy-label--filled]="filled()"
         [class.mdy-label--has-error]="hasError() || showInlineError()"
+        [class.mdy-label--unwritten]="!label()"
       ><!--
         The text and the marker sit against each other on purpose. A newline between them is a text
         node, and a text node is part of the computed accessible name: the control ends up called
         "First Name " while the user reads "First Name", and anything matching on the name exactly —
         a test, an assistive tool's find-by-name — misses it.
-      -->{{ label() }}@if (required()) {
+      -->{{ shownText() }}@if (required()) {
           <span
             class="mdy-label__required"
             [class.mdy-label__required--filled]="filled()"
@@ -52,8 +53,25 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
   `,
 })
 export class MdyControlLabelComponent {
-  /** The label text. If empty, renders nothing. */
+  /** The caption a document wrote. Empty where none was written. */
   readonly label = input<string>("");
+
+  /**
+   * The name the field resolves to when no caption was written.
+   *
+   * Everything inside a field is named by pointing at this element — a panel's `aria-labelledby`
+   * resolves here — and a reference that lands on nothing announces the role and nothing else. So the
+   * element exists whenever the field has words at all, carrying whatever the resolver chose, and
+   * where those words are the field's own key rather than a person's it is taken out of sight by
+   * `mdy-label--unwritten`. A name is owed to a screen reader; a heading is not.
+   */
+  readonly words = input<string>("");
+
+  /** Whether there is anything to draw: a caption, or a name the field could resolve. */
+  protected readonly shown = computed(() => (this.label() || this.words()).trim().length > 0);
+
+  /** What the caption says: the document's words where it wrote them, the resolver's otherwise. */
+  protected readonly shownText = computed(() => this.label() || this.words());
 
   /**
    * Whether the field this label belongs to is failing.

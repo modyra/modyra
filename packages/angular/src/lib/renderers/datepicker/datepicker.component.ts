@@ -57,6 +57,7 @@ import { MdyCalendarComponent } from "./calendar.component";
   template: `
     <mdy-control-label
       [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

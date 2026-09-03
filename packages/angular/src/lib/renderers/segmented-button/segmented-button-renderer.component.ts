@@ -31,6 +31,7 @@ import { MdySelectOption } from "../../core/types";
          and not what it is asking. Group labelled via aria-labelledby: the label gets a real id (B33). -->
     <mdy-control-label
       [label]="label()"
+      [words]="controlAriaLabel() ?? \'\'"
       [labelId]="labelId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
