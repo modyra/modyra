@@ -19,6 +19,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
+import { sameIgnoringOrder, sortLiteralUnions } from "./lib/emitted-text.mjs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -88,42 +89,13 @@ function files(dir) {
   return found.sort();
 }
 
-/**
- * Sorts the members of every run of string literals joined by `|`, so that two spellings of the same
- * union compare equal. Nothing else about the text is touched: a difference that survives this is a
- * difference in what the file says.
- */
-function normalizeUnions(text) {
-  return text.replace(/"[^"\n]*"(?:\s*\|\s*"[^"\n]*")+/g, (union) => {
-    const members = union.split("|").map((member) => member.trim());
-    return members.sort().join(" | ");
-  });
-}
-
 const ORDERING = "union member ordering";
 const MEMBERS = "member ordering";
 
-/**
- * The members of a declaration, in one order.
- *
- * The two compilers emit an object type's members in the order each happened to infer them, so Vue's
- * `defineComponent` came out `{ kind: "toggle" | "checkbox"; label: string }` from one and
- * `{ label: string; kind: "checkbox" | "toggle" }` from the other — the same type, twice, differing
- * in two ways at once. Neither order is meaning: a property list and a union are both unordered, and
- * a consumer cannot write code that sees the difference.
- *
- * Compared as a multiset of lines, so a file whose lines were rearranged reads as unchanged while a
- * file that gained, lost or altered a line does not. That is the whole tolerance: it cannot absorb a
- * changed declaration, because a changed declaration changes a line.
- */
-function sortedLines(text) {
-  return normalizeUnions(text).split("\n").map((line) => line.trim()).filter(Boolean).sort().join("\n");
-}
-
 function compare(left, right, name) {
   if (left === right) return null;
-  if (normalizeUnions(left) === normalizeUnions(right)) return { file: name, kind: ORDERING };
-  if (sortedLines(left) === sortedLines(right)) return { file: name, kind: MEMBERS };
+  if (sortLiteralUnions(left) === sortLiteralUnions(right)) return { file: name, kind: ORDERING };
+  if (sameIgnoringOrder(left, right)) return { file: name, kind: MEMBERS };
 
   const a = left.split("\n");
   const b = right.split("\n");

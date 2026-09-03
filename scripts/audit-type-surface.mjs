@@ -26,6 +26,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "
 import { join, resolve, relative } from "node:path";
 import ts from "typescript";
 
+import { sortLiteralUnions } from "./lib/emitted-text.mjs";
 import { publishedPackageDirs } from "./lib/published-packages.mjs";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
@@ -410,27 +411,9 @@ function membersOf(node) {
  * object types, or an alias of another type entirely — records `["(opaque)"]`: enough for the alias
  * being withdrawn to fail, and no claim about what is inside it.
  */
-/**
- * A union of string literals, written in one order.
- *
- * TypeScript prints a union in the order it interned its members, which is the order the program
- * happened to meet them — so the same declaration comes out
- * `<"label" | "control" | … | "root">` from one build and `<"errors" | "root" | "label" | …>` from
- * the next, with nothing about the type changed. Recorded raw, that reads as the member retyped:
- * one entry removed and another added, which this classifies **major**. A release gate that calls a
- * rebuild a breaking change is worse than one that says nothing.
- *
- * Only runs of quoted literals are touched, and the order of a union carries no meaning, so sorting
- * one cannot lose a difference: a member added, removed or respelled still changes the text.
- */
-function canonicaliseLiteralUnions(text) {
-  return text.replace(/(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')(?:\s*\|\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'))+/g,
-    (run) => run.split("|").map((one) => one.trim()).sort().join(" | "));
-}
-
 /** One line, single spaces: a declaration reflowed by a printer is not a changed declaration. */
 function normaliseSpacing(text) {
-  return canonicaliseLiteralUnions(text.replace(/\s+/g, " ").trim());
+  return sortLiteralUnions(text.replace(/\s+/g, " ").trim());
 }
 
 function unionMembersOf(type, sourceFile) {
@@ -597,7 +580,7 @@ function parseMembers(entries) {
     // equal to one recorded after. Regenerating instead would spend a `major` verdict on the day the
     // tool changed, and every snapshot older than that day would keep the false difference.
     parsed.set(optional ? head.slice(0, -1) : head,
-      { optional, type: canonicaliseLiteralUnions(entry.slice(split + 2)) });
+      { optional, type: sortLiteralUnions(entry.slice(split + 2)) });
   }
   return parsed;
 }
