@@ -24,17 +24,26 @@ import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 /**
- * The kinds whose popup Tab moves *inside* rather than out of.
+ * The kinds whose popup Tab moves *inside* rather than out of — read from the binding that says so.
  *
- * Derived from the anatomy rather than named: **a kind that declares an actions bar has a confirm
- * button inside its overlay**, and a confirm button Tab cannot reach is a widget with no keyboard
- * commit path. ADR 0122 withdrew `Tab@open:cancel` for exactly those and left it for the rest.
+ * This was derived from the anatomy: a kind declaring an `actions` bar has a confirm button in its
+ * overlay, and a confirm button Tab cannot reach is a widget with no keyboard commit path. That was
+ * a **proxy**, and it agreed with the contract for one kind by coincidence. When `colors` joined
+ * this family — an operable part, not a choice, inside the popup and *not repeated* — the anatomy
+ * did not move and the declaration did:
  *
- * Deriving it is what keeps this spec honest when a second kind grows an action bar: it moves to the
- * other assertion by itself instead of quietly failing the first.
+ *     timepicker   Tab@open intent=move    parts.actions=true    the proxy agreed
+ *     colors       Tab@open intent=move    parts.actions=false   the proxy did not
+ *
+ * So the claim now reads the declaration it is about. The four kinds that close are still protected;
+ * the two that keep Tab are asserted to keep it. A kind that changes family in the contract moves
+ * between the two assertions on its own, and this spec becomes the proof of the family rather than
+ * the obstacle to it.
  */
 const KEEPS_TAB = (kind: string): boolean =>
-  (MDY_WIDGET_CONTRACTS as Record<string, { parts: Record<string, unknown> }>)[kind]?.parts?.actions !== undefined;
+  (MDY_WIDGET_KEYBOARD[kind] ?? []).some(
+    (binding) => binding.key === "Tab" && binding.when === "open" && binding.intent === "move",
+  );
 
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
