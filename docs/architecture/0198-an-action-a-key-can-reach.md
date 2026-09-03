@@ -1,6 +1,6 @@
 # ADR 0198: An action in a panel is one a key can reach
 
-Status: Accepted
+Status: Accepted — amended 2026-09-03, see Consequences
 
 ## Context
 
@@ -52,10 +52,16 @@ is still the way out.
 - Enumerated over all seventeen kinds, the widened predicate moves **exactly one**: colours. The rule
   is unchanged for everything else, and a kind that grows a control in its panel inherits the ring
   without anyone remembering to grant it.
-- The multiselect's `optionStep` is the second shape and is **found, decided and scheduled**: it is
-  one action per row, so it does not change family — it gains a key declared `when: "open"` instead,
-  and `Tab` goes on closing that panel. Until that lands, that stepper is still pointer-only, which is
-  recorded here rather than left to be rediscovered.
+- The multiselect's `optionStep` is the second shape: one action per row, so it does not change
+  family — it gains a key declared `when: "open"` instead, and `Tab` goes on closing that panel.
+- **Amendment, 2026-09-03: that key is `ArrowRight` and `ArrowLeft`, and the choice was measured.**
+  What this kind already declares while its panel is open: `Escape`, `Tab`, `Enter`, `Space` on an
+  option, `ArrowUp`/`ArrowDown`/`Home`/`End` for moving, and any printable character for type-ahead.
+  The vertical axis walks the list, so the horizontal one is free for the control on the row the walk
+  is standing on. `+` and `−` were the alternative and are not available: they are printable, and the
+  type-ahead binding would take them before this one was asked. The declaration lands first and the
+  renderers follow it — until they do, the stepper is still pointer-only, which is recorded here
+  rather than left to be rediscovered.
 - A spec that asserted "Tab closes what it tabs out of" for every kind failed three renderers for a
   correct change. It was deriving already — from anatomy (`parts.actions`) rather than from the
   declaration — and agreed with the contract for one kind by coincidence. It now reads the binding it

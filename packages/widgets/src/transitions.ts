@@ -456,6 +456,25 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     bindings.push({ key: "ArrowUp", when: "closed", intent: "step", on: "chip" });
     bindings.push({ key: "ArrowDown", when: "closed", intent: "step", on: "chip" });
     // and `Delete` is what the platform's own lists answer to.
+    // The same quantity, on the option in the open list, which had no key at all.
+    //
+    // `optionStep` is drawn inside each option while the panel is open and is a `tabindex="-1"`
+    // pointer affordance like the chip's — so it was operable with a pointer and with nothing else,
+    // for the same reason and in the same words as the chip's was before these two keys existed.
+    //
+    // A key rather than a tab stop, because this is one action **per row**: a stop that named the row
+    // would be one stop per row and Tab would become a scroll. That is the criterion ADR 0198 draws,
+    // and it is why this kind stays in the family whose Tab dismisses rather than joining the one
+    // that keeps it.
+    //
+    // Left and right, measured against what this kind already declares while open — `Escape`, `Tab`,
+    // `Enter`, `Space` on an option, `ArrowUp`/`ArrowDown`/`Home`/`End` for moving, and any printable
+    // character for type-ahead. The vertical axis walks the list, so the horizontal one is free for
+    // the control on the row the walk is standing on. `+` and `−` were the alternative and are not
+    // available: they are printable, and the type-ahead binding above would eat them before this one
+    // was asked.
+    bindings.push({ key: "ArrowRight", when: "open", intent: "step", on: "option", by: 1 });
+    bindings.push({ key: "ArrowLeft", when: "open", intent: "step", on: "option", by: -1 });
     bindings.push({ key: "Backspace", when: "closed", intent: "remove", on: "chip" });
     bindings.push({ key: "Delete", when: "closed", intent: "remove", on: "chip" });
     // The way back, from the keyboard, using the gesture every application on the platform already
