@@ -16,6 +16,7 @@ installDomGlobals();
 const { createApp, h } = await import("vue");
 const { MdyTextField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
+const { MDY_CANONICAL_EMPTY } = await import("@modyra/widgets/testing");
 
 export const name = "@modyra/vue";
 
@@ -26,7 +27,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea"];
+export const kinds = ["text", "email", "password", "textarea", "number"];
 
 /**
  * Mounting one widget, ready for the kit to inspect.
@@ -41,7 +42,9 @@ export const mount = async (kind) => {
   }
   const host = document.createElement("div");
   document.body.append(host);
-  const form = createVueForm({ value: field("") });
+  // The empty the kind declares, so the form starts where the contract says it starts rather than at
+  // a string this file chose.
+  const form = createVueForm({ value: field(MDY_CANONICAL_EMPTY[kind]) });
   const app = createApp({
     render: () => h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind }),
   });
@@ -66,6 +69,9 @@ export const mount = async (kind) => {
     settle: async () => { await new Promise((resolve) => setTimeout(resolve, 0)); },
     dispose: () => { app.unmount(); host.remove(); },
     control: () => host.querySelector("input, textarea"),
-    value: () => host.querySelector("input, textarea")?.value ?? "",
+    // The field's value, not the control's text. What a kind holds when it holds nothing is the
+    // kind's own answer — a number field is empty at `null` and a text field at `""` — and reading
+    // the DOM string reports `""` for both, which is right for one of them by accident.
+    value: () => form.f.value.value(),
   };
 };

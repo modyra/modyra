@@ -13,8 +13,10 @@
  * would render a field the themes cannot arrange.
  *
  * **One component for several kinds, because the catalogue says they are one shape.** `text`,
- * `email`, `password` and `textarea` declare the same parts in the same places; what separates them
- * is a native type and, for one of them, a tag. Both are declared — `controlType` and the control
+ * `email`, `password`, `textarea` and `number` declare the same *required* parts in the same places;
+ * what separates them is a native type and, for one of them, a tag. The number field also declares
+ * two stepper buttons, and they are optional: the platform draws its own, so a renderer that omits
+ * them leaves the kind with the keyboard and the native affordance rather than with nothing. Both are declared — `controlType` and the control
  * part's element — so this reads them instead of branching on the kind. A component that branched
  * would be deciding again what the catalogue decided, and would need editing the day a fifth kind
  * joins the shape rather than simply accepting it.
@@ -44,7 +46,7 @@ export const MdyTextField = defineComponent({
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
     /** Which of the kinds that share this anatomy is being drawn. */
-    kind: { type: String as PropType<"text" | "email" | "password" | "textarea">, default: "text" },
+    kind: { type: String as PropType<"text" | "email" | "password" | "textarea" | "number">, default: "text" },
   },
   setup(props) {
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
