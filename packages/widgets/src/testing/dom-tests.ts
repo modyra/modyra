@@ -227,6 +227,14 @@ export function partsSharingClassesWith(kind: MdyWidgetKind, part: string): read
 }
 
 /** An `input[type=button]` is a button; a bare `input` is a control. Tags alone cannot say so. */
+/**
+ * The tags that make an element operable, for the rule that `presentation` may not cover one.
+ *
+ * Deliberately the native ones only. A `<div role="button">` is operable too, but it carries a role
+ * the checks above already judge; this rule exists for the case where nothing is claimed at all.
+ */
+const OPERABLE_TAGS: ReadonlySet<string> = new Set(["input", "button", "select", "textarea"]);
+
 function satisfiesSemanticElement(element: Element, semantic: string, declaredRole?: string): boolean {
   const allowed = MDY_SEMANTIC_ELEMENTS[semantic];
   if (!allowed) return true;
@@ -604,6 +612,33 @@ export function inspectWidgetDom(
           part: node.part,
           message: `${node.part} must be a ${expectedElement}, got <${element.tagName.toLowerCase()}>` +
             `${element.getAttribute("role") ? ` role="${element.getAttribute("role")}"` : ""}`,
+        });
+      }
+      // A part that renders an operable control is never declared `presentation`.
+      //
+      // `presentation` admits every element by construction — that is what it is for, and why the
+      // arrows, ticks and dial hands wear it. But on a part that turns out to be an input or a
+      // button it is not a loose claim, it is the absence of one: nothing can contradict it, so no
+      // check here can fail, and a reader of the declaration is told a control is decoration. The
+      // kind named `radio` declared its own radio that way while its sibling declared the real
+      // element, and every gate stayed green because there was nothing to disagree with.
+      //
+      // Keyed on what was rendered rather than on the part's name, because the whole point is that
+      // the declaration says nothing: the page is the only witness left.
+      // Except where a variant declares it. A varianted part states its element per configuration and
+      // the shared line is what the configurations agree on, which for a part that genuinely differs
+      // is nothing — `presentation` there is the contract saying "the variant decides", not saying
+      // nothing at all. The multiselect's option is a button in one mode and a container in the
+      // other, and reading only the shared line called that a missing declaration.
+      const someVariantDeclares = Object.values(definition.variants ?? {})
+        .some((each) => (each as { elements?: Record<string, string> }).elements?.[node.part] !== undefined);
+      if (expectedElement === "presentation" && !someVariantDeclares
+        && OPERABLE_TAGS.has(element.tagName.toLowerCase())) {
+        issues.push({
+          code: "PART_ELEMENT",
+          part: node.part,
+          message: `${node.part} renders <${element.tagName.toLowerCase()}> and is declared "presentation", `
+            + "which admits every element — so this part's element is not declared at all",
         });
       }
       const own = new Set(classesOf(element));
