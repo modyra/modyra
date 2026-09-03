@@ -45,7 +45,6 @@
         --mdy-error: var(--mdy-sys-color-error);
         --mdy-on-error: var(--mdy-sys-color-on-error);
         --mdy-error-container: var(--mdy-sys-color-error-container);
-        --mdy-on-error-container: var(--mdy-sys-color-on-error-container);
         --mdy-surface: var(--mdy-sys-color-surface);
         --mdy-on-surface: var(--mdy-sys-color-on-surface);
         --mdy-on-surface-variant: var(--mdy-sys-color-on-surface-variant);
@@ -69,10 +68,6 @@
         --mdy-corner-full: var(--mdy-sys-shape-corner-full);
 
         /* ── State Layer Opacity ────────────────────────────────────────────────── */
-        --mdy-state-hover-opacity: var(--mdy-sys-state-hover-opacity);
-        --mdy-state-focus-opacity: var(--mdy-sys-state-focus-opacity);
-        --mdy-state-disabled-content-opacity: var(--mdy-sys-state-disabled-content-opacity);
-        --mdy-state-disabled-container-opacity: var(--mdy-sys-state-disabled-container-opacity);
 
         /* ── Stacking scale ─────────────────────────────────────────────────────────
          * One documented ladder for everything that paints out of flow. The rungs matter more
@@ -303,7 +298,6 @@
         --mdy-color-dropdown-shadow: var(--mdy-comp-color-picker-dropdown-shadow);
 
         /* ── Spin Button ────────────────────────────────────────────────────────── */
-        --mdy-spin-btn-size: var(--mdy-affordance-target-stacked);
         --mdy-spin-btn-border-radius: var(--mdy-corner-full);
         --mdy-spin-btn-hover-bg: color-mix(in srgb, var(--mdy-primary), transparent 92%);
 
@@ -338,8 +332,6 @@
         --mdy-datepicker-popup-padding: var(--mdy-comp-date-picker-popup-padding);
         --mdy-datepicker-popup-shadow: var(--mdy-comp-date-picker-popup-shadow);
         --mdy-datepicker-popup-bg: var(--mdy-comp-date-picker-popup-bg);
-        --mdy-datepicker-modal-bg: var(--mdy-comp-date-picker-modal-container-color);
-        --mdy-datepicker-modal-radius: var(--mdy-comp-date-picker-modal-container-shape);
         --mdy-datepicker-hover-bg: var(--mdy-comp-date-picker-cell-hover-bg);
         --mdy-datepicker-disabled-opacity: var(--mdy-comp-date-picker-cell-disabled-opacity);
         --mdy-datepicker-today-color: var(--mdy-sys-color-primary);
@@ -4599,7 +4591,6 @@
         --mdy-floating-input-height: var(--mdy-fl-input-height);
 
         --mdy-fl-active-y: calc(0.5rem + (var(--mdy-fl-density-val) * 0.0625rem));
-        --mdy-fl-label-active-top: var(--mdy-fl-active-y);
         --mdy-fl-active-scale: 0.75;
 
         /* At rest the label is centred on the control's text: half the leftover height once the

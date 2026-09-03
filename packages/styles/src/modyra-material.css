@@ -96,7 +96,6 @@
         --mdy-md-chroma-secondary: 0.04;
         --mdy-md-chroma-tertiary: 0.06;
         --mdy-md-chroma-neutral: 0.01;
-        --mdy-md-chroma-neutral-variant: 0.02;
         --mdy-md-hue-shift-tertiary: 60;
 
         /* Accent roles, light scheme. `on-primary` is tone 100 because `primary` is tone 40 — the
@@ -169,7 +168,6 @@
         --mdy-primary-container: var(--mdy-surface-container-highest);
         --mdy-on-primary-container: color-mix(in srgb, var(--mdy-primary), black 80%);
         --mdy-error-container: color-mix(in srgb, var(--mdy-error), white 94%);
-        --mdy-on-error-container: var(--mdy-error);
 
         --mdy-on-surface: color-mix(in srgb, var(--mdy-primary), black 80%);
         --mdy-on-surface-variant: color-mix(in srgb, var(--mdy-primary), black 40%);
@@ -1177,7 +1175,6 @@
 
             /* Error container in dark */
             --mdy-error-container: color-mix(in srgb, var(--mdy-error), black 65%);
-            --mdy-on-error-container: color-mix(in srgb, var(--mdy-error), white 80%);
 
             /* Select dropdown must be darker than surface */
             --mdy-select-dropdown-bg: var(--mdy-surface-container);

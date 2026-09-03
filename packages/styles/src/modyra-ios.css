@@ -86,7 +86,6 @@
         --mdy-ios-label: #000000;
         --mdy-ios-secondary-label: rgba(60, 60, 67, 0.60);
         --mdy-ios-tertiary-label: rgba(60, 60, 67, 0.30);
-        --mdy-ios-quaternary-label: rgba(60, 60, 67, 0.18);
         --mdy-ios-placeholder: var(--mdy-ios-tertiary-label);
 
         /* ── Backgrounds ────────────────────────────────────────────────────
@@ -97,23 +96,17 @@
         --mdy-ios-bg: #FFFFFF;
         --mdy-ios-secondary-bg: #F2F2F7;
         --mdy-ios-tertiary-bg: #FFFFFF;
-        --mdy-ios-grouped-bg: #F2F2F7;
         --mdy-ios-secondary-grouped-bg: #FFFFFF;
-        --mdy-ios-tertiary-grouped-bg: #F2F2F7;
 
         /* ── Separators ─────────────────────────────────────────────────────
            The translucent one lets the surface beneath tint it and is what a list uses between rows.
            The opaque one is for where something must not show through — a border over a blurred
            material, where a translucent hairline doubles the blur behind it. */
         --mdy-ios-separator: rgba(60, 60, 67, 0.29);
-        --mdy-ios-opaque-separator: #C6C6C8;
 
         /* In light there is no elevated tier — a sheet and the page behind it use the same surfaces,
            and separation comes from the shadow. Declared anyway so a rule can read it in either
            scheme without asking which one it is in. */
-        --mdy-ios-elevated-bg: var(--mdy-ios-bg);
-        --mdy-ios-secondary-elevated-bg: var(--mdy-ios-secondary-bg);
-        --mdy-ios-tertiary-elevated-bg: var(--mdy-ios-tertiary-bg);
 
         /* ── Fills ──────────────────────────────────────────────────────────
            Four levels, used INSIDE content — text fields, segmented tracks, search bars — and never
@@ -127,7 +120,6 @@
         --mdy-ios-system-fill: rgba(120, 120, 128, 0.20);
         --mdy-ios-secondary-fill: rgba(120, 120, 128, 0.16);
         --mdy-ios-tertiary-fill: rgba(118, 118, 128, 0.12);
-        --mdy-ios-quaternary-fill: rgba(116, 116, 128, 0.08);
 
         /* The names the rest of this theme was written against, kept so it keeps working, and now
            pointing at the level each of them actually was. */
@@ -201,28 +193,11 @@
 
            Tracking is in px at the style's own size, which is how the design kit states it — it does
            not scale with a user's text size, and expressing it in em would make it do so. */
-        --mdy-ios-text-large-title: 2.125rem/2.5625rem;
-        --mdy-ios-text-large-title-tracking: 0.37px;
-        --mdy-ios-text-title1: 1.75rem/2.125rem;
-        --mdy-ios-text-title1-tracking: 0.36px;
-        --mdy-ios-text-title2: 1.375rem/1.75rem;
-        --mdy-ios-text-title2-tracking: -0.26px;
-        --mdy-ios-text-title3: 1.25rem/1.5625rem;
-        --mdy-ios-text-title3-tracking: -0.45px;
-        --mdy-ios-text-headline: 1.0625rem/1.375rem;
         --mdy-ios-text-headline-tracking: -0.43px;
-        --mdy-ios-text-body: 1.0625rem/1.375rem;
         --mdy-ios-text-body-tracking: -0.43px;
-        --mdy-ios-text-callout: 1rem/1.3125rem;
-        --mdy-ios-text-callout-tracking: -0.31px;
-        --mdy-ios-text-subheadline: 0.9375rem/1.25rem;
         --mdy-ios-text-subheadline-tracking: -0.23px;
-        --mdy-ios-text-footnote: 0.8125rem/1.125rem;
         --mdy-ios-text-footnote-tracking: -0.08px;
-        --mdy-ios-text-caption1: 0.75rem/1rem;
         --mdy-ios-text-caption1-tracking: 0px;
-        --mdy-ios-text-caption2: 0.6875rem/0.8125rem;
-        --mdy-ios-text-caption2-tracking: 0.07px;
 
         /* ── Text fields — 44pt min hit target, flat fill, 10pt corner ──── */
         --mdy-input-padding: 0.6875rem 0.875rem;
@@ -336,7 +311,6 @@
            rather than from a primary this theme never chose. `--mdy-primary` bridges from it. */
         --mdy-sys-color-primary: var(--mdy-ios-blue);
         --mdy-on-primary: var(--mdy-ios-on-blue);
-        --mdy-base-bg: var(--mdy-ios-secondary-bg);
         --mdy-surface: var(--mdy-ios-bg);
         --mdy-surface-container: var(--mdy-ios-gray6);
         --mdy-surface-container-highest: var(--mdy-ios-gray5);
@@ -356,16 +330,12 @@
         --mdy-datepicker-selected-bg: var(--mdy-ios-blue);
         --mdy-datepicker-selected-color: var(--mdy-ios-on-blue);
         --mdy-datepicker-hover-bg: var(--mdy-ios-fill);
-        --mdy-datepicker-outside-opacity: 0.3;
         --mdy-datepicker-disabled-opacity: 0.25;
-        --mdy-datepicker-header-gap: 0.25rem;
-        --mdy-datepicker-nav-btn-size: 2.25rem;
         --mdy-datepicker-popup-padding: 0.5rem;
         --mdy-datepicker-popup-bg: var(--mdy-ios-glass-bg-fallback);
         --mdy-datepicker-popup-border: var(--mdy-ios-glass-border);
         --mdy-datepicker-popup-border-radius: 14px;
         --mdy-datepicker-popup-shadow: var(--mdy-ios-glass-shadow);
-        --mdy-datepicker-icon-size: 1.25rem;
         --mdy-datepicker-today-color: var(--mdy-ios-blue);
 
         /* Date Range */
@@ -412,7 +382,6 @@
             --mdy-ios-label: #FFFFFF;
             --mdy-ios-secondary-label: rgba(235, 235, 245, 0.60);
             --mdy-ios-tertiary-label: rgba(235, 235, 245, 0.30);
-            --mdy-ios-quaternary-label: rgba(235, 235, 245, 0.16);
             --mdy-ios-placeholder: var(--mdy-ios-tertiary-label);
 
             /* ── Backgrounds, base ──────────────────────────────────────────
@@ -420,9 +389,7 @@
             --mdy-ios-bg: #000000;
             --mdy-ios-secondary-bg: #1C1C1E;
             --mdy-ios-tertiary-bg: #2C2C2E;
-            --mdy-ios-grouped-bg: #000000;
             --mdy-ios-secondary-grouped-bg: #1C1C1E;
-            --mdy-ios-tertiary-grouped-bg: #2C2C2E;
 
             /* ── Backgrounds, elevated ──────────────────────────────────────
                The tier iOS switches to inside anything presented over the screen — a sheet, a
@@ -432,17 +399,12 @@
                A theme with no elevated tier gives a sheet the base surface and then has nothing left
                to separate the two, which is why a dark iOS modal in a web port usually looks flat.
                Opt in by setting `data-mdy-ios-elevated` on the presented subtree. */
-            --mdy-ios-elevated-bg: #1C1C1E;
-            --mdy-ios-secondary-elevated-bg: #2C2C2E;
-            --mdy-ios-tertiary-elevated-bg: #3A3A3C;
 
             --mdy-ios-system-fill: rgba(120, 120, 128, 0.36);
             --mdy-ios-secondary-fill: rgba(120, 120, 128, 0.32);
             --mdy-ios-tertiary-fill: rgba(118, 118, 128, 0.24);
-            --mdy-ios-quaternary-fill: rgba(118, 118, 128, 0.18);
 
             --mdy-ios-separator: rgba(84, 84, 88, 0.65);
-            --mdy-ios-opaque-separator: #38383A;
 
             --mdy-ios-glass-tint: rgba(28, 28, 30, 0.68);
             --mdy-ios-glass-edge: rgba(0, 0, 0, 0.55);

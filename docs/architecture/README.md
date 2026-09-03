@@ -215,6 +215,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0198: An action in a panel is one a key can reach](0198-an-action-a-key-can-reach.md) — the predicate was narrower than the sentence beside it, and one panel's action was pointer-only for years
 - [ADR 0199: The view a calendar is showing is one a key can change](0199-a-view-a-key-can-change.md) — the arrows move within a view and nothing declared a door between them; the accelerator opens it, chosen by measurement
 - [ADR 0200: A lint rule is loosened only to keep an intention already stated](0200-a-linter-nobody-runs.md) — a red check nobody runs and a green one bought by loosening protect equally; each exemption names the sentence it keeps
+- [ADR 0201: The custom properties nothing reads are removed, and seven that look alike are kept](0201-the-properties-nothing-reads.md) — a var() is not the only way a property is surface: seven are set by a theme rather than read by the library
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

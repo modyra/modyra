@@ -23,9 +23,10 @@ generated or vendored files excluded by asking version control rather than by pa
 Angular example's build directory. Counted as a reader it made 317 properties look like consumer surface where six
 are: our CSS reading itself.
 
-*A grep read a comment.* Checking a sample by hand, `grep` reported `--mdy-base-bg` as read in
-`modyra-material.css`. The occurrence is inside a comment. The instrument, which strips them, was
-right; the check being used to check it was not.
+*A grep read a comment.* Checking a sample by hand, `grep` reported one of these properties as read
+in `modyra-material.css`. The occurrence is inside a comment. The instrument, which strips them, was
+right; the check being used to check it was not. The property is named in ADR 0201 — it was among the
+42 removed, so naming it here would be this page teaching a property that no longer exists.
 
 **A document that shows a use is not a reader.** Four properties appear in `var()` inside code fences
 in `docs/`. Counting those took the total from 90 to 86 — documentation *of* a use, read as the use.
@@ -90,62 +91,27 @@ fix. No removal question arises for these; they belong in the guide beside their
 | `--mdy-z-raised` | modyra.css | `--mdy-z-*` (5) | 3 | 2026-07-28 |
 | `--mdy-z-sticky` | modyra.css | `--mdy-z-*` (5) | 3 | 2026-07-28 |
 
-## 49 — alone in its family
+## 49 — alone in its family: 42 removed, 7 kept
 
-**These are a decision for the user, and this page does not take it.** Nothing near them is read
-either, so the scale argument does not apply — but neither does "dead": they are recent, they are
-published, and a property is read by loading a stylesheet, not by calling it. Removing one is a
-removal from a public surface, and `contract:diff` has no classification path for CSS, which is the
-condition on which the standing authority stops.
+The half this page measured and did not recommend on. The owner decided to remove it; carrying that
+out found that the premise held for 42 of the 49 and not for seven.
 
-| property | declared in | family | siblings read | last touched |
-| --- | --- | ---: | ---: | --- |
-| `--mdy-base-bg` | modyra-ios.css | `--mdy-base-*` (0) | 0 | 2026-07-18 |
-| `--mdy-datepicker-cell-border-radius` | modyra-ionic.css | `--mdy-datepicker-cell-border-*` (0) | 0 | 2026-07-18 |
-| `--mdy-datepicker-header-gap` | modyra-ios.css | `--mdy-datepicker-header-*` (0) | 0 | 2026-07-18 |
-| `--mdy-datepicker-icon-size` | modyra-ios.css | `--mdy-datepicker-icon-*` (0) | 0 | 2026-07-18 |
-| `--mdy-datepicker-modal-bg` | modyra.css | `--mdy-datepicker-modal-*` (1) | 0 | 2026-07-30 |
-| `--mdy-datepicker-modal-radius` | modyra.css | `--mdy-datepicker-modal-*` (1) | 0 | 2026-07-30 |
-| `--mdy-datepicker-nav-btn-size` | modyra-ios.css | `--mdy-datepicker-nav-btn-*` (0) | 0 | 2026-07-18 |
-| `--mdy-datepicker-outside-opacity` | modyra-ios.css | `--mdy-datepicker-outside-*` (0) | 0 | 2026-07-18 |
-| `--mdy-duration-1` | modyra-scale.css | `--mdy-duration-*` (1) | 0 | 2026-08-23 |
-| `--mdy-duration-2` | modyra-scale.css | `--mdy-duration-*` (1) | 0 | 2026-08-23 |
-| `--mdy-fl-label-active-top` | modyra.css | `--mdy-fl-label-active-*` (0) | 0 | 2026-07-31 |
-| `--mdy-fl-prefix-width` | material-filled-field.css | `--mdy-fl-prefix-*` (0) | 0 | 2026-07-29 |
-| `--mdy-focus-offset` | modyra-scale.css | `--mdy-focus-*` (1) | 0 | 2026-08-23 |
-| `--mdy-focus-width` | modyra-scale.css | `--mdy-focus-*` (1) | 0 | 2026-08-23 |
-| `--mdy-ios-elevated-bg` | modyra-ios.css | `--mdy-ios-elevated-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-grouped-bg` | modyra-ios.css | `--mdy-ios-grouped-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-opaque-separator` | modyra-ios.css | `--mdy-ios-opaque-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-quaternary-fill` | modyra-ios.css | `--mdy-ios-quaternary-*` (1) | 0 | 2026-08-05 |
-| `--mdy-ios-quaternary-label` | modyra-ios.css | `--mdy-ios-quaternary-*` (1) | 0 | 2026-08-05 |
-| `--mdy-ios-secondary-elevated-bg` | modyra-ios.css | `--mdy-ios-secondary-elevated-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-tertiary-elevated-bg` | modyra-ios.css | `--mdy-ios-tertiary-elevated-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-tertiary-grouped-bg` | modyra-ios.css | `--mdy-ios-tertiary-grouped-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-body` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-callout` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-callout-tracking` | modyra-ios.css | `--mdy-ios-text-callout-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-caption1` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-caption2` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-caption2-tracking` | modyra-ios.css | `--mdy-ios-text-caption2-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-footnote` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-headline` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-large-title` | modyra-ios.css | `--mdy-ios-text-large-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-large-title-tracking` | modyra-ios.css | `--mdy-ios-text-large-title-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-subheadline` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title1` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title1-tracking` | modyra-ios.css | `--mdy-ios-text-title1-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title2` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title2-tracking` | modyra-ios.css | `--mdy-ios-text-title2-*` (0) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title3` | modyra-ios.css | `--mdy-ios-text-*` (9) | 0 | 2026-08-05 |
-| `--mdy-ios-text-title3-tracking` | modyra-ios.css | `--mdy-ios-text-title3-*` (0) | 0 | 2026-08-05 |
-| `--mdy-leading-1` | modyra-scale.css | `--mdy-leading-*` (2) | 0 | 2026-08-23 |
-| `--mdy-leading-2` | modyra-scale.css | `--mdy-leading-*` (2) | 0 | 2026-08-23 |
-| `--mdy-leading-3` | modyra-scale.css | `--mdy-leading-*` (2) | 0 | 2026-08-23 |
-| `--mdy-md-chroma-neutral-variant` | modyra-material.css | `--mdy-md-chroma-neutral-*` (0) | 0 | 2026-08-05 |
-| `--mdy-on-error-container` | modyra-material.css, modyra.css | `--mdy-on-error-*` (0) | 0 | 2026-07-18 |
-| `--mdy-spin-btn-size` | modyra.css | `--mdy-spin-btn-*` (0) | 0 | 2026-08-03 |
-| `--mdy-state-disabled-container-opacity` | modyra.css | `--mdy-state-disabled-container-*` (0) | 0 | 2026-07-18 |
-| `--mdy-state-disabled-content-opacity` | modyra.css | `--mdy-state-disabled-content-*` (0) | 0 | 2026-07-18 |
-| `--mdy-state-focus-opacity` | modyra.css | `--mdy-state-focus-*` (0) | 0 | 2026-07-18 |
-| `--mdy-state-hover-opacity` | modyra.css | `--mdy-state-hover-*` (0) | 0 | 2026-07-18 |
+**Seven are surface that is set, not read.** They are the step names of `modyra-scale.css`, and
+`contract-diff` already treated them as public surface — *"a consumer builds a theme by setting
+these; renaming one breaks them exactly as renaming a part does"*. Nothing in the library reads a
+scale step because the consumer is the one who writes it, so this page's measurement — which counts
+readers — could not see them and reported them beside the genuinely unused. **A `var()` is not the
+only way a property is surface**, and that is the correction this exercise adds to the two above.
+
+**They are named in ADR 0201, not here**, along with the 42 that went. A document naming a property
+no stylesheet declares is what the audit calls a phantom, and prose that keeps listing what has been
+removed is how a reader comes to believe it still exists. The decision record is exempt from that
+scan by design, which is why the lists live there and the release notes carry the removals too.
+
+**The counts above are relative, so read them as of their measurement.** A property is "alone in its
+family" only while no sibling of its family is read; removing 42 members moved some of the survivors.
+After the removal the audit reports 43 in the scale-step half and 10 alone. Neither pair is wrong —
+the families shrank — and the numbers are an outcome, never a target.
+
+**What this page keeps.** The measurement, its perimeter, and the corrections that changed the
+answer, which outlive the rows they were gathered for.

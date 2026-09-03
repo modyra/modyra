@@ -109,7 +109,6 @@
 
     /* Datepicker styling */
     --mdy-datepicker-cell-size: 2.25rem;
-    --mdy-datepicker-cell-border-radius: 50%;
     --mdy-datepicker-selected-bg: var(--ion-color-primary);
     --mdy-datepicker-selected-color: #fff;
     --mdy-datepicker-today-ring: 2px solid var(--ion-color-primary);

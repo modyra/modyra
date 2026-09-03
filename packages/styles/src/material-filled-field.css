@@ -31,7 +31,6 @@
         /* 32px (includes icon + inner margin) */
         --mdy-prefix-spacer: 0.25rem;
         /* 4px gap to input text */
-        --mdy-fl-prefix-width: calc(var(--mdy-prefix-pad-left) + var(--mdy-prefix-icon-area) + var(--mdy-prefix-spacer));
     }
 
     /* Component-based decorators alignment (Centered Vertically by default) */
