@@ -17,7 +17,33 @@ import { fileURLToPath } from "node:url";
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** A script whose name says it verifies something. */
-export const IS_A_CHECK = /^(test|battle|audit|contract):/;
+const NAMED_LIKE_A_CHECK = /^(test|battle|audit|contract):/;
+
+/**
+ * A script that runs a verifier, whatever it is called.
+ *
+ * The name test alone requires a namespace and a colon, so a check called `lint` or `battle` is not
+ * a check as far as it is concerned — and the gate built on it then reports every check reached or
+ * explained while `lint` is run by no workflow at all. A roster derived from a naming convention
+ * says "the ones spelled my way", not "all of them", and publishing a script under a name outside
+ * the convention becomes the way to stop being asked about.
+ *
+ * So what a script *runs* is asked as well. Deliberately narrow: the audits already answer to the
+ * name test, and a pattern loose enough to catch them by behaviour catches builds too — a compiler
+ * invoked to produce output is not a check, even though a check may invoke the same compiler.
+ */
+const RUNS_A_VERIFIER = /\beslint\b|\bjest\b|\bplaywright\s+test\b|node\s+--test\b/;
+
+/**
+ * Whether a script verifies something — by its name, or by what it runs.
+ *
+ * Both arms are needed and neither is sufficient: the name catches the thirty audits that verify by
+ * exiting non-zero with no recognisable tool in their command line, and the command catches the
+ * ones whose author did not use the namespace.
+ */
+export function isACheck(name, command = "") {
+  return NAMED_LIKE_A_CHECK.test(name) || RUNS_A_VERIFIER.test(command);
+}
 
 /** Every `npm run X` / `pnpm run X` in a blob of shell, whatever flags sit between. */
 export function scriptsInvokedBy(text) {

@@ -24,7 +24,7 @@
  * legitimate, which is why the exemption list below carries a reason per entry rather than a name —
  * an exemption that does not say why is a silence with a comment on it.
  */
-import { IS_A_CHECK, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
+import { isACheck, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
 
 const CHECK = process.argv.includes("--check");
 
@@ -42,6 +42,8 @@ const DELIBERATELY_OUTSIDE = new Map([
   ["audit:visual-debt", "answers about baselines that can only be recorded after a push, so a red in CI would be a red on a state that is allowed to be true"],
   ["contract:diff", "the same script as `test:contract-snapshot` without `--check`, plus a build: it classifies a change for the person deciding a release, while the detection that a change happened is the `--check` form, which is in the gate list CI runs"],
   ["audit:unwatched-changes", "asks which checks a change can break before it is pushed, which is a question about a working tree; in CI the change is already pushed and every check it names is running anyway"],
+  ["battle", "the whole battle population under node's own reporter, in the form a person runs while working; CI drives the identical suite through the baseline harness as `battle:ci`, which is the form that has a verdict"],
+  ["lint", "run by no workflow and currently failing: 92 errors and 15 warnings across 73 files, none of them introduced by a recent change - it has simply never gated anything. Wiring it in before it is green would put main red on the first push, so it stays outside until the files are clean. This exemption is temporary and its condition is written down: when `npm run lint` exits zero, delete this line and give it a workflow"],
   ["test:perf", "asserts absolute wall-clock thresholds, the tightest at 20ms - a number calibrated on a developer machine, which on a shared runner measures the runner's load rather than this code"],
 ]);
 
@@ -52,7 +54,7 @@ const rootsByFile = workflowRoots();
 const roots = new Set([...rootsByFile.values()].flatMap((named) => [...named]));
 const reached = reachableFrom(edges, roots);
 
-const checks = Object.keys(scripts).filter((name) => IS_A_CHECK.test(name));
+const checks = Object.keys(scripts).filter((name) => isACheck(name, scripts[name]));
 const unrun = checks.filter((name) => !reached.has(name));
 const unexplained = unrun.filter((name) => !DELIBERATELY_OUTSIDE.has(name));
 
@@ -77,7 +79,7 @@ const staleExemptions = [...DELIBERATELY_OUTSIDE.keys()].filter((name) =>
   // Reached: a workflow started running it and the exemption now argues against the facts.
   // Absent: the script is gone. Not check-shaped: the exemption can never be consulted, so it reads
   // as covering something while covering nothing — the quietest of the three.
-  reached.has(name) || !(name in scripts) || !IS_A_CHECK.test(name));
+  reached.has(name) || !(name in scripts) || !isACheck(name, scripts[name]));
 if (staleExemptions.length > 0) {
   console.log(`Exemptions that no longer describe anything: ${staleExemptions.join(", ")}\n`);
 }

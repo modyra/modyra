@@ -22,7 +22,7 @@
  *   node scripts/audit-unwatched-changes.mjs --check       # exit 1 when a check has no declared paths
  */
 import { execFileSync } from "node:child_process";
-import { IS_A_CHECK, ROOT, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
+import { ROOT, isACheck, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
 
 const STAGED = process.argv.includes("--staged");
 /**
@@ -90,7 +90,7 @@ const inCI = reachableFrom(edges, [...workflowRoots().values()].flatMap((named) 
 
 /** A check CI runs and `npm run test` does not: the population this exists for. */
 const gap = Object.keys(scripts)
-  .filter((name) => IS_A_CHECK.test(name))
+  .filter((name) => isACheck(name, scripts[name]))
   .filter((name) => inCI.has(name) && !local.has(name))
   .sort();
 
@@ -117,7 +117,7 @@ for (const [check, paths] of WATCHES) {
 }
 
 console.log("# Checks this change can break that `npm run test` will not run\n");
-console.log(`Checks CI runs: ${Object.keys(scripts).filter((n) => IS_A_CHECK.test(n) && inCI.has(n)).length}`
+console.log(`Checks CI runs: ${Object.keys(scripts).filter((n) => isACheck(n, scripts[n]) && inCI.has(n)).length}`
   + ` · of those, outside \`npm run test\`: ${gap.length}`);
 console.log(`Files ${range ? `in ${range}` : STAGED ? "staged" : `ahead of ${since}, working tree included`}: ${files.length}\n`);
 if (!range && !STAGED) {
