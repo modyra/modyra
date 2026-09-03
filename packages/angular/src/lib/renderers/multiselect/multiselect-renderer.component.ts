@@ -17,7 +17,6 @@ import {
   signal,
   viewChild,
 } from "@angular/core";
-import { filterOptionsByQuery } from "@modyra/widgets";
 import type { MdyMultiselectMode } from "@modyra/core";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -486,14 +485,21 @@ export class MdyMultiselectComponent<TValue = string>
     return fn ? painted.filter((o) => fn(o.value)) : painted;
   });
 
-  protected readonly searchResults = computed(() => {
-    // Every option, chosen or not, with the state that says which. Filtering the chosen ones out
-    // was this renderer's own answer: the contract gives each option a `selected` state and, in
-    // toggle mode, `aria-pressed` — both unreachable for a list that removes what was taken. It also
-    // made the strip's overflow affordance a lie, because the values it says are out of sight are
-    // exactly the ones such a list omits.
-    return filterOptionsByQuery(this.filteredOptions(), this.searchQuery());
-  });
+  /**
+   * The options the panel offers, which is the controller's answer rather than a second one.
+   *
+   * Every option, chosen or not, with the state that says which. Filtering the chosen ones out was
+   * this renderer's own answer: the contract gives each option a `selected` state and, in toggle
+   * mode, `aria-pressed` — both unreachable for a list that removes what was taken. It also made the
+   * strip's overflow affordance a lie, because the values it says are out of sight are exactly the
+   * ones such a list omits.
+   *
+   * Deriving the same narrowing here as well gave a value the field holds two fates: the widening
+   * that offers a held value the list does not carry runs on both sides of `filterFn`, so a filter
+   * that rejects such a value removed it here and the controller put it back. A filter says what may
+   * be added, never what is already held. ADR 0196.
+   */
+  protected readonly searchResults = computed(() => this.controller()?.filteredOptions() ?? []);
 
   private readonly overlayInputRef =
     viewChild<ElementRef<HTMLInputElement>>("overlayInput");
