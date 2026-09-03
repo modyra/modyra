@@ -178,6 +178,32 @@ function splitAtTopLevelColon(part) {
   return -1;
 }
 
+/**
+ * What a type accepts, with a name it declares one level away resolved to what it stands for.
+ *
+ * `key: string` becoming `key: MdyKeyOrPress` is a widening — the alias is `string | { … }` — but
+ * compared as text the two share nothing, so the widening is invisible and reads as a retype. The
+ * snapshot already records every exported alias as its own entry, so the answer is in the file
+ * being compared rather than in a second reading of the source: each side is resolved against its
+ * own snapshot, which is what the name meant on that side.
+ *
+ * One level only. A chain of aliases resolves as far as the first, and the rest is compared as text
+ * — which errs toward calling a change breaking, the direction that costs a look rather than a
+ * consumer.
+ */
+function acceptedTypes(text, snapshot, name) {
+  const scope = String(name).split(":")[0];
+  return splitTopLevel(String(text), "|").flatMap((part) => {
+    const bare = part.trim();
+    const recorded = /^[A-Za-z_$][\w$]*$/.test(bare) ? snapshot[`${scope}:${bare}`] : undefined;
+    if (!Array.isArray(recorded)) return [normaliseType(bare)];
+    const arms = recorded
+      .map((entry) => /^variant [^:]*: ([\s\S]+)$/.exec(String(entry))?.[1])
+      .filter((arm) => arm !== undefined);
+    return arms.length > 0 ? arms.map(normaliseType) : [normaliseType(bare)];
+  });
+}
+
 function normaliseType(text) {
   // Documentation is not surface. A doc comment sits inside an inline object type in the emitted
   // declaration, so rewording one changed the compared string and was reported **major** on a type
@@ -755,7 +781,20 @@ for (const name of Object.keys(baseline)) {
         }
         continue;
       }
-      changes.push(["major", `${name}.${member} is now \`${after.type}\`, was \`${before.type}\``]);
+      // A parameter that accepts more is not a break, and it is the one place where growing a type
+      // is safe. A caller passing what it passed before still type-checks, because what the function
+      // will accept has only widened — contravariance, and it holds for a parameter and for nothing
+      // else. Reported major, `key: string` becoming `key: MdyKeyOrPress` reads as a breaking change
+      // in a changeset, and a release blocked on a phantom teaches a reader to disbelieve the tool.
+      //
+      // Restricted to parameters by the shape of the recorded name, `(0) thing`. The same widening on
+      // a property or a return type **is** a break: there a consumer is the one receiving the value,
+      // so a type that grew hands them a case they never had to handle.
+      const widened = /^\(\d+\)\s/.test(member)
+        && acceptedTypes(before.type, baseline, name).every((part) => acceptedTypes(after.type, current, name).includes(part));
+      changes.push(widened
+        ? ["minor", `${name}.${member} accepts more: is now \`${after.type}\`, was \`${before.type}\``]
+        : ["major", `${name}.${member} is now \`${after.type}\`, was \`${before.type}\``]);
     }
   }
   for (const [member, after] of now) {
