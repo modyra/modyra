@@ -227,7 +227,22 @@ function normaliseType(text) {
   if (union.length > 1) return union.map(normaliseType).sort().join(" | ");
   const object = /^\{([\s\S]*)\}$/.exec(inner);
   if (object !== null) {
-    const members = splitTopLevel(object[1], ";").map((member) => member.trim()).sort();
+    // Each member's *type* is normalised too, not only the member list sorted.
+    //
+    // Sorting the members alone leaves everything inside them as text, and a union is the thing that
+    // does not survive being compared as text: `{ kind: "a" | null }` and `{ kind: null | "a" }` are
+    // one type printed two ways. Every other position — top level, inside a generic — was already
+    // reached; an object member was the one place the recursion stopped, so a union nested in one
+    // stayed order-sensitive. No shape in the current surface is in that position, which is why this
+    // is a hole closed rather than a defect repaired.
+    const members = splitTopLevel(object[1], ";")
+      .map((member) => {
+        const split = member.indexOf(":");
+        if (split === -1) return member.trim();
+        return `${member.slice(0, split).trim()}: ${normaliseType(member.slice(split + 1))}`;
+      })
+      .filter((member) => member !== "")
+      .sort();
     return `{ ${members.join("; ")} }`;
   }
   // **And inside a generic**, which is where the real ones live: the union that reshuffled was
