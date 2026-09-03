@@ -251,7 +251,7 @@ console.log("# Contract logic written inside consumers\n");
 console.log("Literal = an answer the contract owns, re-answered here. Derived = a reference to the");
 console.log("catalogues that hold those answers. Both are candidates: the sites are printed to be read.\n");
 
-const head = ["package", "kinds", "lines", ...CATEGORIES.map((c) => c.key), "literal", "derived", "lit/kind", "floor"];
+const head = ["package", "kinds", "lines", ...CATEGORIES.map((c) => c.key), "literal", "derived", "lit/kind", "tags"];
 console.log(head.map((h, i) => h.padEnd(i === 0 ? 9 : 9)).join(""));
 for (const row of report) {
   if (row.missing) { console.log(`${row.pkg.padEnd(9)}(no src)`); continue; }
@@ -287,8 +287,11 @@ console.log("upper bound on what is missing, and its coverage as a lower bound o
 const floor = report.reduce((a, r) => a + (r.elementNames ?? 0), 0);
 const comments = report.reduce((a, r) => a + (r.inComments ?? 0), 0);
 const outside = report.reduce((a, r) => a + (r.outsidePerimeter ?? 0), 0);
-console.log(`\n\`floor\` counts custom element tags — published API, spelled exactly like a class. They`);
-console.log(`will never fall: the ratchet aims at ${floor} across the consumers, not at 0. A further`);
+console.log(`\n\`tags\` counts custom element tags — published API, spelled exactly like a class.`);
+console.log(`This column was called \`floor\`, and the word carried two opposite readings: an`);
+console.log(`irreducible residue that will never fall, and a target that has been reached. It is the`);
+console.log(`first, and a dictation read it as the second. The ratchet aims at ${floor} across the`);
+console.log(`consumers rather than at 0 — that is the whole claim this number supports. A further`);
 console.log(`${comments} literal(s) sit inside comments and are not counted at all; prose is not code.`);
 console.log(`${outside} literal(s) name the developer-tools panel, which is not a widget and answers to`);
 console.log(`no contract. They are inside the counts above and named here rather than filtered away,`);
