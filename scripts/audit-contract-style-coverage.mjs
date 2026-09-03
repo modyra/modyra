@@ -56,6 +56,8 @@ import {
   widgetStateClasses,
 } from "../packages/widgets/dist/index.js";
 import { MDY_SHARED_UI_CLASSES } from "../packages/widgets/dist/vocabulary.js";
+import { MDY_CLASS_DOORS } from "../packages/widgets/dist/index.js";
+import { classesFromDoors, perimeterLine } from "./lib/class-doors-in-source.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const ALLOWLIST_PATH = join(ROOT, "scripts/contract-coverage-allowlist.json");
@@ -191,11 +193,22 @@ function emittedClasses() {
     for (const name of elementNames(source)) elements.get(adapter).add(name);
   }
   const byClass = new Map();
+  const add = (token, adapter) => {
+    if (!byClass.has(token)) byClass.set(token, new Set());
+    byClass.get(token).add(adapter);
+  };
   for (const [adapter, source] of sources) {
-    for (const token of classTokens(source, elements.get(adapter))) {
-      if (!byClass.has(token)) byClass.set(token, new Set());
-      byClass.get(token).add(adapter);
-    }
+    for (const token of classTokens(source, elements.get(adapter))) add(token, adapter);
+    // A renderer that *asks* the contract for a class writes no literal to find, and asking is the
+    // direction this repository is moving in. Counting only literals understated the emitted set by
+    // 38 classes, and that gap widens with every adoption batch.
+    //
+    // **It changes no finding, and that is worth stating rather than implying otherwise.** The three
+    // off-contract categories skip any class the contract declares, and a door only ever answers
+    // with a declared class — so a door-derived class could never have been reported as `dead`.
+    // What this fixes is the number a reader compares against "Themes declare": 184 against 231 says
+    // something false about coverage, and the falsehood grows as renderers stop spelling classes out.
+    for (const cls of classesFromDoors(source, MDY_CLASS_DOORS).classes) add(cls, adapter);
   }
   return byClass;
 }
@@ -334,6 +347,9 @@ console.log(`Contract can produce: ${contract.size} classes`);
 // and what a page carries is exactly what a source reader cannot see. The word matters because a
 // reader deciding whether a class is safe to delete needs to know which of the two they were told.
 console.log(`Renderers write: ${emitted.size}   Themes declare: ${styled.size}`);
+console.log("`write` counts a class spelled as a literal AND one a renderer asks a contract door for:");
+console.log("both put it on the element, and only the first leaves a string to grep. Read from source");
+console.log("with comments stripped, never from a rendered page.");
 console.log("Read from source with comments stripped, never from a rendered page or a computed style.");
 console.log(`Contract classes no theme paints: ${unpainted.length}\n`);
 
