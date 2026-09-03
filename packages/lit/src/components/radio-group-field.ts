@@ -78,6 +78,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
             const optionAttrs = optionView?.attributes;
             return html`<label
               class="${this.partClass("option")} ${option.disabled || handle.disabled() ? "mdy-radio-item--disabled" : ""}"
+              aria-disabled=${optionAttrs?.["aria-disabled"] ?? nothing}
             >
               <input
                 type="radio"
@@ -85,7 +86,6 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
                 .value=${String(key)}
                 .checked=${this.isChosen(handle.value(), option.value)}
                 ?disabled=${handle.disabled() || option.disabled === true}
-                aria-disabled=${optionAttrs?.["aria-disabled"] ?? (option.disabled || handle.disabled())}
                 @change=${() => {
                   if (this.fieldController) {
                     this.fieldController.dispatch({ type: "select", optionKey: key });
