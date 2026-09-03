@@ -56,6 +56,24 @@ describe("an attribute with two writers on the multiselect trigger", () => {
     expect(element.getAttribute("aria-label")).toBe("Tags");
   });
 
+  it("draws the caption element the projection points at, and leaves it unidentified", () => {
+    // Why the template's answer is the one that works here, and where the real divergence is.
+    //
+    // The projection points `aria-labelledby` at `${widgetId}__label` unconditionally. The caption
+    // element is on the page — but with no id on it, so the reference would resolve to nothing. The
+    // template's conditional is not a duplicate of the projection: it is a correction of it, made
+    // silently, and it is why nobody noticed the id was missing.
+    //
+    // The other renderers identify the same element, so this is where the three diverge rather than
+    // a fault in what the contract projects.
+    const fixture = TestBed.createComponent(NoLabelHost);
+    fixture.detectChanges();
+    const caption = document.querySelector("mdy-control-label");
+
+    expect(caption).toBeTruthy();
+    expect(caption!.id).toBe("");
+  });
+
   it("carries the states the projection emits, not an absent attribute", () => {
     const element = trigger();
 
