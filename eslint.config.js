@@ -20,6 +20,12 @@ module.exports = defineConfig([
       "benchmarks/*.html",
       // The battle host page, bundled from published output by battle:browser.
       "battle-tests/.tmp-browser/**",
+      // Astro's own content cache and the Studio bundle it copies in. Both are
+      // written by a build and both are gitignored, so a finding in them is a
+      // report about output nobody edits — and one that cannot be repaired at
+      // the source, because the source is a generator.
+      "site/.astro/**",
+      "site/public/studio-app/**",
     ],
   },
   {
@@ -37,11 +43,24 @@ module.exports = defineConfig([
       "@typescript-eslint/array-type": "off",
       // Interface implementations/overrides often can't drop a parameter:
       // the leading-underscore convention marks them as intentionally unused.
+      //
+      // All four forms it takes here, because for a while it covered two. A name
+      // is marked unused the same way whether it is an argument, a caught error,
+      // a binding or an inferred type parameter — `infer _K` where only the other
+      // half of the pair is wanted — and a rule that honoured the convention for
+      // arguments alone reported the others as defects while the sentence above
+      // said they were deliberate.
+      //
+      // `ignoreRestSiblings` is the same intention in the shape the codebase
+      // actually writes it: `const { role: _role, ...withoutRole } = projected`
+      // omits a key by naming it, and the name it gives is the point.
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
           argsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
         },
       ],
       "@angular-eslint/directive-selector": [
