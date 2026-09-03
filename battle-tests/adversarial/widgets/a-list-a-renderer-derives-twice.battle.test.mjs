@@ -28,6 +28,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { leaningOn } from "../../models/records.mjs";
 import assert from "node:assert/strict";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -76,11 +77,11 @@ function filesNaming(door) {
 }
 
 test("the record this rule stands on is still standing", () => {
-  const record = readFileSync(join(root, RECORD), "utf8");
-  assert.match(record, /^Status:\s*Accepted\s*$/m,
-    `${RECORD} is no longer Accepted, so this prohibition has no decision behind it`);
-  assert.ok(/filterFn/.test(record) && /holds/.test(record),
-    `${RECORD} no longer describes a held value and a host filter, which is the shape this guards`);
+  // Read through the shared reader, which knows an amendment keeps a decision alive. Spelled here as
+  // `Status: Accepted` exactly, this failed on a record amended in place — the sanctioned way to keep
+  // a record current — and so punished the correct action.
+  const standing = leaningOn(196, { mentions: ["filterFn", "holds"] });
+  assert.ok(standing.ok, standing.why);
 });
 
 test("no renderer derives the narrowed list a controller already answers", () => {

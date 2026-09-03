@@ -33,6 +33,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { leaningOn } from "../../models/records.mjs";
 import assert from "node:assert/strict";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -141,17 +142,16 @@ const DECLARED_ABSENCES = [
   {
     path: "packages/react/src/widgets/select-field.ts",
     name: "setOptions",
-    record: "docs/architecture/0195-a-list-that-arrives-after-the-control-is-on-screen.md",
+    record: 195,
   },
 ];
 
 const exempt = (path, name) =>
   DECLARED_ABSENCES.some((absence) => {
     if (absence.path !== path || absence.name !== name) return false;
-    const record = read(absence.record);
-    return /^Status:\s*Accepted\s*$/m.test(record)
-      && record.includes(absence.name)
-      && /React/.test(record);
+    // Through the shared reader: an amendment keeps a decision alive, and spelling the status here
+    // as `Accepted` exactly would have revoked this exemption the day ADR 0195 was amended in place.
+    return leaningOn(absence.record, { mentions: [absence.name, "React"] }).ok;
   });
 
 
