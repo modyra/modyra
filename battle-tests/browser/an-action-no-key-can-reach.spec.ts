@@ -27,7 +27,7 @@
  * passes every claim about what it never opened.
  */
 import { expect, test } from "@playwright/test";
-import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, timepickerTabOrder } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 const OPTIONS = ["Roma", "Milano", "Napoli", "Torino"].map((label) => ({ value: label.toLowerCase(), label }));
@@ -56,6 +56,86 @@ function classesAKeyNames(kind: string): string[] {
  * the flag reads as false, which is the safe direction — a part that is not declared repeated is
  * treated as singular and therefore allowed a tab stop.
  */
+/**
+ * Classes of repeated parts the arrows move *among* — the roving subject, not something inside it.
+ *
+ * A repeated part is not one thing: `swatch` and `gridcell` are the choices an arrow lands on, while
+ * `optionStep` is a button drawn once per row *inside* the choice. Absolving both because the kind
+ * declares arrow movement was how this guardian stayed green through the whole of the optionStep
+ * defect — the arrows move between options and never reach the stepper.
+ *
+ * The contract already separates them and the repair predicate uses the same split: a choice element
+ * is what the movement traverses, a `button` is an action reached some other way.
+ */
+function rovingSubjectClasses(kind: string): string[] {
+  const CHOICE = new Set(["option", "gridcell", "row", "listitem"]);
+  const nodes = MDY_WIDGET_CONTRACTS[kind]?.structure?.nodes ?? [];
+  const parts = MDY_WIDGET_CONTRACTS[kind]?.parts ?? {};
+  return nodes
+    .filter((node) => node.repeated === true && CHOICE.has(String(node.element)))
+    .flatMap((node) => parts[String(node.part)]?.classes ?? []);
+}
+
+/**
+ * Classes of parts a declared key reaches, counting the row a per-row control acts through.
+ *
+ * `ArrowRight` carries `intent: "step"` and `on: "option"`: it names the row, and the stepper is the
+ * control that row steps with. Asking only for a binding naming `optionStep` itself would find none
+ * and call a declared, reachable action mute.
+ */
+function reachedByADeclaredKey(kind: string): string[] {
+  const open = (MDY_WIDGET_KEYBOARD[kind] ?? []).filter((binding) => binding.when === "open");
+  const namedDirectly = new Set(open.filter((b) => typeof b.on === "string").map((b) => String(b.on)));
+  // A binding may also reach a control *through* the row it names. `ArrowRight` carries
+  // `intent: "step"` and `on: "option"`: stepping a row is done with the row's stepper, so the
+  // stepper is what that key operates.
+  //
+  // Only `step`, and that narrowness is the whole value. Taking any binding that names the parent
+  // would absolve the stepper through the space bar, which names the same row to **toggle** it —
+  // and then removing the step keys would change nothing here, which is exactly the check that
+  // failed when this read every intent.
+  const throughTheRow = new Set(
+    open.filter((b) => b.intent === "step" && typeof b.on === "string").map((b) => String(b.on)),
+  );
+  const nodes = MDY_WIDGET_CONTRACTS[kind]?.structure?.nodes ?? [];
+  const parts = MDY_WIDGET_CONTRACTS[kind]?.parts ?? {};
+  const reached = new Set<string>();
+  for (const node of nodes) {
+    const part = String(node.part);
+    const viaParent = node.parent !== undefined
+      && throughTheRow.has(String(node.parent))
+      && String(node.element) === "button";
+    if (namedDirectly.has(part) || viaParent) {
+      for (const cls of parts[part]?.classes ?? []) reached.add(cls);
+    }
+  }
+  return [...reached];
+}
+
+/**
+ * Classes a kind's own declared tab order reaches, for the kinds that declare one.
+ *
+ * A kind whose `Tab@open` intent is `move` keeps the keyboard and walks its panel itself, so the
+ * elements on that walk carry `tabindex="-1"` and are unreachable by the browser's own order — while
+ * being perfectly reachable by the ring the kind implements. Reading native focusability there is the
+ * surrogate again, one turn along: it says no where a person gets there on the first press.
+ *
+ * `timepickerTabOrder` is that declaration, and today it is the only one: colours retains Tab and
+ * declares no order, which is why this map has one entry rather than a general accessor. The map is
+ * the honest shape — it names who declares, and shrinks to nothing the day the contract offers the
+ * order for every kind that keeps Tab.
+ */
+const DECLARED_TAB_ORDER: Record<string, () => readonly string[]> = {
+  timepicker: () => timepickerTabOrder({}),
+};
+
+function orderedClasses(kind: string): string[] {
+  const order = DECLARED_TAB_ORDER[kind];
+  if (order === undefined) return [];
+  const parts = MDY_WIDGET_CONTRACTS[kind]?.parts ?? {};
+  return order().flatMap((part) => parts[part]?.classes ?? [String(part)]);
+}
+
 function repeatedClasses(kind: string): string[] {
   const nodes = MDY_WIDGET_CONTRACTS[kind]?.structure?.nodes ?? [];
   const parts = MDY_WIDGET_CONTRACTS[kind]?.parts ?? {};
@@ -112,12 +192,28 @@ for (const host of HOSTS) {
     const opened: string[] = [];
     const inspected: string[] = [];
 
-    for (const kind of KINDS) {
-      const id = `nk-${kind}`;
-      await page.evaluate(({ mountId, k, api, options }) => {
+    // One mount per declared variant, read from the contract rather than chosen.
+    //
+    // Mounting each kind once takes its default, and a part that exists only in another variant is
+    // never drawn: `optionStep` lives in the multiselect's `multi` and the default is `single`, so
+    // this guardian passed through the whole of that defect with the button absent from the page.
+    // An exemption granted by the absence of the subject is the frozen roster again, and deriving
+    // the roster from `variants` is what makes it fall for every kind, not only this one.
+    const subjects = KINDS.flatMap((kind) => {
+      const variants = Object.keys(MDY_WIDGET_CONTRACTS[kind]?.variants ?? {});
+      return variants.length === 0
+        ? [{ kind, variant: null as string | null }]
+        : variants.map((variant) => ({ kind, variant }));
+    });
+
+    for (const { kind, variant } of subjects) {
+      const id = `nk-${kind}${variant === null ? "" : `-${variant}`}`;
+      await page.evaluate(({ mountId, k, api, options, mode }) => {
+        const field: Record<string, unknown> = { name: "x", kind: k, label: "X", options };
+        if (mode !== null) field.mode = mode;
         (window as never as Record<string, { mountFields(i: string, f: unknown[]): unknown }>)[api]
-          .mountFields(mountId, [{ name: "x", kind: k, label: "X", options }]);
-      }, { mountId: id, k: kind, api: host.api, options: OPTIONS });
+          .mountFields(mountId, [field]);
+      }, { mountId: id, k: kind, api: host.api, options: OPTIONS, mode: variant });
       await page.waitForTimeout(280);
       await page.locator(`[data-form="${id}"] [aria-haspopup]`).first().click({ timeout: 5_000 }).catch(() => undefined);
       await page.waitForTimeout(320);
@@ -127,7 +223,7 @@ for (const host of HOSTS) {
         (binding) => binding.key === "Tab" && binding.when === "open" && binding.intent === "move",
       );
 
-      const found = await page.evaluate(({ declaredClasses, repeated, popups, tabCounts, movesWithArrows }) => {
+      const found = await page.evaluate(({ declaredClasses, repeated, popups, tabCounts, movesWithArrows, rovingSubjects, byDeclaredKey, ordered }) => {
         const panel = popups.map((cls) => document.querySelector(`.${cls}`)).find((node) => node !== null) ?? null;
         if (panel === null || panel.getClientRects().length === 0) return null;
 
@@ -150,9 +246,11 @@ for (const host of HOSTS) {
           // by that movement. Colours moves *real focus* between swatches rather than naming an
           // active descendant, so the aria check below cannot see it — and reporting ten swatches as
           // unreachable would be this guardian inventing the defect it exists to find.
-          if (isRepeated && movesWithArrows) continue;
+          if (isRepeated && movesWithArrows && rovingSubjects.some((cls) => element.classList.contains(cls))) continue;
           if (roving !== null && element.id !== "" && panel.querySelector(`#${CSS.escape(roving)}`) !== null) continue;
           if (declaredClasses.some((cls) => element.classList.contains(cls))) continue;
+          if (byDeclaredKey.some((cls) => element.classList.contains(cls))) continue;
+          if (ordered.some((cls) => element.classList.contains(cls))) continue;
           mute.push(`${element.tagName.toLowerCase()}.${element.className || "(no class)"}`);
         }
         return { count: operable.length, mute };
@@ -161,6 +259,9 @@ for (const host of HOSTS) {
           (binding) => binding.when === "open" && binding.intent === "move" && binding.key.startsWith("Arrow"),
         ),
         declaredClasses: classesAKeyNames(kind),
+        rovingSubjects: rovingSubjectClasses(kind),
+        byDeclaredKey: reachedByADeclaredKey(kind),
+        ordered: orderedClasses(kind),
         repeated: repeatedClasses(kind),
         popups: popupClasses,
         tabCounts: tabStaysInside,
@@ -168,8 +269,8 @@ for (const host of HOSTS) {
 
       await page.keyboard.press("Escape").catch(() => undefined);
       if (found === null) continue;
-      opened.push(kind);
-      if (found.count > 0) inspected.push(kind);
+      opened.push(id);
+      if (found.count > 0) inspected.push(id);
       for (const one of found.mute) unreachable.push(`${kind}: ${one}`);
     }
 
@@ -178,7 +279,7 @@ for (const host of HOSTS) {
     // this file did exactly that for all six kinds while reporting three green renderers.
     expect(
       opened.length,
-      `no panel opened for any kind (tried ${KINDS.join(", ")}), so this measured nothing`,
+      `no panel opened for any subject (tried ${subjects.map((s) => s.kind).join(", ")}), so this measured nothing`,
     ).toBeGreaterThan(3);
     expect(
       inspected.length,
