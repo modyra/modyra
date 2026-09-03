@@ -36,6 +36,17 @@ const since = (() => {
   const at = process.argv.indexOf("--since");
   return at === -1 ? "origin/main" : process.argv[at + 1];
 })();
+/**
+ * An explicit `a..b`, so this can be asked about a commit that is not the head.
+ *
+ * Without it the map can only ever be checked against the present, and the question worth asking is
+ * the historical one: *would this have named the check that went red for that commit?* A map graded
+ * only against today grades itself.
+ */
+const range = (() => {
+  const at = process.argv.indexOf("--range");
+  return at === -1 ? null : process.argv[at + 1];
+})();
 const CHECK = process.argv.includes("--check");
 
 /**
@@ -46,22 +57,26 @@ const CHECK = process.argv.includes("--check");
  * answer "nothing to run" for the same reason the gate it describes answers "nothing wrong".
  *
  * These are perimeters, not exact triggers. A perimeter that is slightly too wide costs a command
- * somebody did not need to run; one that is too narrow costs a red on main.
+ * somebody did not need to run; one that is too narrow costs a red on main — and the first version
+ * of this map was too narrow in exactly the case it was written from. `test:e2e` listed the renderer
+ * packages and not `packages/widgets/src`, so the manifest change that emptied a demo page would
+ * have been pushed with this check saying nothing. A page is built on the contract as much as on the
+ * renderer that draws it, so both are in.
  */
 const WATCHES = new Map([
   ["battle:audit", ["battle-tests/"]],
   ["battle:generative", ["battle-tests/generative/", "packages/core/src/", "packages/widgets/src/"]],
   ["battle:angular", ["battle-tests/angular/", "packages/angular/src/"]],
-  ["battle:browser:ci", ["battle-tests/browser/", "packages/plain/src/", "packages/lit/src/", "packages/styles/src/"]],
+  ["battle:browser:ci", ["packages/core/src/", "packages/widgets/src/", "battle-tests/browser/", "packages/plain/src/", "packages/lit/src/", "packages/styles/src/"]],
   ["battle:campaign", ["battle-tests/generative/"]],
   ["battle:ci", ["battle-tests/", "packages/"]],
   ["test:battle-types", ["battle-tests/types/", "packages/core/src/", "packages/widgets/src/"]],
-  ["test:bundle", ["packages/angular/src/", "packages/angular/bundle-test/", "scripts/check-bundle.mjs"]],
+  ["test:bundle", ["packages/core/src/", "packages/widgets/src/", "packages/angular/src/", "packages/angular/bundle-test/", "scripts/check-bundle.mjs"]],
   ["test:core-bundle", ["packages/core/src/", "docs/guides/comparison-form-libraries.md", "scripts/check-core-bundle.mjs"]],
   ["test:form-scale", ["packages/core/src/", "packages/plain/src/", "scripts/benchmark-forms.mjs"]],
-  ["test:themes", ["packages/styles/src/", "packages/angular/src/", "packages/lit/src/", "packages/plain/src/"]],
+  ["test:themes", ["packages/widgets/src/", "packages/styles/src/", "packages/angular/src/", "packages/lit/src/", "packages/plain/src/"]],
   ["test:styles-architecture", ["packages/styles/src/", "packages/styles/package.json"]],
-  ["test:e2e", ["e2e/", "examples/", "apps/demo/", "packages/plain/src/", "packages/lit/src/", "packages/styles/src/"]],
+  ["test:e2e", ["packages/core/src/", "packages/widgets/src/", "e2e/", "examples/", "apps/demo/", "packages/plain/src/", "packages/lit/src/", "packages/styles/src/"]],
   ["test:conformance-browser", ["examples/", "packages/plain/src/", "packages/widgets/src/"]],
   ["test:studio", ["packages/studio-", "apps/studio/", "apps/plain-preview/", "packages/plain/"]],
   ["test:typescript7", ["packages/", "scripts/test-typescript-7.mjs"]],
@@ -84,6 +99,7 @@ const stale = [...WATCHES.keys()].filter((name) => !gap.includes(name));
 
 const changed = () => {
   const git = (...args) => execFileSync("git", args, { cwd: ROOT, encoding: "utf8" }).trim();
+  if (range) return git("diff", "--name-only", range).split("\n").filter(Boolean);
   if (STAGED) return git("diff", "--cached", "--name-only").split("\n").filter(Boolean);
   // Everything this head carries that origin/main does not, plus what is not committed yet: the
   // question is about a push, and a push takes both.
@@ -103,7 +119,7 @@ for (const [check, paths] of WATCHES) {
 console.log("# Checks this change can break that `npm run test` will not run\n");
 console.log(`Checks CI runs: ${Object.keys(scripts).filter((n) => IS_A_CHECK.test(n) && inCI.has(n)).length}`
   + ` · of those, outside \`npm run test\`: ${gap.length}`);
-console.log(`Files ${STAGED ? "staged" : `ahead of ${since}, working tree included`}: ${files.length}\n`);
+console.log(`Files ${range ? `in ${range}` : STAGED ? "staged" : `ahead of ${since}, working tree included`}: ${files.length}\n`);
 
 if (woken.size === 0) {
   console.log("Nothing in this change is read by a check the local gate skips.");
