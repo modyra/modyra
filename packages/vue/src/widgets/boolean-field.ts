@@ -19,12 +19,7 @@ import {
   type MdyBooleanFieldController,
 } from "@modyra/widgets";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps } from "./part.js";
-
-/** What a declared element is drawn as, where the contract does not mean a real control. */
-const TAG_FOR_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
-  group: "span", presentation: "span", container: "div", text: "span",
-});
+import { drawDeclaredUnder, partProps } from "./part.js";
 
 export const MdyBooleanField = defineComponent({
   name: "MdyBooleanField",
@@ -47,23 +42,12 @@ export const MdyBooleanField = defineComponent({
     });
     const view = computed(() => controller.view());
 
-    /**
-     * The parts the structure puts under one parent, drawn as declared.
-     *
-     * Required only: an optional part is one a renderer may leave out, and drawing every declared
-     * node would put a required marker on a field that has none and an inline error where there is
-     * no error. Recursive because the declaration is a tree — the toggle's thumb is inside its
-     * track, and flattening the two would draw a shape the contract does not describe.
-     */
-    const drawUnder = (parent: string): VNode[] => contract.structure.nodes
-      .filter((node) => node.parent === parent && node.optional !== true)
-      .map((node) => h(
-        TAG_FOR_ELEMENT[String(node.element)] ?? "span",
-        // Indexed through a widened view of the map: the two kinds declare different parts under the
-        // label, so the union of their keys is what a walk over either can reach.
-        { class: (contract.parts as Readonly<Record<string, { classes: readonly string[] }>>)[node.part]?.classes.join(" ") },
-        drawUnder(String(node.part)),
-      ));
+    /** The parts declared under one parent, drawn by the walk this package shares. */
+    const drawUnder = (parent: string): VNode[] => drawDeclaredUnder(
+      contract,
+      parent,
+      (tag, attrs, kids) => h(tag, attrs, kids as VNode[]),
+    ) as VNode[];
 
     return () => {
       const parts = view.value.parts;
