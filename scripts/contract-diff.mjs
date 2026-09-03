@@ -273,6 +273,22 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
  * a value and no longer finds it draws something else, and for `concealed` that something else is
  * the secret in plain text.
  */
+/**
+ * A field absent from every kind in the baseline is a field this snapshot has just learned to
+ * record — the instrument grew, not the subject.
+ *
+ * It is the one moment the tool knows it is the cause, and the only moment: the verdict travels into
+ * a changeset, where a reader sees `minor` beside a kind and attributes it to the code. So it is
+ * marked here rather than left to be inferred. Told apart by the shape of the absence — a snapshot
+ * that widened lacks the key for *every* kind, while a declaration genuinely added to one kind sits
+ * beside the same key present on the others.
+ */
+const newToTheSnapshot = new Set(
+  ["controlType", "concealed"].filter(
+    (field) => !Object.values(baseline.kinds).some((held) => field in held),
+  ),
+);
+
 for (const [kind, held] of Object.entries(baseline.kinds)) {
   const now = current.kinds[kind];
   if (!now) continue;
@@ -280,9 +296,15 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
     const was = held[field];
     const is = now[field];
     if (was === is) continue;
-    if (was === undefined) record("minor", kind, `${field} now declared: ${JSON.stringify(is)}`);
-    else if (is === undefined) record("major", kind, `${field} no longer declared (was ${JSON.stringify(was)})`);
-    else record("major", kind, `${field} changed: ${JSON.stringify(was)} → ${JSON.stringify(is)}`);
+    if (was === undefined) {
+      record("minor", kind, newToTheSnapshot.has(field)
+        ? `${field} now recorded: ${JSON.stringify(is)} — new to this snapshot, not to the contract`
+        : `${field} now declared: ${JSON.stringify(is)}`);
+    } else if (is === undefined) {
+      record("major", kind, `${field} no longer declared (was ${JSON.stringify(was)})`);
+    } else {
+      record("major", kind, `${field} changed: ${JSON.stringify(was)} → ${JSON.stringify(is)}`);
+    }
   }
 }
 
