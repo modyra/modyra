@@ -21,9 +21,11 @@ everything on the same day before quoting an ordering.
 above is the one a reader has most reason to trust — it names its script, and anyone can run it. It
 is also the one that moved: between 2026-08-10 and 2026-08-20 the realistic surface went from 13.4 KB
 gzip to 26.3 KB, and nothing noticed, because `npm run test:core-bundle` reports and does not gate.
-It still does not gate — a budget raised whenever a legitimate feature crosses it records past sizes
-instead of limiting future ones. What it does now is read this table and print the difference, so a
-figure that has drifted is stated by the command rather than discovered by a reader comparing files.
+It still does not gate on the weight — a budget raised whenever a legitimate feature crosses it
+records past sizes instead of limiting future ones. It gates on the **divergence**: the command reads
+this table, and fails when the figures it measures are not the ones published here. Growth is a
+product decision and belongs in the trajectory below, where a reader can judge it; growth nobody
+wrote down is the defect, and it is the one that went unnoticed for ten days.
 By 2026-08-22 it had moved again, to 27.0 KB. A number with a command behind it drifts exactly as
 quietly as one without, unless something re-runs the command. Treat every figure here as of its
 stated date, this page's own included.

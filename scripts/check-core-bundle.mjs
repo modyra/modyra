@@ -94,8 +94,11 @@ const dist = newest("packages/core/dist");
 console.log(`Measured from packages/core/dist, built ${new Date(dist).toISOString().slice(0, 19).replace("T", " ")}`
   + ` — not from source, and not from a tarball.`);
 if (src > dist) {
-  console.log("  packages/core/src is NEWER than that build: these figures are of source that is no"
+  // Not a divergence — a run that cannot answer the question. Reporting either verdict off a build
+  // that is not the source in hand would put a number in the guide for code nobody has.
+  console.error("packages/core/src is NEWER than that build: these figures are of source that is no"
     + "\n  longer what you have. Run `npm run build:core` and measure again.");
+  process.exit(1);
 }
 
 const whole = measure("whole", "packages/core/dist/index.js");
@@ -104,16 +107,18 @@ const surface = measure("surface", surfaceEntry);
 console.log(`@modyra/core whole entry:        ${whole.min.toFixed(1)} KB min, ${whole.gz.toFixed(1)} KB gzip`);
 console.log(`@modyra/core realistic surface:  ${surface.min.toFixed(1)} KB min, ${surface.gz.toFixed(1)} KB gzip`);
 
-// Reported, not gated.
+// The size is not gated; the *divergence* is.
 //
-// These numbers back the figures in `docs/guides/comparison-form-libraries.md`, and measuring them
-// is worth keeping. Failing on them was not: a budget that is raised every time a legitimate feature
-// crosses it records past sizes rather than limiting future ones, and it blocked correct changes —
-// in CI and, until now, in the release workflow too.
+// A budget raised every time a legitimate feature crosses it records past sizes rather than limiting
+// future ones, and it blocked correct changes — in CI and in the release workflow. So growth passes,
+// as long as it is declared: the guide's trajectory table is where a product decision about weight
+// belongs, and a reader can judge it there.
 //
-// What a re-imported satellite module would actually do is show up here as a step change. Watching
-// for that is a reader's job, and a reader can see it in this output.
-console.log("Reported, not gated — see the note in this file for why these numbers do not fail a build.");
+// What fails is the guide and the measurement disagreeing. That is the defect that let the realistic
+// surface go from 13.4 KB to 26.3 KB with nobody noticing — not the growth, the silence about it.
+// Under this rule every new kilobyte costs one line of guide that admits it, and that line is
+// precisely what the next reader needs to find.
+console.log("The weight is not gated; a guide that no longer matches it is.");
 
 /**
  * What the guide says these numbers are, so the two can be seen to disagree.
@@ -143,8 +148,9 @@ function published() {
 
 const claim = published();
 if (claim.whole === null || claim.surface === null) {
-  console.log(`\n${GUIDE} no longer states both figures in the shape this reads — the two cannot be`
+  console.error(`\n${GUIDE} no longer states both figures in the shape this reads — the two cannot be`
     + " compared, which is a defect in this check rather than a clean result.");
+  process.exit(1);
 } else {
   // The tolerance is one published step, and it is the guide's precision that sets it.
   //
@@ -168,9 +174,11 @@ if (claim.whole === null || claim.surface === null) {
   if (found.length === 0) {
     console.log(`${GUIDE} publishes the same two figures within its own 0.1 KB precision, measured ${claim.on}.`);
   } else {
-    console.log(`\n${GUIDE} publishes figures this run does not reproduce:`);
-    for (const one of found) console.log(`  ${one}`);
-    console.log("  Neither number is wrong on its own. Update the guide's table, or explain the step"
-      + "\n  change beside it — the guide is where a reader looks, and it is the one that is stale.");
+    console.error(`\n${GUIDE} publishes figures this run does not reproduce:`);
+    for (const one of found) console.error(`  ${one}`);
+    console.error("  Neither number is wrong on its own, and growth is not the finding. Add the row to"
+      + "\n  the guide's trajectory table and update the figures above it — a weight nobody wrote down"
+      + "\n  is the thing this fails on.");
+    process.exit(1);
   }
 }
