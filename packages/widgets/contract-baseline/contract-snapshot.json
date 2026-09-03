@@ -3,6 +3,7 @@
   "kinds": {
     "text": {
       "valueSlot": "container",
+      "controlType": "text",
       "parts": {
         "root": {
           "order": 0,
@@ -188,6 +189,7 @@
     },
     "email": {
       "valueSlot": "container",
+      "controlType": "email",
       "parts": {
         "root": {
           "order": 0,
@@ -373,6 +375,8 @@
     },
     "password": {
       "valueSlot": "container",
+      "controlType": "password",
+      "concealed": true,
       "parts": {
         "root": {
           "order": 0,
@@ -717,6 +721,7 @@
     },
     "number": {
       "valueSlot": "container",
+      "controlType": "number",
       "parts": {
         "root": {
           "order": 0,
@@ -907,6 +912,7 @@
     },
     "slider": {
       "valueSlot": "shape",
+      "controlType": "range",
       "parts": {
         "root": {
           "order": 0,
@@ -1080,6 +1086,7 @@
     },
     "checkbox": {
       "valueSlot": "shape",
+      "controlType": "checkbox",
       "parts": {
         "root": {
           "order": 0,
@@ -1250,6 +1257,7 @@
     },
     "toggle": {
       "valueSlot": "shape",
+      "controlType": "checkbox",
       "parts": {
         "root": {
           "order": 0,
@@ -3980,6 +3988,7 @@
     },
     "file": {
       "valueSlot": "container",
+      "controlType": "file",
       "parts": {
         "root": {
           "order": 0,
@@ -4193,6 +4202,7 @@
     },
     "colors": {
       "valueSlot": "container",
+      "controlType": "color",
       "parts": {
         "root": {
           "order": 0,

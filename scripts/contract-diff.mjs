@@ -73,6 +73,15 @@ function snapshot() {
       // theming a control reads it to know what to draw, and changing it changes what every renderer
       // draws for that kind.
       valueSlot: definition.valueSlot,
+      // The native control a kind is drawn with, and whether what it holds is concealed. Both are
+      // declarations an adapter implements, so both are public in the sense that matters here: a
+      // renderer reads them to decide what to draw.
+      //
+      // `concealed` is the whole of what separates `password` from `text`. Without it in the
+      // snapshot, removing it reported "Contract unchanged" and classified `patch` — the tool with
+      // authority over a release being blind to the one fact that keeps a secret off the screen.
+      controlType: definition.controlType,
+      concealed: definition.concealed,
       parts,
       // Ordered as declared: a relation's `to` is a preference order, so reordering it changes
       // which element a reference resolves to and is not a cosmetic change.
@@ -253,6 +262,27 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
     // Every renderer draws this kind differently afterwards, and a theme keyed on the box is drawing
     // it for a control that no longer has one — or failing to for one that now does.
     record("major", kind, `value slot changed: ${held.valueSlot} → ${now.valueSlot}`);
+  }
+}
+
+/**
+ * The two declarations a renderer reads to decide what control to draw.
+ *
+ * Gaining one is `minor`: nothing a consumer had stops working, and a renderer that ignores it draws
+ * what it drew before. Changing or losing one is `major`, and not by symmetry — an adapter that read
+ * a value and no longer finds it draws something else, and for `concealed` that something else is
+ * the secret in plain text.
+ */
+for (const [kind, held] of Object.entries(baseline.kinds)) {
+  const now = current.kinds[kind];
+  if (!now) continue;
+  for (const field of ["controlType", "concealed"]) {
+    const was = held[field];
+    const is = now[field];
+    if (was === is) continue;
+    if (was === undefined) record("minor", kind, `${field} now declared: ${JSON.stringify(is)}`);
+    else if (is === undefined) record("major", kind, `${field} no longer declared (was ${JSON.stringify(was)})`);
+    else record("major", kind, `${field} changed: ${JSON.stringify(was)} → ${JSON.stringify(is)}`);
   }
 }
 
