@@ -1080,7 +1080,11 @@ export function renderMultiselectField(
     if (state.activeKey === null) search.removeAttribute("aria-activedescendant");
     else search.setAttribute("aria-activedescendant", view.parts[state.activeKey]?.id ?? "");
     applyPart(overlay.grid, view.parts.group);
-    syncGrids(state.options);
+    // What the query leaves, not everything the field was given: `state.options` is the whole list
+    // and `filteredOptions` is what is left once `state.query` has narrowed it. Drawing the whole
+    // list here leaves the box a person types into changing nothing they can see, while the
+    // controller narrows agreeably out of sight.
+    syncGrids(controller.filteredOptions());
     applyPart(shell.description, view.parts.description);
     // The description says what the document gave it and nothing more. The chips are the selection,
     // so a number beside them counts what is already on screen; the ones the strip scrolled past
