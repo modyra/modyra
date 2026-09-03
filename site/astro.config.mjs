@@ -120,6 +120,7 @@ export default defineConfig({
 						{ label: 'Known issues', slug: 'known-issues' },
 						{ label: 'Reactivity capability matrix', slug: 'reactivity-capability-matrix' },
 						{ label: 'The deprecation harvest, measured', slug: 'deprecation-dossier' },
+						{ label: 'CSS properties nothing reads, measured', slug: 'css-orphan-dossier' },
 					],
 				},
 				{
