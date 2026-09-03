@@ -30,6 +30,17 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       <!-- attr.title, not title: the property is a DOMString, so an absent value assigned to it
            becomes the word "null" and every checkbox without an error shows a tooltip saying so.
            The attribute binding removes the attribute instead. -->
+      <!--
+        The false half of the value, after the visible control. HTML leaves an unchecked box out of
+        the payload altogether, so without this a person who said no and a form that never carried
+        the question arrive identical at the other end.
+
+        After the visible control and before the caption, which is where the contract declares it.
+        Ahead of the control it would change what the most obvious selector anybody writes — the
+        first input in the field — actually finds; after the label it disagreed with the declared
+        order, which nothing could see while this element carried no class to be found by.
+      -->
+      <input [mdyPart]="submitFalsePart()" />
       <label
         class="{{ cls.label }}"
         [class.mdy-label--has-error]="paintsAsInvalid()"
@@ -42,15 +53,6 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
           <span class="{{ cls.requiredMarker }}" aria-hidden="true">*</span>
         }
       </label>
-      <!--
-        The false half of the value, after the visible control. HTML leaves an unchecked box out of
-        the payload altogether, so without this a person who said no and a form that never carried
-        the question arrive identical at the other end.
-
-        After, not before: a hidden input ahead of the visible control changes what the most obvious
-        selector anybody writes — the first input in the field — actually finds.
-      -->
-      <input [mdyPart]="submitFalsePart()" />
     </div>
     <!-- Not an else: an error does not take the place of the instruction that would have prevented
          it, which is what the described-by projection says by naming both. Rendered as an

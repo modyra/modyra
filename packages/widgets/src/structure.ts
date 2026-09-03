@@ -613,7 +613,18 @@ export const MDY_FIELD_STATE_CLASSES = Object.freeze({
  * been reported as an internal change while breaking every stylesheet that used one. The snapshot
  * now records them alongside the scale, for the same reason and in the same shape.
  */
+/**
+ * The companion input that carries `false` when a boolean field is not ticked.
+ *
+ * One element on two kinds, so it is named once here rather than twice in their catalogue entries.
+ * It had no class at all until this existed, which made it the one element carrying the field's name
+ * that resolved to no part: declared in the submission table, present on the page, reachable from
+ * neither direction — and its declared position among its siblings therefore never checked.
+ */
+export const MDY_SUBMIT_FALSE_CLASS = "mdy-submit-false";
+
 export const MDY_SHARED_UI_CLASSES = Object.freeze([
+  MDY_SUBMIT_FALSE_CLASS,
   "mdy-button",
   // What the inline error draws inside itself. The part is one element on thirteen kinds; its icon
   // and its tooltip are the same two classes wherever it appears.

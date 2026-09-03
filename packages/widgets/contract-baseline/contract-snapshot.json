@@ -1139,7 +1139,9 @@
           "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
-          "classes": [],
+          "classes": [
+            "mdy-submit-false"
+          ],
           "states": []
         },
         "indicator": {
@@ -1310,7 +1312,9 @@
           "presentWhen": "kindOffersIt",
           "repeated": false,
           "role": null,
-          "classes": [],
+          "classes": [
+            "mdy-submit-false"
+          ],
           "states": []
         },
         "track": {
@@ -4565,7 +4569,8 @@
       "mdy-inline-errors",
       "mdy-overlay",
       "mdy-overlay-backdrop",
-      "mdy-overlay-panel"
+      "mdy-overlay-panel",
+      "mdy-submit-false"
     ],
     "layout": [
       "mdy-layout-column",

@@ -40,6 +40,7 @@
     "mdy-select__trigger--loading": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--open": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
     "mdy-select__trigger--readonly": "declared state on select.trigger; no theme paints any of the five, so the trigger state vocabulary is unadopted",
+    "mdy-submit-false": "the companion input that carries `false` for an unticked boolean; `type=hidden` has nothing to paint, and a theme reaching it would be styling an element no one can see",
     "mdy-timepicker--dial": "unreviewed",
     "mdy-timepicker-dial-variant": "unreviewed",
     "mdy-timepicker-segment--focused": "unreviewed — the themes paint --active on this base and never --focused",

@@ -35,6 +35,7 @@
  * is the question, the form owner is who is answering.**
  */
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS, type MdyWidgetKind } from "./catalog.js";
+import { MDY_SUBMIT_FALSE_CLASS } from "./structure.js";
 
 /**
  * How one kind puts its value into a form's payload.
@@ -191,7 +192,9 @@ export function submitFalsePart(
   state: { readonly disabled?: boolean; readonly checked?: boolean } = {},
 ): { readonly classes: readonly string[]; readonly attributes: Readonly<Record<string, string | boolean>> } {
   return Object.freeze({
-    classes: Object.freeze([]),
+    // The class is what makes this element findable as the part the table above names. Without one it
+    // was the single element carrying the field's name that resolved to no part.
+    classes: Object.freeze([MDY_SUBMIT_FALSE_CLASS]),
     attributes: Object.freeze({
       type: "hidden",
       name: path,

@@ -6,7 +6,7 @@
  * datepicker" without also being the answer to "how is a definition assembled".
  */
 import { MDY_CHIP_CLASSES } from "../chip.js";
-import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
+import { MDY_FIELD_SHELL_CLASSES, MDY_SUBMIT_FALSE_CLASS } from "../structure.js";
 import {
   CALENDAR_CELL_STATES,
   CALENDAR_PERIOD_CELL_STATES,
@@ -58,12 +58,12 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // renderer emits, so a theme centres the tick inside it instead of guessing where the box sits
   // behind a label's pseudo-element.
   checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "submitFalse", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper", indicator: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+    { parents: { label: "inputWrapper", indicator: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], submitFalse: [MDY_SUBMIT_FALSE_CLASS], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
       roles: { control: "checkbox" } ,
       required: ["indicator"],
       controlType: "checkbox" }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "submitFalse", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
-    { parents: { label: "inputWrapper", track: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
+    { parents: { label: "inputWrapper", track: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], submitFalse: [MDY_SUBMIT_FALSE_CLASS], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
       roles: { control: "switch" } ,
       required: ["thumb"],
       controlType: "checkbox" }),

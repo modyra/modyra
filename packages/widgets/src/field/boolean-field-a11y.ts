@@ -3,6 +3,8 @@
  */
 
 import type { MdyFieldError } from "@modyra/core";
+import { submitFalsePart } from "../submission.js";
+import { MDY_SUBMIT_FALSE_CLASS } from "../structure.js";
 import { fieldDescribedBy } from "./shell-a11y.js";
 import { assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
@@ -142,18 +144,15 @@ export function projectBooleanFieldA11y(
     // Carries `false` under the field's key, **after** the box in the document: a hidden input
     // before the visible control changes what `querySelector("input")` and `.first()` mean for
     // everyone reading the field, and that is the most obvious selector anybody writes.
-    submitFalse: {
-      classes: [],
-      attributes: options.submitName === undefined ? {} : {
-        type: "hidden",
-        name: options.submitName,
-        value: "false",
-        // Silent while the box is ticked, so the payload carries one key rather than two: a ticked
-        // box sends `true` alone and an unticked one sends `false` alone, with no repeated key for a
-        // receiving end to resolve. Disabled with the field for the same reason a control is.
-        disabled: state.disabled === true || state.checked === true,
-      },
-    },
+    submitFalse: options.submitName === undefined
+      // No key to submit under, so the element carries nothing but the class that names it. It is
+      // still the part: a renderer draws it either way, and a part findable in only one of its two
+      // states is findable by nobody writing a check.
+      ? { classes: [MDY_SUBMIT_FALSE_CLASS], attributes: {} }
+      // Asked of the projection that owns this element rather than restated here. Both spellings
+      // existed, with the same attributes and the same paragraph of reasoning beside each, and two
+      // renderers read one while the third read the other.
+      : submitFalsePart(options.submitName, { disabled: state.disabled, checked: state.checked }),
     input: {
       id: inputId,
       classes: [],

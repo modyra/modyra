@@ -72,6 +72,17 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
         <!-- The label carries the field's state the way every other kind's does: it is drawn here
              rather than through the shared renderLabel, because the control sits inside it, and the classes
              have to come from the same vocabulary either way. -->
+        <!--
+          The false half of the value, after the visible control. HTML leaves an unchecked box out of
+          the payload altogether, so without this a person who said no and a form that never carried
+          the question arrive identical at the other end.
+
+          After the visible control, and before the caption: a hidden input ahead of the control
+          changes what the most obvious selector anybody writes — the first input in the field —
+          actually finds, and the contract declares this part between the control and the label.
+          It sat after the label, which no check could see while the element carried no class.
+        -->
+        <input ${mdyPart(submitFalsePart(handle.path, { disabled: handle.disabled(), checked: handle.value() === true }))} />
         <label
           class="${[MDY_FIELD_STATE_CLASSES.label, ...Object.entries(shellStateClasses({ error: this.showErrors(handle) }).label).filter(([, on]) => on).map(([name]) => name)].join(" ")}"
           id="${this.fieldId}__label"
@@ -83,15 +94,6 @@ export class MdyCheckboxFieldElement extends MdyFieldElement<boolean> {
             ? html`<span class="${CLASS.requiredMarker}" aria-hidden="true">*</span>`
             : nothing}
         </label>
-        <!--
-          The false half of the value, after the visible control. HTML leaves an unchecked box out of
-          the payload altogether, so without this a person who said no and a form that never carried
-          the question arrive identical at the other end.
-
-          After, not before: a hidden input ahead of the visible control changes what the most
-          obvious selector anybody writes — the first input in the field — actually finds.
-        -->
-        <input ${mdyPart(submitFalsePart(handle.path, { disabled: handle.disabled(), checked: handle.value() === true }))} />
       </div>
       ${this.renderSupportingText()}
       ${this.renderErrors(handle)}
