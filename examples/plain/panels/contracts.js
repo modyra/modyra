@@ -414,6 +414,7 @@ export const contractsPanel = {
       popupPlacementClass: ["select", "above"],
       popupAlignmentClass: ["select", "right"],
       multiselectChipClasses: { role: "value" },
+      contractParts: ["select", "trigger"],
     };
     // Every function that puts a class on an element, and what each answers for one kind.
     //
@@ -436,12 +437,27 @@ export const contractsPanel = {
       // Each door is asked something it can answer: they take different arguments, and a door shown
       // returning nothing because it was asked the wrong question teaches the opposite of the point.
       const asked = SAMPLE_CALL[door.name];
+      // Every shape a door can take, and an answer for a door this page has not been taught.
+      //
+      // A door is not always called: one is *read*, as a path through the contract, and it carries
+      // `resolvePath` and no `resolve` at all. The branch that assumed otherwise threw, and because
+      // this whole panel is built in one pass the throw took the inspection table below it with it —
+      // a manifest entry added in one package emptied a page in another, and the page said nothing
+      // about why. So the last branch answers instead of assuming: a door with no shape this knows
+      // is named as such, which is a row a reader can act on rather than a blank panel.
       if (door.unresolvable) {
         answer.textContent = `dipende da un valore — ${door.unresolvable}`;
       } else if (door.resolveObject) {
-        answer.textContent = [...door.resolveObject(asked)].join(" ");
+        answer.textContent = [...door.resolveObject(asked ?? {})].join(" ");
+      } else if (door.resolvePath) {
+        const [kind, part] = asked ?? [];
+        answer.textContent = kind
+          ? `${[...door.resolvePath(kind, part)].join(" ")} — letta come ${door.readPath.root}.${part}.${door.readPath.leaf}`
+          : "una porta che si legge come percorso, senza un esempio su questa pagina";
+      } else if (door.resolve) {
+        answer.textContent = [...door.resolve(asked ?? [])].join(" ") || `nessuna, per ${(asked ?? []).join("/")}`;
       } else {
-        answer.textContent = [...door.resolve(asked)].join(" ") || `nessuna, per ${asked.join("/")}`;
+        answer.textContent = "una porta di una forma che questa pagina non conosce ancora";
       }
       doorsList.append(term, answer);
     }
