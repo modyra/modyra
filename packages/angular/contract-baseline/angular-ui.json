@@ -912,8 +912,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-label",
-        "aria-readonly"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-number"
@@ -980,8 +979,7 @@
         "aria-disabled",
         "aria-hidden",
         "aria-label",
-        "aria-labelledby",
-        "aria-readonly"
+        "aria-labelledby"
       ],
       "selectors": [
         "mdy-control-segmented"
@@ -1076,8 +1074,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-label",
-        "aria-readonly"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-text"
@@ -1098,8 +1095,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-label",
-        "aria-readonly"
+        "aria-label"
       ],
       "selectors": [
         "mdy-control-textarea"

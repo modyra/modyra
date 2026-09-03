@@ -50,7 +50,6 @@ import { inputNumber } from "../renderer-projection";
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
         [readonly]="isReadonly()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('number')"
         [attr.aria-label]="controlAriaLabel()"

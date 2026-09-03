@@ -41,7 +41,6 @@ import { inputText } from "../renderer-projection";
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
         [readonly]="isReadonly()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [rows]="rows()"
         (input)="onInput($event)"
         (blur)="dispatchValueBlur('textarea')"

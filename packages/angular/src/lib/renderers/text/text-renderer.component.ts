@@ -49,7 +49,6 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
         [readonly]="isReadonly()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.autocomplete]="autocomplete()"
         [mdyPart]="controlPart()"
         (input)="onInput($event)"
