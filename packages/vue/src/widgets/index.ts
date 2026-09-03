@@ -17,3 +17,4 @@ export type {
 } from "./field.js";
 export { MdyTextField } from "./text-field.js";
 export { partProps, type MdyVuePartProps } from "./part.js";
+export { MdyBooleanField } from "./boolean-field.js";

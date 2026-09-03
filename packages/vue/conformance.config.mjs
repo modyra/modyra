@@ -14,9 +14,10 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
-const { MDY_CANONICAL_EMPTY } = await import("@modyra/widgets/testing");
+const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
+const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
 export const name = "@modyra/vue";
 
@@ -27,7 +28,10 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle"];
+
+/** Which component draws a kind, read from the shape rather than from a list of names. */
+const BOOLEAN = new Set(["checkbox", "toggle"]);
 
 /**
  * Mounting one widget, ready for the kit to inspect.
@@ -46,23 +50,25 @@ export const mount = async (kind) => {
   // a string this file chose.
   const form = createVueForm({ value: field(MDY_CANONICAL_EMPTY[kind]) });
   const app = createApp({
-    render: () => h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind }),
+    render: () => (BOOLEAN.has(kind)
+      ? h(MdyBooleanField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind })
+      : h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind })),
   });
   app.mount(host);
 
   const root = () => host.firstElementChild;
   return {
     root: root(),
-    parts: () => ({
-      root: root(),
-      label: host.querySelector(".mdy-label"),
-      inputWrapper: host.querySelector(".mdy-input-wrapper"),
-      // The control is whichever tag the kind declares, asked of the page rather than assumed: this
-      // renderer draws a textarea for one of these kinds and an input for the rest.
-      control: host.querySelector("input, textarea"),
-      supportingText: host.querySelector(".mdy-supporting-text"),
-      errors: host.querySelector(".mdy-control__errors"),
-    }),
+    // Resolved from the catalogue, never from a selector this file chose. A map written by hand is a
+    // map written for one kind: the first version named the text field's wrapper class and was right
+    // for four kinds by resemblance, then reported a checkbox's wrapper as missing while it was on
+    // the page. `findPartElements` is the same lookup the kit uses on itself.
+    parts: () => Object.fromEntries(
+      MDY_WIDGET_CONTRACTS[kind].structure.nodes
+        .map((node) => [node.part, findPartElements(host, kind, node.part)])
+        .filter(([, found]) => found.length > 0)
+        .map(([part, found]) => [part, found.length === 1 ? found[0] : found]),
+    ),
     // Nothing yet: the states the kit drives arrive with the units that make them reachable, and
     // saying so is what keeps a state nobody can reach out of the conformance count.
     drive: () => false,
