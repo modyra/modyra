@@ -26,7 +26,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text"];
+export const kinds = ["text", "email", "password", "textarea"];
 
 /**
  * Mounting one widget, ready for the kit to inspect.
@@ -36,14 +36,14 @@ export const kinds = ["text"];
  * it cannot do and reports a state silently unreachable as conformance.
  */
 export const mount = async (kind) => {
-  if (kind !== "text") {
+  if (!kinds.includes(kind)) {
     throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
   const host = document.createElement("div");
   document.body.append(host);
   const form = createVueForm({ value: field("") });
   const app = createApp({
-    render: () => h(MdyTextField, { field: form.f.value, label: "Given", widgetId: "vue-text" }),
+    render: () => h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind }),
   });
   app.mount(host);
 
@@ -54,7 +54,9 @@ export const mount = async (kind) => {
       root: root(),
       label: host.querySelector(".mdy-label"),
       inputWrapper: host.querySelector(".mdy-input-wrapper"),
-      control: host.querySelector("input"),
+      // The control is whichever tag the kind declares, asked of the page rather than assumed: this
+      // renderer draws a textarea for one of these kinds and an input for the rest.
+      control: host.querySelector("input, textarea"),
       supportingText: host.querySelector(".mdy-supporting-text"),
       errors: host.querySelector(".mdy-control__errors"),
     }),
@@ -63,7 +65,7 @@ export const mount = async (kind) => {
     drive: () => false,
     settle: async () => { await new Promise((resolve) => setTimeout(resolve, 0)); },
     dispose: () => { app.unmount(); host.remove(); },
-    control: () => host.querySelector("input"),
-    value: () => host.querySelector("input")?.value ?? "",
+    control: () => host.querySelector("input, textarea"),
+    value: () => host.querySelector("input, textarea")?.value ?? "",
   };
 };
