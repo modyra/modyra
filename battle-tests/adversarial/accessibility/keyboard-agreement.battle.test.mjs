@@ -37,7 +37,7 @@
 
 import { MDY_POPUP_OPENERS, widgetKeyIntent } from "@modyra/widgets";
 
-import { MDY_WIDGET_CONTRACTS as CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS as CONTRACTS, popupHoldsAnAction } from "@modyra/widgets";
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
 
@@ -126,9 +126,18 @@ battle(
       // ADR 0122 withdrew that binding for those, because Tab was the only key that reached their
       // confirm button and it closed the popup before arriving.
       //
-      // Derived from the anatomy rather than named, so a second kind growing an action bar moves to
-      // the other branch by itself: an `actions` bar means a confirm button inside the overlay.
-      if (CONTRACTS[kind]?.parts?.actions !== undefined) {
+      // Asked of the contract's own predicate, not of a stand-in for it.
+      //
+      // This read `parts.actions !== undefined` — an actions bar meaning a confirm button inside the
+      // overlay — and that agreed with the rule for one kind by coincidence. Colours joined this
+      // family by holding an operable part that is not a choice and is not repeated, with no actions
+      // bar at all, so the anatomy did not move while the rule did, and this battle failed a change
+      // that was correct.
+      //
+      // `popupHoldsAnAction` is the rule itself, exported for callers rather than copied into them.
+      // It is not the thing under test either: what is asserted below is the keyboard table's
+      // agreement, and deriving that expectation from the same table would assert nothing.
+      if (popupHoldsAnAction(kind)) {
         // `target: "last"` because Shift is not in this call — the plain Tab walks to the end of the
         // order and wraps, and the pair of them is what makes the ring closed rather than a corridor.
         expectEqual(tab, { type: "move", target: "last" }, {
