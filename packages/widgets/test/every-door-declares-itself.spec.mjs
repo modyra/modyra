@@ -129,3 +129,16 @@ test("a door asked the wrong question adds nothing and does not throw", () => {
     assert.ok(Array.isArray(answer.classes), `${door.name} threw on a question it cannot answer`);
   }
 });
+
+test("a door asked with nothing says so, rather than answering with nothing", () => {
+  // The distinction belongs to the contract, not to whoever is displaying it: a caller that has no
+  // question for a door yet must not be handed an answer that reads as "this door puts no class on
+  // any element". A caller that does want the door's own defaults asks with the empty shape.
+  for (const door of MDY_CLASS_DOORS) {
+    if (door.unresolvable) continue;
+    const answer = answerDoor(door);
+    assert.deepEqual(answer.classes, [], `${door.name} answered a question nobody asked`);
+    assert.match(answer.unresolvable ?? "", /asked with nothing/,
+      `${door.name} was silent about not having been asked`);
+  }
+});

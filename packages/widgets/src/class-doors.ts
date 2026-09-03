@@ -123,12 +123,20 @@ export interface MdyDoorAnswer {
  */
 export function answerDoor(door: MdyClassDoor, asked?: unknown): MdyDoorAnswer {
   if (door.unresolvable) return { classes: [], unresolvable: door.unresolvable };
+  // Asked with nothing is not answered with nothing, and collapsing the two is worse than the throw
+  // this function replaced: a door that was never asked reads as a door that puts no class on any
+  // element, which is the opposite of what a caller showing this is trying to say. `undefined` means
+  // not asked; a caller that wants the door's own defaults asks with the empty shape — `{}` for an
+  // options door, `[]` for a positional one.
+  if (asked === undefined) {
+    return { classes: [], unresolvable: "asked with nothing: this door takes an argument and none was given" };
+  }
   try {
     if (door.resolveObject) {
-      return { classes: [...door.resolveObject((asked as Record<string, unknown>) ?? {})] };
+      return { classes: [...door.resolveObject(asked as Record<string, unknown>)] };
     }
     if (door.resolvePath && door.readPath) {
-      const [kind, part] = (asked as readonly string[]) ?? [];
+      const [kind, part] = asked as readonly string[];
       if (typeof kind !== "string" || typeof part !== "string") {
         return { classes: [], unresolvable: "read as a path, and asked without a kind and a part" };
       }
@@ -137,7 +145,7 @@ export function answerDoor(door: MdyClassDoor, asked?: unknown): MdyDoorAnswer {
         path: `${door.readPath.root}.${part}.${door.readPath.leaf}`,
       };
     }
-    if (door.resolve) return { classes: [...door.resolve((asked as readonly string[]) ?? [])] };
+    if (door.resolve) return { classes: [...door.resolve(asked as readonly string[])] };
   } catch {
     // A door asked something it cannot answer adds no class and does not take its caller down with
     // it. The gates report this as perimeter; a page shows the row and keeps the rest of the page.
