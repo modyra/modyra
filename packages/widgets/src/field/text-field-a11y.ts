@@ -134,7 +134,11 @@ export function projectTextFieldA11y<TValue>(
       attributes: {
         // What the control is, and what this projection alone knows: the kind's input type, the
         // autocomplete a caller asked for, and the two native flags.
-        type: options.inputType ?? "text",
+        // No invented default: a kind whose control type the contract does not declare leaves the
+        // attribute off rather than being told it is a text box. The implicit `?? "text"` put
+        // `type="text"` on a <textarea> — an attribute that element does not have — because a
+        // default nobody declared cannot have an exception.
+        type: options.inputType ?? null,
         autocomplete: options.autocomplete ?? null,
         // Everything a control exposes about its *state and rules* comes from the shell projection,
         // which is where a renderer that binds a part reads it. Two projections spelling the same

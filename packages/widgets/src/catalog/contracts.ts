@@ -39,11 +39,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // The box and its two steppers need one positioning context between them, and it is not a part:
       // nothing is announced by it and no contract member points at it.
       presentation: { spinner: "mdy-number-spinner" } ,
-      elements: { increment: "button", decrement: "button" } }),
+      elements: { increment: "button", decrement: "button" },
+      controlType: "number" }),
   slider: define("slider", ["mdy-renderer", "mdy-renderer--slider"], ["root", "label", "requiredMarker", "track", "control", "value", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { value: "track" },
       classes: { track: ["mdy-slider-container"], control: ["mdy-slider"], value: ["mdy-slider-value"] } ,
-      required: ["value"] }),
+      required: ["value"],
+      controlType: "range" }),
   // Boolean controls wrap their input and their text in one clickable element, so the label sits
   // inside the wrapper next to the control rather than above it.
   // `indicator` is the drawn box, the checkbox's answer to the toggle's track: a real element every
@@ -52,11 +54,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   checkbox: define("checkbox", ["mdy-renderer", "mdy-renderer--checkbox"], ["root", "inputWrapper", "control", "submitFalse", "indicator", "label", "requiredMarker", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { label: "inputWrapper", indicator: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-checkbox"], control: ["mdy-checkbox__control"], indicator: ["mdy-checkbox__indicator"], label: [MDY_FIELD_SHELL_CLASSES.label], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
       roles: { control: "checkbox" } ,
-      required: ["indicator"] }),
+      required: ["indicator"],
+      controlType: "checkbox" }),
   toggle: define("toggle", ["mdy-renderer", "mdy-renderer--toggle"], ["root", "inputWrapper", "control", "submitFalse", "track", "thumb", "label", "requiredMarker", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { parents: { label: "inputWrapper", track: "label", submitFalse: "inputWrapper" }, elements: { label: "label", inputWrapper: "container" }, classes: { inputWrapper: ["mdy-toggle"], control: ["mdy-toggle__control"], track: ["mdy-toggle__track"], thumb: ["mdy-toggle__thumb"], label: ["mdy-toggle__label"], requiredMarker: [MDY_FIELD_SHELL_CLASSES.requiredMarker] } ,
       roles: { control: "switch" } ,
-      required: ["thumb"] }),
+      required: ["thumb"],
+      controlType: "checkbox" }),
   radio: define("radio", ["mdy-renderer", "mdy-renderer--radio-group"], ["root", "label", "requiredMarker", "group", "option", "optionControl", "optionLabel", "supportingText", "errors", "errorItem"] as const, false,
     { classes: { group: ["mdy-radio-group"], option: ["mdy-radio-item"], optionControl: ["mdy-radio-circle"], optionLabel: ["mdy-radio-label"] },
       // A native chooser renders each choice as a <label> around its own <input type=radio>. That
@@ -314,7 +318,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       // the hand of somebody removing several, one at a time. It stands with the control that picks
       // files instead, which is the part of this field that does not change with what is in it.
       // ADR 0173.
-      required: ["content", "clear"] }),
+      required: ["content", "clear"],
+      controlType: "file" }),
   colors: define("colors", ["mdy-renderer", "mdy-renderer--colors"], ["root", "label", "requiredMarker", "inputWrapper", "nativePicker", "preview", "control", "hexInput", "toggle", "popup", "presets", "swatch", "customEntry", "customTint", "inlineError", "supportingText", "errors", "errorItem"] as const, true,
     {
       // The picker is the affordance a pointer uses to reach the colour, and the contract does not
@@ -353,7 +358,8 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
       states: { swatch: ["active"], popup: POPUP_PLACEMENT_STATES },
       classes: { nativePicker: ["mdy-colors__primary-picker"], preview: ["mdy-colors__preview-swatch"], control: ["mdy-colors__native-hidden"], hexInput: ["mdy-colors__hex-input"], toggle: ["mdy-colors__toggle-area"], customEntry: ["mdy-colors__custom-entry"], customTint: ["mdy-colors__custom-tint"], popup: ["mdy-colors__dropdown", MDY_POPUP_CLASS, MDY_POPUP_SURFACE_CLASS], presets: ["mdy-colors__presets"], swatch: ["mdy-color-swatch"] } ,
       presentation: { box: "mdy-colors", dropdownHeader: "mdy-colors__dropdown-header", arrow: "mdy-select__arrow" } ,
-      required: ["hexInput", "nativePicker", "preview", "toggle", "presets"] }),
+      required: ["hexInput", "nativePicker", "preview", "toggle", "presets"],
+      controlType: "color" }),
 });
 
 /**
