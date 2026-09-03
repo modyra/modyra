@@ -456,6 +456,18 @@ export const contractsPanel = {
         : answered.path
             ? `${answered.classes.join(" ")} — letta come ${answered.path}`
             : answered.classes.join(" ") || `nessuna, per ${[asked].flat().join("/")}`;
+      // What *kind* of answer this row is, declared rather than left to be read out of the sentence.
+      //
+      // A door that cannot answer because the door itself says so is a row this page is happy with.
+      // A door that could have answered and was asked with nothing is a hole in `SAMPLE_CALL`, and
+      // the two are one word apart in the rendered text. A check that told them apart by matching
+      // that text went green the day the wording moved — it kept passing on the very case it was
+      // written for, which is worse than never having existed.
+      answer.dataset.answer = !answered.unresolvable
+        ? "answered"
+        : door.unresolvable
+          ? "declared"
+          : "unasked";
       doorsList.append(term, answer);
     }
     doors.append(doorsList);

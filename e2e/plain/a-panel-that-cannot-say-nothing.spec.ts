@@ -62,7 +62,16 @@ test("no door on the page is missing the example it is asked with", async ({ pag
     const name = (await terms.nth(at).textContent())?.trim() ?? "";
     const said = (await answers.nth(at).textContent())?.trim() ?? "";
     expect(said, `the ${name} row is blank`).not.toBe("");
-    expect(said, `${name} has no sample on the page, so its row cannot say what it puts on an element`)
-      .not.toContain("non ha ancora un esempio");
+    // Read from the row's own declaration, never from its wording.
+    //
+    // This assertion used to match the sentence the page wrote for a door with no sample. The
+    // wording then moved into the contract, the page stopped writing that sentence, and this test
+    // went **green on the plant that had made it red** — passing on exactly the defect it exists
+    // for, and saying nothing while it did. A check that reads prose stops seeing its subject the
+    // day the prose changes, and reports that as success.
+    const kind = await answers.nth(at).getAttribute("data-answer");
+    expect(kind, `the ${name} row does not say what kind of answer it is`).not.toBeNull();
+    expect(kind, `${name} was asked with nothing — it has no sample in SAMPLE_CALL, so its row cannot `
+      + "say what it puts on an element").not.toBe("unasked");
   }
 });
