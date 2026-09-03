@@ -65,30 +65,38 @@ function repeatedClasses(kind: string): string[] {
 }
 
 /**
- * Panel actions this guardian finds and does not fail on, per renderer, with the question they wait
- * for.
+ * Panel actions this guardian finds and does not fail on, per renderer, each naming the declared key
+ * that makes its act reachable — or saying that no key does.
  *
- * Recorded rather than excluded: the list prints, it may only shrink, and an entry that stops being
- * a finding fails so it cannot outlive its reason. The calendar's header buttons move the month and
- * switch the view, and the datepicker declares `PageUp`/`PageDown` and the arrows for exactly those
- * acts — so the *function* is reachable by key while the *button* is not. Whether a pointer-only
- * control duplicating a key-reachable action is a defect is an interaction decision, and this file
- * is not the place it gets taken.
+ * ADR 0198 decides the first kind: WCAG 2.1.1 asks that the **function** be operable from a
+ * keyboard, not that every control be. A pointer-only button duplicating an act a declared key
+ * already performs is an affordance, not a barrier. So an entry names that key, and **fails when the
+ * key leaves the contract** rather than only when the button does — an exemption that outlives the
+ * reason it was granted for is the stale entry this suite's other gates already refuse.
+ *
+ * The second kind is the finding that rule produces. `view-toggle` and `header-label` open the
+ * months and years views, and **no binding declares a view change**: the arrows move *within* a
+ * view, `PageUp`/`PageDown` move the month. Applying the rule honestly, the act behind those two has
+ * no keyboard path at all — which is the same species as the colours entry, not an affordance. They
+ * are recorded as an open defect rather than as an exemption, because calling them exempt would be
+ * the guardian granting itself the decision it was told to ask for.
  */
-const AWAITING_A_DECISION: Record<string, string[]> = {
+type PanelAction = { readonly at: string; readonly reachableBy: string | null; readonly why: string };
+
+const RECORDED: Record<string, PanelAction[]> = {
   plain: [
-    "datepicker: button.mdy-datepicker__header-label",
-    "datepicker: button.mdy-datepicker__nav-btn",
+    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
+    { at: "datepicker: button.mdy-datepicker__header-label", reachableBy: null, why: "opens the months view, and no key declares a view change" },
   ],
   lit: [
-    "datepicker: button.mdy-datepicker__nav-btn",
-    "datepicker: button.mdy-datepicker__view-toggle",
-    "daterange: button.mdy-datepicker__nav-btn",
-    "daterange: button.mdy-datepicker__view-toggle",
+    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
+    { at: "datepicker: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
+    { at: "daterange: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
+    { at: "daterange: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
   ],
   angular: [
-    "datepicker: button.mdy-datepicker__nav-btn",
-    "datepicker: button.mdy-datepicker__view-toggle",
+    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
+    { at: "datepicker: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
   ],
 };
 
@@ -179,9 +187,17 @@ for (const host of HOSTS) {
 
     // Recorded per renderer, because the evidence is: the three do not draw the same header, so a
     // single list would report an entry as stale in one renderer while it is live in another.
-    const recorded = AWAITING_A_DECISION[host.name] ?? [];
-    const open = unreachable.filter((one) => !recorded.includes(one));
-    const stale = recorded.filter((one) => !unreachable.includes(one));
+    const recorded = RECORDED[host.name] ?? [];
+    const open = unreachable.filter((one) => !recorded.some((entry) => entry.at === one));
+    const stale = recorded.filter((entry) => !unreachable.includes(entry.at)).map((entry) => entry.at);
+
+    // An exemption dies with the key that justified it, not only with the element it excused.
+    const withdrawn = recorded
+      .filter((entry) => entry.reachableBy !== null)
+      .filter((entry) => !(MDY_WIDGET_KEYBOARD[entry.at.split(":")[0]] ?? [])
+        .some((binding) => binding.key === entry.reachableBy && binding.when === "open"))
+      .map((entry) => `${entry.at} was excused by ${entry.reachableBy}, which the contract no longer declares`);
+    expect(withdrawn, `an exemption outlived its reason: ${JSON.stringify(withdrawn)}`).toEqual([]);
     expect(
       stale,
       `recorded as awaiting a decision and no longer found — prune it, or the record outlives its `
