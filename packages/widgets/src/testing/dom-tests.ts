@@ -163,6 +163,12 @@ export const MDY_SEMANTIC_ELEMENTS: Readonly<Record<string, { tags: readonly str
   text: { tags: ["p", "div", "span", "output", "strong", "em", "small", "abbr"], roles: ["presentation", "none"] },
   presentation: undefined,
   label: { tags: ["label"], roles: [] },
+  // A multi-line control, and the only tag that is one. `input` admits three tags because most kinds
+  // do not care which of them a renderer reaches for; this kind is named after its tag, so the
+  // question "which element" has an answer and the contract should be able to give it. Without this
+  // entry the kind declared `input`, which is true and does not discriminate: a generator reading it
+  // learns "a native form control" and still has to guess between three.
+  textarea: { tags: ["textarea"], roles: ["textbox"] },
   input: {
     tags: ["input", "textarea", "select"],
     roles: ["textbox", "searchbox", "combobox", "spinbutton", "slider", "checkbox", "radio", "switch"],
@@ -614,17 +620,22 @@ export function inspectWidgetDom(
             `${element.getAttribute("role") ? ` role="${element.getAttribute("role")}"` : ""}`,
         });
       }
-      // A part that renders an operable control is never declared `presentation`.
+      // A part that renders an operable control is never declared with a semantic that admits
+      // everything.
       //
-      // `presentation` admits every element by construction — that is what it is for, and why the
-      // arrows, ticks and dial hands wear it. But on a part that turns out to be an input or a
-      // button it is not a loose claim, it is the absence of one: nothing can contradict it, so no
-      // check here can fail, and a reader of the declaration is told a control is decoration. The
-      // kind named `radio` declared its own radio that way while its sibling declared the real
-      // element, and every gate stayed green because there was nothing to disagree with.
+      // Four of them do — `root`, `group`, `presentation`, `popup` — and that is what they are for:
+      // it is why the arrows, ticks and dial hands wear one. But on a part that turns out to be an
+      // input or a button it is not a loose claim, it is the absence of one. Nothing can contradict
+      // it, so no check here can fail, and a reader of the declaration is told a control is
+      // decoration. The kind named `radio` declared its own radio that way while its sibling
+      // declared the real element, and every gate stayed green because there was nothing to
+      // disagree with.
       //
-      // Keyed on what was rendered rather than on the part's name, because the whole point is that
-      // the declaration says nothing: the page is the only witness left.
+      // Asked of the table rather than by naming `presentation`: which semantics admit everything is
+      // the table's answer, and a fifth added later inherits this rule instead of slipping under it.
+      //
+      // Keyed on what was rendered, because the whole point is that the declaration says nothing:
+      // the page is the only witness left.
       // Except where a variant declares it. A varianted part states its element per configuration and
       // the shared line is what the configurations agree on, which for a part that genuinely differs
       // is nothing — `presentation` there is the contract saying "the variant decides", not saying
@@ -632,13 +643,14 @@ export function inspectWidgetDom(
       // other, and reading only the shared line called that a missing declaration.
       const someVariantDeclares = Object.values(definition.variants ?? {})
         .some((each) => (each as { elements?: Record<string, string> }).elements?.[node.part] !== undefined);
-      if (expectedElement === "presentation" && !someVariantDeclares
+      if (MDY_SEMANTIC_ELEMENTS[expectedElement] === undefined && !someVariantDeclares
         && OPERABLE_TAGS.has(element.tagName.toLowerCase())) {
         issues.push({
           code: "PART_ELEMENT",
           part: node.part,
-          message: `${node.part} renders <${element.tagName.toLowerCase()}> and is declared "presentation", `
-            + "which admits every element — so this part's element is not declared at all",
+          message: `${node.part} renders <${element.tagName.toLowerCase()}> `
+            + `and is declared "${expectedElement}", which admits every element — so this part's `
+            + "element is not declared at all",
         });
       }
       const own = new Set(classesOf(element));

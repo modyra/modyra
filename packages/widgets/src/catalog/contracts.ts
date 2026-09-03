@@ -29,7 +29,13 @@ export const MDY_WIDGET_CONTRACTS = Object.freeze({
   // nothing else separates it from a text field. Said here, an adapter has a statement to implement.
   password: define("password", ["mdy-renderer", "mdy-renderer--text"], ["root", "label", "requiredMarker", "inputWrapper", "prefix", "control", "suffix", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
     { controlType: "password", concealed: true }),
-  textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false),
+  textarea: define("textarea", ["mdy-renderer", "mdy-renderer--textarea"], ["root", "label", "requiredMarker", "inputWrapper", "control", "inlineError", "supportingText", "errors", "errorItem"] as const, false,
+    // The kind is named after its element, so it says which one it is. `control` defaults to the
+    // `input` semantic, which admits an input, a textarea or a select — true of this kind and unable
+    // to tell a reader which of the three to draw. `controlType` cannot carry it either: this
+    // element takes no `type`, and giving that field a second meaning would make it a sentence
+    // rather than a token.
+    { elements: { control: "textarea" } }),
   // `increment` and `decrement` are the spin buttons drawn beside the input. The native control has
   // its own and the foundation hides them, so these are the stepping affordance rather than a second
   // one: a renderer that draws neither leaves the kind with no way to step but the keyboard. They

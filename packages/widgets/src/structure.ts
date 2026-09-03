@@ -59,12 +59,15 @@ export const MDY_WIDGET_CONTRACT_VERSION = 5 as const;
  *   so is what keeps the grid navigable.
  * - `text` — prose a person reads. Which element carries it is presentation; what it may not be is
  *   a control pretending to be a caption.
+ * - `textarea` — a control for prose across lines. Narrower than `input`, which admits three tags
+ *   because most kinds do not care which: a kind named after its element can say which, and one
+ *   that says `input` has told a reader something true that does not answer the question.
  * - `status` — words announced when they change: a run of errors, a loading note.
  * - `image` — a graphic with an accessible name. The tag is whatever draws it, so the role is what
  *   counts. An inline error is one of these: an icon carrying its message in a tooltip.
  */
 export type MdyWidgetSemanticElement =
-  | "root" | "label" | "input" | "button" | "group" | "status" | "submission"
+  | "root" | "label" | "input" | "textarea" | "button" | "group" | "status" | "submission"
   | "listbox" | "option" | "radio" | "dialog" | "grid" | "gridcell" | "container"
   | "presentation" | "popup" | "text" | "affordance" | "columnheader" | "image";
 
