@@ -21,7 +21,7 @@ import {
   readPartAttribute,
   readPartPresence,
 } from "@modyra/widgets/testing";
-import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, partIsOwed, presentationClass } from "@modyra/widgets";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, answerDoor, partIsOwed, presentationClass } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -82,6 +82,7 @@ export const contractsPanel = {
     "MDY_CALENDAR_VIEW_MODES",
     "MDY_CHIP_CLASSES",
     "MDY_CLASS_DOORS",
+    "answerDoor",
     "MDY_CHIP_DRAG_THRESHOLD",
     "MDY_COLOR_PRESETS",
     "MDY_CONTRACT_VOCABULARIES",
@@ -437,28 +438,19 @@ export const contractsPanel = {
       // Each door is asked something it can answer: they take different arguments, and a door shown
       // returning nothing because it was asked the wrong question teaches the opposite of the point.
       const asked = SAMPLE_CALL[door.name];
-      // Every shape a door can take, and an answer for a door this page has not been taught.
+      // Asked through the contract's own reader, not by switching on which resolver it carries.
       //
-      // A door is not always called: one is *read*, as a path through the contract, and it carries
-      // `resolvePath` and no `resolve` at all. The branch that assumed otherwise threw, and because
-      // this whole panel is built in one pass the throw took the inspection table below it with it —
-      // a manifest entry added in one package emptied a page in another, and the page said nothing
-      // about why. So the last branch answers instead of assuming: a door with no shape this knows
-      // is named as such, which is a row a reader can act on rather than a blank panel.
-      if (door.unresolvable) {
-        answer.textContent = `dipende da un valore — ${door.unresolvable}`;
-      } else if (door.resolveObject) {
-        answer.textContent = [...door.resolveObject(asked ?? {})].join(" ");
-      } else if (door.resolvePath) {
-        const [kind, part] = asked ?? [];
-        answer.textContent = kind
-          ? `${[...door.resolvePath(kind, part)].join(" ")} — letta come ${door.readPath.root}.${part}.${door.readPath.leaf}`
-          : "una porta che si legge come percorso, senza un esempio su questa pagina";
-      } else if (door.resolve) {
-        answer.textContent = [...door.resolve(asked ?? [])].join(" ") || `nessuna, per ${(asked ?? []).join("/")}`;
-      } else {
-        answer.textContent = "una porta di una forma che questa pagina non conosce ancora";
-      }
+      // This page did switch, and the day a door arrived that is *read* as a path rather than called,
+      // the branch that assumed a `resolve` threw — and because the panel is built in one pass the
+      // throw took the inspection table below it too. A manifest entry added in one package emptied a
+      // page in another. `answerDoor` knows the shapes in the package that defines them, so a shape
+      // added tomorrow reaches this page without it being taught anything.
+      const answered = answerDoor(door, asked);
+      answer.textContent = answered.unresolvable
+        ? `dipende da un valore — ${answered.unresolvable}`
+        : answered.path
+          ? `${answered.classes.join(" ")} — letta come ${answered.path}`
+          : answered.classes.join(" ") || `nessuna, per ${[asked ?? []].flat().join("/")}`;
       doorsList.append(term, answer);
     }
     doors.append(doorsList);

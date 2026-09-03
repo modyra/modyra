@@ -4657,6 +4657,11 @@
     "(2) options?: MdyOverlayAnchorOptions",
     "-> returns: MdyOverlayAnchoring"
   ],
+  "widgets:answerDoor": [
+    "(0) door: MdyClassDoor",
+    "(1) asked?: unknown",
+    "-> returns: MdyDoorAnswer"
+  ],
   "widgets:applyOverlayProperties": [
     "(0) element: HTMLElement",
     "(1) properties: Readonly<Record<string, string>>",

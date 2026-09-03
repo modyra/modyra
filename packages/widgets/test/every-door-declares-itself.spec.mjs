@@ -13,7 +13,19 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { MDY_CLASS_DOORS, partClasses, presentationClass } from "../dist/index.js";
+import { MDY_CLASS_DOORS, answerDoor, partClasses, presentationClass } from "../dist/index.js";
+
+/** A question each door can answer, so a door shown empty is empty for a reason. */
+const SAMPLE = {
+  partClasses: ["select", "trigger"],
+  presentationClass: ["select", "box"],
+  popupPlacementClass: ["select", "above"],
+  popupAlignmentClass: ["select", "right"],
+  multiselectChipClasses: { role: "value" },
+  contractParts: ["select", "trigger"],
+  stateClass: [],
+  partStateClass: [],
+};
 
 test("every door either answers or says why it cannot", () => {
   for (const door of MDY_CLASS_DOORS) {
@@ -88,5 +100,32 @@ test("a door read as a path declares both of its ends and the way to answer them
     assert.ok(door.readPath, `${door.name} resolves a path and declares none`);
     assert.ok(typeof door.resolvePath === "function", `${door.name} declares a path and cannot answer it`);
     assert.ok(door.readPath.root && door.readPath.leaf, `${door.name} declares a path missing an end`);
+  }
+});
+
+test("every door can be asked through one reader, whatever its shape", () => {
+  // The failure this closes: a caller that switched on which resolver a door carries threw on the
+  // first door of a shape it had not learnt, and took a whole page down with it. A reader that
+  // cannot be taught a new shape must at least survive one.
+  for (const door of MDY_CLASS_DOORS) {
+    const answer = answerDoor(door, SAMPLE[door.name]);
+    assert.ok(Array.isArray(answer.classes), `${door.name} answered with no classes array`);
+    assert.ok(
+      answer.classes.length > 0 || typeof answer.unresolvable === "string",
+      `${door.name} produced no classes and no reason, which is the silence the manifest exists to end`,
+    );
+  }
+});
+
+test("a door of a shape the reader has not been taught says so instead of throwing", () => {
+  const answer = answerDoor({ name: "invented" }, ["select", "trigger"]);
+  assert.deepEqual(answer.classes, []);
+  assert.match(answer.unresolvable ?? "", /shape/);
+});
+
+test("a door asked the wrong question adds nothing and does not throw", () => {
+  for (const door of MDY_CLASS_DOORS) {
+    const answer = answerDoor(door, ["nonsense", "nonsense"]);
+    assert.ok(Array.isArray(answer.classes), `${door.name} threw on a question it cannot answer`);
   }
 });

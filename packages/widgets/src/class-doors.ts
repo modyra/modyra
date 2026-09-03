@@ -94,6 +94,58 @@ const forKind = <T>(fn: (kind: MdyWidgetKind, second: string) => T) =>
   };
 
 /** Every door, and for each the way a gate turns a call site into the classes it puts on an element. */
+/** What a door answered, in the one shape every caller reads. */
+export interface MdyDoorAnswer {
+  /** The classes the call produces. Empty where the door could not be answered. */
+  readonly classes: readonly string[];
+  /** Why there are none, in the door's own words, where it declares it cannot be answered. */
+  readonly unresolvable?: string;
+  /** The property path this door is read as, where it is read rather than called. */
+  readonly path?: string;
+}
+
+/**
+ * One door, asked.
+ *
+ * The manifest exists so a door added in this package is seen by every gate the same day. That holds
+ * for the *names*, and it did not hold for the *shapes*: a caller that switched on which resolver a
+ * door carries had to learn each new shape, and one that had not yet learnt `resolvePath` called a
+ * `resolve` that was not there. The throw emptied a whole page, in another package, for a manifest
+ * entry added here — the product of two growing numbers, back one level up from where it was closed.
+ *
+ * So the shapes are known in one place. A caller asks and reads `classes`; a door this function has
+ * not been taught answers with a reason rather than an exception, because a caller that cannot be
+ * told about a new shape must at least not be broken by one.
+ *
+ * `asked` is whatever the door's own shape takes: the positional arguments as an array, the options
+ * record for an object door, `[kind, part]` for a path. A door asked with nothing answers with what
+ * it can, which for most doors is nothing at all.
+ */
+export function answerDoor(door: MdyClassDoor, asked?: unknown): MdyDoorAnswer {
+  if (door.unresolvable) return { classes: [], unresolvable: door.unresolvable };
+  try {
+    if (door.resolveObject) {
+      return { classes: [...door.resolveObject((asked as Record<string, unknown>) ?? {})] };
+    }
+    if (door.resolvePath && door.readPath) {
+      const [kind, part] = (asked as readonly string[]) ?? [];
+      if (typeof kind !== "string" || typeof part !== "string") {
+        return { classes: [], unresolvable: "read as a path, and asked without a kind and a part" };
+      }
+      return {
+        classes: [...door.resolvePath(kind, part)],
+        path: `${door.readPath.root}.${part}.${door.readPath.leaf}`,
+      };
+    }
+    if (door.resolve) return { classes: [...door.resolve((asked as readonly string[]) ?? [])] };
+  } catch {
+    // A door asked something it cannot answer adds no class and does not take its caller down with
+    // it. The gates report this as perimeter; a page shows the row and keeps the rest of the page.
+    return { classes: [], unresolvable: "asked something its own resolver refused" };
+  }
+  return { classes: [], unresolvable: "a door of a shape this reader has not been taught" };
+}
+
 export const MDY_CLASS_DOORS: readonly MdyClassDoor[] = Object.freeze([
   { name: "partClasses", resolve: forKind((k, p) => partClasses(k, p as never)) },
   { name: "presentationClass", resolve: forKind((k, n) => presentationClass(k, n)) },
