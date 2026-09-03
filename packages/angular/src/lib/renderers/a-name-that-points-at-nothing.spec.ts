@@ -123,5 +123,11 @@ describe("a field with no caption", () => {
     expect(captions.length).toBeGreaterThanOrEqual(FIELDS.length - 3);
     expect(captions.filter((caption) => caption.id === "")).toEqual([]);
     expect(identified.length).toBe(captions.length);
+
+    // And the id is the contract's, not one the component invented. An id captured before the host
+    // named the field, or derived from whichever control the caption points `for` at, is a second
+    // author on the identity — and two authors who agree with each other are still not the contract.
+    const invented = identified.filter((id) => /^mdy-control-\d/.test(id) || id.includes("__trigger__"));
+    expect(invented).toEqual([]);
   });
 });

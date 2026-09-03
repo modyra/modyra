@@ -31,8 +31,8 @@ import { MdySelectOption } from "../../core/types";
          and not what it is asking. Group labelled via aria-labelledby: the label gets a real id (B33). -->
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
-      [labelId]="labelId"
+      [words]="controlAriaLabel() ?? ''"
+      [labelId]="labelId()"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="value() !== null"
@@ -112,7 +112,14 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
    * a part name the same way. A hyphen still yields a unique id and still works — and is unreachable
    * by anybody who builds the name instead of reading it off the element.
    */
-  protected readonly labelId = defaultWidgetIdFactory.part(this.fieldId, "label");
+  /**
+   * The id the caption carries, which is the one the projection names it by.
+   *
+   * Computed rather than captured: `fieldId` is settled by the host after construction, so a field
+   * initializer spells the id the component had before it was given one — and both the caption and
+   * the reference to it then agree on an id the contract never chose.
+   */
+  protected readonly labelId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "label"));
 
   /**
    * Which attribute names the group, asked of the contract rather than answered here.
@@ -126,7 +133,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
       ariaLabel: this.ariaLabel(),
       label: this.label(),
       name: this.effectiveName(),
-      labelId: this.labelId,
+      labelId: this.labelId(),
     }),
   );
 

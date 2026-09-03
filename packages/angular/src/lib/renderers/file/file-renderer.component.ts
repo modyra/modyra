@@ -21,7 +21,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
   template: `
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
+      [words]="controlAriaLabel() ?? ''"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

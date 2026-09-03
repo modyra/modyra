@@ -75,7 +75,7 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
   template: `
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
+      [words]="controlAriaLabel() ?? ''"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

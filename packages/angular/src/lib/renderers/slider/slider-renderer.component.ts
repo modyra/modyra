@@ -21,7 +21,7 @@ import { inputText } from "../renderer-projection";
   template: `
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
+      [words]="controlAriaLabel() ?? ''"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

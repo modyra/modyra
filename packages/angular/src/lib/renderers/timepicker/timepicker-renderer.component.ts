@@ -57,7 +57,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
   template: `
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
+      [words]="controlAriaLabel() ?? ''"
       [forId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"

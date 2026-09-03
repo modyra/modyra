@@ -43,7 +43,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
   template: `
     <mdy-control-label
       [label]="label()"
-      [words]="controlAriaLabel() ?? \'\'"
+      [words]="controlAriaLabel() ?? ''"
       [forId]="hexInputId()"
       [hasError]="paintsAsInvalid()"
       [widgetId]="fieldId"
