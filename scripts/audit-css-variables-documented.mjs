@@ -56,7 +56,12 @@ function declared() {
   for (const file of readdirSync(STYLES).filter((name) => name.endsWith(".css"))) {
     const source = readFileSync(join(STYLES, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, " ");
     for (const [, name] of source.matchAll(/(?:^|[;{]|\s)(--mdy-[a-z0-9-]+)\s*:/g)) {
-      if (!found.has(name)) found.set(name, file);
+      // Every sheet that declares it, not the first one found. Which sheet comes first is directory
+      // order — `modyra-default.css` sorts before `modyra.css` — so keeping only the first said a
+      // property was "declared by a theme" whenever a theme happened to sort earlier than the
+      // foundation that also declares it. That turned 80 theme-supplied properties into 192.
+      if (!found.has(name)) found.set(name, new Set());
+      found.get(name).add(file);
     }
   }
   return found;
@@ -201,7 +206,21 @@ for (const name of untiered) {
   }
   if (who.has("an example or app")) classified.set(name, "read by an example or app");
   else if (who.has("a renderer")) classified.set(name, "read by a renderer");
-  else classified.set(name, "read only between stylesheets");
+  else {
+    // Between stylesheets, *which* sheet declares it is the whole distinction. A property the
+    // foundation declares and its own rules consume is plumbing. One a **theme** declares and the
+    // foundation consumes is the opposite: it is what a theme must supply for the foundation to
+    // work — a contract pointing outward, at anybody writing a theme of their own, and the section
+    // of the guide nobody would have written from the totals.
+    // Supplied by a theme only when **every** sheet that declares it is a theme: where the
+    // foundation declares it too, the theme is overriding a default, not meeting a requirement.
+    const sheets = [...(inCss.get(name) ?? [])];
+    const fromATheme = sheets.length > 0
+      && sheets.every((sheet) => /^modyra-(ios|material|ionic|modern|salience|default)\.css$/.test(sheet));
+    classified.set(name, fromATheme
+      ? "declared by a theme, consumed by the foundation — what a theme must supply"
+      : "declared and read between the foundation's own sheets");
+  }
 }
 
 console.log("# CSS custom properties against the documents that name them\n");
@@ -212,7 +231,7 @@ for (const [tier, description] of tiers) {
 console.log(`\nDeclared: ${inCss.size}   named in a document: ${inDocs.size}\n`);
 
 console.log(`## undocumented — public and named in no document: ${undocumented.length}`);
-for (const name of undocumented.slice(0, 8)) console.log(`  ${name.padEnd(42)} ${inCss.get(name)}`);
+for (const name of undocumented.slice(0, 8)) console.log(`  ${name.padEnd(42)} ${[...inCss.get(name)].join(", ")}`);
 if (undocumented.length > 8) console.log(`  … and ${undocumented.length - 8} more`);
 
 console.log(`\n## phantom — a document names it and no stylesheet declares it: ${phantom.length}`);
@@ -229,8 +248,9 @@ for (const [kind, list] of [...groups].sort((a, b) => b[1].length - a[1].length)
   console.log(`  ${String(list.length).padStart(4)}  ${kind}`);
   console.log(`        e.g. ${list.slice(0, 3).join(", ")}`);
 }
-console.log("  A property read only between stylesheets is plumbing; one an example reads is surface");
-console.log("  somebody has exercised. Neither is owed documentation until the header names its tier.");
+console.log("  Who declares one is as telling as who reads it: the foundation declaring its own is");
+console.log("  plumbing, a theme declaring what the foundation consumes is a contract pointing at");
+console.log("  whoever writes the next theme. None is owed documentation until the header names its tier.");
 console.log("  These cannot be called public or internal from any declaration, so this audit does");
 console.log("  not count them as owed documentation. That is a gap in the tier header, not in the docs.");
 

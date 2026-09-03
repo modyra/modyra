@@ -16,13 +16,20 @@ import {
   timepickerFocusPart,
   timepickerTabOrder,
   timepickerTabTarget,
+  popupHoldsAnAction,
 } from "../dist/index.js";
 
 test("Tab moves within a popup that has its own controls, and dismisses one that does not", () => {
   const tabOf = (kind) => MDY_WIDGET_KEYBOARD[kind].filter((b) => b.key === "Tab" && b.when === "open");
-  assert.deepEqual(tabOf("timepicker"), [{ key: "Tab", when: "open", intent: "move" }]);
+  // Two kinds keep the key, and for one reason: their popup holds something to operate that is not
+  // one of the choices. The timepicker's is an actions bar; the colours panel's is the button for a
+  // custom tint, which is why it moved into this family — its action had no bar to be declared in,
+  // and `Tab` closed the panel before reaching it. ADR 0198.
+  for (const kind of ["timepicker", "colors"]) {
+    assert.deepEqual(tabOf(kind), [{ key: "Tab", when: "open", intent: "move" }], kind);
+  }
   // A list is one composite control: Tab leaving it is the combobox pattern and stays.
-  for (const kind of ["select", "multiselect", "datepicker", "daterange", "colors"]) {
+  for (const kind of ["select", "multiselect", "datepicker", "daterange"]) {
     assert.deepEqual(tabOf(kind), [{ key: "Tab", when: "open", intent: "cancel", restoresFocus: false }], kind);
   }
 });
@@ -30,10 +37,16 @@ test("Tab moves within a popup that has its own controls, and dismisses one that
 test("the question is asked of the catalogue, not of a list beside it", () => {
   // A kind that grows an action bar grows this with it. `timepicker` is the only overlay declaring
   // one today, and if that changes the binding follows without an edit here.
-  const withActions = Object.entries(MDY_WIDGET_CONTRACTS)
-    .filter(([, c]) => c.capabilities?.overlay && "actions" in c.parts)
-    .map(([kind]) => kind);
-  assert.deepEqual(withActions, ["timepicker"]);
+  // Asked as the rule means it rather than as one kind's anatomy: a popup that holds a part drawn as
+  // a button, which is not one of the choices and is not repeated. `"actions" in parts` was the
+  // timepicker's own shape standing in for that sentence, and it agreed with the contract for that
+  // kind alone — the colours panel satisfies the sentence and has no bar. ADR 0198.
+  // Asked through the contract's own reader rather than re-implemented here: a copy of a predicate
+  // in a test is a second answer that drifts, and the first draft of this copy was already looser
+  // than the original — it counted buttons outside the popup and named three kinds too many.
+  const withActions = Object.keys(MDY_WIDGET_CONTRACTS)
+    .filter((kind) => MDY_WIDGET_CONTRACTS[kind].capabilities?.overlay && popupHoldsAnAction(kind));
+  assert.deepEqual(withActions, ["timepicker", "colors"]);
 });
 
 test("Escape still cancels, still takes focus back, and answers whatever is held with it", () => {

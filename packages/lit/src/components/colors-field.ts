@@ -176,6 +176,31 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
    * palette — so a palette that left the keyboard on the toggle was one no keyboard could reach the
    * presets in. The swatch holding the current value is where a person is; the first one otherwise.
    */
+  /**
+   * `Tab` walks this panel's own stops instead of leaving it.
+   *
+   * The contract classes this kind with the panels that keep the key, because the popup holds an
+   * action of its own — the custom entry — and the arrows stay inside the swatch grid by design. A
+   * `Tab` that dismissed left that button reachable with a pointer and with nothing else. ADR 0198.
+   *
+   * The grid is one stop rather than one per swatch, and the ring wraps: `Escape` is the way out,
+   * and it still is.
+   */
+  private walkPanelStops(event: KeyboardEvent): boolean {
+    if (!this._open || event.key !== "Tab") return false;
+    if (!keyMeans("colors", event, "move", true)) return false;
+    const entry = this.querySelector<HTMLElement>(`.${this.partClass("customEntry")}`);
+    if (entry === null) return false;
+    event.preventDefault();
+    if (document.activeElement === entry) {
+      const swatches = Array.from(this.querySelectorAll<HTMLButtonElement>(`.${this.partClass("swatch")}`));
+      (swatches.find((swatch) => swatch.tabIndex === 0) ?? swatches[0])?.focus();
+    } else {
+      entry.focus();
+    }
+    return true;
+  }
+
   private focusPresets(handle: MdyFieldHandle<string | null>): void {
     void this.updateComplete.then(() => {
       if (!this._open) return;
@@ -215,6 +240,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             this.restoreFocus();
             return;
           }
+          if (this.walkPanelStops(e)) return;
           this.moveThroughSwatches(e);
         }}
       >

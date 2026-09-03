@@ -184,6 +184,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
           <button
             type="button"
             class="{{ cls.customEntry }}"
+            (keydown)="walkPanelStops($event)"
             (click)="openPlatformChooser()"
           >
             <span
@@ -359,7 +360,35 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
    * catalogue's and so is the direction: a row runs in the writing direction, and reading
    * `ArrowLeft` as "back" is wrong in a right-to-left document.
    */
+  /**
+   * `Tab` walks this panel's own stops instead of leaving it.
+   *
+   * The contract classes this kind with the panels that keep the key, because the popup holds an
+   * action of its own — the custom entry — and the arrows stay inside the swatch grid by design. A
+   * `Tab` that dismissed left that button reachable with a pointer and with nothing else. ADR 0198.
+   *
+   * The grid is one stop rather than one per swatch, and the ring wraps; `Escape` is still the way
+   * out.
+   */
+  protected walkPanelStops(event: KeyboardEvent): boolean {
+    if (event.key !== "Tab") return false;
+    if (keyBindingFor("colors", event, true)?.intent !== "move") return false;
+    const entry = this.hostRef.nativeElement.querySelector(
+      `.${MDY_WIDGET_CONTRACTS.colors.parts.customEntry.classes[0]}`,
+    ) as HTMLElement | null;
+    if (entry === null) return false;
+    event.preventDefault();
+    if (document.activeElement === entry) {
+      const order = this.presetSwatches();
+      (order.find((swatch) => swatch.tabIndex === 0) ?? order[0])?.focus();
+    } else {
+      entry.focus();
+    }
+    return true;
+  }
+
   protected onPresetKeydown(event: KeyboardEvent): void {
+    if (this.walkPanelStops(event)) return;
     const binding = keyBindingFor("colors", event, true);
     if (!binding || binding.intent !== "move") return;
     const order = this.presetSwatches();

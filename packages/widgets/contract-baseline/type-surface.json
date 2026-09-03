@@ -262,6 +262,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
+    "protected walkPanelStops(0) event: KeyboardEvent,-> returns: boolean",
     "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errors\" | \"root\" | \"label\" | \"toggle\" | \"control\" | \"errorItem\" | \"inputWrapper\" | \"requiredMarker\" | \"supportingText\" | \"popup\" | \"inlineError\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
@@ -5401,6 +5402,10 @@
     "(0) kind: MdyPopupWidgetKind",
     "(1) alignment: MdyOverlayAlignment",
     "-> returns: string | null"
+  ],
+  "widgets:popupHoldsAnAction": [
+    "(0) kind: MdyWidgetKind",
+    "-> returns: boolean"
   ],
   "widgets:popupPlacementClass": [
     "(0) kind: MdyPopupWidgetKind",

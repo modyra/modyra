@@ -61,6 +61,7 @@ export {
   keyBindingFor, matchesKeyGesture, type MdyKeyOrPress,
   transitionsFrom,
   widgetKeyGuide,
+  popupHoldsAnAction,
 } from "./transitions.js";
 export type {
   MdyKeyBinding,

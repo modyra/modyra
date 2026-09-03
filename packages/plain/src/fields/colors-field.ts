@@ -288,8 +288,36 @@ export function renderColorsField(
     order[to]?.focus();
     return true;
   };
-  presetList.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
-  picker.addEventListener("keydown", (event) => { moveThroughSwatches(event); });
+  /**
+   * `Tab` walks the panel's own stops rather than leaving it.
+   *
+   * This panel holds an action of its own — the custom entry — and the contract classes it with the
+   * kinds that keep the key for that reason: a `Tab` that dismissed left that button reachable with a
+   * pointer and with nothing else, because the arrows stay inside the swatch grid by design. ADR 0198.
+   *
+   * The grid is **one** stop, not one per swatch: the arrows are what move within it, and `Tab` is
+   * how a person leaves it for the action beside it. It wraps, because a panel that holds the key is
+   * a room — walking out of it the way you walk out of a page leaves the action behind. `Escape` is
+   * the way out, and it still is.
+   */
+  const walkPanelStops = (event: KeyboardEvent): boolean => {
+    if (!isOpen() || event.key !== "Tab") return false;
+    const binding = keyBindingFor("colors", event, true);
+    if (binding?.intent !== "move") return false;
+    event.preventDefault();
+    const onEntry = document.activeElement === customEntry;
+    if (onEntry) {
+      const active = swatches.find(({ swatch }) => swatch.tabIndex === 0) ?? swatches[0];
+      active?.swatch.focus();
+    } else {
+      customEntry.focus();
+    }
+    return true;
+  };
+
+  presetList.addEventListener("keydown", (event) => { walkPanelStops(event) || moveThroughSwatches(event); });
+  picker.addEventListener("keydown", (event) => { walkPanelStops(event) || moveThroughSwatches(event); });
+  customEntry.addEventListener("keydown", (event) => { walkPanelStops(event); });
 
   // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
   // when it opens, so listening on the popup alone left the palette impossible to dismiss by

@@ -21,7 +21,7 @@ import {
   readPartAttribute,
   readPartPresence,
 } from "@modyra/widgets/testing";
-import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, answerDoor, focusPartOnOpen, partIsOwed, presentationClass } from "@modyra/widgets";
+import { MDY_CLASS_DOORS, MDY_WIDGET_CONTRACTS as CONTRACTS, answerDoor, focusPartOnOpen, partIsOwed, popupHoldsAnAction, presentationClass } from "@modyra/widgets";
 import { actionWithHint, badge, level, scenario, toolbar, verdictPrinter } from "./shell.js";
 
 /**
@@ -84,6 +84,7 @@ export const contractsPanel = {
     "MDY_CLASS_DOORS",
     "answerDoor",
     "focusPartOnOpen",
+    "popupHoldsAnAction",
     "MDY_CHIP_DRAG_THRESHOLD",
     "MDY_COLOR_PRESETS",
     "MDY_CONTRACT_VOCABULARIES",
@@ -450,7 +451,11 @@ export const contractsPanel = {
       term.textContent = options.searchable ? `${kind} (con filtro)` : kind;
       const answer = document.createElement("dd");
       const part = focusPartOnOpen(kind, options);
-      answer.textContent = part === null ? "nessun pannello suo" : part;
+      // E se quel pannello tiene il Tab: un pannello con un'azione propria lo trattiene, uno
+      // da cui si sceglie lo lascia uscire. ADR 0198.
+      answer.textContent = part === null
+        ? "nessun pannello suo"
+        : `${part}${popupHoldsAnAction(kind) ? " — e il Tab resta dentro" : ""}`;
       landingList.append(term, answer);
     }
     landing.append(landingList);

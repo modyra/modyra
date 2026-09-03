@@ -70,6 +70,7 @@ One definition of how a control behaves, shared by every renderer.
 - [Known issues](known-issues.md) — what does not work yet, and who it affects
 - [Reactivity capability matrix](reactivity-capability-matrix.md) — generated, per adapter
 - [The deprecation harvest, measured](deprecation-dossier.md) — who names each alias and orphan candidate, and what a removal would cost
+- [CSS custom properties nothing here reads, measured](css-orphan-dossier.md) — the 90 with no reader in this repository, split by whether their scale is read, and what a removal would cost
 
 ## Architecture and integration
 

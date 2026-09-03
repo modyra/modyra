@@ -4507,7 +4507,7 @@
         "Escape@open:cancel mod=any focus=true",
         "Home@open:move",
         "Space@closed:open on=nativePicker",
-        "Tab@open:cancel focus=false"
+        "Tab@open:move"
       ]
     }
   },

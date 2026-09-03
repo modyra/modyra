@@ -109,9 +109,18 @@ for (const kind of Object.keys(MDY_POPUP_OPENERS)) {
     for (const phase of ["closed", "open"]) {
       // A closed control has no dialog to keep anybody in, so the exemption is the open phase's only.
       if (phase === "open" && !letsTabOut(kind)) {
-        assert.ok("actions" in MDY_WIDGET_CONTRACTS[kind].parts,
-          `${kind} declares no way out by Tab and no actions bar either, so nothing explains why its `
-          + "open panel would keep the key");
+        // Why a panel may keep the key, asked of the contract rather than of one kind's anatomy.
+        //
+        // This read `parts.actions`, which was the timepicker's own shape standing in for the rule —
+        // and it agreed with the contract for exactly that kind, by coincidence. The colours panel
+        // holds an action of its own without an actions bar, and when the contract moved it into the
+        // family that keeps Tab, this assertion failed a correct change. ADR 0198.
+        const holds = MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) =>
+          String(node.element) === "button" && node.repeated !== true
+          && node.parent !== undefined && node.parent !== "root");
+        assert.ok(holds,
+          `${kind} declares no way out by Tab and no action of its own in the panel either, so `
+          + "nothing explains why its open panel would keep the key");
         continue;
       }
       if (phase === "open") {

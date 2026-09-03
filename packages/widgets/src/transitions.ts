@@ -248,7 +248,21 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // Asked of the catalogue rather than of a list beside it: a kind that grows an action bar grows
     // this with it, and one that loses it loses this. `Escape` still cancels, in both shapes, and is
     // what a keyboard user leaves with.
-    const keepsFocus = "actions" in MDY_WIDGET_CONTRACTS[kind].parts;
+    // Read as the paragraph above says it, rather than as the one bar that first needed it.
+    //
+    // `"actions" in parts` was the timepicker's own anatomy standing in for the rule, and it was
+    // narrower than the sentence beside it: the colours panel holds a button for entering a custom
+    // tint, has no `actions` bar, and was therefore classed as a panel you only choose from — so Tab
+    // closed it before that button, the arrows never leave the swatch grid, and the control was
+    // reachable with a pointer and with nothing else. ADR 0198.
+    //
+    // Derived from what the catalogue already declares: a part inside the popup whose element is a
+    // button, which is not one of the choices, and which is **not repeated**. The last clause is the
+    // anatomy doing the deciding — one action per panel can be a tab stop because Tab knows where it
+    // arrives; one action per *row* cannot, since a stop that named the row would be one stop per row
+    // and Tab would be a scroll. Those are reached by a key on the active row instead, which is a
+    // different repair for a different shape.
+    const keepsFocus = popupHoldsAnAction(kind);
     bindings.push(keepsFocus
       ? { key: "Tab", when: "open", intent: "move" }
       : { key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
@@ -491,6 +505,40 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
 }
 
 /** Every key each kind answers to. A kind that answers to none declares none. */
+
+/** The elements a part is drawn as when it is something a person operates. */
+const OPERABLE_ELEMENTS = new Set(["button"]);
+/** The elements a part is drawn as when it is one of the things being chosen. */
+const CHOICE_ELEMENTS = new Set(["option", "gridcell", "radio"]);
+
+/**
+ * Whether a kind's popup holds an action of its own — something to operate that is not a choice.
+ *
+ * Walks the parents the structure declares rather than matching a name: `popup` and `dialog` are the
+ * containers a panel is, and `content` is deliberately not among them — two kinds use that name for
+ * different things, the timepicker's inner box and the file field's list of chosen files, and
+ * admitting it put a field with no panel at all into the answer.
+ */
+export function popupHoldsAnAction(kind: MdyWidgetKind): boolean {
+  const nodes = MDY_WIDGET_CONTRACTS[kind].structure.nodes;
+  const byPart = new Map<string, (typeof nodes)[number]>(nodes.map((node) => [String(node.part), node]));
+  const insidePopup = (part: string): boolean => {
+    let at = byPart.get(part);
+    const seen = new Set<string>();
+    while (at?.parent !== undefined && !seen.has(at.part)) {
+      seen.add(at.part);
+      if (at.parent === "popup" || at.parent === "dialog") return true;
+      at = byPart.get(String(at.parent));
+    }
+    return false;
+  };
+  return nodes.some((node) =>
+    OPERABLE_ELEMENTS.has(String(node.element))
+    && !CHOICE_ELEMENTS.has(String(node.element))
+    && node.repeated !== true
+    && insidePopup(String(node.part)));
+}
+
 export const MDY_WIDGET_KEYBOARD: Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>> =
   Object.freeze(
     Object.fromEntries(
