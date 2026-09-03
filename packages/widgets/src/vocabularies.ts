@@ -31,6 +31,7 @@ import {
   MDY_LAYOUT_COLUMN_DISPLAY_PROPERTIES, MDY_LAYOUT_COLUMN_START_PROPERTIES,
 } from "./layout.js";
 import { MDY_LABELABLE_TAGS, MDY_SEMANTICS_REQUIRING_NAME } from "./relations.js";
+import { MDY_ARIA_DISABLED_PARTS } from "./structure.js";
 import { MDY_STATE_MODIFIERS } from "./state.js";
 import { MDY_STATE_EXPRESSION, MDY_WIDGET_STATES, MDY_WIDGET_STATE_CONTRACTS, MDY_WIDGET_STATE_SUPPORT } from "./widget-states.js";
 import { MDY_CHIP_CLASSES } from "./chip.js";
@@ -137,6 +138,8 @@ const CATALOGUES: MdyVocabulary[] = [
     describes: "which states each kind can actually be in" },
   { name: "MDY_STATE_MODIFIERS", shape: "names", value: MDY_STATE_MODIFIERS, door: "./vocabulary",
     describes: "the class suffix each state carries" },
+  { name: "MDY_ARIA_DISABLED_PARTS", shape: "list", value: MDY_ARIA_DISABLED_PARTS, door: ".",
+    describes: "the parts drawn at all times that must say whether they can act" },
   { name: "MDY_STATE_EXPRESSION", shape: "names", value: MDY_STATE_EXPRESSION, door: ".",
     describes: "how a state is written where a class cannot carry it" },
   { name: "MDY_CSS_PROPERTIES", shape: "table", value: MDY_CSS_PROPERTIES, door: ".",

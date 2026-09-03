@@ -16,6 +16,11 @@ export type {
   UseMdyFieldOptions,
 } from "./field.js";
 export { MdyTextField } from "./text-field.js";
-export { partProps, drawDeclaredUnder, type MdyVuePartProps } from "./part.js";
+//  is deliberately not here. It is the walk the components in this package share,
+// and nothing outside calls it: a published name nobody can exercise is surface that has to be kept
+// without ever being checked.  is published because a consumer writing its own component
+// against this contract needs the same translation, and it is exercised here.
+export { partProps, type MdyVuePartProps } from "./part.js";
 export { MdyBooleanField } from "./boolean-field.js";
 export { MdySliderField } from "./slider-field.js";
+export { MdyFileField } from "./file-field.js";

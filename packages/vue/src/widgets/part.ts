@@ -11,7 +11,7 @@
  * already; the filter is here so the intent is stated rather than inherited from a framework's
  * coincidence.
  */
-import type { MdyPartContract } from "@modyra/widgets";
+import { MDY_ARIA_DISABLED_PARTS, type MdyPartContract } from "@modyra/widgets";
 
 export type MdyVuePartProps = Record<string, unknown>;
 
@@ -34,6 +34,10 @@ export function partProps(part: MdyPartContract | undefined, extra: MdyVuePartPr
 /** What a declared element is drawn as, where the contract does not mean a real control. */
 const TAG_FOR_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
   group: "span", presentation: "span", container: "div", text: "span",
+  // A part declared a button is drawn as one. The map held only the elements that draw nothing, and
+  // the first kind to declare an operable part inside its subtree got a `<span>` where a control
+  // belonged — which the kit named, because a semantic that discriminates is a claim that can fail.
+  button: "button", status: "span", image: "span",
 });
 
 /**
@@ -53,12 +57,26 @@ export function drawDeclaredUnder(
   parent: string,
   render: (tag: string, props: MdyVuePartProps, children: unknown[]) => unknown,
   except: ReadonlySet<string> = new Set(),
+  /**
+   * The kind, so the walk can honour the rules keyed by `kind.part`.
+   *
+   * `MDY_ARIA_DISABLED_PARTS` is the one that matters here: it names the few parts that are drawn at
+   * all times and must therefore say whether they can act, because they are not natively disabled.
+   * A walk that drew them without it renders a button that looks available and refuses.
+   */
+  kind?: string,
+  disabled = false,
 ): unknown[] {
   return contract.structure.nodes
     .filter((node) => node.parent === parent && node.optional !== true && !except.has(node.part))
     .map((node) => render(
       TAG_FOR_ELEMENT[String(node.element)] ?? "span",
-      { class: contract.parts[node.part]?.classes.join(" ") },
-      drawDeclaredUnder(contract, node.part, render, except),
+      {
+        class: contract.parts[node.part]?.classes.join(" "),
+        ...(kind !== undefined && MDY_ARIA_DISABLED_PARTS.includes(`${kind}.${node.part}`)
+          ? { "aria-disabled": String(disabled) }
+          : {}),
+      },
+      drawDeclaredUnder(contract, node.part, render, except, kind, disabled),
     ));
 }

@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,7 +28,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
@@ -50,7 +50,9 @@ export const mount = async (kind) => {
   // a string this file chose.
   const form = createVueForm({ value: field(MDY_CANONICAL_EMPTY[kind]) });
   const app = createApp({
-    render: () => (kind === "slider"
+    render: () => (kind === "file"
+      ? h(MdyFileField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      : kind === "slider"
       ? h(MdySliderField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
       : BOOLEAN.has(kind)
       ? h(MdyBooleanField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind })

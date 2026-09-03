@@ -134,6 +134,7 @@ export const securityPanel = {
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
     "calendarViewOnZoom",
+    "MDY_ARIA_DISABLED_PARTS",
     "capabilityOf",
     "createCommandRuntime",
     "createDatepickerFieldController",

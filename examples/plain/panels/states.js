@@ -136,6 +136,7 @@ export const statesPanel = {
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
     "calendarViewOnZoom",
+    "MDY_ARIA_DISABLED_PARTS",
     "capabilityOf",
     "chipActionName",
     "chipFocusAfterRemoval",

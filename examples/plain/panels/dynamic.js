@@ -174,6 +174,7 @@ export const dynamicPanel = {
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
     "calendarViewOnZoom",
+    "MDY_ARIA_DISABLED_PARTS",
     "capabilityOf",
     "createCommandRuntime",
     "createDatepickerFieldController",

@@ -3998,6 +3998,9 @@
   "vue:MdyBooleanField": [
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<boolean>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<\"checkbox\" | \"toggle\">;\n        default: string;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<boolean>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<\"checkbox\" | \"toggle\">;\n        default: string;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    kind: \"checkbox\" | \"toggle\";\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
   ],
+  "vue:MdyFileField": [
+    "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly File[]>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly File[]>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
+  ],
   "vue:MdySliderField": [
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<number>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<number>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
   ],
@@ -4033,13 +4036,6 @@
     "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
     "-> returns: MdyTypedForm<S>"
   ],
-  "vue:drawDeclaredUnder": [
-    "(0) contract: { structure: { nodes: readonly { part: string; parent?: string; optional?: boolean; element?: string; }[]; }; parts: Readonly<Record<string, { classes: readonly string[]; }>>; }",
-    "(1) parent: string",
-    "(2) render: (tag: string, props: MdyVuePartProps, children: unknown[]) => unknown",
-    "(3) except?: ReadonlySet<string>",
-    "-> returns: unknown[]"
-  ],
   "vue:executeVueCommands": [
     "(0) commands: readonly MdyUiCommand[]",
     "(1) lookup: MdyElementLookup",
@@ -4070,6 +4066,9 @@
   ],
   "widgets:MDY_ANY_PRINTABLE_KEY": [
     "const: (inferred)"
+  ],
+  "widgets:MDY_ARIA_DISABLED_PARTS": [
+    "const: readonly string[]"
   ],
   "widgets:MDY_BACKDROP_ATTRIBUTE": [
     "const: (inferred)"

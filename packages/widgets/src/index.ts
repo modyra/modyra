@@ -12,6 +12,10 @@ export type {
 } from "./contract.js";
 
 export {
+  // The parts that are drawn at all times and must therefore say whether they can act. The DOM
+  // contract has always enforced this and no renderer could read it: three names every adapter had
+  // to know by heart, which is a rule declared and connected to nothing on the side that obeys it.
+  MDY_ARIA_DISABLED_PARTS,
   MDY_FIELD_SHELL_CLASSES,
   MDY_FIELD_STATE_CLASSES,
   MDY_FORM_SHELL_CLASSES,
