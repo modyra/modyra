@@ -120,6 +120,16 @@ console.log("# Checks this change can break that `npm run test` will not run\n")
 console.log(`Checks CI runs: ${Object.keys(scripts).filter((n) => IS_A_CHECK.test(n) && inCI.has(n)).length}`
   + ` · of those, outside \`npm run test\`: ${gap.length}`);
 console.log(`Files ${range ? `in ${range}` : STAGED ? "staged" : `ahead of ${since}, working tree included`}: ${files.length}\n`);
+if (!range && !STAGED) {
+  // Said here because the bare reading answers a different question than it appears to, and which
+  // question depends on who else is working. "Everything ahead of origin/main plus the working tree"
+  // is the right subject for one person on one tree; where a second session has a batch open in the
+  // same checkout, their files are in that reading and this names the checks *their* work can break.
+  // The answer looked authoritative either way — ten commands, no hint that most belonged elsewhere.
+  console.log("Reading everything ahead of origin/main plus the working tree. On a shared checkout");
+  console.log("that includes another session's open work, so some of what follows may be theirs: ask");
+  console.log("`--range <base>..<your commit>` for the checks one push is answerable for.\n");
+}
 
 if (woken.size === 0) {
   console.log("Nothing in this change is read by a check the local gate skips.");
