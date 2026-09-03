@@ -446,11 +446,18 @@ export const contractsPanel = {
       // page in another. `answerDoor` knows the shapes in the package that defines them, so a shape
       // added tomorrow reaches this page without it being taught anything.
       const answered = answerDoor(door, asked);
+      // "Asked with nothing" and "answered with nothing" are different rows, and collapsing them
+      // teaches the opposite of this page's point: a door with no sample here would read as a door
+      // that puts no class on an element. `SAMPLE_CALL` is written by hand, so the door added
+      // tomorrow is exactly the one that arrives without an entry — the same frozen-roster shape as
+      // the switch this loop used to carry, one field along.
       answer.textContent = answered.unresolvable
         ? `dipende da un valore — ${answered.unresolvable}`
-        : answered.path
-          ? `${answered.classes.join(" ")} — letta come ${answered.path}`
-          : answered.classes.join(" ") || `nessuna, per ${[asked ?? []].flat().join("/")}`;
+        : asked === undefined
+          ? "questa pagina non ha ancora un esempio per questa porta — aggiungilo a SAMPLE_CALL"
+          : answered.path
+            ? `${answered.classes.join(" ")} — letta come ${answered.path}`
+            : answered.classes.join(" ") || `nessuna, per ${[asked].flat().join("/")}`;
       doorsList.append(term, answer);
     }
     doors.append(doorsList);
