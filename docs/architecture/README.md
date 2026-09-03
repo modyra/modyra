@@ -213,6 +213,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0196: A filter says what may be added, never what is already held](0196-a-filter-says-what-may-be-added.md) — the widening ran on both sides of the host's filter, so a held value it refuses vanished on one route and survived on the other; the held value is always offered
 - [ADR 0197: A panel opens on what it is for](0197-a-panel-opens-on-what-it-is-for.md) — the primary operable unit takes focus; five kinds already did it privately and the sixth had three answers
 - [ADR 0198: An action in a panel is one a key can reach](0198-an-action-a-key-can-reach.md) — the predicate was narrower than the sentence beside it, and one panel's action was pointer-only for years
+- [ADR 0199: The view a calendar is showing is one a key can change](0199-a-view-a-key-can-change.md) — the arrows move within a view and nothing declared a door between them; the accelerator opens it, chosen by measurement
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

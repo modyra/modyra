@@ -127,9 +127,10 @@ export interface MdyKeyBinding {
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo" | "typeahead";
+  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo" | "typeahead" | "view";
   /**
-   * Which way a `reorder` goes: `-1` earlier in the value, `1` later.
+   * Which way a `reorder` goes: `-1` earlier in the value, `1` later. A `step` reads it the same way,
+   * and a `view` reads it as scope: `1` widens — days to months to years — and `-1` narrows again.
    *
    * Declared rather than derived from the key, because "earlier" is not "left": the strip runs in
    * the writing direction, so in a right-to-left document `ArrowLeft` moves a chip *later*. A
@@ -362,6 +363,29 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // are, and it is the same `by` the grid pattern gives every other two-dimensional widget.
     bindings.push({ key: "ArrowRight", when: "open", intent: "move", by: 1 });
     bindings.push({ key: "ArrowLeft", when: "open", intent: "move", by: -1 });
+  }
+  // Changing which view the calendar is showing: out to the months, out again to the years, and back
+  // in the other direction.
+  //
+  // Keyed on the alternate views being declared, not on the grid: a kind may have a month to walk
+  // without having anywhere else to go, and a key that changes to a view a kind does not draw is a
+  // key that does nothing. The two views are named parts, so the anatomy decides this the way it
+  // decides the page keys above.
+  //
+  // The vertical arrows, held with the platform's accelerator. Every bare arrow is spent on walking
+  // the grid, and a bare binding refuses a press with that accelerator held, so the two cannot
+  // collide: `matchesKeyGesture` answers the bare declaration only when nothing is held, and this
+  // one only when something is. `primary` rather than a named `Ctrl` because the accelerator is the
+  // platform's — the calendar this follows is the desktop one, and on a Mac that gesture is `Cmd`.
+  //
+  // `Shift` and `Alt` were the other candidates and both are unavailable for a reason worth stating
+  // here rather than rediscovering: a bare binding's refusal counts only `Ctrl` and `Meta`, so a
+  // binding declared with `Shift` or `Alt` on a key already declared bare would be shadowed by it and
+  // do nothing at all.
+  const zoomsAView = ["monthPicker", "yearPicker"].every((part) => part in MDY_WIDGET_CONTRACTS[kind].parts);
+  if (zoomsAView) {
+    bindings.push({ key: "ArrowUp", when: "open", intent: "view", by: 1, modifier: "primary" });
+    bindings.push({ key: "ArrowDown", when: "open", intent: "view", by: -1, modifier: "primary" });
   }
   if (NAVIGATES_OPTIONS.includes(kind)) {
     for (const key of ["ArrowDown", "ArrowUp"]) {

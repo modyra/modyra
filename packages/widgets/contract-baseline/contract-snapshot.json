@@ -3080,9 +3080,11 @@
       "variants": {},
       "keyboard": [
         "ArrowDown@open:move",
+        "ArrowDown@open:view mod=primary by=-1",
         "ArrowLeft@open:move by=-1",
         "ArrowRight@open:move by=1",
         "ArrowUp@open:move",
+        "ArrowUp@open:view mod=primary by=1",
         "End@open:move",
         "Enter@closed:open on=control",
         "Enter@open:commit",
@@ -3487,9 +3489,11 @@
       "variants": {},
       "keyboard": [
         "ArrowDown@open:move",
+        "ArrowDown@open:view mod=primary by=-1",
         "ArrowLeft@open:move by=-1",
         "ArrowRight@open:move by=1",
         "ArrowUp@open:move",
+        "ArrowUp@open:view mod=primary by=1",
         "End@open:move",
         "Enter@closed:open on=toggle",
         "Enter@open:commit",

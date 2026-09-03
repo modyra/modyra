@@ -6,7 +6,7 @@
  */
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetKind } from "../catalog.js";
-import { keyBindingFor } from "../transitions.js";
+import { keyBindingFor, type MdyKeyOrPress } from "../transitions.js";
 export type MdyWidgetKeyIntent =
   | { readonly type: "open" }
   | { readonly type: "close"; readonly restoreFocus: boolean }
@@ -33,7 +33,13 @@ export type MdyWidgetKeyIntent =
    */
   | { readonly type: "grab" }
   /** Put back the last destructive change, whichever act produced it. */
-  | { readonly type: "undo" };
+  | { readonly type: "undo" }
+  /**
+   * Show the same value at a wider or narrower scope: `1` out to the months and then the years,
+   * `-1` back in. Not a `move` — nothing about the value changes, only which of the kind's views is
+   * the one being walked.
+   */
+  | { readonly type: "view"; readonly by: -1 | 1 };
 
 /**
  * How close to the viewport edge a popup may sit. Exported because it is part of the placement
@@ -41,7 +47,12 @@ export type MdyWidgetKeyIntent =
  * `anchorTop - MDY_OVERLAY_VIEWPORT_MARGIN`, not `anchorTop`.
  */
 
-export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean): MdyWidgetKeyIntent | null {
+export function widgetKeyIntent(kind: MdyWidgetKind, key: MdyKeyOrPress, open: boolean): MdyWidgetKeyIntent | null {
+  // The press, where the caller has one. A bare key name is still accepted and still means the bare
+  // gesture — but a binding that declares a held modifier can only ever be reached by a caller that
+  // passes what was held, and asking this door with a name alone silently answers for the bare
+  // declaration of the same key instead.
+  const name = typeof key === "string" ? key : key.key;
   // Reads the kind's declared bindings rather than answering the same way for all seventeen. It used
   // to special-case `number` and the four togglable kinds and give everything else list navigation,
   // so a text field claimed ArrowDown, a textarea claimed Enter, and a slider — whose arrows must
@@ -57,10 +68,10 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
     // sequence of letters lands on depends on the labels, which this layer does not hold. Answering
     // null here would say the key is unclaimed and let it fall through to the platform, which is the
     // opposite of what the declaration means.
-    case "typeahead": return { type: "typeahead", character: key };
+    case "typeahead": return { type: "typeahead", character: name };
     case "toggle": return { type: "toggle" };
     case "step":
-      return key === "ArrowUp" ? { type: "increment" } : { type: "decrement" };
+      return name === "ArrowUp" ? { type: "increment" } : { type: "decrement" };
     case "move":
       // A binding that carries a direction says which way it goes; the key alone cannot, because a
       // horizontal strip runs in the writing direction and `ArrowLeft` is *later* in a right-to-left
@@ -75,13 +86,17 @@ export function widgetKeyIntent(kind: MdyWidgetKind, key: string, open: boolean)
       }
       return {
         type: "move",
-        target: key === "ArrowDown" ? "next" : key === "ArrowUp" ? "previous" : key === "Home" ? "first" : "last",
+        target: name === "ArrowDown" ? "next" : name === "ArrowUp" ? "previous" : name === "Home" ? "first" : "last",
       };
     // The direction is the binding's, not the key's: the strip runs in the writing direction, so in
     // a right-to-left document `ArrowLeft` moves a chip later rather than earlier.
     case "reorder": return { type: "reorder", by: binding.by ?? 1 };
     case "remove": return { type: "remove" };
     case "grab": return { type: "grab" };
+    // A direction is what a view change *is*, so a declaration without one is not an intent this can
+    // answer. Defaulting would invent a direction the contract did not state, and out and in are not
+    // interchangeable.
+    case "view": return binding.by === undefined ? null : { type: "view", by: binding.by };
   }
 }
 
