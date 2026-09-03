@@ -527,6 +527,9 @@ importers:
       '@vue/reactivity':
         specifier: ^3.5.0
         version: 3.5.39
+      vue:
+        specifier: ^3.5.40
+        version: 3.5.40(typescript@7.0.2)
 
   packages/widgets:
     dependencies:
@@ -14784,6 +14787,16 @@ snapshots:
       '@vue/shared': 3.5.40
     optionalDependencies:
       typescript: 5.9.3
+
+  vue@3.5.40(typescript@7.0.2):
+    dependencies:
+      '@vue/compiler-dom': 3.5.40
+      '@vue/compiler-sfc': 3.5.40
+      '@vue/runtime-dom': 3.5.40
+      '@vue/server-renderer': 3.5.40
+      '@vue/shared': 3.5.40
+    optionalDependencies:
+      typescript: 7.0.2
 
   w3c-xmlserializer@5.0.0:
     dependencies:
