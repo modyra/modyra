@@ -1540,7 +1540,7 @@
           "parent": "option",
           "optional": false,
           "presentWhen": null,
-          "repeated": false,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-radio-input"
@@ -1731,7 +1731,7 @@
           "parent": "option",
           "optional": false,
           "presentWhen": null,
-          "repeated": false,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-segmented__control"
@@ -1757,7 +1757,7 @@
           "parent": "option",
           "optional": false,
           "presentWhen": null,
-          "repeated": false,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-segmented__text"
@@ -2308,7 +2308,7 @@
           "parent": "chip",
           "optional": true,
           "presentWhen": "valueIsPresent",
-          "repeated": false,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-chip__move"
@@ -2321,7 +2321,7 @@
           "parent": "chip",
           "optional": true,
           "presentWhen": "valueIsPresent",
-          "repeated": false,
+          "repeated": true,
           "role": null,
           "classes": [
             "mdy-chip__remove"

@@ -511,6 +511,23 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
       repeated: REPEATED_PARTS.has(name),
     };
   });
+  // What repeats is not a list, it is a consequence: a part drawn inside something that repeats is
+  // drawn once per instance of it. There is no way to render one control across two option rows, so
+  // a singular part under a repeating parent describes a page nobody can build. Read from the table
+  // alone this was the shape of three declarations — a radio's and a segmented's control, and a
+  // segmented's words — while their siblings under the same parent repeated, and of the two buttons
+  // a multiselect draws on every chip. The table below still names where repetition *starts*; where
+  // it continues is answered here, so a kind that grows a part inside a repeating one inherits the
+  // answer instead of waiting for someone to add the name.
+  const repeatsByName = new Map(laidOut.map((node) => [node.part as string, node]));
+  const repeats = (part: string): boolean => {
+    for (let node = repeatsByName.get(part); node !== undefined; node = node.parent === undefined ? undefined : repeatsByName.get(node.parent)) {
+      if (node.repeated === true) return true;
+    }
+    return false;
+  };
+  for (const node of laidOut) node.repeated = repeats(node.part as string);
+
   // A part inside the popup is present when the popup is, and the anatomy already answers which
   // those are — the same derivation the server split reads. Declared in the table instead it would
   // be a second answer to a settled question, going stale the first time a kind grows a part inside

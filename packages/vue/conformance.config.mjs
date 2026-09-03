@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,10 +28,13 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
+const GROUP = new Set(["radio", "segmented"]);
+/** Two options, because a group with one cannot show a roving focus moving. */
+const GROUP_OPTIONS = [{ value: "a", label: "First" }, { value: "b", label: "Second" }];
 
 /**
  * Mounting one widget, ready for the kit to inspect.
@@ -40,7 +43,13 @@ const BOOLEAN = new Set(["checkbox", "toggle"]);
  * this adapter cannot reach yet, which is the honest word for it: the kit skips what a renderer says
  * it cannot do and reports a state silently unreachable as conformance.
  */
-export const mount = async (kind) => {
+/**
+ * This config passes the kit's `rules` and `value` through to the field it builds, so the sections
+ * that need them run instead of reporting themselves unestablished.
+ */
+export const declaresRules = true;
+
+export const mount = async (kind, { rules, value } = {}) => {
   if (!kinds.includes(kind)) {
     throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
@@ -48,9 +57,13 @@ export const mount = async (kind) => {
   document.body.append(host);
   // The empty the kind declares, so the form starts where the contract says it starts rather than at
   // a string this file chose.
-  const form = createVueForm({ value: field(MDY_CANONICAL_EMPTY[kind]) });
+  const form = createVueForm({
+    value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
+  });
   const app = createApp({
-    render: () => (kind === "file"
+    render: () => (GROUP.has(kind)
+      ? h(MdyOptionField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind, options: GROUP_OPTIONS })
+      : kind === "file"
       ? h(MdyFileField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
       : kind === "slider"
       ? h(MdySliderField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })

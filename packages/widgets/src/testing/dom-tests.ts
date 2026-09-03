@@ -507,6 +507,26 @@ export function inspectWidgetDom(
       });
     }
 
+    // A part that repeats because its parent does appears once per parent, and the contract already
+    // says how many parents there are: the DOM holds them. Without this, "repeated" means "any
+    // number", so a group drawing two choices and one control conforms — the choice a person cannot
+    // make is invisible to every check here. Required children only: an optional one is absent by
+    // permission, and a part that lives behind an overlay is counted when the overlay is open.
+    const parentNode = definition.structure.nodes.find((other) => other.part === node.parent);
+    const parentsDrawn = node.parent === undefined ? [] : resolved.get(node.parent) ?? [];
+    const requiredHere = !node.optional || (variant?.required.includes(node.part) ?? false);
+    if (
+      node.repeated === true && parentNode?.repeated === true && requiredHere
+      && parentsDrawn.length > 0 && elements.length !== parentsDrawn.length
+    ) {
+      issues.push({
+        code: "PART_CARDINALITY",
+        part: node.part,
+        message: `${node.part} is drawn once per ${String(node.parent)}, and the DOM has `
+          + `${parentsDrawn.length} of those but ${elements.length} of it`,
+      });
+    }
+
     const expected = options.counts?.[node.part];
     if (expected !== undefined) {
       // Count the DOM, not the map. A part with classes can be counted for real; one without has

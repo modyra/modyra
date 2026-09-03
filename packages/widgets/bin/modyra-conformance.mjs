@@ -298,8 +298,13 @@ if (config.declaresRules === true) {
   const findings = [];
   const OUTSIDE = "mdy-conformance-not-an-option";
 
+  // A section that exercised nothing has not passed, it has abstained. Reported as a tick it reads
+  // exactly like a renderer that showed every held value, which is the difference between evidence
+  // and an empty loop — and an adapter drawing none of these kinds collects the tick for free.
+  let exercised = 0;
   for (const kind of ["select", "multiselect"]) {
     if (!kinds.includes(kind)) continue;
+    exercised += 1;
     const fixture = await mount(kind, {
       validators: false,
       value: kind === "multiselect" ? [OUTSIDE] : OUTSIDE,
@@ -314,7 +319,15 @@ if (config.declaresRules === true) {
     fixture.dispose();
   }
 
-  record("A value the options do not contain is shown", findings);
+  if (exercised === 0) {
+    record(
+      "A value the options do not contain is shown",
+      null,
+      "not run — this adapter draws none of the kinds that hold a value their options may not contain",
+    );
+  } else {
+    record("A value the options do not contain is shown", findings);
+  }
 } else {
   record(
     "A value the options do not contain is shown",
