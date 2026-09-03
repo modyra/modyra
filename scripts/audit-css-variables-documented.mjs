@@ -41,13 +41,69 @@ const CHECK = process.argv.includes("--check");
  * already states, and the two would part company the day a tier is added. The header names each
  * tier with a sentence; the sentence is what says whether it is a surface.
  */
-function declaredTiers() {
-  const base = readFileSync(join(STYLES, "modyra-base.css"), "utf8").slice(0, 2000);
+/**
+ * The roles a tier line may declare. A role the gate does not know is not a role.
+ *
+ * `public` is a consumer surface and owes documentation. `internal` is plumbing. `theme-contract`
+ * is what a theme must supply for the foundation to work — outward-facing, but at whoever writes a
+ * theme rather than at whoever uses one. `bridge` is the short aliases, which belong to no prefix.
+ */
+export const ROLES = new Set(["public", "internal", "theme-contract", "bridge"]);
+
+/**
+ * The tier system, read from the header that declares it — each tier with the role it states.
+ *
+ * **The role is a token, never a sentence.** It used to be inferred: every tier counted as public
+ * unless its description happened to contain the words "never used by components". That is a
+ * surrogate read off prose sitting next to the declaration instead of the declaration itself, and
+ * it fails in the direction that costs most — a tier line worded any other way becomes a public
+ * surface in silence, moving both the documented and the owed counts with nothing to notice it.
+ * A token can be absent, and an absent one is a red that says what to write.
+ *
+ * `bridge` names its members outright because they belong to no prefix: `--mdy-primary` is not
+ * reachable from `--mdy-<tier>-*` by any spelling, so a prefix rule can never classify it. It is
+ * the one place a list is the honest form — and the list is held to both directions below, so it
+ * can neither omit a member nor keep one that has left the sheets.
+ */
+export function parseTierHeader(text) {
   const tiers = new Map();
-  for (const [, tier, description] of base.matchAll(/--mdy-(\w+)-\*\s+(.+)/g)) {
-    tiers.set(tier, description.trim());
+  const bridge = new Set();
+  const malformed = [];
+  // A list of six names wraps, and a parser that reads one line drops the rest in silence — the
+  // failure this whole file exists to refuse. So the list continues onto any following line that
+  // carries alias names and nothing else: no role token, no tier pattern, nothing but names.
+  let continuingBridge = false;
+  for (const line of text.split("\n")) {
+    const bridgeLine = line.match(/\[bridge\]\s*(.*)/);
+    const namesOnly = /--mdy-[a-z0-9-]+/.test(line)
+      && !/--mdy-\w+-\*/.test(line) && !/\[[a-z-]+\]/.test(line);
+    if (bridgeLine || (continuingBridge && namesOnly)) {
+      for (const [, name] of (bridgeLine?.[1] ?? line).matchAll(/(--mdy-[a-z0-9-]+)/g)) bridge.add(name);
+      continuingBridge = true;
+      continue;
+    }
+    continuingBridge = false;
+    const tierLine = line.match(/--mdy-(\w+)-\*(.*)/);
+    if (!tierLine) continue;
+    const [, tier, rest] = tierLine;
+    const role = rest.match(/\[([a-z-]+)\]/)?.[1];
+    if (role === undefined || !ROLES.has(role)) {
+      malformed.push({ tier, role, line: line.trim() });
+      continue;
+    }
+    tiers.set(tier, { role, description: rest.replace(/\[[a-z-]+\]/, "").trim() });
   }
-  return tiers;
+  return { tiers, bridge, malformed };
+}
+
+function declaredTiers() {
+  const base = readFileSync(join(STYLES, "modyra-base.css"), "utf8");
+  // The file's opening comment and nothing after it. A section divider further down names a tier
+  // too — `/* ── Reference tier (--mdy-ref-*) … ── */` — and reading past the header turns every
+  // such divider into a tier line missing its role. The declaration is the header; the dividers
+  // are prose about it, and this file's whole point is that the two are not the same thing.
+  const end = base.indexOf("*/");
+  return parseTierHeader(end === -1 ? base : base.slice(0, end));
 }
 
 /** Every custom property a stylesheet in this package declares, with the sheet that declares it. */
@@ -133,9 +189,33 @@ const NOT_OURS = new Map([
   ["--mdy-slate", "the marketing site's own palette, set on its own elements"],
 ]);
 
-const tiers = declaredTiers();
-const publicTiers = [...tiers].filter(([, description]) => !/never used by components/i.test(description));
-const isPublic = (name) => publicTiers.some(([tier]) => name.startsWith(`--mdy-${tier}-`));
+const { tiers, bridge, malformed } = declaredTiers();
+
+/**
+ * A header that cannot be read stops the audit here, before a single count is taken.
+ *
+ * Every number below is read through this header, and with no tier parsed the honest-looking ones
+ * are the dangerous ones: measured against an unreadable header this printed
+ * `undocumented — public and named in no document: 0`, which is not a finding but the absence of a
+ * classifier, and it is the most reassuring number this file can produce. A reader who sees a zero
+ * above an error remembers the zero. So nothing is counted and nothing is printed except the fault
+ * and what to write to fix it.
+ */
+if (malformed.length > 0) {
+  console.log("# CSS custom properties against the documents that name them\n");
+  console.log(`## the tier header does not declare its roles: ${malformed.length}`);
+  for (const { tier, role, line } of malformed) {
+    console.log(role === undefined
+      ? `  - --mdy-${tier}-* declares no role — add one of [${[...ROLES].join("] [")}] to: ${line}`
+      : `  - --mdy-${tier}-* declares [${role}], which is not a role — use one of [${[...ROLES].join("] [")}]`);
+  }
+  console.log("\n  Nothing else is reported: every count this audit takes is read through the header,");
+  console.log("  so with the header unreadable a zero here would mean \"no classifier\", not \"no debt\".");
+  if (CHECK) process.exit(1);
+  process.exit(0);
+}
+const isPublic = (name) => [...tiers].some(([tier, { role }]) =>
+  role === "public" && name.startsWith(`--mdy-${tier}-`));
 const isTiered = (name) => [...tiers.keys()].some((tier) => name.startsWith(`--mdy-${tier}-`));
 
 const inCss = declared();
@@ -225,9 +305,10 @@ for (const name of untiered) {
 
 console.log("# CSS custom properties against the documents that name them\n");
 console.log(`Tiers declared by modyra-base.css: ${[...tiers.keys()].map((t) => `--mdy-${t}-*`).join(", ")}`);
-for (const [tier, description] of tiers) {
-  console.log(`  --mdy-${tier}-*`.padEnd(16) + `${isPublic(`--mdy-${tier}-x`) ? "public " : "internal"}  ${description}`);
+for (const [tier, { role, description }] of tiers) {
+  console.log(`  --mdy-${tier}-*`.padEnd(16) + `${role.padEnd(15)} ${description}`);
 }
+console.log(`  [bridge]`.padEnd(16) + `${String(bridge.size).padStart(2)} alias(es) named outright: ${[...bridge].join(", ") || "(none)"}`);
 console.log(`\nDeclared: ${inCss.size}   named in a document: ${inDocs.size}\n`);
 
 console.log(`## undocumented — public and named in no document: ${undocumented.length}`);
@@ -271,7 +352,43 @@ if (existsSync(guide)) {
   }
 }
 
+/**
+ * The header's own defects, which are prior to every count above.
+ *
+ * A tier line with no role token is not a tier this can classify, and guessing one is what the
+ * token exists to stop. An alias reachable from no prefix and named in no list is invisible to
+ * both mechanisms at once — the case the bridge list exists for, so a missing entry is the list
+ * failing at its one job. And an entry naming a property no sheet declares is the same defect
+ * pointing the other way: a list that keeps a name after it leaves the sheets stops describing
+ * anything, and would go on excusing a hole that has moved.
+ */
+const grammarFaults = [];
+// Only once the header parses. Every one of these is derived through the tier list, so a header
+// that declared no usable tier makes each tiered property look untiered — the first run of this
+// printed seven `--mdy-sys-color-*` names as unreachable aliases, which is the instrument
+// describing its own broken input. A fault in the header is reported alone, and what depends on
+// the header waits until the header is readable.
+const uncoveredAliases = untiered
+  .filter((name) => (readBy.get(name) ?? new Set()).has("an example or app"))
+  .filter((name) => !bridge.has(name));
+for (const name of uncoveredAliases) {
+  grammarFaults.push(`${name} is read by an example or app, belongs to no tier, and is in no [bridge] list`);
+}
+for (const name of [...bridge].filter((name) => !inCss.has(name))) {
+  grammarFaults.push(`[bridge] names ${name}, which no stylesheet declares any more — stale entry`);
+}
+
+if (grammarFaults.length > 0) {
+  console.log(`\n## the header declares its roles, and still cannot classify: ${grammarFaults.length}`);
+  for (const fault of grammarFaults) console.log(`  - ${fault}`);
+  console.log("  Every count above is read through this header, so a gap here moves all of them.");
+}
+
 console.log(`\nThe guide that is owed covers ${undocumented.length} propert(y/ies) — that is its perimeter.`);
+if (CHECK && grammarFaults.length > 0) {
+  console.error("\nAN ALIAS IS REACHABLE FROM NO TIER AND NAMED IN NO LIST — listed above.");
+  process.exit(1);
+}
 if (CHECK && phantom.length > 0) {
   console.error("\nA DOCUMENT NAMES A PROPERTY NOTHING DECLARES — the prose is stale, or the example");
   console.error("uses a host's own property and should be recorded in NOT_OURS with that reason.");
