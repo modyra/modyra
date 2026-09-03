@@ -14,7 +14,7 @@
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import { escapeForSelector, partSelector } from "../part-classes.js";
 import { dynamicParts } from "../ssr.js";
-import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./dom-tests.js";
+import { MDY_SEMANTIC_ELEMENTS, partsSharingClassesWith } from "./semantic-elements.js";
 
 /**
  * A kind's parts keyed by name.
