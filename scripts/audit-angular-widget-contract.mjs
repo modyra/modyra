@@ -20,6 +20,16 @@ const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourceRoot = join(root, "packages/angular/src/lib");
 const baselinePath = join(root, "packages/angular/contract-baseline/angular-ui.json");
 const check = process.argv.includes("--check");
+/**
+ * Recording is its own flag, and reading changes nothing.
+ *
+ * Without this the default action of running the script was to overwrite the baseline, so anyone
+ * running it to *look* re-recorded whatever the tree happened to hold — a ratchet that re-baselines
+ * as a side effect of being read cannot catch the drift it exists for, and the failure is silent
+ * because the report it prints looks exactly the same. The instructions it prints have always said
+ * `--write`; the code did not read the flag, so every other spelling wrote too.
+ */
+const write = process.argv.includes("--write");
 const rendererRoots = [join(sourceRoot, "renderers"), join(sourceRoot, "control")];
 const files = [];
 function walk(dir) {
@@ -170,7 +180,17 @@ if (check) {
     `${manifest.aria.length} ARIA attribute names, ${manifest.selectors.length} selectors referenced. ` +
     "Rendered DOM is checked by dom-contract.spec.ts and the state matrices.",
   );
-} else {
+} else if (write) {
   writeFileSync(baselinePath, serialized);
   console.log(`Wrote ${relative(root, baselinePath)}`);
+} else {
+  console.log(
+    `Angular UI source surface: ${manifest.classes.length} classes, ${manifest.aria.length} ARIA ` +
+    `attribute names, ${manifest.selectors.length} selectors referenced. Read from source, never ` +
+    "from a rendered document.",
+  );
+  const expected = (() => { try { return readFileSync(baselinePath, "utf8"); } catch { return null; } })();
+  if (expected === null) console.log("No baseline recorded yet — take one with --write.");
+  else if (expected !== serialized) console.log("Differs from the recorded baseline; --check says how, --write re-records it.");
+  else console.log("Matches the recorded baseline. Nothing written: recording is --write.");
 }

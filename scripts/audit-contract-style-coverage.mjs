@@ -330,7 +330,11 @@ const structurallyUncovered = structuralStateCoverage();
 
 console.log("# Contract coverage of the visual surface\n");
 console.log(`Contract can produce: ${contract.size} classes`);
-console.log(`Renderers emit: ${emitted.size}   Themes style: ${styled.size}`);
+// "write", not "emit": both numbers are read from source, and the gap between what a file writes
+// and what a page carries is exactly what a source reader cannot see. The word matters because a
+// reader deciding whether a class is safe to delete needs to know which of the two they were told.
+console.log(`Renderers write: ${emitted.size}   Themes declare: ${styled.size}`);
+console.log("Read from source with comments stripped, never from a rendered page or a computed style.");
 console.log(`Contract classes no theme paints: ${unpainted.length}\n`);
 
 for (const kind of ["drift", "unstyled", "dead"]) {
