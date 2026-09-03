@@ -67,6 +67,16 @@ for (const { kind, extra } of CASES) {
       landed.classList.contains(expected),
       `${kind}${shown}: focus landed on .${landed.className} and the contract names "${part}" (.${expected})`,
     );
+
+    // The class alone cannot tell the two apart, and the two are the whole decision: an option in the
+    // panel and a chip in the strip both carry `mdy-chip`, and the chip is the control that *removes*
+    // a value. Asserted by where the element is, which is the property that differs — a check that
+    // only read the class would pass on the behaviour this replaced.
+    if (part === "option") {
+      const inPanel = partClasses(kind, "options").some((cls) => landed.closest(`.${cls}`) !== null);
+      assert.ok(inPanel, `${kind}${shown}: focus landed on a chip outside the panel — the strip's chips remove a value, they do not offer one`);
+      assert.ok(!landed.classList.contains("mdy-chip--value"), `${kind}${shown}: focus landed on a value chip rather than an option`);
+    }
     host.remove();
   });
 }

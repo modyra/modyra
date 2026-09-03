@@ -68,6 +68,15 @@ describe("a multiselect panel", () => {
       const landed = document.activeElement as HTMLElement;
       expect(landed).not.toBe(document.body);
       expect(landed.classList.contains(expected!)).toBe(true);
+
+      // The class alone cannot tell the two apart, and the two are the whole decision: an option in
+      // the panel and a chip in the strip both carry `mdy-chip`, and a chip removes a value rather
+      // than offering one. Asserted by where the element sits, which is what differs.
+      if (part === "option") {
+        const containers = partClasses("multiselect", "options" as never);
+        expect(containers.some((cls) => landed.closest(`.${cls}`) !== null)).toBe(true);
+        expect(landed.classList.contains("mdy-chip--value")).toBe(false);
+      }
     });
   }
 });

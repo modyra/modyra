@@ -67,5 +67,14 @@ for (const searchable of [false, true]) {
       `focus landed on ${landed.tagName.toLowerCase()}.${landed.className} and the contract names `
       + `"${part}" (.${expected}) for searchable=${searchable}`,
     );
+
+    // The class alone cannot tell the two apart, and the two are the whole decision: an option in the
+    // panel and a chip in the strip both carry `mdy-chip`, and a chip is the control that *removes* a
+    // value. Asserted by where the element sits, which is what differs.
+    if (part === "option") {
+      const inPanel = partClasses("multiselect", "options").some((cls) => landed.closest(`.${cls}`) !== null);
+      assert.ok(inPanel, "focus landed on a chip outside the panel — the strip's chips remove a value, they do not offer one");
+      assert.ok(!landed.classList.contains("mdy-chip--value"), "focus landed on a value chip rather than an option");
+    }
   });
 }
