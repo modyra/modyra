@@ -23,6 +23,10 @@
  *
  * Where a wall does not forward a name on purpose, the excuse is read from the record that argues
  * it, never restated here.
+ *
+ * @source-inspection — whether a wall *declares* a forwarded name is a fact about its sources, and
+ * the drift being hunted is invisible from outside: every wall compiles, ships and answers for
+ * everything it knows about. A build cannot be asked which name one of them never learned.
  */
 
 import { readFileSync } from "node:fs";
