@@ -53,6 +53,7 @@ const GATES = [
   "npm run test:platform-floor",
   "npm run test:eslint-plugin",
   "npm run test:docs",
+  "npm run test:css-variables",
   "npm run test:conformance",
   "node scripts/audit-patch3-readiness.mjs --require-ready",
 ];

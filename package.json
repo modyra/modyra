@@ -86,6 +86,7 @@
     "audit:unrun-checks": "node scripts/audit-unrun-checks.mjs --check",
     "audit:unwatched-changes": "node scripts/audit-unwatched-changes.mjs",
     "test:docs": "node scripts/audit-docs.mjs --check",
+    "test:css-variables": "node scripts/audit-css-variables-documented.mjs --check",
     "test:layout-contract": "node scripts/audit-layout-contract.mjs --check",
     "test:styles-architecture": "node scripts/audit-styles-architecture.mjs --check",
     "test:platform-floor": "node scripts/audit-platform-floor.mjs --check",

@@ -213,8 +213,8 @@ per-component overrides.
 
 ```css
 :root {
-  --mdy-comp-text-input-height: 52px;
-  --mdy-comp-select-option-padding: 12px 16px;
+  --mdy-comp-checkbox-container-size: 22px;
+  --mdy-comp-date-picker-cell-selected-bg: #0071e3;
 }
 ```
 
