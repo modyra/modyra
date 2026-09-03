@@ -40,6 +40,14 @@ export interface MdyMultiselectFieldA11yOptions {
    */
   readonly errorsReserved?: boolean;
   readonly widgetId: string;
+  /**
+   * The id of the option the cursor is standing on, or `null` while it stands on none.
+   *
+   * Taken rather than computed: the id of an option is already spelled where the option parts are
+   * built, and a projection spelling it again would be a second copy of that format — the copy that
+   * keeps answering after the first one moves.
+   */
+  readonly activeDescendantId?: string | null;
 }
 
 /** Builds the static IDs used by a multiselect field widget view. */
@@ -196,6 +204,17 @@ export function projectMultiselectFieldA11y<TValue>(
         // What refuses it is the controller, and this is what says so.
         "aria-readonly": state.readonly ? "true" : null,
         "aria-describedby": describedBy,
+        // Where the keyboard is standing in the list, which is not what is chosen.
+        //
+        // Declared here and on the filter box, because the attribute is read from whichever element
+        // holds focus and which one that is depends on whether this field draws a box to type in.
+        // A renderer applies the parts it draws, so both carry it and the one nobody is standing on
+        // is never consulted.
+        //
+        // `null` and not an omitted key: a projection that leaves the key out hands `undefined` to
+        // whoever reads it, and "no attribute" is a thing this contract says rather than a thing a
+        // reader infers.
+        "aria-activedescendant": options.activeDescendantId ?? null,
         disabled: state.disabled,
       },
     },
@@ -276,6 +295,9 @@ export function projectMultiselectFieldA11y<TValue>(
       attributes: {
         "aria-controls": groupId,
         "aria-label": "Filter options",
+        // The same cursor, on the element that holds focus while a person is typing. See the
+        // trigger's own copy for why both carry it.
+        "aria-activedescendant": options.activeDescendantId ?? null,
         // The native attribute, so the question is reachability rather than writability. Filtering
         // does not change the value, so a user who may read the field must still be able to do it.
         disabled: blocksFocus(state.interactivity),

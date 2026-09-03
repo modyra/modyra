@@ -202,7 +202,6 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         (keydown)="onOverlayKeydown($event)"
         [attr.aria-describedby]="describedById(fieldId)"
         [attr.aria-label]="label() ? null : controlAriaLabel()"
-        [attr.aria-activedescendant]="searchable() ? null : activeDescendant()"
       >
         @if (chosen().length === 0) {
           <span class="mdy-multiselect__placeholder">{{ label() }}</span>
@@ -996,10 +995,18 @@ export class MdyMultiselectComponent<TValue = string>
     return this.controller()?.view().parts[this.optionKey(value)]?.id ?? null;
   }
 
+  /**
+   * Where the keyboard is standing in the list, read from the projection rather than worked out
+   * again here.
+   *
+   * Which option the cursor is on and which id that option carries are one answer. Asking the state
+   * for the first and the view for the second was a second way of arriving at it, and a second way
+   * is the one that keeps answering after the first changes — which is how three renderers came to
+   * each own a copy of this, and one of them to cover only the case with a filter box.
+   */
   protected readonly activeDescendant = computed(() => {
-    const key = this.activeOverlayKey();
-    if (!key || !this.open()) return null;
-    return this.controller()?.view().parts[key]?.id ?? null;
+    const projected = this.controller()?.view().parts.trigger?.attributes?.["aria-activedescendant"];
+    return typeof projected === "string" ? projected : null;
   });
 
   private followCursor(): void {

@@ -206,6 +206,7 @@ export function createMultiselectFieldController<TValue>(
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const currentState = state();
     const a11y = projectMultiselectFieldA11y(currentState, handle.errors(), {
+      activeDescendantId: currentState.activeKey === null ? null : optionPartId(currentState.activeKey),
       widgetId,
       // The error container is reserved under any field that can fail a rule, which is a fact about
       // the field and not about the renderer — so the description names one element that never
@@ -251,6 +252,15 @@ export function createMultiselectFieldController<TValue>(
     };
   });
 
+  /**
+   * The id an option carries, spelled once for this widget.
+   *
+   * The projection is handed the cursor's id rather than the format, and the option parts are built
+   * from this same call — so the two cannot drift into naming different elements, which is what a
+   * dangling `aria-activedescendant` is.
+   */
+  const optionPartId = (key: string): string => `${widgetId}__opt__${key}`;
+
   function a11yOption(key: string, option: MdySelectOption<TValue>, currentState: MdyMultiselectFieldState<TValue>) {
     const selected = currentState.selectedKeys.has(key);
     const count = currentState.counts.get(key) ?? 0;
@@ -259,7 +269,7 @@ export function createMultiselectFieldController<TValue>(
     // renderer filters identically by applying the part rather than reimplementing the match.
     const visible = filteredOptions().some((candidate) => keyFor(candidate) === key);
     return {
-      id: `${widgetId}__opt__${key}`,
+      id: optionPartId(key),
       // The shared chip vocabulary, projected once here so every
       // renderer draws the same chip: `--centered` reserves the check's width in toggle mode,
       // `--counter` is the bag mode with its step buttons.

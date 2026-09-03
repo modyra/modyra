@@ -1083,11 +1083,10 @@ export function renderMultiselectField(
     // way back exists, not what it puts back.
     wayBackAction.title = wayBackAction.getAttribute("aria-label") ?? "";
     applyPart(popup, view.parts.popup);
+    // Where the keyboard is in the list travels with the part: the projection names the cursor on
+    // both the box and the trigger, because the reference is read from whichever of them holds
+    // focus and only this field knows which it drew.
     applyPart(search, view.parts.search);
-    // Where the keyboard is in the list, said to a reader. The cursor is not focus — focus stays in
-    // the box a person is typing into — so the only way to announce it is to name it.
-    if (state.activeKey === null) search.removeAttribute("aria-activedescendant");
-    else search.setAttribute("aria-activedescendant", view.parts[state.activeKey]?.id ?? "");
     applyPart(overlay.grid, view.parts.group);
     // What the query leaves, not everything the field was given: `state.options` is the whole list
     // and `filteredOptions` is what is left once `state.query` has narrowed it. Drawing the whole

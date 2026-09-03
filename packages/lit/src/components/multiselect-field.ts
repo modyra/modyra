@@ -522,11 +522,12 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * contain focus for, and it only speaks from where the person is reading.
    */
   private activeDescendant(): string | null {
-    // The controller's `open`, not this element's copy of it: the two settle on different renders,
-    // and reading the copy left the reference absent on exactly the pass that first had a cursor.
-    const state = this.fieldController?.state();
-    if (!state?.open || !state.activeKey) return null;
-    return this.fieldController?.view().parts[state.activeKey]?.id ?? null;
+    // Read from the projection, not worked out again here. Which option the cursor is on and which
+    // id that option carries are one answer, and this element asking the state for the first and
+    // the view for the second was a second way of arriving at it — the way that keeps answering
+    // after the first one changes.
+    const projected = this.fieldController?.view().parts.trigger?.attributes?.["aria-activedescendant"];
+    return typeof projected === "string" ? projected : null;
   }
 
   /**
