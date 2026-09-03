@@ -145,6 +145,24 @@ export interface MdyKeyBinding {
    * both kinds of move.
    */
   readonly page?: boolean;
+  /**
+   * Whether holding `Shift` makes the same movement take a longer stride.
+   *
+   * The calendar is what forced it: `PageUp` turns to the previous month and `Shift`+`PageUp` to the
+   * previous year. One binding, two magnitudes — which is what `Shift` does everywhere in this
+   * contract. It modifies the *act*; only the platform's accelerator chooses which declaration
+   * answers, and a second declaration for the held version would be a rule nothing could reach.
+   *
+   * How much longer is deliberately not said here, for the reason `page` does not say "a month": the
+   * unit belongs to whoever carries the movement out, and a vocabulary shared by seventeen kinds
+   * should not learn the calendar's units to describe one of them.
+   *
+   * Declared because it was true and unwritten. The year jump has shipped in every renderer since
+   * before this field existed, and the table said only that these keys move a page — so a legend
+   * built from the table would have told a person the calendar turns a month at a time, which is
+   * half of what their keyboard does.
+   */
+  readonly longStride?: boolean;
   /** Whether a `move` goes as far as it can rather than one place — `Home` and `End`. */
   readonly toEnd?: boolean;
   /**
@@ -352,8 +370,8 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   // not, so a page key means something here and nothing there.
   const turnsAPage = MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === "grid");
   if (turnsAPage) {
-    bindings.push({ key: "PageDown", when: "open", intent: "move", by: 1, page: true });
-    bindings.push({ key: "PageUp", when: "open", intent: "move", by: -1, page: true });
+    bindings.push({ key: "PageDown", when: "open", intent: "move", by: 1, page: true, longStride: true });
+    bindings.push({ key: "PageUp", when: "open", intent: "move", by: -1, page: true, longStride: true });
     // Sideways, which is half of walking a month. A week runs left to right and the table declared
     // only the vertical pair, so a person moving through a calendar with the keyboard could go up
     // and down a column and never along a row — and all three renderers answered the horizontal
