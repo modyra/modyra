@@ -318,7 +318,14 @@ export function createDatepickerFieldController(
           metaKey: intent.metaKey,
           shiftKey: intent.shiftKey,
         }, true);
-        const acceleratorHeld = (intent.ctrlKey === true || intent.metaKey === true) && declared === null;
+        // Held at all, whatever the catalogue answers. The condition used to be "held *and* nothing
+        // is declared", which held only while no binding claimed a held arrow: the moment one did,
+        // the press stopped being refused here and fell through to the movement below, which reads
+        // the key name and never the modifier — so the accelerator moved a day as well as changing
+        // the view. What a held arrow means is decided where the binding is read, and none of this
+        // calendar's movement keys is declared with a modifier. `cancel` is answered first, because
+        // a dismissal declares that it survives anything held with it.
+        const acceleratorHeld = intent.ctrlKey === true || intent.metaKey === true;
         if (declared?.intent === "cancel") return closePicker(true);
         if (acceleratorHeld) return [];
         if (intent.key === "Enter" || intent.key === " ") return commitDate(focusedDate());

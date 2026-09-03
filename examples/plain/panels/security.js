@@ -133,6 +133,7 @@ export const securityPanel = {
     "calendarDayId",
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
+    "calendarViewOnZoom",
     "capabilityOf",
     "createCommandRuntime",
     "createDatepickerFieldController",

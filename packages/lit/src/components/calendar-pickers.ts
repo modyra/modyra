@@ -13,6 +13,7 @@ import {
   projectCalendarViewA11y,
   keyBindingFor,
   type MdyCalendarViewMode,
+  calendarViewOnZoom,
 } from "@modyra/widgets";
 import { mdyPart } from "../mdy-part.js";
 
@@ -128,6 +129,16 @@ export function calendarGridKey(
     if (dismissal.restoresFocus === true) event.preventDefault();
     if (viewMode !== "days") send({ type: "set-view-mode", mode: "days" });
     else close();
+    return;
+  }
+  // Stepping out to a wider view and back in, before the guard below: two of the three views are not
+  // the grid, so a step handled only while the days are showing would work once and then be stuck in
+  // the view it reached. Which view a step lands on is `calendarViewOnZoom`'s answer.
+  const zoom = keyBindingFor(kind, event, true);
+  if (zoom?.intent === "view" && zoom.by !== undefined) {
+    event.preventDefault();
+    const reached = calendarViewOnZoom(viewMode, zoom.by);
+    if (reached !== viewMode) send({ type: "set-view-mode", mode: reached });
     return;
   }
   if (viewMode !== "days") return;

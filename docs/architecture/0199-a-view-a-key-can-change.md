@@ -37,8 +37,17 @@ and `modifier: "primary"`, `when: "open"`.
 
 `primary` rather than a named `Ctrl`, and that is not a detail. The precedent this follows is the
 desktop calendar, and "the accelerator" is what that precedent means: `Ctrl` where the platform uses
-it, `Cmd` on a Mac. The vocabulary already carries that distinction and `matchesKeyGesture` resolves
-it once, so no renderer has to make the platform test for itself.
+it, `Cmd` on a Mac. The vocabulary already carries that word, so no renderer has to name a key and be
+wrong on half the machines that run it.
+
+**What the matcher actually does, because the first draft of this record overstated it.** It does not
+test the platform: a `primary` binding is answered by `Ctrl` *and* by `Cmd`, on every platform, and
+refused only when something further is held. That is the lenient direction and the right one for
+answering a press — a person on a Mac with a keyboard mapped the other way is not told their gesture
+was the wrong one. But it means nothing in this package resolves the accelerator *for display*: a
+legend that wanted to print this gesture would have to make the platform test itself, and there is no
+exported name that would stop it printing `Ctrl` to somebody holding `Cmd`. Recorded as a gap, not
+repaired here.
 
 **The key was chosen by measuring, not by reading the code beside it.** Every bare arrow is spent
 walking the grid, so the question was whether a bare declaration also answers a *held* press. Both
@@ -101,15 +110,18 @@ to walk; a months view is somewhere to go, and only the second is what this key 
 `packages/widgets/test/a-view-a-key-can-change.spec.mjs` — ten checks. The binding appears on exactly
 the kinds that declare both views and on no others, derived from the anatomy rather than compared
 against a list; a kind with a grid and no alternate views is asserted *not* to have it; the
-accelerator resolves under `Ctrl` and under `Meta`, so the platform resolution is exercised in both
-directions rather than on the machine's own; the bare arrows are asserted to still walk the grid, and
+accelerator is answered under `Ctrl` and under `Meta`, which is what the matcher promises and is
+asserted rather than assumed; the bare arrows are asserted to still walk the grid, and
 the held ones to still change the view, because one of those alone would pass with the two bindings
 swapped; a press carrying more than the accelerator is refused; and the key is offered only while the
 calendar is showing.
 
-What is not yet verified is the act: no renderer honours this binding, so nothing here presses a key
-and watches a view change. That is the next batch, and it owes a bench that presses — including on a
-Mac, where this is the first non-`undo` binding to exercise the platform resolution for real.
+The act is verified in the batch that followed, by a bench per renderer that presses the gesture and
+reads **where focus is** — not which view the state says it is on. That distinction earned its place
+immediately: one renderer changed the view correctly and left the keyboard standing on a cell the
+render had just removed, which was invisible for as long as the only way into these views was a
+pointer on the header. Each bench presses both accelerators, because the matcher accepts both and
+pressing only the one this machine uses would leave the other declared and unexercised.
 
 ## Security and privacy
 

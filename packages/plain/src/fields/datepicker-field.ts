@@ -18,6 +18,7 @@ import { fieldAccessibleName, keyMeans, applySubmissionNames,
   projectCalendarPeriodCellA11y,
   projectCalendarViewA11y,
   calendarViewOnToggle,
+  calendarViewOnZoom,
   type MdyCalendarViewMode,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
@@ -248,6 +249,45 @@ export function renderDatepickerField(
   };
   wrapper.addEventListener("keydown", onEscape);
   popup.addEventListener("keydown", onEscape);
+
+  /**
+   * Stepping out to a wider view and back in, from wherever in the calendar the person is standing.
+   *
+   * Answered on the popup rather than on the grid, because two of the three views are not the grid:
+   * a handler bound there would work while the days are showing and stop once it had done its job
+   * once. Which view a step reaches is `calendarViewOnZoom`'s answer, not this renderer's.
+   *
+   * The gesture is asked of the catalogue. A condition naming the key here would also have to name
+   * the modifier, and it is the modifier that separates this from the bare arrow that walks the
+   * grid — a copy of that distinction is one that keeps answering after the declaration moves.
+   */
+  // The popup sits inside the wrapper *and* may be moved out of it, so both carry this listener and
+  // one press can reach it twice. A dismissal survives that — closing a closed panel is closing it —
+  // but a step does not: two runs of one press walked the days to the months and straight on to the
+  // years, which reads as a key that skips a view rather than as a handler that ran twice.
+  const zoomed = new WeakSet<KeyboardEvent>();
+  const onZoomView = (event: KeyboardEvent): void => {
+    const state = controller.state();
+    if (!state.open || zoomed.has(event)) return;
+    const binding = keyBindingFor("datepicker", event, state.open);
+    if (binding?.intent !== "view" || binding.by === undefined) return;
+    event.preventDefault();
+    zoomed.add(event);
+    const reached = calendarViewOnZoom(state.viewMode, binding.by);
+    if (reached === state.viewMode) return;
+    dispatch({ type: "set-view-mode", mode: reached });
+    // The keys follow the eye. A step that changed the view and left focus in the one it came from
+    // would leave the next press going to a view nobody is looking at — and in this renderer the
+    // view it came from is hidden, so focus would be on an element in no accessibility tree at all.
+    queueMicrotask(() => {
+      const host = reached === "months" ? monthPicker : reached === "years" ? yearPicker : grid;
+      const landing = host.querySelector<HTMLElement>('[aria-selected="true"], [tabindex="0"]')
+        ?? host.querySelector<HTMLElement>("button:not([disabled])");
+      landing?.focus();
+    });
+  };
+  wrapper.addEventListener("keydown", onZoomView);
+  popup.addEventListener("keydown", onZoomView);
 
   // The header goes to the top of the funnel and choosing narrows back down. Which view it opens
   // is `calendarViewOnToggle`'s answer, not this renderer's: writing it here is how three renderers

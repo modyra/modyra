@@ -38,3 +38,21 @@ export function calendarViewAfterPick(mode: MdyCalendarViewMode): MdyCalendarVie
 export function calendarViewOnToggle(mode: MdyCalendarViewMode): MdyCalendarViewMode {
   return mode === "days" ? "years" : "days";
 }
+
+/**
+ * Where a step along the funnel goes: `1` out to a wider view, `-1` back in to a narrower one.
+ *
+ * A different journey from the header's control, and deliberately so. The header is a shortcut to
+ * the top for somebody reaching for a date far from the month on screen; this walks the three views
+ * one at a time, which is what a key repeated in one direction should do.
+ *
+ * **Clamped at both ends rather than wrapped.** A ring would send a person zooming out past the
+ * years straight back to the days, so holding the key would oscillate between the widest and the
+ * narrowest view instead of settling — and the end of a range is where a repeated key is most likely
+ * to be held one press too long.
+ */
+export function calendarViewOnZoom(mode: MdyCalendarViewMode, by: -1 | 1): MdyCalendarViewMode {
+  const at = MDY_CALENDAR_VIEW_MODES.indexOf(mode);
+  const next = Math.min(Math.max(at + by, 0), MDY_CALENDAR_VIEW_MODES.length - 1);
+  return MDY_CALENDAR_VIEW_MODES[next]!;
+}

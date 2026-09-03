@@ -126,3 +126,37 @@ test("the header opens the top of the funnel, and closes back to the days", asyn
   // Toggling twice from the days is a round trip, not a walk down the funnel.
   assert.equal(calendarViewOnToggle(calendarViewOnToggle("days")), "days");
 });
+
+/**
+ * Where a step along the funnel goes, which is not where the header goes.
+ *
+ * The header is a shortcut to the top for somebody reaching for a date far from the month on screen;
+ * this walks the three views one at a time, which is what a key repeated in one direction should do.
+ * The two journeys are declared separately because a renderer given only one of them would have to
+ * decide the other, and that is how a header that jumps and a key that steps came to be one function
+ * in the first place.
+ */
+test("a step walks the views one at a time, and stops at each end", async () => {
+  const { calendarViewOnZoom } = await import("../dist/index.js");
+
+  assert.equal(calendarViewOnZoom("days", 1), "months", "a step out of the days is the months, not the years");
+  assert.equal(calendarViewOnZoom("months", 1), "years");
+  assert.equal(calendarViewOnZoom("years", -1), "months");
+  assert.equal(calendarViewOnZoom("months", -1), "days");
+
+  // Clamped, not wrapped. A ring would send a held key from the widest view straight back to the
+  // narrowest and oscillate between the two ends, and the end of a range is exactly where a repeated
+  // key is most likely to be held one press too long.
+  assert.equal(calendarViewOnZoom("years", 1), "years", "stepping out of the widest view wrapped round");
+  assert.equal(calendarViewOnZoom("days", -1), "days", "stepping into the narrowest view wrapped round");
+
+  // The two journeys differ, and this is the case that shows it: the header jumps from the days to
+  // the years, a step reaches the months. A renderer wiring the key to the header's answer would
+  // pass every check that only asked whether the view changed.
+  const { calendarViewOnToggle } = await import("../dist/index.js");
+  assert.notEqual(
+    calendarViewOnZoom("days", 1),
+    calendarViewOnToggle("days"),
+    "a step and the header's jump have become the same answer, so one of the two is now undeclared",
+  );
+});

@@ -252,13 +252,22 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
     if (this._open) {
       if (this.view.viewMode === "days") {
         this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
-      } else if (this.view.viewMode === "years") {
-        this.querySelector<HTMLElement>(
-          `.${partClasses("datepicker", "yearCell", { selected: true }).join(".")}`,
-        )?.scrollIntoView?.({
-          block: "center",
-          behavior: "instant",
-        });
+      } else {
+        const cell = this.view.viewMode === "years" ? "yearCell" : "monthCell";
+        const selected = this.querySelector<HTMLElement>(
+          `.${partClasses("datepicker", cell, { selected: true }).join(".")}`,
+        );
+        selected?.scrollIntoView?.({ block: "center", behavior: "instant" });
+        // The keyboard follows the eye into the view it reached. Only when it is not already in
+        // there: this runs on every render, and a landing taken unconditionally would pull focus
+        // back to the selected cell each time somebody moved off it.
+        //
+        // These two views used to be reachable only by clicking the header, which leaves focus on
+        // the header button, so nothing here had to move it. A key that steps the view makes that a
+        // person zooming out and finding the keyboard nowhere.
+        if (!this.contains(document.activeElement) || document.activeElement === this) {
+          (selected ?? this.querySelector<HTMLElement>(`.${partClasses("datepicker", cell).join(".")}`))?.focus();
+        }
       }
     }
   }

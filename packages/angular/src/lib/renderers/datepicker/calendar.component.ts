@@ -1,4 +1,4 @@
-import { type MdyDatepickerFieldController , keyBindingFor } from "@modyra/widgets";
+import { type MdyDatepickerFieldController , keyBindingFor, calendarViewOnZoom, partClasses } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -9,7 +9,7 @@ import {
   Injector,
   input,
   output,
-  viewChild,
+  viewChild, ElementRef
 } from "@angular/core";
 import {
   CalendarDate,
@@ -112,6 +112,8 @@ export class MdyCalendarComponent {
 
   private readonly grid = viewChild(MdyCalendarGridComponent);
   private readonly injector = inject(Injector);
+  /** The calendar's own element, so a landing is looked for inside this calendar and no other. */
+  private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     effect(() => {
@@ -173,6 +175,30 @@ export class MdyCalendarComponent {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
+    // Stepping out to a wider view and back in, before the guard below: two of the three views are
+    // not the grid, so a step handled only while the days are showing would work once and then be
+    // stuck in the view it reached. Which view a step lands on is `calendarViewOnZoom`'s answer.
+    const zoom = keyBindingFor("datepicker", event, true);
+    if (zoom?.intent === "view" && zoom.by !== undefined) {
+      event.preventDefault();
+      const reached = calendarViewOnZoom(this.view(), zoom.by);
+      if (reached !== this.view()) {
+        this.controller()?.dispatch({ type: "set-view-mode", mode: reached });
+        // The keyboard follows the eye into the view it reached. Without this a person zooming out
+        // is left standing on a cell the render has just taken away, and the next press goes to the
+        // document rather than to the view they are looking at.
+        // After the render, not after the microtask: the view it lands in does not exist until this
+        // component has drawn it, and a landing looked for any earlier finds the view being left.
+        afterNextRender(() => {
+          const part = reached === "years" ? "yearCell" : reached === "months" ? "monthCell" : "gridcell";
+          const host = this.hostRef.nativeElement;
+          const landing = host.querySelector<HTMLElement>(`.${partClasses("datepicker", part, { selected: true }).join(".")}`)
+            ?? host.querySelector<HTMLElement>(`.${partClasses("datepicker", part).join(".")}`);
+          landing?.focus();
+        }, { injector: this.injector });
+      }
+      return;
+    }
     if (this.view() !== "days") {
       // Asked of the catalogue. The binding declares that a dismissal answers whatever is held with
       // it, and a condition naming the key is a second copy of that rule — the copy is what keeps
@@ -208,6 +234,10 @@ export class MdyCalendarComponent {
         return;
     }
 
+    // A press carrying the platform's accelerator is not a movement of this grid: none of the keys
+    // that walk it is declared with a modifier, and reading the key name alone made a held arrow
+    // move a day as well as meaning whatever else it was declared for.
+    if (event.ctrlKey || event.metaKey) return;
     const next = calendarKeyboardTarget(event.key, focused, event.shiftKey);
     if (!next) return; // Don't prevent default for unhandled keys
 

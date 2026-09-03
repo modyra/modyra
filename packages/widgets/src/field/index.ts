@@ -138,7 +138,7 @@ export type {
 
 export { fieldShellRootClasses } from "./shell-a11y.js";
 
-export { MDY_CALENDAR_VIEW_MODES, calendarViewAfterPick, calendarViewOnToggle } from "./calendar-view.js";
+export { MDY_CALENDAR_VIEW_MODES, calendarViewAfterPick, calendarViewOnToggle, calendarViewOnZoom } from "./calendar-view.js";
 export type { MdyCalendarViewMode } from "./calendar-view.js";
 export { projectCalendarViewA11y, projectCalendarPeriodCellA11y, projectCalendarDayCellA11y } from "./calendar-view-a11y.js";
 export type { MdyCalendarPeriodCell, MdyCalendarViewA11yOptions } from "./calendar-view-a11y.js";

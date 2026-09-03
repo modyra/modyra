@@ -135,6 +135,7 @@ export const statesPanel = {
     "calendarDayId",
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
+    "calendarViewOnZoom",
     "capabilityOf",
     "chipActionName",
     "chipFocusAfterRemoval",

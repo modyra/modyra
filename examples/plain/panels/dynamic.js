@@ -173,6 +173,7 @@ export const dynamicPanel = {
     "calendarDayId",
     "calendarKeyboardTarget",
     "calendarViewOnToggle",
+    "calendarViewOnZoom",
     "capabilityOf",
     "createCommandRuntime",
     "createDatepickerFieldController",
