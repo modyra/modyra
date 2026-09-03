@@ -51,6 +51,7 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       [filled]="!!value()"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div class="{{ cls.box }}" #wrapper [class.mdy-colors--open]="open()">

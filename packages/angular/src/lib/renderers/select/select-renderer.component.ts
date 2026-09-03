@@ -66,6 +66,7 @@ import { MdyDropdownBase } from "../dropdown-base";
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     @if (optionTpl() || searchable()) {

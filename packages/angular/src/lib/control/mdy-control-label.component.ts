@@ -46,13 +46,16 @@ import { MdyInlineErrorIconComponent } from "./inline-error-icon.component";
           >
         }
         @if (showInlineError()) {
-          <mdy-inline-error-icon [errorText]="errorText()" />
+          <mdy-inline-error-icon [errorText]="errorText()" [errorsId]="errorsId()" />
         }
       </label>
     }
   `,
 })
 export class MdyControlLabelComponent {
+  /** The id the field's errors are named by, passed to the inline message that carries them. */
+  readonly errorsId = input<string>("");
+
   /** The caption a document wrote. Empty where none was written. */
   readonly label = input<string>("");
 

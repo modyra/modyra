@@ -38,6 +38,7 @@ import { MdySelectOption } from "../../core/types";
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div

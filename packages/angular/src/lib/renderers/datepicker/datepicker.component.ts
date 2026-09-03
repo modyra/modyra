@@ -64,6 +64,7 @@ import { MdyCalendarComponent } from "./calendar.component";
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div class="{{ cls.box }}" #wrapper>

@@ -35,6 +35,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       [filled]="!!value()"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
     <div [class]="wrapperClasses()">
       @if (prefix(); as p) {

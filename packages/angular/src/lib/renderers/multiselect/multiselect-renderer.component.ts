@@ -76,12 +76,14 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
     <mdy-control-label
       [label]="label()"
       [words]="controlAriaLabel() ?? ''"
-      [forId]="fieldId"
+      [forId]="triggerPart().id ?? fieldId"
+      [widgetId]="fieldId"
       [hasError]="paintsAsInvalid()"
       [required]="isRequired()"
       [filled]="!!value() && value()!.length > 0"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
     <!-- The shell every other kind sits in. Without it this renderer's multiselect was outside the
          row system entirely: anything a theme states about the input wrapper — the frame, the
@@ -130,7 +132,6 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
               (pointerenter)="revealChipName($event, held.key)"
               (pointerleave)="hideChipName()"
               (blur)="hideChipName()"
-              [attr.aria-describedby]="namedChip() === held.key ? fieldId + '__chiptip' : null"
               (pointerdown)="startChipDrag($event, held.key)"
               (keydown)="onChipKeydown($event, held.key)"
               [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
@@ -195,16 +196,11 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
         type="button"
         class="mdy-multiselect__trigger"
         [id]="fieldId"
-        [mdyPart]="openerPart()"
+        [mdyPart]="triggerPart()"
         [disabled]="isDisabled()"
         (click)="toggleOverlay($event)"
         (keydown)="onOverlayKeydown($event)"
-        [attr.aria-invalid]="paintsAsInvalid()"
-        [attr.aria-disabled]="effectiveAriaDisabled()"
-        [attr.aria-required]="isRequired()"
-        [attr.aria-readonly]="isReadonly() ? 'true' : null"
         [attr.aria-describedby]="describedById(fieldId)"
-        [attr.aria-labelledby]="label() ? labelId() : null"
         [attr.aria-label]="label() ? null : controlAriaLabel()"
         [attr.aria-activedescendant]="searchable() ? null : activeDescendant()"
       >
@@ -475,9 +471,21 @@ export class MdyMultiselectComponent<TValue = string>
     () => overlayControlledId("multiselect", this.fieldId) ?? "",
   );
 
-  /** The relation between this widget's opener and the overlay it opens. */
-  protected readonly openerPart = computed(
-    () => projectOverlayOpenerA11y("multiselect", { widgetId: this.fieldId, open: this.open() })!,
+  /**
+   * What the contract says this control carries — all of it, not the overlay relation alone.
+   *
+   * The field's trigger part answers the opener's three (`aria-expanded`, `aria-controls`,
+   * `aria-haspopup`, with the same values in the same state — measured, not assumed) **and** the
+   * five the opener knows nothing about: invalid, required, readonly, describedby, labelledby.
+   * Applying the opener alone left those five with no author but this template, so the contract's
+   * answer to them never reached the page.
+   *
+   * The opener stays as the answer for the moment before the controller is adopted: an element with
+   * no relation at all announces a button that opens nothing.
+   */
+  protected readonly triggerPart = computed(
+    () => this.controller()?.view().parts.trigger
+      ?? projectOverlayOpenerA11y("multiselect", { widgetId: this.fieldId, open: this.open() })!,
   );
 
   /**

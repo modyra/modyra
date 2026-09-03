@@ -28,6 +28,7 @@ import { MDY_I18N_MESSAGES } from "../../core/i18n";
       [filled]="chosen().length > 0"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div

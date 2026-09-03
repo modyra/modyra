@@ -642,6 +642,18 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * rendered, styled, and announced to nobody: a description no reference can reach is invisible to
    * assistive technology however carefully it is worded.
    */
+  /**
+   * The id the field's errors are named by.
+   *
+   * One spelling for two carriers: the error list draws it when there is a list, and the inline
+   * message draws it when the errors are shown beside the caption instead. The projection names this
+   * id whenever it describes a control that has errors, and it does not know which of the two this
+   * renderer chose — so both have to answer to the same name.
+   */
+  protected errorsElementId(fieldId: string): string {
+    return defaultWidgetIdFactory.part(fieldId, "errors");
+  }
+
   protected descriptionId(fieldId: string): string {
     // The element is on the page whether or not it has words, so the id is too: the projection names
     // this id whenever it describes the control, and an id that appears only once there are words

@@ -28,6 +28,7 @@ import { inputText } from "../renderer-projection";
       [filled]="true"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div class="{{ cls.track }}">

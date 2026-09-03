@@ -36,6 +36,7 @@ import { inputNumber } from "../renderer-projection";
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
     <div [class]="wrapperClasses()">
       @if (prefix(); as p) {

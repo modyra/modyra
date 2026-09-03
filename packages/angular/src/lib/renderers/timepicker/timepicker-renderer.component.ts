@@ -64,6 +64,7 @@ import { MdyTimepickerClockComponent } from "./timepicker-clock.component";
       [filled]="value() !== null"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
 
     <div class="mdy-timepicker" #wrapper>

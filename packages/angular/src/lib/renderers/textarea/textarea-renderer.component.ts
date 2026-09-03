@@ -28,6 +28,7 @@ import { inputText } from "../renderer-projection";
       [filled]="!!value()"
       [showInlineError]="inlineErrorShown()"
       [errorText]="inlineErrorText()"
+      [errorsId]="inlineErrorShown() ? errorsElementId(fieldId) : ''"
     />
     <div [class]="wrapperClasses()">
       @if (prefix(); as p) {
