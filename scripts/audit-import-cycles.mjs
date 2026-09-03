@@ -30,15 +30,41 @@ const sources = (dir) => {
   return out;
 };
 
-/** Relative specifiers only: a bare package name is another package's problem. */
+/**
+ * Relative specifiers only: a bare package name is another package's problem.
+ *
+ * Both spellings, and that matters: `import("./x.js")` closes a ring exactly as a static import
+ * does, and a reader that only knew `from "./x"` would report a graph with the edge missing — which
+ * is a clean run, not a smaller one. A dynamic import is the shape a cycle is most often broken
+ * *with*, so it is the shape this most needs to see.
+ *
+ * A specifier that resolves to nothing is counted rather than dropped. Every unresolved one is an
+ * edge the graph does not have, and a cycle through it cannot be found: silence there reads as
+ * "no cycle" for the same reason an unbuilt package reads as "nothing wrong".
+ */
+const unresolved = [];
 const edgesOf = (file) => {
-  const source = readFileSync(file, "utf8");
-  const specifiers = [...source.matchAll(/(?:from|import)\s*["'](\.[^"']+)["']/g)].map((m) => m[1]);
+  // Comments first. A doc block writes `{@link import("./x.js").f}` to point a reader at a sibling,
+  // and that closes no ring — it was enough to fabricate a two-module cycle between a shell and the
+  // field it documents. A specifier that is prose is not an edge.
+  const source = readFileSync(file, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
+  const specifiers = [
+    ...source.matchAll(/(?:from|import)\s*["'](\.[^"']+)["']/g),
+    ...source.matchAll(/import\s*\(\s*["'](\.[^"']+)["']/g),
+  ].map((m) => m[1]);
   const out = new Set();
   for (const specifier of specifiers) {
-    const target = resolve(dirname(file), specifier.replace(/\.js$/, ".ts"));
-    if (existsSync(target)) out.add(target);
-    else if (existsSync(`${target.replace(/\.ts$/, "")}/index.ts`)) out.add(`${target.replace(/\.ts$/, "")}/index.ts`);
+    const base = resolve(dirname(file), specifier).replace(/\.(js|mjs|ts|mts)$/, "");
+    const found = [".ts", ".mts", "/index.ts", "/index.mts"]
+      .map((suffix) => `${base}${suffix}`)
+      .find((candidate) => existsSync(candidate));
+    if (found) out.add(found);
+    // A stylesheet or a data file is not a module and has no edge to be missing.
+    else if (!/\.(css|json|svg|png|txt|md)$/.test(specifier)) {
+      unresolved.push(`${relative(ROOT, file)} -> ${specifier}`);
+    }
   }
   return out;
 };
@@ -96,6 +122,16 @@ const added = cycles.filter((c) => !recorded.includes(c));
 const closed = recorded.filter((c) => !cycles.includes(c));
 
 console.log(`Import cycles: ${cycles.length} (recorded ${recorded.length})`);
+console.log(`Read from source: static and dynamic relative imports across ${packages.length} package(s)`
+  + " — a cycle closed through a bare package specifier belongs to audit-package-independence.");
+if (unresolved.length > 0) {
+  // Named, not counted: an edge the graph does not have is a cycle this cannot find, and the reader
+  // needs to know which module it stopped following.
+  console.log(`  ${unresolved.length} relative specifier(s) resolved to no file, so their edges are absent`
+    + " (a generator's output names paths this repository writes rather than imports):");
+  for (const one of unresolved.slice(0, 10)) console.log(`    ${one}`);
+  if (unresolved.length > 10) console.log(`    … and ${unresolved.length - 10} more`);
+}
 for (const cycle of added) console.log(`  new: ${cycle}`);
 // Asserted in both directions: a stale entry is a claim about the code that stopped being true.
 for (const cycle of closed) console.log(`  closed, still recorded: ${cycle}`);
