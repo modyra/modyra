@@ -66,8 +66,9 @@ describe("a multiselect panel", () => {
     expect(document.activeElement).toBe(opener);
   });
 
-  for (const searchable of [true]) {
-    it(`with searchable=${searchable}, opens on the part the contract names`, () => {
+  it("with searchable=true, opens on the part the contract names", () => {
+    {
+      const searchable = true;
       open(searchable);
       const part = focusPartOnOpen("multiselect", { searchable })!;
       const expected = partClasses("multiselect", part as never)[0];
@@ -87,6 +88,6 @@ describe("a multiselect panel", () => {
         expect(containers.some((cls) => landed.closest(`.${cls}`) !== null)).toBe(true);
         expect(landed.classList.contains("mdy-chip--value")).toBe(false);
       }
-    });
-  }
+    }
+  });
 });

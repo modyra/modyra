@@ -1,6 +1,6 @@
 # ADR 0197: A panel opens on what it is for
 
-Status: Accepted
+Status: Accepted — amended 2026-09-03, see Consequences
 
 ## Context
 
@@ -45,11 +45,25 @@ selector is a renderer that can disagree with the contract about where focus wen
 
 - For five kinds this is a declaration and not a change: nothing moved to make them conform, and the
   checks that now assert it passed the moment they were written.
-- Two renderers change for the multiselect. Lit moves focus into the panel where it kept it on the
-  trigger; Angular does so for a multiselect without a filter box, where it also kept it.
+- Lit moves focus into the panel for the multiselect, in both configurations, where it kept it on the
+  trigger.
+- **Amendment, 2026-09-03: Angular does not follow this yet for a multiselect with no filter box, and
+  that is recorded here rather than left to the code.** The change was made and reverted the same
+  morning: moving focus to the first option took the keyboard away from the element this renderer
+  binds type-ahead to — `onOverlayKeydown`, whose condition is `!searchable()` — so a person typing a
+  letter moved nothing, which a browser battle caught on the published head. Before the batch, focus
+  stayed on the trigger by *omission* rather than by decision: the reference the old code focused is
+  `undefined` when there is no filter box. Angular keeps that behaviour until the keyboard is answered
+  from wherever focus is; the departure is asserted in
+  `packages/angular/src/lib/renderers/multiselect/a-panel-opens-on-what-it-is-for.spec.ts` so it cannot go quiet, and the
+  condition for rejoining is that type-ahead stops depending on where focus happened to stay.
+- The decision above is unchanged. What this amendment records is that its adoption is partial, and
+  where.
 - A person using a keyboard reaches the options with no extra press, in every renderer.
 - A renderer that wants the activedescendant pattern for a kind now has to argue it here rather than
-  implement it quietly. That is the cost, and it is the point.
+  implement it quietly. That is the cost, and it is the point — and the amendment above is that rule
+  applied to this record's own author: the departure was argued in a comment and a test first, which
+  is not the place this sentence names.
 
 ## Alternatives rejected
 
