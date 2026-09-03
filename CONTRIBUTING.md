@@ -80,6 +80,13 @@ direction rather than only stating an outcome.
   are allowed. What causes damage is inference *dressed as a report* — it
   arrives already dressed, so the reader's own check passes it.
 
+  A claim *about a commit* takes its evidence from `git show <sha>:<path>`,
+  never from the file on disk, and a number that supports it is run against
+  that head. The working tree is shared and moving: reading it and reporting
+  the result as a property of a commit cites what the commit does not contain.
+  On a one-person checkout the two coincide, which is why the habit does not
+  form on its own.
+
 ### Comments and documentation
 
 - **Comments say what the code does, not how it came to be.** No change
