@@ -1,11 +1,684 @@
 {
-  "note": "Public names not yet asserted or not yet shown. The list may only get shorter.",
+  "note": "Public names not yet asserted or not yet shown. The list may only get shorter. A name arrives here for one of two reasons and they are not the same: it was published without a check, or the surface this is measured against grew to include the package it was always in. The public names come from `type-surface.json`, which watches every published package rather than three of them, so an adapter's exports count here — most of this list arrived that way, not as newly published names nobody exercised.",
   "shownCeiling": "`shown` counts a name a panel was measured to run, not one a list claims. What is left is not all reachable: a file chooser and the platform's colour picker are windows outside the document, so the names behind them cannot be executed by any scripted run — that is a fact about the instrument's reach, not a gap in the demos. The rest — a chip dragged, a clock face, a range completed — a demo could drive and none does yet. Raising the number by listing a name a panel does not run would make it stop meaning what it says. Measured three ways and the answer held: what is left is not code the run failed to reach but code the demos do not contain — bundling the lab and looking for those names finds most of them absent, shaken out because nothing imports them. Raising this number means writing a demo that uses them, not driving the ones there harder.",
   "score": {
-    "published": 907,
-    "asserted": 907,
-    "showable": 401,
-    "shown": 401
+    "published": 1101,
+    "asserted": 1005,
+    "showable": 417,
+    "shown": 417
   },
-  "uncovered": []
+  "uncovered": [
+    {
+      "name": "Hct",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyCheckboxFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyColorsFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyControllerHost",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyDatepickerFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyDaterangeFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyDerivedPalette",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyFieldControls",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyFileFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyFormErrorsElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyHctPaletteModel",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyLitCommandHandlers",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyLitSelectAdapter",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyLitSelectAdapterOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyMountedField",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyMultiselectFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyNumberFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyOwnedForm",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPaletteModel",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPaletteModelName",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPaletteRelation",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPerceptualPaletteModel",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPerceptualPaletteModelName",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPerceptualRelation",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPlainForm",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyPreactTextFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyRadioGroupFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactBooleanFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactColorsFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactDatepickerFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactDaterangeFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactFileFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactMultiselectFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactOptionFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactSelectFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactTextFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyReactTimepickerFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyResolvedTheme",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySegmentedFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySelectApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySelectFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySliderFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySolidFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySolidSelectApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardFailure",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardFormOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardIssue",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardPathSegment",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardResult",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardSchemaTree",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardSchemaV1",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStandardSuccess",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyStore",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySvelteFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdySvelteSelectApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyTextareaFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyThemeDefinition",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyThemeMode",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyTimepickerFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyToggleFieldElement",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyVueFieldApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyVuePartProps",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyVueSelectApi",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "MdyZodItemDescriptor",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "Oklch",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyBooleanFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyColorsFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyDatepickerFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyDaterangeFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyDynamicFormOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyFileFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyMultiselectFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyOptionFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdySelectFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdySelectOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyTextFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "UseMdyTimepickerFieldOptions",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "announceLit",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "defineMdyTextField",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "deltaEOK",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "deriveHctPalette",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "executeLitCommands",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "hctToHex",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "hexToHct",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "lstarFromY",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "mdyIcon",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "oklchToHex",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "parseHex",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "partProps",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "relativeLuminance",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "toHex",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "useMdyColorsField",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "useMdyFileField",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    },
+    {
+      "name": "yFromLstar",
+      "asserted": false,
+      "shown": true,
+      "showable": false,
+      "reason": "published and never asserted"
+    }
+  ]
 }

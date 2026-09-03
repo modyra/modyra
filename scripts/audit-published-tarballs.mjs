@@ -22,6 +22,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { publishedPackageDirs } from "./lib/published-packages.mjs";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 /**
@@ -58,21 +59,7 @@ const PACKAGES = [
  * two of thirteen.
  */
 function assertListCoversEveryPublishablePackage() {
-  const publishable = readdirSync(join(ROOT, "packages"), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .flatMap((entry) => {
-      try {
-        const manifest = JSON.parse(
-          readFileSync(join(ROOT, "packages", entry.name, "package.json"), "utf8"),
-        );
-        // `packages/angular` is private in source and published from its build output; the list
-        // carries it under that directory.
-        if (manifest.private === true && entry.name !== "angular") return [];
-        return [entry.name];
-      } catch {
-        return [];
-      }
-    });
+  const publishable = publishedPackageDirs();
 
   const listed = new Set(PACKAGES.map((pkg) => pkg.name));
   const missing = publishable.filter((name) => !listed.has(name));

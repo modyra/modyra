@@ -295,7 +295,12 @@ const score = {
 
 if (process.argv.includes("--write")) {
   writeFileSync(BASELINE, `${JSON.stringify({
-    note: "Public names not yet asserted or not yet shown. The list may only get shorter.",
+    note: "Public names not yet asserted or not yet shown. The list may only get shorter. "
+      + "A name arrives here for one of two reasons and they are not the same: it was published "
+      + "without a check, or the surface this is measured against grew to include the package it "
+      + "was always in. The public names come from `type-surface.json`, which watches every "
+      + "published package rather than three of them, so an adapter's exports count here — most of "
+      + "this list arrived that way, not as newly published names nobody exercised.",
     shownCeiling:
       "`shown` counts a name a panel was measured to run, not one a list claims. What is left is not "
       + "all reachable: a file chooser and the platform's colour picker are windows outside the "

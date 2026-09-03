@@ -1200,7 +1200,7 @@
   ],
   "angular:MdyZodFormOptions": [
     "injector?: Injector",
-    "submitMode?: \"valid-only\" | \"always\" | \"manual\"",
+    "submitMode?: \"always\" | \"manual\" | \"valid-only\"",
     "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
   ],
   "angular:angularReactivity": [
@@ -1550,7 +1550,7 @@
     "code: string",
     "message: string",
     "path: string",
-    "severity: \"warning\" | \"error\""
+    "severity: \"error\" | \"warning\""
   ],
   "core:MdyDynamicField": [
     "variant of an unnamed shape: MdyDynamicBooleanField",
@@ -1642,7 +1642,7 @@
     "step?: number"
   ],
   "core:MdyDynamicOptionsField": [
-    "kind: \"select\" | \"radio\" | \"multiselect\" | \"segmented\"",
+    "kind: \"multiselect\" | \"radio\" | \"segmented\" | \"select\"",
     "loading?: boolean",
     "mode?: MdyMultiselectMode",
     "options: ReadonlyArray<MdySelectOption<unknown>>",
@@ -1660,7 +1660,7 @@
     "node: \"record\""
   ],
   "core:MdyDynamicRule": [
-    "effect: \"visible\" | \"hidden\" | \"enabled\" | \"disabled\"",
+    "effect: \"disabled\" | \"enabled\" | \"hidden\" | \"visible\"",
     "target: string",
     "when: { readonly field: string; readonly operator: MdyDynamicRuleOperator; readonly value?: unknown; }"
   ],
@@ -1688,7 +1688,7 @@
     "hidden?: boolean"
   ],
   "core:MdyDynamicTextField": [
-    "kind: \"text\" | \"textarea\" | \"email\" | \"password\""
+    "kind: \"email\" | \"password\" | \"text\" | \"textarea\""
   ],
   "core:MdyDynamicValidation": [
     "message: string",
@@ -1773,7 +1773,7 @@
   "core:MdyFieldError": [
     "kind: string",
     "message: string",
-    "origin?: \"validation\" | \"async\" | \"cross-field\" | \"server\" | \"shape\" | \"entry\"",
+    "origin?: \"async\" | \"cross-field\" | \"entry\" | \"server\" | \"shape\" | \"validation\"",
     "payload?: unknown"
   ],
   "core:MdyFieldHandle": [
@@ -1990,7 +1990,7 @@
     "variant of index+member+reason+unit+value: { readonly member: \"windows\"; readonly reason: \"must-divide\"; readonly index: number; readonly unit: number; readonly value: number; }",
     "variant of index+member+reason+value: { readonly member: \"windows\"; readonly reason: \"unreadable-time\"; readonly index: number; readonly value: string; }",
     "variant of index+member+reason: { readonly member: \"windows\"; readonly reason: \"empty-range\"; readonly index: number; }",
-    "variant of member+reason+unit+value: { readonly member: \"minuteStep\" | \"hourStep\"; readonly reason: \"must-divide\"; readonly unit: number; readonly value: number; }"
+    "variant of member+reason+unit+value: { readonly member: \"hourStep\" | \"minuteStep\"; readonly reason: \"must-divide\"; readonly unit: number; readonly value: number; }"
   ],
   "core:MdyGroupDescriptor": [
     "children: TChildren",
@@ -2017,7 +2017,7 @@
   ],
   "core:MdyObserveOptions": [
     "equal?: MdyEqualityFn<T>",
-    "timing?: \"sync\" | \"runtime\""
+    "timing?: \"runtime\" | \"sync\""
   ],
   "core:MdyOnCleanup": [
     "(opaque)"
@@ -2329,7 +2329,7 @@
     "(opaque)"
   ],
   "core:MdyValueSecurityResult": [
-    "actions: ReadonlyArray<{ readonly kind: \"sanitized\" | \"max-length\" | \"sanitizer-error\"; readonly detail: string; }>",
+    "actions: ReadonlyArray<{ readonly kind: \"max-length\" | \"sanitized\" | \"sanitizer-error\"; readonly detail: string; }>",
     "value: unknown"
   ],
   "core:MdyValueShape": [
@@ -2908,6 +2908,1152 @@
     "(1) facts: MdyValidatorFacts",
     "(2) declaration?: MdyValidatorDeclaration",
     "-> returns: ValidatorFn<T>"
+  ],
+  "eslint-plugin:configs": [
+    "const: {\n    recommended: {\n        name: string;\n        plugins: {\n            modyra: {\n                meta: {\n                    name: string;\n                };\n                rules: {\n                    \"valid-dynamic-form\": {\n                        meta: {\n                            type: \"problem\";\n                            docs: {\n                                description: string;\n                            };\n                            schema: never[];\n                            messages: {\n                                diagnostic: string;\n                            };\n                        };\n                        create(context: import(\"./rules/valid-dynamic-form.js\").RuleContext): {\n                            ObjectExpression(node: import(\"./static-value.js\").EsNode): void;\n                        };\n                    };\n                };\n            };\n        };\n        rules: {\n            \"modyra/valid-dynamic-form\": string;\n        };\n    };\n}"
+  ],
+  "eslint-plugin:meta": [
+    "const: {\n    name: string;\n}"
+  ],
+  "eslint-plugin:rules": [
+    "const: {\n    \"valid-dynamic-form\": {\n        meta: {\n            type: \"problem\";\n            docs: {\n                description: string;\n            };\n            schema: never[];\n            messages: {\n                diagnostic: string;\n            };\n        };\n        create(context: import(\"./rules/valid-dynamic-form.js\").RuleContext): {\n            ObjectExpression(node: import(\"./static-value.js\").EsNode): void;\n        };\n    };\n}"
+  ],
+  "lit:MdyCheckboxFieldElement": [
+    "connectedCallback-> returns: void",
+    "disconnectedCallback-> returns: void",
+    "protected renderControl-> returns: unknown",
+    "protected widgetKind: \"checkbox\"",
+    "render-> returns: unknown"
+  ],
+  "lit:MdyColorsFieldElement": [
+    "_open: boolean",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "presets: readonly string[]",
+    "properties: PropertyDeclarations",
+    "protected focusLeft-> returns: void",
+    "protected renderControl(0) handle: MdyFieldHandle<string | null>,-> returns: unknown",
+    "protected tabbedAway-> returns: void",
+    "protected useWrapper: boolean",
+    "protected widgetKind: \"colors\"",
+    "render-> returns: unknown",
+    "willUpdate(0) changed: Map<string, unknown>,-> returns: void"
+  ],
+  "lit:MdyControllerHost": [
+    "addController: void",
+    "requestUpdate: void"
+  ],
+  "lit:MdyDatepickerFieldElement": [
+    "_open: boolean",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "firstDayOfWeek?: number",
+    "max?: string",
+    "maxDate?: string",
+    "min?: string",
+    "minDate?: string",
+    "placeholder: string",
+    "properties: PropertyDeclarations",
+    "protected earliest: string | undefined",
+    "protected focusLeft-> returns: void",
+    "protected forceModalPlacement-> returns: boolean",
+    "protected latest: string | undefined",
+    "protected renderControl(0) handle: MdyFieldHandle<string | null>,-> returns: unknown",
+    "protected tabbedAway-> returns: void",
+    "protected updated(0) changed: Map<string, unknown>,-> returns: void",
+    "protected widgetKind: \"datepicker\"",
+    "render-> returns: unknown",
+    "variant: \"docked\" | \"modal\"",
+    "willUpdate(0) changed: Map<string, unknown>,-> returns: void"
+  ],
+  "lit:MdyDaterangeFieldElement": [
+    "_open: boolean",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "dateFilter?: (date: string) => boolean",
+    "disconnectedCallback-> returns: void",
+    "endPlaceholder: string",
+    "firstDayOfWeek?: number",
+    "max?: string",
+    "maxDate?: string",
+    "min?: string",
+    "minDate?: string",
+    "properties: PropertyDeclarations",
+    "protected earliest: string | undefined",
+    "protected focusLeft-> returns: void",
+    "protected forceModalPlacement-> returns: boolean",
+    "protected isFilled(0) _handle: MdyFieldHandle<MdyDateRange | null>,-> returns: boolean",
+    "protected labelForId: string",
+    "protected latest: string | undefined",
+    "protected renderControl(0) handle: MdyFieldHandle<MdyDateRange | null>,-> returns: unknown",
+    "protected tabbedAway-> returns: void",
+    "protected updated(0) changed: Map<string, unknown>,-> returns: void",
+    "protected useWrapper: boolean",
+    "protected widgetKind: \"daterange\"",
+    "render-> returns: unknown",
+    "startPlaceholder: string",
+    "variant: \"docked\" | \"modal\"",
+    "willUpdate(0) changed: Map<string, unknown>,-> returns: void"
+  ],
+  "lit:MdyFieldElement": [
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "field: MdyFieldHandle<T> | undefined",
+    "floatingLabel: boolean",
+    "idScope?: string",
+    "inlineErrors: boolean",
+    "label: string",
+    "locale: string | undefined",
+    "messages: MdyI18nMessages",
+    "properties: PropertyDeclarations",
+    "protected _pendingName: string | null",
+    "protected applyControlName-> returns: void",
+    "protected controlErrors-> returns: readonly string[]",
+    "protected controlPart(0) handle: MdyFieldHandle<T>,-> returns: MdyPartContract",
+    "protected createRenderRoot-> returns: HTMLElement",
+    "protected describedState-> returns: string",
+    "protected descriptionId: string",
+    "protected errorsId: string",
+    "protected errorsReserved(0) handle: MdyFieldHandle<T>,-> returns: boolean",
+    "protected fallbackName-> returns: string | typeof nothing",
+    "protected fieldId: string",
+    "protected focusLeft-> returns: void",
+    "protected hasDescription-> returns: boolean",
+    "protected inlineErrorText(0) handle: MdyFieldHandle<T>,-> returns: string",
+    "protected isChosen(0) held: unknown,(1) optionValue: unknown,-> returns: boolean",
+    "protected isFilled(0) handle: MdyFieldHandle<T>,-> returns: boolean",
+    "protected labelForId: string",
+    "protected labelId: string",
+    "protected nameOfPart(0) part: string,-> returns: string | typeof nothing",
+    "protected namedBy-> returns: { readonly labelledby: string | typeof nothing; readonly label: string | typeof nothing; }",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected partClass(0) part: string,-> returns: string",
+    "protected partRole(0) part: string,-> returns: string | typeof nothing",
+    "protected partStateClass(0) part: string,(1) state: MdyStateName,(2) on: boolean,-> returns: string",
+    "protected popupClass(0) placement: MdyOverlayPlacement,(1) alignment?: MdyOverlayAlignment,-> returns: string",
+    "protected popupPromise: string | typeof nothing",
+    "protected renderAffix(0) slot: \"prefix\" | \"suffix\",-> returns: unknown",
+    "protected renderControl(0) handle: MdyFieldHandle<T>,-> returns: unknown",
+    "protected renderErrors(0) handle: MdyFieldHandle<T>,-> returns: unknown",
+    "protected renderInlineErrorIcon(0) handle: MdyFieldHandle<T>,-> returns: unknown",
+    "protected renderLabel(0) handle: MdyFieldHandle<T>,(1) forId?: string,(2) labelId?: string,-> returns: unknown",
+    "protected renderSupportingText-> returns: unknown",
+    "protected resolvedLocale: string",
+    "protected rootClasses: readonly string[]",
+    "protected showErrors(0) handle: MdyFieldHandle<T>,-> returns: boolean",
+    "protected syncStateClasses(0) handle: MdyFieldHandle<T>,-> returns: void",
+    "protected tabbedAway-> returns: void",
+    "protected updated(0) changed: Map<string, unknown>,-> returns: void",
+    "protected useWrapper: boolean",
+    "protected widgetKind: MdyWidgetKind",
+    "protected wrapperClass(0) handle: MdyFieldHandle<T>,-> returns: string",
+    "render-> returns: unknown",
+    "supportingText: string | undefined"
+  ],
+  "lit:MdyFileFieldElement": [
+    "accept: string",
+    "constructor-> returns: (inferred)",
+    "multiple: boolean",
+    "placeholder: string",
+    "properties: PropertyDeclarations",
+    "protected renderControl(0) handle: MdyFieldHandle<readonly File[] | null>,-> returns: unknown",
+    "protected useWrapper: boolean",
+    "protected widgetKind: \"file\""
+  ],
+  "lit:MdyFormController": [
+    "constructor(0) _host: MdyControllerHost,(1) _signals: ReadonlyArray<MdySignal<unknown>>,-> returns: (inferred)",
+    "hostConnected-> returns: void",
+    "hostDisconnected-> returns: void"
+  ],
+  "lit:MdyFormErrorsElement": [
+    "form: { state: { lastSubmitErrors(): ReadonlyArray<MdyFormError>; }; } | undefined",
+    "properties: PropertyDeclarations",
+    "protected createRenderRoot-> returns: HTMLElement | DocumentFragment",
+    "render-> returns: unknown"
+  ],
+  "lit:MdyLitCommandHandlers": [
+    "-> MdyWidgetCommandHandlers"
+  ],
+  "lit:MdyLitSelectAdapter": [
+    "connectHandlers(0) handlers: MdyLitCommandHandlers,-> returns: void",
+    "constructor(0) host: LitElement,(1) options: MdyLitSelectAdapterOptions<TValue>,(2) lookup: MdyElementLookup,-> returns: (inferred)",
+    "destroy-> returns: void",
+    "dispatch(0) intent: MdySelectIntent,-> returns: void",
+    "setDescribedBy(0) next: { errorsVisible?: boolean; descriptionVisible?: boolean; },-> returns: void",
+    "setLoading(0) loading: boolean,-> returns: void",
+    "setOpen(0) open: boolean,-> returns: void",
+    "setOptions(0) options: readonly MdySelectOption<TValue>[],-> returns: void",
+    "setPopupRendered(0) rendered: boolean,-> returns: void",
+    "setReadonly(0) readonly: boolean,-> returns: void",
+    "state: MdySelectState<TValue>",
+    "view: ReturnType<MdySelectFieldController<TValue>[\"view\"]>"
+  ],
+  "lit:MdyLitSelectAdapterOptions": [
+    "-> MdySelectFieldControllerOptions"
+  ],
+  "lit:MdyMultiselectFieldElement": [
+    "_query: string",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "filterFn?: (value: unknown) => boolean",
+    "loading: boolean",
+    "mode: MdyMultiselectMode",
+    "optionTemplate?: unknown",
+    "properties: PropertyDeclarations",
+    "protected close(0) _handle: MdyFieldHandle<readonly unknown[]>,-> returns: void",
+    "protected focusLeft-> returns: void",
+    "protected isSelected(0) _handle: MdyFieldHandle<readonly unknown[]>,(1) value: unknown,-> returns: boolean",
+    "protected multiselectable: boolean",
+    "protected onKeydown(0) e: KeyboardEvent,(1) handle: MdyFieldHandle<readonly unknown[]>,-> returns: void",
+    "protected onOpened-> returns: void",
+    "protected pick(0) _handle: MdyFieldHandle<readonly unknown[]>,(1) value: unknown,-> returns: void",
+    "protected tabbedAway-> returns: void",
+    "protected toggleOpen(0) handle: MdyFieldHandle<readonly unknown[]>,-> returns: void",
+    "protected triggerText(0) handle: MdyFieldHandle<readonly unknown[]>,-> returns: string",
+    "protected updated(0) changed: Map<string, unknown>,-> returns: void",
+    "protected widgetKind: \"multiselect\"",
+    "render-> returns: unknown",
+    "reorderable: boolean",
+    "searchable: boolean",
+    "willUpdate(0) changed: Map<string, unknown>,-> returns: void"
+  ],
+  "lit:MdyNumberFieldElement": [
+    "connectedCallback-> returns: void",
+    "disconnectedCallback-> returns: void",
+    "max?: number",
+    "min?: number",
+    "properties: PropertyDeclarations",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected renderControl(0) handle: MdyFieldHandle<number | null>,-> returns: unknown",
+    "protected widgetKind: \"number\"",
+    "step?: number"
+  ],
+  "lit:MdyOwnedForm": [
+    "constructor(0) host: MdyControllerHost,(1) schema: S,(2) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">,-> returns: (inferred)",
+    "form: MdyTypedForm<S>",
+    "hostConnected-> returns: void",
+    "hostDisconnected-> returns: void"
+  ],
+  "lit:MdyRadioGroupFieldElement": [
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "layout: \"vertical\" | \"horizontal\"",
+    "properties: PropertyDeclarations",
+    "protected renderControl-> returns: unknown",
+    "protected widgetKind: \"radio\"",
+    "render-> returns: unknown"
+  ],
+  "lit:MdySegmentedFieldElement": [
+    "connectedCallback-> returns: void",
+    "disconnectedCallback-> returns: void",
+    "protected renderControl-> returns: unknown",
+    "protected widgetKind: \"segmented\"",
+    "render-> returns: unknown"
+  ],
+  "lit:MdySelectFieldElement": [
+    "allowCreate: boolean",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "loading: boolean",
+    "properties: PropertyDeclarations",
+    "protected close(0) _handle: MdyFieldHandle<unknown | null>,-> returns: void",
+    "protected isSelected(0) handle: MdyFieldHandle<unknown | null>,(1) value: unknown,-> returns: boolean",
+    "protected listOptions: ReadonlyArray<MdySelectOption<unknown>>",
+    "protected onKeydown(0) e: KeyboardEvent,(1) _handle: MdyFieldHandle<unknown | null>,-> returns: void",
+    "protected onOpened-> returns: void",
+    "protected pick(0) _handle: MdyFieldHandle<unknown | null>,(1) value: unknown,-> returns: void",
+    "protected renderControl(0) handle: MdyFieldHandle<unknown | null>,-> returns: unknown",
+    "protected renderedOptions(0) value: unknown,-> returns: ReadonlyArray<MdySelectOption<unknown>>",
+    "protected toggleOpen(0) handle: MdyFieldHandle<unknown | null>,-> returns: void",
+    "protected triggerText(0) handle: MdyFieldHandle<unknown | null>,-> returns: string",
+    "protected widgetKind: \"select\"",
+    "protected willUpdate(0) changedProperties: PropertyValueMap<this>,-> returns: void",
+    "render-> returns: unknown",
+    "searchable: boolean"
+  ],
+  "lit:MdySliderFieldElement": [
+    "constructor-> returns: (inferred)",
+    "max?: number",
+    "min?: number",
+    "properties: PropertyDeclarations",
+    "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
+    "protected renderControl(0) handle: MdyFieldHandle<number>,-> returns: unknown",
+    "protected widgetKind: \"slider\"",
+    "step: number"
+  ],
+  "lit:MdyTextFieldElement": [
+    "autocomplete: string",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "placeholder: string",
+    "properties: PropertyDeclarations",
+    "protected renderControl(0) handle: MdyFieldHandle<string | null>,-> returns: unknown",
+    "protected widgetKind: \"text\"",
+    "type: string"
+  ],
+  "lit:MdyTextareaFieldElement": [
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "placeholder: string",
+    "properties: PropertyDeclarations",
+    "protected renderControl(0) handle: MdyFieldHandle<string | null>,-> returns: unknown",
+    "protected widgetKind: \"textarea\"",
+    "rows: number"
+  ],
+  "lit:MdyTimepickerFieldElement": [
+    "_dragAngle: number | null",
+    "_handLength: number",
+    "_isDragging: boolean",
+    "_open: boolean",
+    "animateHand: boolean",
+    "compact: boolean",
+    "connectedCallback-> returns: void",
+    "constructor-> returns: (inferred)",
+    "disconnectedCallback-> returns: void",
+    "format: MdyTimeFormat",
+    "granularity: MdyTimeGranularity | undefined",
+    "placeholder: string",
+    "properties: PropertyDeclarations",
+    "protected focusLeft-> returns: void",
+    "protected renderControl(0) handle: MdyFieldHandle<string | null>,-> returns: unknown",
+    "protected updated(0) changed: Map<string, unknown>,-> returns: void",
+    "protected useWrapper: boolean",
+    "protected widgetKind: \"timepicker\"",
+    "render-> returns: unknown",
+    "showUnavailable: boolean",
+    "viewMode: MdyTimepickerViewMode",
+    "willUpdate(0) changed: Map<string, unknown>,-> returns: void"
+  ],
+  "lit:MdyToggleFieldElement": [
+    "connectedCallback-> returns: void",
+    "disconnectedCallback-> returns: void",
+    "protected renderControl-> returns: unknown",
+    "protected widgetKind: \"toggle\"",
+    "render-> returns: unknown"
+  ],
+  "lit:announceLit": [
+    "(0) message: string",
+    "-> returns: void"
+  ],
+  "lit:createLitForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "lit:defineMdyElements": [
+    "-> returns: void"
+  ],
+  "lit:defineMdyTextField": [
+    "-> returns: void"
+  ],
+  "lit:executeLitCommands": [
+    "(0) host: LitElement",
+    "(1) commands: readonly MdyUiCommand[]",
+    "(2) lookup: MdyElementLookup",
+    "(3) handlers: MdyWidgetCommandHandlers",
+    "-> returns: void"
+  ],
+  "lit:litReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "lit:mdyIcon": [
+    "(0) name: keyof typeof MDY_ICONS",
+    "(1) className: string",
+    "-> returns: unknown"
+  ],
+  "lit:mdyLitTagFor": [
+    "(0) kind: string",
+    "-> returns: string | null"
+  ],
+  "plain:MdyFieldControls": [
+    "setBounds?: (minDate: string | null, maxDate: string | null) => void",
+    "setOptions?: (options: ReadonlyArray<{ readonly value: unknown; readonly label: string; readonly disabled?: boolean; }>) => void"
+  ],
+  "plain:MdyMountedField": [
+    "(opaque)"
+  ],
+  "plain:MdyPlainForm": [
+    "dispose: void",
+    "form: MdyTypedForm<MdyFormSchema>",
+    "reactivity: MdyReactivity"
+  ],
+  "plain:MountMdyFormOptions": [
+    "collections?: ReadonlyArray<MdyDynamicCollection>",
+    "draft?: string | MdyDraftOptions",
+    "fieldOptions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>",
+    "idPrefix?: string",
+    "layout?: ReadonlyArray<MdyDynamicLayoutNode>",
+    "onSubmit?: (value: MdySubmittedValue<MdyFormSchema>) => Promise<import(\"@modyra/core\").MdyFormError[] | void> | import(\"@modyra/core\").MdyFormError[] | void",
+    "rules?: ReadonlyArray<MdyDynamicRule>",
+    "submitLabel?: string | null",
+    "validations?: ReadonlyArray<MdyDynamicValidation>"
+  ],
+  "plain:applyFieldValidators": [
+    "(0) form: MdyTypedForm<MdyFormSchema>",
+    "(1) fields: ReadonlyArray<MdyDynamicField>",
+    "-> returns: void"
+  ],
+  "plain:buildForm": [
+    "(0) fields: ReadonlyArray<MdyDynamicField>",
+    "(1) reactivity: MdyReactivity",
+    "(2) collections?: ReadonlyArray<MdyDynamicCollection>",
+    "(3) formOptions?: { readonly draft?: string | MdyDraftOptions; /** * The document's cross-field rules, as `parseDynamicForm` reports them. * * A form built without them behaves as though the slot were empty: a document saying \"start and * end must differ\" produced a form that said so nowhere and submitted the pair anyway. They are * the form's own validators — one rule about two fields has no field to belong to. */ readonly validations?: ReadonlyArray<MdyDynamicValidation>; /** * What a document cannot declare, supplied by the host that mounted it. * * A document says which rules a field has and *when* its asynchronous checks run — and has no * way to say that a field has any, because an async check is a function and a document is data. * A field verified against something only the server can reach therefore needs its check * attached here, by name. * * Merged onto the descriptor the document built rather than replacing it, so what the document * declared survives: a host adding a server check does not silently drop the rules the document * asked for. */ readonly fieldOptions?: Readonly<Record<string, Readonly<Record<string, unknown>>>>; }",
+    "-> returns: MdyTypedForm<MdyFormSchema>"
+  ],
+  "plain:mdyIcon": [
+    "(0) name: MdyIconName",
+    "(1) className?: string",
+    "-> returns: SVGSVGElement"
+  ],
+  "plain:mountDynamicForm": [
+    "(0) container: HTMLElement",
+    "(1) document_: unknown",
+    "(2) options?: Omit<MountMdyFormOptions, \"layout\" | \"rules\" | \"collections\">",
+    "-> returns: MdyPlainForm"
+  ],
+  "plain:mountMdyForm": [
+    "(0) container: HTMLElement",
+    "(1) fields: ReadonlyArray<MdyDynamicField>",
+    "(2) options?: MountMdyFormOptions",
+    "-> returns: MdyPlainForm"
+  ],
+  "plain:renderBooleanField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicBooleanField",
+    "(2) handle: MdyFieldHandle<boolean>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) widgetId?: string",
+    "-> returns: () => void"
+  ],
+  "plain:renderDatepickerField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicDateField",
+    "(2) handle: MdyFieldHandle<string | null>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) options?: { readonly minDate?: string | null; readonly maxDate?: string | null; readonly locale?: string; readonly firstDayOfWeek?: number; }",
+    "(5) widgetId?: string",
+    "(6) messages?: MdyI18nMessages",
+    "-> returns: MdyMountedField"
+  ],
+  "plain:renderField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicField",
+    "(2) handle: MdyFieldHandle<never>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) widgetId?: string",
+    "(5) messages?: MdyI18nMessages",
+    "-> returns: MdyMountedField"
+  ],
+  "plain:renderMultiselectField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicOptionsField",
+    "(2) handle: MdyFieldHandle<ReadonlyArray<unknown>>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) mode?: MdyMultiselectMode",
+    "(5) widgetId?: string",
+    "(6) messages?: MdyI18nMessages",
+    "-> returns: MdyMountedField"
+  ],
+  "plain:renderOptionField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicOptionsField",
+    "(2) handle: MdyFieldHandle<unknown>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) widgetId?: string",
+    "-> returns: MdyMountedField"
+  ],
+  "plain:renderSelectField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicOptionsField",
+    "(2) handle: MdyFieldHandle<unknown>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) widgetId?: string",
+    "(5) messages?: MdyI18nMessages",
+    "-> returns: () => void"
+  ],
+  "plain:renderTextField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicTextField | MdyDynamicNumberField",
+    "(2) handle: MdyFieldHandle<string | number>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) widgetId?: string",
+    "(5) messages?: MdyI18nMessages",
+    "-> returns: () => void"
+  ],
+  "plain:renderTimepickerField": [
+    "(0) container: HTMLElement",
+    "(1) f: MdyDynamicDateField",
+    "(2) handle: MdyFieldHandle<string | null>",
+    "(3) reactivity?: MdyReactivity",
+    "(4) format?: MdyTimeFormat",
+    "(5) widgetId?: string",
+    "(6) messages?: MdyI18nMessages",
+    "-> returns: () => void"
+  ],
+  "preact:MdyPreactTextFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyFieldState<TValue>",
+    "view: MdyWidgetViewContract"
+  ],
+  "preact:MdySelectApi": [
+    "dispatch: (intent: MdySelectIntent) => void",
+    "setOptions: (options: readonly MdySelectOption<TValue>[]) => void",
+    "setValue: (value: TValue | null) => void",
+    "state: MdySelectState<TValue>",
+    "view: ReturnType<MdySelectController<TValue>[\"view\"]>"
+  ],
+  "preact:MdyStore": [
+    "getSnapshot: number",
+    "subscribe: () => void"
+  ],
+  "preact:UseMdySelectOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
+  "preact:UseMdyTextFieldOptions": [
+    "-> Omit"
+  ],
+  "preact:createFieldStore": [
+    "(0) handle: MdyFieldHandle<unknown>",
+    "-> returns: MdyStore & { destroy(): void; }"
+  ],
+  "preact:createStore": [
+    "(0) signals: ReadonlyArray<MdySignal<unknown>>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyStore & { destroy(): void; }"
+  ],
+  "preact:preactReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "preact:useMdyCommandQueue": [
+    "(0) lookup: MdyElementLookup",
+    "(1) handlers: MdyWidgetCommandHandlers",
+    "-> returns: { execute(commands: readonly MdyUiCommand[]): void; }"
+  ],
+  "preact:useMdyField": [
+    "(0) handle: MdyFieldHandle<T>",
+    "-> returns: { readonly value: T; /** * The errors this field **shows**, which is not always the errors it holds. * * A field the form is not asking about — disabled by a binding, or inside a section a condition * has closed — is not validated by the form, so painting it as failing shows a verdict its own * form does not hold. `heldErrors` is what it still carries, for a debugging view: the model, as * against what the person is being asked. */ readonly errors: ReadonlyArray<{ readonly kind: string; readonly message: string; }>; readonly heldErrors: ReadonlyArray<{ readonly kind: string; readonly message: string; }>; readonly touched: boolean; readonly dirty: boolean; readonly valid: boolean; /** Whether the field paints as failing: it is failing **and** the form is asking about it. */ readonly showsAsInvalid: boolean; /** Whether the error text belongs on screen: failing, in play, and the person has had a turn. */ readonly errorsVisible: boolean; readonly pending: boolean; readonly disabled: boolean; /** Whether a rule marks this field required — for `aria-required` on your own control. */ readonly required: boolean; /** * What the field's rules state that an input can carry: `min`, `max`, `step`, lengths, `pattern` * and the keyboard hint. You are writing the control here, so this is where a constraint declared * once reaches it — see the typed-forms guide. */ readonly constraints: MdyFieldConstraints; set(value: T): void; markAsTouched(): void; }"
+  ],
+  "preact:useMdyForm": [
+    "(0) schema: () => S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "preact:useMdySelect": [
+    "(0) options: UseMdySelectOptions<TValue>",
+    "(1) lookup: MdyElementLookup",
+    "(2) handlers: MdyPreactCommandHandlers",
+    "-> returns: MdySelectApi<TValue>"
+  ],
+  "preact:useMdyTextField": [
+    "(0) handle: MdyFieldHandle<TValue>",
+    "(1) options: UseMdyTextFieldOptions<TValue>",
+    "-> returns: MdyPreactTextFieldApi<TValue>"
+  ],
+  "react:MdyReactBooleanFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setChecked: void",
+    "setReadonly: void",
+    "state: MdyBooleanFieldState"
+  ],
+  "react:MdyReactColorsFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyColorsFieldState"
+  ],
+  "react:MdyReactDatepickerFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyDatepickerFieldState"
+  ],
+  "react:MdyReactDaterangeFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setBounds: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyDaterangeFieldState"
+  ],
+  "react:MdyReactFileFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyFileFieldState<TFile>"
+  ],
+  "react:MdyReactMultiselectFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "filteredOptions: ReadonlyArray<{ readonly value: TValue; readonly label: string; readonly disabled?: boolean; }>",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyMultiselectFieldState<TValue>"
+  ],
+  "react:MdyReactOptionFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyOptionFieldState<TValue>"
+  ],
+  "react:MdyReactSelectFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setDescribedBy: void",
+    "setLoading: void",
+    "setOpen: void",
+    "setPopupRendered: void",
+    "setReadonly: void",
+    "state: MdySelectState<TValue>"
+  ],
+  "react:MdyReactTextFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyFieldState<TValue>",
+    "view: MdyWidgetViewContract"
+  ],
+  "react:MdyReactTimepickerFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyTimepickerFieldState"
+  ],
+  "react:MdySelectApi": [
+    "dispatch: (intent: MdySelectIntent) => void",
+    "setOptions: (options: readonly MdySelectOption<TValue>[]) => void",
+    "setValue: (value: TValue | null) => void",
+    "state: MdySelectState<TValue>",
+    "view: ReturnType<MdySelectController<TValue>[\"view\"]>"
+  ],
+  "react:MdyStore": [
+    "getSnapshot: number",
+    "subscribe: () => void"
+  ],
+  "react:UseMdyBooleanFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyColorsFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyDatepickerFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyDaterangeFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyDynamicFormOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyFileFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyMultiselectFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyOptionFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdySelectFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdySelectOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
+  "react:UseMdyTextFieldOptions": [
+    "-> Omit"
+  ],
+  "react:UseMdyTimepickerFieldOptions": [
+    "-> Omit"
+  ],
+  "react:applyDynamicValidators": [
+    "(0) form: MdyTypedForm<MdyFormSchema>",
+    "(1) fields: ReadonlyArray<MdyDynamicField>",
+    "-> returns: void"
+  ],
+  "react:createFieldStore": [
+    "(0) handle: MdyFieldHandle<unknown>",
+    "-> returns: MdyStore & { destroy(): void; }"
+  ],
+  "react:createStore": [
+    "(0) signals: ReadonlyArray<MdySignal<unknown>>",
+    "(1) reactivity?: MdyReactivity",
+    "-> returns: MdyStore & { destroy(): void; }"
+  ],
+  "react:reactReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "react:useMdyBooleanField": [
+    "(0) handle: MdyFieldHandle<boolean>",
+    "(1) options: UseMdyBooleanFieldOptions",
+    "-> returns: MdyReactBooleanFieldApi"
+  ],
+  "react:useMdyColorsField": [
+    "(0) handle: MdyFieldHandle<string>",
+    "(1) options: UseMdyColorsFieldOptions",
+    "-> returns: MdyReactColorsFieldApi"
+  ],
+  "react:useMdyCommandQueue": [
+    "(0) lookup: MdyElementLookup",
+    "(1) handlers: MdyWidgetCommandHandlers",
+    "-> returns: { execute(commands: readonly MdyUiCommand[]): void; }"
+  ],
+  "react:useMdyDatepickerField": [
+    "(0) handle: MdyFieldHandle<string | null>",
+    "(1) options: UseMdyDatepickerFieldOptions",
+    "-> returns: MdyReactDatepickerFieldApi"
+  ],
+  "react:useMdyDaterangeField": [
+    "(0) handle: MdyFieldHandle<MdyDateRangeValue>",
+    "(1) options: UseMdyDaterangeFieldOptions",
+    "-> returns: MdyReactDaterangeFieldApi"
+  ],
+  "react:useMdyDynamicForm": [
+    "(0) fields: ReadonlyArray<MdyDynamicField>",
+    "(1) options?: UseMdyDynamicFormOptions",
+    "-> returns: MdyTypedForm<MdyFormSchema>"
+  ],
+  "react:useMdyField": [
+    "(0) handle: MdyFieldHandle<T>",
+    "-> returns: { readonly value: T; /** * The errors this field **shows**, which is not always the errors it holds. * * A field the form is not asking about — disabled by a binding, or inside a section a condition * has closed — is not validated by the form, so painting it as failing shows a verdict its own * form does not hold. `heldErrors` is what it still carries, for a debugging view: the model, as * against what the person is being asked. */ readonly errors: ReadonlyArray<{ readonly kind: string; readonly message: string; }>; readonly heldErrors: ReadonlyArray<{ readonly kind: string; readonly message: string; }>; readonly touched: boolean; readonly dirty: boolean; readonly valid: boolean; /** Whether the field paints as failing: it is failing **and** the form is asking about it. */ readonly showsAsInvalid: boolean; /** Whether the error text belongs on screen: failing, in play, and the person has had a turn. */ readonly errorsVisible: boolean; readonly pending: boolean; readonly disabled: boolean; /** Whether a rule marks this field required — for `aria-required` on your own control. */ readonly required: boolean; /** * What the field's rules state that an input can carry: `min`, `max`, `step`, lengths, `pattern` * and the keyboard hint. You are writing the control here, so this is where a constraint declared * once reaches it — see the typed-forms guide. */ readonly constraints: MdyFieldConstraints; set(value: T): void; markAsTouched(): void; }"
+  ],
+  "react:useMdyFileField": [
+    "(0) handle: MdyFieldHandle<readonly TFile[]>",
+    "(1) options: UseMdyFileFieldOptions<TFile>",
+    "-> returns: MdyReactFileFieldApi<TFile>"
+  ],
+  "react:useMdyForm": [
+    "(0) schema: () => S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "react:useMdyMultiselectField": [
+    "(0) handle: MdyFieldHandle<ReadonlyArray<TValue>>",
+    "(1) options: UseMdyMultiselectFieldOptions<TValue>",
+    "-> returns: MdyReactMultiselectFieldApi<TValue>"
+  ],
+  "react:useMdyOptionField": [
+    "(0) handle: MdyFieldHandle<TValue | null>",
+    "(1) options: UseMdyOptionFieldOptions<TValue>",
+    "-> returns: MdyReactOptionFieldApi<TValue>"
+  ],
+  "react:useMdySelect": [
+    "(0) options: UseMdySelectOptions<TValue>",
+    "(1) lookup: MdyElementLookup",
+    "(2) handlers: MdyReactCommandHandlers",
+    "-> returns: MdySelectApi<TValue>"
+  ],
+  "react:useMdySelectField": [
+    "(0) handle: MdyFieldHandle<TValue | null>",
+    "(1) options: UseMdySelectFieldOptions<TValue>",
+    "-> returns: MdyReactSelectFieldApi<TValue>"
+  ],
+  "react:useMdyTextField": [
+    "(0) handle: MdyFieldHandle<TValue>",
+    "(1) options: UseMdyTextFieldOptions<TValue>",
+    "-> returns: MdyReactTextFieldApi<TValue>"
+  ],
+  "react:useMdyTimepickerField": [
+    "(0) handle: MdyFieldHandle<string | null>",
+    "(1) options: UseMdyTimepickerFieldOptions",
+    "-> returns: MdyReactTimepickerFieldApi"
+  ],
+  "solid:MdySolidFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyFieldState<TValue>",
+    "view: MdyWidgetViewContract"
+  ],
+  "solid:MdySolidSelectApi": [
+    "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
+    "setOptions: void",
+    "setValue: void",
+    "state: Readonly<MdySelectState<TValue>>",
+    "view: ReturnType<MdySelectController<TValue>[\"view\"]>"
+  ],
+  "solid:UseMdyFieldOptions": [
+    "-> Omit"
+  ],
+  "solid:UseMdySelectOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
+  "solid:createSolidForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "solid:executeSolidCommands": [
+    "(0) commands: readonly MdyUiCommand[]",
+    "(1) lookup: MdyElementLookup",
+    "(2) handlers: MdyWidgetCommandHandlers",
+    "-> returns: void"
+  ],
+  "solid:solidReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "solid:useMdyField": [
+    "(0) handle: MdyFieldHandle<TValue>",
+    "(1) options: UseMdyFieldOptions<TValue>",
+    "-> returns: MdySolidFieldApi<TValue>"
+  ],
+  "solid:useMdySelect": [
+    "(0) options: UseMdySelectOptions<TValue>",
+    "-> returns: MdySolidSelectApi<TValue>"
+  ],
+  "solid:useSolidForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "standard-schema:MdyStandardFailure": [
+    "issues: ReadonlyArray<MdyStandardIssue>"
+  ],
+  "standard-schema:MdyStandardFormOptions": [
+    "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
+  ],
+  "standard-schema:MdyStandardInput": [
+    "(opaque)"
+  ],
+  "standard-schema:MdyStandardIssue": [
+    "message: string",
+    "path?: ReadonlyArray<PropertyKey | MdyStandardPathSegment> | undefined"
+  ],
+  "standard-schema:MdyStandardOutput": [
+    "(opaque)"
+  ],
+  "standard-schema:MdyStandardPathSegment": [
+    "key: PropertyKey"
+  ],
+  "standard-schema:MdyStandardResult": [
+    "variant of an unnamed shape: MdyStandardFailure",
+    "variant of an unnamed shape: MdyStandardSuccess<Output>"
+  ],
+  "standard-schema:MdyStandardSchemaTree": [
+    "(opaque)"
+  ],
+  "standard-schema:MdyStandardSchemaV1": [
+    "\"~standard\": { readonly version: 1; readonly vendor: string; readonly validate: (value: unknown) => MdyStandardResult<Output> | Promise<MdyStandardResult<Output>>; readonly types?: { readonly input: Input; readonly output: Output; } | undefined; }"
+  ],
+  "standard-schema:MdyStandardSuccess": [
+    "issues?: undefined",
+    "value: Output"
+  ],
+  "standard-schema:buildStandardTree": [
+    "(0) schema: MdyStandardSchemaV1",
+    "(1) fields: S",
+    "-> returns: S"
+  ],
+  "standard-schema:buildStandardValidator": [
+    "(0) schema: MdyStandardSchemaV1",
+    "-> returns: MdyFormValidatorFn<TValue>"
+  ],
+  "standard-schema:createStandardForm": [
+    "(0) schema: TSchema",
+    "(1) fields: S",
+    "(2) options?: MdyStandardFormOptions<MdyFormValue<S>>",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "standard-schema:serverValidate": [
+    "(0) schema: MdyStandardSchemaV1",
+    "(1) payload: unknown",
+    "-> returns: Promise<ReadonlyArray<MdyFormError>>"
+  ],
+  "styles:Hct": [
+    "c: number",
+    "h: number",
+    "t: number"
+  ],
+  "styles:MDY_HCT_PALETTE_MODEL": [
+    "const: MdyHctPaletteModel"
+  ],
+  "styles:MDY_ON_COLOR_FLOOR": [
+    "const: (inferred)"
+  ],
+  "styles:MDY_PALETTE_MODELS": [
+    "const: Readonly<Record<string, MdyPaletteModel>>"
+  ],
+  "styles:MDY_PERCEPTUAL_PALETTE_MODELS": [
+    "const: Readonly<{\n    salience: Readonly<{\n        light: Readonly<{\n            primary: Readonly<{\n                l: -1;\n                salience: -1;\n                minDeltaE: 0;\n            }>;\n            secondary: Readonly<{\n                l: 0.38;\n                salience: 0.78;\n                minDeltaE: 0.18;\n            }>;\n            tertiary: Readonly<{\n                l: 0.9;\n                salience: 0.22;\n                minDeltaE: 0.12;\n            }>;\n            error: Readonly<{\n                l: 0.52;\n                salience: 0.72;\n                minDeltaE: 0.16;\n            }>;\n        }>;\n        dark: Readonly<{\n            primary: Readonly<{\n                l: 0.78;\n                salience: 0.72;\n                minDeltaE: 0;\n            }>;\n            secondary: Readonly<{\n                l: 0.48;\n                salience: 0.76;\n                minDeltaE: 0.16;\n            }>;\n            tertiary: Readonly<{\n                l: 0.34;\n                salience: 0.3;\n                minDeltaE: 0.14;\n            }>;\n            error: Readonly<{\n                l: 0.72;\n                salience: 0.68;\n                minDeltaE: 0.16;\n            }>;\n        }>;\n        errorHue: 28;\n    }>;\n}>"
+  ],
+  "styles:MDY_SRGB_EPSILON": [
+    "const: (inferred)"
+  ],
+  "styles:MdyDerivedPalette": [
+    "error: string",
+    "onError: string",
+    "onPrimary: string",
+    "onSecondary: string",
+    "onTertiary: string",
+    "primary: string",
+    "secondary: string",
+    "tertiary: string"
+  ],
+  "styles:MdyHctPaletteModel": [
+    "error: { readonly hue: number; readonly chroma: number; }",
+    "neutral: { readonly hueShift: number; readonly chroma: number; }",
+    "neutralVariant: { readonly hueShift: number; readonly chroma: number; }",
+    "primary: { readonly hueShift: number; readonly chroma: number; readonly atLeastSource: boolean; }",
+    "secondary: { readonly hueShift: number; readonly chroma: number; }",
+    "tertiary: { readonly hueShift: number; readonly chroma: number; }",
+    "tones: { readonly role: number; readonly on: number; readonly container: number; readonly onContainer: number; }"
+  ],
+  "styles:MdyPaletteModel": [
+    "contrastProxy: { readonly threshold: number; readonly chromaWeight: number; readonly hueOffset: number; }",
+    "error: { readonly h: number; readonly c: number; readonly l: number; }",
+    "onChroma: number",
+    "secondary: MdyPaletteRelation",
+    "tertiary: MdyPaletteRelation"
+  ],
+  "styles:MdyPaletteModelName": [
+    "(opaque)"
+  ],
+  "styles:MdyPaletteRelation": [
+    "c: number",
+    "h: number",
+    "l: number",
+    "minC?: number"
+  ],
+  "styles:MdyPerceptualPaletteModel": [
+    "dark: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }",
+    "errorHue: number",
+    "light: { readonly primary: MdyPerceptualRelation; readonly secondary: MdyPerceptualRelation; readonly tertiary: MdyPerceptualRelation; readonly error: MdyPerceptualRelation; }"
+  ],
+  "styles:MdyPerceptualPaletteModelName": [
+    "(opaque)"
+  ],
+  "styles:MdyPerceptualRelation": [
+    "l: number",
+    "minDeltaE: number",
+    "salience: number"
+  ],
+  "styles:MdyResolvedTheme": [
+    "dark: Readonly<Record<string, string>>",
+    "light: Readonly<Record<string, string>>",
+    "metrics: { readonly light: Readonly<Record<string, number>>; readonly dark: Readonly<Record<string, number>>; }",
+    "model: MdyPerceptualPaletteModelName",
+    "name: string",
+    "seed: string",
+    "selector: string"
+  ],
+  "styles:MdyThemeDefinition": [
+    "model?: MdyPerceptualPaletteModelName",
+    "name: string",
+    "seed: string",
+    "selector?: string"
+  ],
+  "styles:MdyThemeMode": [
+    "\"dark\"",
+    "\"light\""
+  ],
+  "styles:Oklch": [
+    "c: number",
+    "h: number",
+    "l: number"
+  ],
+  "styles:compileMdyTheme": [
+    "(0) definition: MdyThemeDefinition",
+    "-> returns: MdyResolvedTheme"
+  ],
+  "styles:contrastRatio": [
+    "(0) a: string",
+    "(1) b: string",
+    "-> returns: number"
+  ],
+  "styles:deltaEOK": [
+    "(0) left: Oklch",
+    "(1) right: Oklch",
+    "-> returns: number"
+  ],
+  "styles:deriveHctPalette": [
+    "(0) primary: string",
+    "(1) model?: MdyHctPaletteModel",
+    "-> returns: MdyDerivedPalette | null"
+  ],
+  "styles:derivePalette": [
+    "(0) primary: string",
+    "(1) model?: MdyPaletteModel",
+    "-> returns: MdyDerivedPalette | null"
+  ],
+  "styles:hctToHex": [
+    "(0) hct: Hct",
+    "-> returns: string"
+  ],
+  "styles:hexToHct": [
+    "(0) hex: string",
+    "-> returns: Hct | null"
+  ],
+  "styles:hexToOklch": [
+    "(0) hex: string",
+    "-> returns: Oklch | null"
+  ],
+  "styles:isInSrgb": [
+    "(0) rgb: LinearRgb",
+    "(1) epsilon?: number",
+    "-> returns: boolean"
+  ],
+  "styles:lstarFromY": [
+    "(0) y: number",
+    "-> returns: number"
+  ],
+  "styles:maxSrgbChroma": [
+    "(0) l: number",
+    "(1) h: number",
+    "-> returns: number"
+  ],
+  "styles:oklchToHex": [
+    "(0) color: Oklch",
+    "-> returns: string"
+  ],
+  "styles:oklchToLinearRgb": [
+    "(0) color: Oklch",
+    "-> returns: LinearRgb"
+  ],
+  "styles:parseHex": [
+    "(0) hex: string",
+    "-> returns: readonly [number, number, number] | null"
+  ],
+  "styles:relativeLuminance": [
+    "(0) hex: string",
+    "-> returns: number"
+  ],
+  "styles:serializeMdyThemeCss": [
+    "(0) theme: MdyResolvedTheme",
+    "-> returns: string"
+  ],
+  "styles:toHex": [
+    "(0) rgb: readonly [number, number, number]",
+    "-> returns: string"
+  ],
+  "styles:yFromLstar": [
+    "(0) lstar: number",
+    "-> returns: number"
+  ],
+  "svelte:MdySvelteFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: Readable<MdyFieldState<TValue>>",
+    "view: Readable<MdyWidgetViewContract>"
+  ],
+  "svelte:MdySvelteSelectApi": [
+    "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
+    "setOptions: void",
+    "setValue: void",
+    "state: Readable<MdySelectState<TValue>>",
+    "view: Readable<ReturnType<MdySelectController<TValue>[\"view\"]>>"
+  ],
+  "svelte:UseMdyFieldOptions": [
+    "-> Omit"
+  ],
+  "svelte:UseMdySelectOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
+  "svelte:createSvelteForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "svelte:executeSvelteCommands": [
+    "(0) commands: readonly MdyUiCommand[]",
+    "(1) lookup: MdyElementLookup",
+    "(2) handlers: MdyWidgetCommandHandlers",
+    "-> returns: void"
+  ],
+  "svelte:svelteReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "svelte:toStore": [
+    "(0) signal: MdySignal<T>",
+    "-> returns: Readable<T>"
+  ],
+  "svelte:useMdyField": [
+    "(0) handle: MdyFieldHandle<TValue>",
+    "(1) options: UseMdyFieldOptions<TValue>",
+    "-> returns: MdySvelteFieldApi<TValue>"
+  ],
+  "svelte:useMdySelect": [
+    "(0) options: UseMdySelectOptions<TValue>",
+    "-> returns: MdySvelteSelectApi<TValue>"
+  ],
+  "vue:MdyTextField": [
+    "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    /** Which of the kinds that share this anatomy is being drawn. */\n    kind: {\n        type: PropType<\"text\" | \"email\" | \"password\" | \"textarea\" | \"number\">;\n        default: string;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    /** Which of the kinds that share this anatomy is being drawn. */\n    kind: {\n        type: PropType<\"text\" | \"email\" | \"password\" | \"textarea\" | \"number\">;\n        default: string;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    kind: \"email\" | \"number\" | \"password\" | \"text\" | \"textarea\";\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
+  ],
+  "vue:MdyVueFieldApi": [
+    "destroy: void",
+    "dispatch: void",
+    "setReadonly: void",
+    "setValue: void",
+    "state: MdyFieldState<TValue>",
+    "view: MdyWidgetViewContract"
+  ],
+  "vue:MdyVuePartProps": [
+    "-> Record"
+  ],
+  "vue:MdyVueSelectApi": [
+    "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
+    "setOptions: void",
+    "setValue: void",
+    "state: Readonly<MdySelectState<TValue>>",
+    "view: ReturnType<MdySelectController<TValue>[\"view\"]>"
+  ],
+  "vue:UseMdyFieldOptions": [
+    "-> Omit"
+  ],
+  "vue:UseMdySelectOptions": [
+    "onChange?: (value: TValue | null) => void"
+  ],
+  "vue:createVueForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "vue:executeVueCommands": [
+    "(0) commands: readonly MdyUiCommand[]",
+    "(1) lookup: MdyElementLookup",
+    "(2) handlers: MdyWidgetCommandHandlers",
+    "-> returns: void"
+  ],
+  "vue:partProps": [
+    "(0) part: MdyPartContract | undefined",
+    "(1) extra?: MdyVuePartProps",
+    "-> returns: MdyVuePartProps"
+  ],
+  "vue:useMdyField": [
+    "(0) handle: MdyFieldHandle<TValue>",
+    "(1) options: UseMdyFieldOptions<TValue>",
+    "-> returns: MdyVueFieldApi<TValue>"
+  ],
+  "vue:useMdySelect": [
+    "(0) options: UseMdySelectOptions<TValue>",
+    "-> returns: MdyVueSelectApi<TValue>"
+  ],
+  "vue:useVueForm": [
+    "(0) schema: S",
+    "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
+    "-> returns: MdyTypedForm<S>"
+  ],
+  "vue:vueReactivity": [
+    "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
   ],
   "widgets:MDY_ANY_PRINTABLE_KEY": [
     "const: (inferred)"
@@ -3550,7 +4696,7 @@
     "variant \"select-month\": { readonly type: \"select-month\"; readonly month: number; }",
     "variant \"select-year\": { readonly type: \"select-year\"; readonly year: number; }",
     "variant \"set-view-mode\": { readonly type: \"set-view-mode\"; readonly mode: MdyCalendarViewMode; }",
-    "variant \"type\": { readonly type: \"type\"; readonly end: \"start\" | \"end\"; readonly text: string; }"
+    "variant \"type\": { readonly type: \"type\"; readonly end: \"end\" | \"start\"; readonly text: string; }"
   ],
   "widgets:MdyDaterangeFieldState": [
     "cells: ReadonlyArray<MdyDaterangeFieldCell>",
@@ -3563,7 +4709,7 @@
     "invalid: boolean",
     "open: boolean",
     "pending: boolean",
-    "picking: \"start\" | \"end\"",
+    "picking: \"end\" | \"start\"",
     "previewed: MdyDateRangeValue",
     "readonly: boolean",
     "required: boolean",
@@ -3585,7 +4731,7 @@
     "\"tracking-outside\""
   ],
   "widgets:MdyDivergence": [
-    "kind: \"values\" | \"one-unread\" | \"both-unread\"",
+    "kind: \"both-unread\" | \"one-unread\" | \"values\"",
     "label: string",
     "left: string",
     "right: string"
@@ -3852,10 +4998,10 @@
   "widgets:MdyKeyBinding": [
     "awaits?: string",
     "by?: -1 | 1",
-    "intent: \"move\" | \"step\" | \"toggle\" | \"open\" | \"commit\" | \"cancel\" | \"reorder\" | \"remove\" | \"grab\" | \"undo\" | \"typeahead\" | \"view\"",
+    "intent: \"cancel\" | \"commit\" | \"grab\" | \"move\" | \"open\" | \"remove\" | \"reorder\" | \"step\" | \"toggle\" | \"typeahead\" | \"undo\" | \"view\"",
     "key: string",
     "longStride?: boolean",
-    "modifier?: \"primary\" | \"any\"",
+    "modifier?: \"any\" | \"primary\"",
     "on?: string",
     "page?: boolean",
     "requires?: string",
@@ -3932,7 +5078,7 @@
     "variant \"decrement\": { readonly type: \"decrement\"; readonly optionKey: string; }",
     "variant \"focus\": { readonly type: \"focus\"; }",
     "variant \"increment\": { readonly type: \"increment\"; readonly optionKey: string; }",
-    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"first\" | \"last\" | \"next\" | \"previous\"; }",
     "variant \"move-selected\": { readonly type: \"move-selected\"; readonly optionKey: string; readonly to: number; }",
     "variant \"open\": { readonly type: \"open\"; readonly by?: MdyOpenModality; }",
     "variant \"search\": { readonly type: \"search\"; readonly query: string; }",
@@ -3975,7 +5121,7 @@
     "variant \"toggle\": { readonly type: \"toggle\"; readonly value: T; }"
   ],
   "widgets:MdyMultiselectWayBack": [
-    "act: \"remove\" | \"move\" | \"clear\"",
+    "act: \"clear\" | \"move\" | \"remove\"",
     "count: number",
     "optionKey: string | null"
   ],
@@ -4017,7 +5163,7 @@
   "widgets:MdyOptionFieldIntent": [
     "variant \"blur\": { readonly type: \"blur\"; }",
     "variant \"focus\": { readonly type: \"focus\"; }",
-    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"first\" | \"last\" | \"next\" | \"previous\"; }",
     "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }"
   ],
   "widgets:MdyOptionFieldState": [
@@ -4122,7 +5268,7 @@
     "open: boolean"
   ],
   "widgets:MdyOverlayLifecycleTransition": [
-    "announce: \"opened\" | \"closed\" | null",
+    "announce: \"closed\" | \"opened\" | null",
     "effect: \"none\" | \"setup\" | \"teardown\"",
     "restoreFocus: boolean",
     "state: MdyOverlayLifecycleState"
@@ -4171,7 +5317,7 @@
     "owed: boolean",
     "present: boolean",
     "presentWhen?: string",
-    "verdict: \"drawn\" | \"extra\" | \"excused\" | \"missing\""
+    "verdict: \"drawn\" | \"excused\" | \"extra\" | \"missing\""
   ],
   "widgets:MdyPartPresence": [
     "\"documentDeclaresIt\"",
@@ -4305,7 +5451,7 @@
     "variant \"blur\": { readonly type: \"blur\"; }",
     "variant \"close\": { readonly type: \"close\"; readonly restoreFocus: boolean; }",
     "variant \"focus\": { readonly type: \"focus\"; }",
-    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"first\" | \"last\" | \"next\" | \"previous\"; }",
     "variant \"open\": { readonly type: \"open\"; readonly source: \"keyboard\" | \"pointer\"; }",
     "variant \"search\": { readonly type: \"search\"; readonly query: string; }",
     "variant \"select\": { readonly type: \"select\"; readonly optionKey: string; }"
@@ -4404,7 +5550,7 @@
     "(opaque)"
   ],
   "widgets:MdyStructureContractIssue": [
-    "code: \"DUPLICATE_PART\" | \"DUPLICATE_ORDER\" | \"MISSING_PARENT\" | \"ROOT_HAS_PARENT\"",
+    "code: \"DUPLICATE_ORDER\" | \"DUPLICATE_PART\" | \"MISSING_PARENT\" | \"ROOT_HAS_PARENT\"",
     "message: string",
     "part: string"
   ],
@@ -4418,7 +5564,7 @@
   "widgets:MdyTestingVocabulary": [
     "door: \"./testing\"",
     "name: string",
-    "shape: \"list\" | \"names\" | \"keyed-by-kind\" | \"table\" | \"data\"",
+    "shape: \"data\" | \"keyed-by-kind\" | \"list\" | \"names\" | \"table\"",
     "value: unknown"
   ],
   "widgets:MdyTextFieldA11yOptions": [
@@ -4494,14 +5640,14 @@
   ],
   "widgets:MdyTimepickerDialArc": [
     "from: number",
-    "ring: \"outer\" | \"inner\"",
+    "ring: \"inner\" | \"outer\"",
     "span: number",
     "to: number"
   ],
   "widgets:MdyTimepickerDialGhost": [
     "angle: number",
     "reach: number",
-    "ring: \"outer\" | \"inner\""
+    "ring: \"inner\" | \"outer\""
   ],
   "widgets:MdyTimepickerDialKeyResult": [
     "field: \"hour\" | \"minute\"",
@@ -4510,12 +5656,12 @@
   "widgets:MdyTimepickerDialNumber": [
     "index: number",
     "label: string",
-    "ring: \"outer\" | \"inner\"",
+    "ring: \"inner\" | \"outer\"",
     "value: number"
   ],
   "widgets:MdyTimepickerDialPick": [
     "angle: number",
-    "ring: \"outer\" | \"inner\"",
+    "ring: \"inner\" | \"outer\"",
     "value: number"
   ],
   "widgets:MdyTimepickerEntry": [
@@ -4552,7 +5698,7 @@
     "variant \"focus\": { readonly type: \"focus\"; }",
     "variant \"focus-field\": { readonly type: \"focus-field\"; readonly field: \"hour\" | \"minute\"; }",
     "variant \"open\": { readonly type: \"open\"; }",
-    "variant \"set-from-angle\": { readonly type: \"set-from-angle\"; readonly field: \"hour\" | \"minute\"; readonly angle: number; /** * Which ring of the face was touched. Absent means the outer one, which is the only ring a * 12-hour face has — so a caller written before the 24-hour face existed keeps working. * * The angle alone cannot name the hour on a two-ring face: the same direction is 3 outside and * 15 inside, and half the numbers the face draws had no way to be asked for. */ readonly ring?: \"outer\" | \"inner\"; /** * Where this position falls in the gesture that produced it. * * `\"move\"` while a pointer is travelling, `\"end\"` when it is released. Absent is a position with * no gesture around it — a tap, or a host that reports only the result. * * The hour hands over to the minute when a gesture **ends after moving**, and never on a tap. * A tap is where a person starts: they touch roughly the right number and then drag to the one * they meant, and a face that advanced on the touch took the dial away mid-gesture and left them * adjusting minutes they had not asked for. A release after movement is where they stop. */ readonly phase?: \"move\" | \"end\"; }",
+    "variant \"set-from-angle\": { readonly type: \"set-from-angle\"; readonly field: \"hour\" | \"minute\"; readonly angle: number; /** * Which ring of the face was touched. Absent means the outer one, which is the only ring a * 12-hour face has — so a caller written before the 24-hour face existed keeps working. * * The angle alone cannot name the hour on a two-ring face: the same direction is 3 outside and * 15 inside, and half the numbers the face draws had no way to be asked for. */ readonly ring?: \"inner\" | \"outer\"; /** * Where this position falls in the gesture that produced it. * * `\"move\"` while a pointer is travelling, `\"end\"` when it is released. Absent is a position with * no gesture around it — a tap, or a host that reports only the result. * * The hour hands over to the minute when a gesture **ends after moving**, and never on a tap. * A tap is where a person starts: they touch roughly the right number and then drag to the one * they meant, and a face that advanced on the touch took the dial away mid-gesture and left them * adjusting minutes they had not asked for. A release after movement is where they stop. */ readonly phase?: \"end\" | \"move\"; }",
     "variant \"set-hour\": { readonly type: \"set-hour\"; readonly hour: number; }",
     "variant \"set-minute\": { readonly type: \"set-minute\"; readonly minute: number; }",
     "variant \"set-period\": { readonly type: \"set-period\"; readonly period: \"AM\" | \"PM\"; }",
@@ -4711,7 +5857,7 @@
     "variant \"decrement\": { readonly type: \"decrement\"; }",
     "variant \"grab\": { readonly type: \"grab\"; }",
     "variant \"increment\": { readonly type: \"increment\"; }",
-    "variant \"move\": { readonly type: \"move\"; readonly target: \"next\" | \"previous\" | \"first\" | \"last\"; }",
+    "variant \"move\": { readonly type: \"move\"; readonly target: \"first\" | \"last\" | \"next\" | \"previous\"; }",
     "variant \"open\": { readonly type: \"open\"; }",
     "variant \"remove\": { readonly type: \"remove\"; }",
     "variant \"reorder\": { readonly type: \"reorder\"; readonly by: -1 | 1; }",
@@ -6159,5 +7305,32 @@
   "widgets:workIsInFlight": [
     "(0) state: { readonly pending?: boolean; readonly loading?: boolean; }",
     "-> returns: boolean"
+  ],
+  "zod:MdyZodFormOptions": [
+    "validators?: ReadonlyArray<MdyFormValidatorFn<TValue>>"
+  ],
+  "zod:MdyZodItemDescriptor": [
+    "(opaque)"
+  ],
+  "zod:MdyZodSchemaTree": [
+    "(opaque)"
+  ],
+  "zod:buildZodRefinementValidator": [
+    "(0) schema: z.ZodObject",
+    "-> returns: MdyFormValidatorFn<TValue>"
+  ],
+  "zod:buildZodTree": [
+    "(0) objectSchema: z.ZodObject",
+    "-> returns: MdyFormSchema"
+  ],
+  "zod:createZodForm": [
+    "(0) schema: T",
+    "(1) options?: MdyZodFormOptions<MdyFormValue<MdyZodSchemaTree<T[\"shape\"]>>>",
+    "-> returns: MdyTypedForm<MdyZodSchemaTree<T[\"shape\"]>>"
+  ],
+  "zod:serverValidate": [
+    "(0) schema: z.ZodObject",
+    "(1) payload: unknown",
+    "-> returns: ReadonlyArray<MdyFormError>"
   ]
 }

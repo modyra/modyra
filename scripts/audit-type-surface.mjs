@@ -26,6 +26,8 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "
 import { join, resolve, relative } from "node:path";
 import ts from "typescript";
 
+import { publishedPackageDirs } from "./lib/published-packages.mjs";
+
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
 const BASELINE = resolve(ROOT, "packages/widgets/contract-baseline/type-surface.json");
 /**
@@ -40,7 +42,18 @@ const BASELINE = resolve(ROOT, "packages/widgets/contract-baseline/type-surface.
  *
  * So: shapes from everywhere, filtered by the names the declared `exports` map actually publishes.
  */
-const PACKAGES = ["core", "widgets", "angular"];
+/**
+ * Every package a release publishes, not a list of three.
+ *
+ * The roster was written by hand and the prose above it names two of the three in it, which is a
+ * perimeter that has drifted from its own description. Eleven published packages — every adapter
+ * among them — had no release gate looking at their exported types: a new export in `@modyra/vue`
+ * moved nothing here, and with the remaining consumers arriving that unwatched surface multiplies.
+ *
+ * Membership comes from the workspace, so a package published tomorrow is watched the day it lands
+ * rather than the day somebody remembers this line.
+ */
+const PACKAGES = publishedPackageDirs();
 const PACKAGE_DIRS = PACKAGES.map((name) => `packages/${name}/dist`);
 
 /**
@@ -813,8 +826,26 @@ for (const name of Object.keys(baseline)) {
     ]);
   }
 }
+// A package the baseline holds no name from at all is a package this snapshot has just started
+// watching — the instrument grew, not the surface. Reported once, by package, rather than as a
+// hundred names newly exported: a reader who sees "newly exported" against a name that shipped
+// months ago learns to distrust the line, and the verdict travels into a changeset where nobody can
+// tell afterwards. Told apart by the shape of the absence, as elsewhere here: a package absent
+// entirely is one nobody looked at, while a name missing beside its siblings is a real addition.
+const watchedInBaseline = new Set(Object.keys(baseline).map((name) => name.split(":")[0]));
+const newlyWatched = new Map();
 for (const name of Object.keys(current)) {
-  if (!(name in baseline)) changes.push(["minor", `${name} is newly exported`]);
+  if (name in baseline) continue;
+  const pkg = name.split(":")[0];
+  if (watchedInBaseline.has(pkg)) {
+    changes.push(["minor", `${name} is newly exported`]);
+    continue;
+  }
+  newlyWatched.set(pkg, (newlyWatched.get(pkg) ?? 0) + 1);
+}
+for (const [pkg, count] of [...newlyWatched].sort()) {
+  changes.push(["minor", `${pkg}: ${count} exported shape(s) now recorded — new to this snapshot, `
+    + "not to the package"]);
 }
 
 console.log(`Exported shapes compared: ${names.length}`);
