@@ -62,6 +62,45 @@ is still the way out.
   type-ahead binding would take them before this one was asked. The declaration lands first and the
   renderers follow it — until they do, the stepper is still pointer-only, which is recorded here
   rather than left to be rediscovered.
+- **Amendment, 2026-09-03: a pointer-only control that duplicates an act a declared key of the same
+  kind already performs is not a defect.** WCAG 2.1.1 asks that the *function* be operable from a
+  keyboard, not that every control be. The calendar's month arrows are the case: the month already
+  moves on `PageUp` and `PageDown`, so the two buttons drawn beside the header are an affordance for
+  a pointer, not the only way to the act. Bringing them into the tab order was the alternative and
+  was rejected — a header that took stops would put the datepicker in the family that holds `Tab`,
+  against unanimous reports since made law, and it would buy nothing the declared keys do not
+  already buy.
+
+  **The exemption is granted in a shape that can expire.** Each recorded control names the binding
+  that justifies it, and the check fails when *that binding* leaves the contract — not only when the
+  button does. An exemption that outlives the reason it was granted for is a decision nobody took,
+  read later as one that was.
+
+- **And the same amendment records what the rule does *not* excuse.** Applied honestly it produces a
+  finding rather than an exemption: the controls that open the months and years views have no
+  declared key at all. Measured against the current contract, `datepicker` and `daterange` declare
+  `Escape`, `Tab`, `Enter`, a commit on a `gridcell`, `PageUp`/`PageDown`, the four arrows, `Home`
+  and `End` — every one of them moving *within* a view. **No binding declares a change of view.** So
+  the act behind those buttons is the colours entry's species, not the month arrows': operable with a
+  pointer and with nothing else. They are recorded as open, not excused, because calling them exempt
+  would be the rule granting itself the decision it exists to ask for.
+
+  The census, so the two are not read as one: of the eight controls the guardian records across the
+  three renderers, four are month arrows naming `PageUp`, and four are view openers naming nothing —
+  `header-label` in one renderer and `view-toggle` in the other two, which is why the record is kept
+  per renderer rather than as a single list.
+
+- **Where this shape is not yet enforced, stated so the record is not read as a whole guarantee.**
+  The expiring exemption above binds only the controls the guardian has *recorded*. A repeated part
+  is absolved earlier and unconditionally: the guardian excuses one whenever its kind declares any
+  arrow with a `move` intent, without asking whether that arrow names *that part*. Measured on the
+  multiselect's stepper, which is `repeated` and whose class no binding names: it is excused by the
+  arrows that walk between options, which do not reach it. The consequence is the one worth writing
+  down — that branch would have excused it identically before this record's key existed, so a green
+  there says nothing about this species either way. The stepper is also drawn only in the counter
+  variant, which the guardian does not mount. Both are the guardian's to repair; until it does, the
+  guarantee stated above holds for recorded controls and for no others.
+
 - A spec that asserted "Tab closes what it tabs out of" for every kind failed three renderers for a
   correct change. It was deriving already — from anatomy (`parts.actions`) rather than from the
   declaration — and agreed with the contract for one kind by coincidence. It now reads the binding it
@@ -89,6 +128,17 @@ check reading the element would have passed throughout.
 
 Restoring the narrow predicate turns all three of its checks red, with the message naming what is
 lost. The precondition runs first: the panel opened, and something in it holds focus.
+
+The multiselect's key is verified the same way, in all three renderers, by
+`a-quantity-a-key-can-change` — it presses the key and reads the number on the row the cursor is on.
+Removing one renderer's branch turns that renderer's checks red in the same run. The counter reads
+`×0`, so the digits are extracted and the parse asserted: comparing the labels unparsed is green
+whether the quantity moved or not, because a strict check holds `NaN` equal to itself.
+
+The claims this record makes about the guardian are derived from the contract rather than from one of
+its runs: which classes a binding names, which parts are `repeated`, and which branch of the
+guardian's decision fires first. A run of it would agree, and would agree just as readily with the
+defect in place — that is the point being recorded.
 
 The same ring is asserted in Lit and Angular, and a browser-tier confirmation is owed before this is
 called closed — the local measurements are in a DOM without native `Tab`, which sees interception but
