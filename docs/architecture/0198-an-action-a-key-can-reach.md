@@ -94,12 +94,20 @@ is still the way out.
   The expiring exemption above binds only the controls the guardian has *recorded*. A repeated part
   is absolved earlier and unconditionally: the guardian excuses one whenever its kind declares any
   arrow with a `move` intent, without asking whether that arrow names *that part*. Measured on the
-  multiselect's stepper, which is `repeated` and whose class no binding names: it is excused by the
-  arrows that walk between options, which do not reach it. The consequence is the one worth writing
-  down — that branch would have excused it identically before this record's key existed, so a green
-  there says nothing about this species either way. The stepper is also drawn only in the counter
-  variant, which the guardian does not mount. Both are the guardian's to repair; until it does, the
-  guarantee stated above holds for recorded controls and for no others.
+  multiselect's stepper, which is `repeated` and whose class no binding names: it was excused by the
+  arrows that walk between options, which do not reach it. That branch would have excused it
+  identically before this record's key existed, so a green there said nothing about this species
+  either way — and the stepper was drawn only in the counter variant, which the guardian did not
+  mount.
+
+  **Both are now repaired (`1c645f27`), and the guarantee above holds beyond the recorded controls.**
+  The guardian separates a repeated *choice* from a button drawn inside one — an arrow lands on the
+  first and never reaches the second — and it absolves a repeated button only through a binding whose
+  intent is `step`. That narrowness is the load-bearing part: any binding naming the parent row would
+  have absolved the stepper through the space bar, which names the same row to toggle it, and then
+  removing the step keys would have changed nothing. It now goes red on the stepper's class when they
+  are removed. The roster derives from each kind's declared `variants`, so a kind is mounted once per
+  variant and the unmounted-variant blindness falls for every kind rather than this one.
 
 - A spec that asserted "Tab closes what it tabs out of" for every kind failed three renderers for a
   correct change. It was deriving already — from anatomy (`parts.actions`) rather than from the
