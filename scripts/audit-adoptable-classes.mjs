@@ -99,7 +99,14 @@ function producibleClasses() {
 
 const { classes: producible, perimeter, madeBy } = producibleClasses();
 
-const CLASS_LITERAL = /["'`](mdy-[a-z0-9_-]+)/g;
+// A class name is written two ways and both are the same fact: bare in a `class` attribute, and
+// with a leading dot in a `querySelector`. The first reading saw only the bare form and missed 52
+// distinct names across the three renderers — including the one that sent me looking, plain's
+// `".mdy-chip"`, which decides where focus lands when a panel opens.
+//
+// The dot also settles the tag question: a custom element tag is never written with one, so a dotted
+// literal is a class even when its text matches a tag.
+const CLASS_LITERAL = /["'`](\.)?(mdy-[a-z0-9_-]+)/g;
 const ELEMENT_TAG = /["'`](mdy-[a-z]+(?:-[a-z]+)*)["'`]\s*[,)\]]/g;
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
 
@@ -131,8 +138,8 @@ for (const pkg of PACKAGES) {
   for (const file of sourcesOf(dir)) {
     const source = strip(readFileSync(file, "utf8"));
     const tags = new Set([...source.matchAll(ELEMENT_TAG)].map((m) => m[1]));
-    for (const [, name] of source.matchAll(CLASS_LITERAL)) {
-      if (tags.has(name)) continue;
+    for (const [, dotted, name] of source.matchAll(CLASS_LITERAL)) {
+      if (!dotted && tags.has(name)) continue;
       if (producible.has(name)) {
         if (!adoptable.has(name)) adoptable.set(name, relative(ROOT, file));
       } else own.add(name);
