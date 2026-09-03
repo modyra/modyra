@@ -315,8 +315,15 @@ export function renderColorsField(
     return true;
   };
 
-  presetList.addEventListener("keydown", (event) => { walkPanelStops(event) || moveThroughSwatches(event); });
-  picker.addEventListener("keydown", (event) => { walkPanelStops(event) || moveThroughSwatches(event); });
+  // The ring first, the grid second, and the order is the meaning: `walkPanelStops` answers the key
+  // that leaves the swatches for the panel's own action and says whether it took it, so the grid only
+  // sees what the ring did not want. Written as a short-circuit the two reads as one expression whose
+  // value is discarded, which is the same behaviour and does not say which call is the question.
+  const ringElseGrid = (event: KeyboardEvent): void => {
+    if (!walkPanelStops(event)) moveThroughSwatches(event);
+  };
+  presetList.addEventListener("keydown", ringElseGrid);
+  picker.addEventListener("keydown", ringElseGrid);
   customEntry.addEventListener("keydown", (event) => { walkPanelStops(event); });
 
   // Escape closes and hands focus back, from wherever the user is. This overlay does not take focus
