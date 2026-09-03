@@ -54,9 +54,6 @@ import { inputText } from "../renderer-projection";
       }
     </div>
 
-    @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
-    }
     <!-- Not an else: an error does not take the place of the instruction that would have prevented
          it, which is what the described-by projection says by naming both. Rendered as an
          alternative, a field that can fail lost its supporting text the moment the error container
@@ -69,6 +66,17 @@ import { inputText } from "../renderer-projection";
       <!-- The value route, for a field that declared its own words rather than
            projecting them. A document has no template to project. -->
       <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)">{{ text }}</div>
+    } @else {
+      <!-- Drawn with nothing in it, and out of sight. The projection names this id
+           whenever it describes the control, so an element that appears only once
+           there are words leaves that reference pointing at nothing — the defect one
+           step worse than an empty description. The two halves stay apart: the
+           element is always here for a reference to land on, and describedById
+           decides whether making the reference is worth a reader's move. -->
+      <div class="{{ cls.supportingText }}" [id]="descriptionId(fieldId)" hidden></div>
+    }
+    @if (errorsReserved()) {
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     }
   `,
 })

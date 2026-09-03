@@ -387,9 +387,6 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
     </mdy-overlay-panel>
 
 
-    @if (errorsReserved()) {
-      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
-    }
     <!-- Not an else: an error does not take the place of the instruction that would have prevented
          it, which is what the described-by projection says by naming both. Rendered as an
          alternative, a field that can fail lost its supporting text the moment the error container
@@ -405,6 +402,17 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
       </div>
     } @else if (supportingText(); as text) {
       <div class="mdy-supporting-text" [id]="descriptionId(fieldId)">{{ text }}</div>
+    } @else {
+      <!-- Drawn with nothing in it, and out of sight. The projection names this id
+           whenever it describes the control, so an element that appears only once
+           there are words leaves that reference pointing at nothing — the defect one
+           step worse than an empty description. The two halves stay apart: the
+           element is always here for a reference to land on, and describedById
+           decides whether making the reference is worth a reader's move. -->
+      <div class="mdy-supporting-text" [id]="descriptionId(fieldId)" hidden></div>
+    }
+    @if (errorsReserved()) {
+      <mdy-error-list [fieldId]="fieldId" [errors]="errorsOnScreen()" />
     }
   `,
 })
@@ -972,18 +980,6 @@ export class MdyMultiselectComponent<TValue = string>
   }
 
   /** How many are chosen, for the field's own description. */
-  /**
-   * This kind describes itself by more than its supporting text.
-   *
-   * The base withholds the description's id unless a consumer gave the field words, and a multiselect
-   * writes its own — how many are chosen — into the same element. So the sentence was on the page and
-   * nothing named it: a person who cannot see the chips was told the field's name and nothing about
-   * what it holds, while the text saying so sat one element away.
-   */
-  protected override descriptionId(fieldId: string): string | null {
-    if (this.errorsRendered()) return null;
-    return super.descriptionId(fieldId);
-  }
 
   /** The strip's wheel behaviour is the contract's; see `scrollChipStripByWheel`. */
   protected readonly onStripWheel = scrollChipStripByWheel;

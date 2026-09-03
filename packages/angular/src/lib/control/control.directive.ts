@@ -642,11 +642,13 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    * rendered, styled, and announced to nobody: a description no reference can reach is invisible to
    * assistive technology however carefully it is worded.
    */
-  protected descriptionId(fieldId: string): string | null {
-    // Rendered in the branch the error list does not occupy, so the two are never both present.
-    // Named whenever it is on the page. It used to be withheld while errors were shown, which is the
-    // error taking the place of the help at the moment the help is most useful.
-    return this.hasSupportingText() ? defaultWidgetIdFactory.part(fieldId, "description") : null;
+  protected descriptionId(fieldId: string): string {
+    // The element is on the page whether or not it has words, so the id is too: the projection names
+    // this id whenever it describes the control, and an id that appears only once there are words
+    // leaves that reference pointing at nothing. Whether the reference is *made* is a separate
+    // question and stays with `describedById` — the element exists so a reference can land, and a
+    // control names an empty description only if it has something to send a reader to.
+    return defaultWidgetIdFactory.part(fieldId, "description");
   }
 
   /**
