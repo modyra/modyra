@@ -19,8 +19,16 @@ function walk(dir) {
     if (statSync(full).isDirectory()) walk(full);
     else if (name.endsWith(".ts") && !name.endsWith(".spec.ts")) {
       const relative = full.slice(rendererRoot.length + 1);
-      const source = readFileSync(full, "utf8");
-      for (const match of source.matchAll(/this\.(setValue|markAsDirty|markAsTouched)\s*\(/g)) violations.push({ renderer: relative, mutation: match[1] });
+      // Comments removed, and the receiver is not required to be `this`. A renderer that reaches the
+      // handle by any other name — a local, a signal it read, a destructured field — takes the same
+      // decision, and a rule keyed on one spelling only ever finds the spelling. Today both readings
+      // return the same single call; the wider one is what keeps that true after the next refactor.
+      const source = readFileSync(full, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, " ")
+        .replace(/^\s*\/\/.*$/gm, " ");
+      for (const match of source.matchAll(/([A-Za-z_$][\w$]*|\))\s*\.\s*(setValue|markAsDirty|markAsTouched)\s*\(/g)) {
+        violations.push({ renderer: relative, mutation: match[2] });
+      }
     }
   }
 }
@@ -45,6 +53,9 @@ const present = new Set(violations.map(id));
 const appeared = violations.filter((v) => !recorded.has(id(v)));
 const cleared = [...recorded].filter((r) => !present.has(r));
 
+console.log("Read from Angular renderer source with its comments removed: which mutating calls a file"
+  + " writes, on any receiver — not which ones run. Lit and Plain are not asked here; each adapter's"
+  + " ownership is its own gate.");
 console.log(JSON.stringify({
   status: appeared.length || cleared.length ? "ANGULAR OWNERSHIP MOVED" : "ANGULAR OWNERSHIP HELD",
   recorded: recorded.size,
