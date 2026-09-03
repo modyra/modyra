@@ -1,10 +1,14 @@
 /*
  * modyra-base.css
  *
- * Design tokens (CSS custom properties) — three tiers:
- *   --mdy-ref-*   reference/brand tokens — raw values; never used by components
- *   --mdy-sys-*   semantic system tokens — THE theme surface (light + dark)
- *   --mdy-comp-*  component tokens — default to sys vars, exist for overrides
+ * Design tokens (CSS custom properties) — three tiers, each declaring its role:
+ *   --mdy-ref-*   [internal]  reference/brand tokens — raw values; never used by components
+ *   --mdy-sys-*   [public]    semantic system tokens — THE theme surface (light + dark)
+ *   --mdy-comp-*  [public]    component tokens — default to sys vars, exist for overrides
+ *
+ * Short aliases that belong to no prefix, named outright because no prefix can reach them:
+ *   [bridge] --mdy-primary, --mdy-surface, --mdy-surface-container-low,
+ *            --mdy-on-surface, --mdy-on-surface-variant, --mdy-outline-variant
  *
  * Include in your project before any theme or component CSS.
  *
