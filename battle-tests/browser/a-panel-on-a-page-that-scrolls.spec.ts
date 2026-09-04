@@ -65,7 +65,11 @@ for (const host of HOSTS) {
       const opened = await page.locator(panel).first().isVisible({ timeout: 500 }).catch(() => false);
       // A panel that never opened cannot be mispositioned, and calling that a pass would report the
       // silence as anchoring. It is a skip with its reason, not a green.
-      test.skip(!opened, `${host.name} did not open ${kind} from any door the contract names`);
+      // Named rather than shrugged at: `select` in the renderers that draw a native `<select>` has no
+      // panel of ours to anchor — the browser draws its own list, which no page can measure. That is a
+      // different fact from a panel that failed to open, and a reader deserves to see which.
+      test.skip(!opened, `${host.name} opened no ${kind} panel from any door the contract names`
+        + " — for a renderer whose trigger is a native select, there is no panel of ours to place");
 
       const placed = await page.evaluate(({ panel, root }) => {
         const p = [...document.querySelectorAll(panel)].find((n) => n.getClientRects().length > 0);
