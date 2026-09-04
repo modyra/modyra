@@ -13,6 +13,8 @@
  *
  * The control is the same field near the top, where there *is* room: it must open below and wear no
  * modifier, so the flip below is the lack of room rather than an overlay that always goes up.
+ *
+ * Claims under attack: UI-001.
  */
 
 import { expect, test } from "@playwright/test";

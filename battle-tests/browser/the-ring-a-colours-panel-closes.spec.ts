@@ -15,6 +15,8 @@
  * that is hidden, disabled or detached takes none, silently. Every step here reads
  * `document.activeElement` after the key, and the panel's own open state beside it — a ring that
  * ends with the panel shut has not come back, it has left.
+ *
+ * Claims under attack: A11Y-007, A11Y-002.
  */
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";

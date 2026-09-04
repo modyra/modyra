@@ -16,6 +16,8 @@
  *
  * The control is the same field made wrong the ordinary way, in the same renderer, in the same run:
  * whatever an entry error does differently is the entry error, not the shell.
+ *
+ * Claims under attack: A11Y-004, VAL-002.
  */
 
 import { expect, test } from "@playwright/test";

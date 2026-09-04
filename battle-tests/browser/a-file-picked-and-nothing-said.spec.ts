@@ -15,6 +15,8 @@
  * The contract has no message for the second. That is part of the finding rather than an excuse: the
  * five published message tables carry a word for an unreadable date and none for a refused file, so a
  * renderer wanting to say it has nothing to say it with.
+ *
+ * Claims under attack: A11Y-006, UI-011.
  */
 
 import { expect, test } from "@playwright/test";

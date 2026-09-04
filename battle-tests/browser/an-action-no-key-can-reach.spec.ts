@@ -25,6 +25,8 @@
  * visibility comes from their rects; and `mountFields` creates a `section[data-form]`, not an element
  * carrying that id — a selector that matches nothing mounts nothing, and a spec that mounts nothing
  * passes every claim about what it never opened.
+ *
+ * Claims under attack: A11Y-007.
  */
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, timepickerTabOrder } from "@modyra/widgets";

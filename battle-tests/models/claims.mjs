@@ -776,6 +776,39 @@ const CLAIMS = [
       "docs/architecture/0092-a-condition-travels-with-the-form.md",
     ],
   },
+  {
+    id: "UI-012",
+    title: "A field the application put out of the user's hands does not change under any interaction.",
+    area: "widgets",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/core MdyInteractivity — read-only keeps a field reachable, disabled does not: the two are separate states",
+      "@modyra/widgets MDY_WIDGET_CONTRACTS — the framework-agnostic UI contract every adapter implements",
+      "@modyra/widgets stateCarriers — the part that carries a state, per kind, and nothing for a kind that has none",
+    ],
+  },
+  {
+    id: "A11Y-006",
+    title: "An outcome a shared policy computes for the user is told to the user.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets overlayLifecycleTransition — returns the announcement alongside the state and the effect",
+      "@modyra/widgets fileSelectionTransition — hands back the files it kept and the files it turned away",
+      "@modyra/core MDY_VALUE_CONTRACTS — what a kind's value is, so a renderer knows what it accepted",
+    ],
+  },
+  {
+    id: "A11Y-007",
+    title: "Everything operable inside an open panel can be reached from a keyboard.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets MDY_WIDGET_KEYBOARD — the keys a kind declares, and what each one is for",
+      "@modyra/widgets MDY_WIDGET_TRANSITIONS — declares per kind whether a key moves within a panel or takes it away",
+      "@modyra/widgets createFocusCustodian — placing focus is something this package already does",
+    ],
+  },
 ];
 
 const BY_ID = new Map();

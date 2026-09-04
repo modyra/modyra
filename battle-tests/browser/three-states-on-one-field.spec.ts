@@ -16,6 +16,8 @@
  *     which a disabled field already implies; saying both is noise.
  *
  * Nothing in this suite drove the combinations, only the states one at a time.
+ *
+ * Claims under attack: A11Y-004, VAL-002.
  */
 
 import { expect, test } from "@playwright/test";

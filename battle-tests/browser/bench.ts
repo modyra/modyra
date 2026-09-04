@@ -27,6 +27,7 @@ export interface BenchHost { name: string; page: string; ready: string; api: str
 export const HOSTS: BenchHost[] = [
   { name: "plain", page: "/index.html", ready: "battleReady", api: "battle" },
   { name: "lit", page: "/lit.html", ready: "battleLitReady", api: "battleLit" },
+  { name: "vue", page: "/vue.html", ready: "battleVueReady", api: "battleVue" },
   { name: "angular", page: "/angular.html", ready: "battleAngularReady", api: "battleAngular" },
 ];
 
@@ -214,9 +215,12 @@ export async function bench(page: Page, host: BenchHost, state: StateName, extra
   const id = `bench_${state}_${(mounted += 1)}`;
   const field = { name: "s", kind: "multiselect", label: "Scelte", ...STATES[state], ...extra };
 
-  await page.evaluate(({ api, id, field }) => {
-    (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
-      .mountFields(id, [field] as never);
+  // The host answers why it could not mount — a kind it does not draw, a document it rejected — and
+  // that sentence is the diagnosis. Thrown away, the failure below says only that nothing appeared,
+  // which reads as a renderer defect whatever the cause actually was.
+  const outcome = await page.evaluate(({ api, id, field }) => {
+    return (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
+      .mountFields(id, [field] as never) as { mounted?: boolean; message?: string };
   }, { api: host.api, id, field });
   await page.waitForTimeout(400);
 
@@ -224,7 +228,11 @@ export async function bench(page: Page, host: BenchHost, state: StateName, extra
   const drawn = await page.evaluate((sel) => document.querySelector(sel)?.querySelector(".mdy-renderer--multiselect") !== null, root);
   // A spec whose mount silently did nothing reports on an empty page, and every assertion after this
   // point would be describing the absence rather than the state.
-  expect(drawn, `${host.name} drew no multiselect for the "${state}" state`).toBe(true);
+  expect(
+    drawn,
+    `${host.name} drew no multiselect for the "${state}" state`
+      + (outcome?.mounted === false ? ` — the host refused it: ${outcome.message}` : ""),
+  ).toBe(true);
 
   return { id, root, field };
 }

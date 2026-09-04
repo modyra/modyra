@@ -10,6 +10,8 @@
  * the floor has to be refused by both the browser and the form, in the same breath. An attribute the
  * model does not back is the shape of finding 99; this is the case where they agree, and it is worth
  * holding.
+ *
+ * Claims under attack: VAL-004, DYN-004.
  */
 
 import { expect, test } from "@playwright/test";

@@ -15,6 +15,8 @@
  * `label` and `name`, with `nameIsAFallback` true when it came down to the name. A field nobody
  * labelled is still a field somebody has to fill in, and the name it was declared with is the last
  * thing standing between it and a control announced as nothing at all.
+ *
+ * Claims under attack: A11Y-004, VAL-002.
  */
 
 import { expect, test } from "@playwright/test";

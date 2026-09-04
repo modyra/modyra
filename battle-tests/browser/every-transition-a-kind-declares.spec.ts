@@ -15,6 +15,8 @@
  * `select` as a `<select>` — declares no `aria-expanded` to read, and is reported as undriveable
  * rather than failed: the point is what the table promises about widgets that have these states, not
  * that every renderer must build every kind the same way.
+ *
+ * Claims under attack: UI-010, UI-002.
  */
 
 import { expect, test } from "@playwright/test";

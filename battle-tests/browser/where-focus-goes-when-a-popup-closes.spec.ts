@@ -18,6 +18,8 @@
  *
  * The kinds come from the table. A seventh that starts declaring `restoresFocus` is held to it
  * without this spec being edited.
+ *
+ * Claims under attack: A11Y-002.
  */
 
 import { expect, test } from "@playwright/test";

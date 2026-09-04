@@ -17,6 +17,8 @@
  * learns the state. What is missing is being *told* — the difference between information available on
  * request and information delivered when it changes, which for a popup that appears somewhere else on
  * the page is the difference between noticing and not.
+ *
+ * Claims under attack: A11Y-006.
  */
 
 import { expect, test } from "@playwright/test";

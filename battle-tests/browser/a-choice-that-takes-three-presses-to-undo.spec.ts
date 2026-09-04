@@ -27,6 +27,8 @@
  *
  * The chip here is not that chip. It carries `mdy-chip--selected` without `mdy-chip--counter`, so it
  * is a toggle, and a toggle is published as clearing the option. What the page does is `decrement`.
+ *
+ * Claims under attack: UI-006.
  */
 
 import { expect, test } from "@playwright/test";

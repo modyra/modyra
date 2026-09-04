@@ -19,6 +19,8 @@
  * `file`, whose picker is the browser's and whose element has no `aria-readonly` to carry. Both
  * directions are asserted, because an undeclared state asserted is as much a defect as a declared
  * state unchecked: a kind the table names must say it, and a kind it does not must not.
+ *
+ * Claims under attack: UI-012, A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";
