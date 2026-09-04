@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   input,
@@ -13,6 +14,13 @@ import { MdyBaseControl } from "../../control/control.directive";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyErrorListComponent } from "../../control/error-list.component";
+
+/**
+ * The kinds this one component draws. `textarea` is text-like in the schema and has its own
+ * component, because its anatomy differs; these three share one and differ only in the native input
+ * the contract asks for.
+ */
+type MdyTextLikeKind = "text" | "email" | "password";
 
 @Component({
   selector: "mdy-control-text",
@@ -45,7 +53,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
       }
       <input
         [id]="fieldId"
-        [type]="type()"
+        [type]="inputType()"
         [placeholder]="placeholder()"
         [value]="value() ?? ''"
         [disabled]="isDisabled()"
@@ -108,7 +116,27 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
   protected override readonly widgetKind = "text";
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly placeholder = input<string>("");
-  readonly type = input<string>("text");
+  /**
+   * Which text-like kind this is: `text`, `email` or `password`.
+   *
+   * The three share one anatomy — same parts, same classes — and differ only in the native input
+   * they ask for, which is why one component draws all three and why naming the kind is enough for
+   * the contract to answer that difference.
+   */
+  readonly kind = input<MdyTextLikeKind>("text");
+  /**
+   * The native input, when a host has a reason the catalogue does not know.
+   *
+   * Empty means *nothing was said*, and then the kind answers. It used to default to `"text"`, which
+   * is a second statement of what the contract already declares — and the one that does not move
+   * when the declaration does: an email field whose host forgot this attribute rendered as plain
+   * text and lost the keyboard and the affordance that come with it, silently.
+   */
+  readonly type = input<string>("");
+  /** What the host said, or what the kind declares. */
+  protected readonly inputType = computed(
+    () => this.type() !== "" ? this.type() : MDY_WIDGET_CONTRACTS[this.kind()].controlType ?? "text",
+  );
   readonly autocomplete = input<string | null>(null);
 
   private fieldController?: MdyTextFieldController<string>;
@@ -121,7 +149,7 @@ export class MdyTextComponent extends MdyBaseControl<string> implements OnInit {
       this.fieldController = createTextFieldController({
         widgetId: this.fieldId,
         handle: handle as never,
-        inputType: this.type(),
+        inputType: this.inputType(),
         ...(autocomplete ? { autocomplete } : {}),
       });
     }
