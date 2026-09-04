@@ -64,9 +64,15 @@ export default defineConfig({
   timeout: 30_000,
   /**
    * Worker count stays at Playwright's default everywhere. `"100%"` was tried on the runner and
-   * measured: with all four cores saturated, the two documented load-sensitive families (the
-   * angular fixme in e2e/demo.spec.ts, finding U's 1px page-height flap) fail often enough that a
+   * measured: with all four cores saturated, the documented load-sensitive families (the angular
+   * fixme in e2e/demo.spec.ts, finding U's 1px page-height flap) fail often enough that a
    * green run is a coin flip — and a rerun costs more wall time than the two extra workers saved.
+   *
+   * A third joined them, found by the milestone run rather than by CI: `nested-invoices` under
+   * `lit-firefox` missed a `toHaveCount` once at five workers and passed twice on its own. **CI
+   * cannot see this family**, because `retries` below is 1 there and 0 here: in CI that test is
+   * retried green and nobody learns it exists. The local total run is the only thing that looks at
+   * this, which is a reason to keep running it rather than a reason to widen the retry.
    */
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
