@@ -11,8 +11,10 @@
  * by its own audit, which classifies a change rather than forbidding one. Restating the members here
  * would be a second copy of that record, drifting the moment either moved.
  *
- * Generated from the names the coverage audit reports as asserted by nothing; regenerate rather than
- * edit by hand.
+ * The names come from what the coverage audit reports as asserted by nothing, and the list is kept by
+ * hand: there is no generator behind this file. A name published by two packages is two entries —
+ * the audit keys a type by the package that declares it, so one door being reachable says nothing
+ * about the other.
  */
  
 
@@ -321,6 +323,7 @@ import type {
 } from "@modyra/core/datetime";
 
 import type { MdyCvaDirective } from "@modyra/angular/interop";
+import type { MdyTextFieldProps } from "@modyra/react";
 
 /** Each name, stood in a type position so its absence is a compile error. */
 declare const heldCva: MdyCvaDirective;
@@ -912,3 +915,6 @@ void held284;
 
 declare const held285: MdyClassDoor;
 void held285;
+
+declare const held286: MdyTextFieldProps<string>;
+void held286;
