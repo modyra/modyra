@@ -10,7 +10,7 @@
  *
  * Renderers are observed one child process each; see `support/observe-renderer.mjs` for why.
  */
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KINDS } from "../packages/widgets/dist/index.js";
@@ -41,14 +41,34 @@ const UNMEASURED_HERE = {
   },
 };
 
+/**
+ * What a renderer wrote to `stderr` while being observed, kept rather than let through.
+ *
+ * The child's `stderr` used to be inherited, so an exception thrown while drawing a kind printed
+ * itself on the way past and this script went on to say `unchanged` and exit 0. That is the worst
+ * shape a gate can have: it saw the defect and reported success, so the only eye left was CI —
+ * `InvalidCharacterError` from a `classList` token with spaces went out that way and came back
+ * twelve minutes later as a red build.
+ *
+ * A manifest produced while the renderer was throwing is not evidence about the renderer. So
+ * anything on `stderr` is a finding, named with the renderer that produced it, and the run fails.
+ */
+const complaints = [];
+
 const results = [];
 for (const renderer of OBSERVED) {
-  const stdout = execFileSync(
+  const run = spawnSync(
     process.execPath,
     [resolve(root, "scripts/support/observe-renderer.mjs"), renderer.name],
     { cwd: root, encoding: "utf8", maxBuffer: 8 * 1024 * 1024 },
   );
-  const observation = JSON.parse(stdout);
+  if (run.status !== 0) {
+    complaints.push({ renderer: renderer.name, text: (run.stderr ?? "").trim() || `exited ${run.status}` });
+    continue;
+  }
+  const said = (run.stderr ?? "").trim();
+  if (said !== "") complaints.push({ renderer: renderer.name, text: said });
+  const observation = JSON.parse(run.stdout);
 
   const drawn = Object.entries(observation.kinds).filter(([, k]) => k.rendered).map(([kind]) => kind);
   const manifest = {
@@ -122,6 +142,21 @@ function diffLines(before, after) {
 
 console.log(`\ncontract version ${MDY_WIDGET_CONTRACT_VERSION} · ${results.length} renderer(s) observed`);
 for (const [pkg, reason] of Object.entries(notObserved)) console.log(`  not observed: ${pkg} — ${reason}`);
+
+// Said before the verdict, because it decides what the verdict is worth: every line below was
+// produced while a manifest was being built from the renderer that printed it.
+if (complaints.length > 0) {
+  console.error(`\nA RENDERER COMPLAINED WHILE BEING OBSERVED — ${complaints.length}\n`);
+  for (const { renderer, text } of complaints) {
+    console.error(`  ${renderer}:`);
+    for (const line of text.split("\n")) console.error(`    ${line}`);
+  }
+  console.error(
+    "\n  A manifest built while the renderer was throwing describes what survived the throw, not"
+    + "\n  what the renderer draws. Fix the complaint, then run this again.",
+  );
+  process.exit(1);
+}
 
 if (check && drift) {
   console.error("\nCONFORMANCE MANIFEST DRIFT — run `npm run docs:conformance-manifest` and commit the result.");
