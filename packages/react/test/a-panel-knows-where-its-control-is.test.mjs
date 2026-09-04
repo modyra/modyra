@@ -23,6 +23,24 @@ const { createRoot } = await import("react-dom/client");
 const { useMdyAnchoredPanel, useMdyLightDismiss } = await import("../dist/index.js");
 const { popupPlacementClass, MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
+/**
+ * Waited for by condition, never by duration.
+ *
+ * The first version of this bench gave React twenty milliseconds and read the DOM. That is a
+ * tolerance calibrated on the machine it was written on: it held on an idle laptop and failed on a
+ * loaded runner, where the whole adapter suite runs many files at once — and it failed by reading a
+ * panel React had not drawn yet, so the message was a null dereference rather than the defect the
+ * bench is for. A deadline that is generous costs nothing when the condition is already true.
+ */
+const until = async (condition, what) => {
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    if (condition()) return;
+    if (Date.now() > deadline) throw new Error(`waited 5s and ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+};
+
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 /**
@@ -37,14 +55,30 @@ const pressOn = (element) => {
   }
 };
 
+/**
+ * The anchoring, in a child that exists only for a kind with a panel.
+ *
+ * A child rather than a condition around the hook, because a hook is not conditional — and a
+ * component is the thing React already lets you not render. Handing a text field to the anchoring
+ * hook asks the catalogue for a popup that kind does not declare: the bench rendered nothing at all,
+ * and the abstaining test below passed on a crashed component, because nothing that was never bound
+ * can dismiss.
+ */
+const Anchored = ({ kind, panel, anchor, open }) => {
+  useMdyAnchoredPanel({ kind, panel, anchor, isOpen: open });
+  return null;
+};
+
 /** A field root, a trigger and a panel: the three elements every overlay kind hands these hooks. */
 const Bench = ({ kind, open, close }) => {
   const root = React.useRef(null);
   const anchor = React.useRef(null);
   const panel = React.useRef(null);
-  useMdyAnchoredPanel({ kind, panel, anchor, isOpen: open });
   useMdyLightDismiss({ kind, root, isOpen: open, close });
   return React.createElement("div", { ref: root, id: "root" }, [
+    MDY_WIDGET_CONTRACTS[kind].capabilities.overlay
+      ? React.createElement(Anchored, { key: "anchored", kind, panel, anchor, open })
+      : null,
     React.createElement("button", {
       key: "trigger", ref: anchor, id: "trigger", "aria-controls": "panel", "aria-expanded": String(open),
     }, "Open"),
@@ -58,15 +92,18 @@ const mount = async (kind, { open = false, close = () => undefined } = {}) => {
   const root = createRoot(host);
   const draw = (isOpen) => root.render(React.createElement(Bench, { kind, open: isOpen, close }));
   draw(open);
-  await settle();
+  // The panel React draws, before anything reads it: every assertion below is about what was
+  // written onto it, and a bench that reads it too early accuses the renderer of the wait.
+  await until(() => host.querySelector("#panel") !== null, "React drew no panel");
   return { host, draw, settle, dispose: () => { root.unmount(); host.remove(); } };
 };
 
 test("an open panel wears the placement the contract decided", async () => {
   const bench = await mount("select", { open: true });
   const panel = bench.host.querySelector("#panel");
+  // Placement is written by an effect, which runs after the commit that drew the panel.
+  await until(() => panel.dataset.placement !== undefined, "the panel carries no placement at all");
   const placement = panel.dataset.placement;
-  assert.ok(placement, "the panel carries no placement at all");
   assert.ok(
     panel.classList.contains(popupPlacementClass("select", placement)),
     `placement ${placement} was decided and its class is not on the panel`,
@@ -89,8 +126,7 @@ test("a pointer finishing outside closes what is open", async () => {
   // The whole interaction, not the last half of it: dismissal is decided by where a press *and* its
   // release land, so a bench that only fires the release proves nothing about the rule.
   pressOn(outside);
-  await bench.settle();
-  assert.equal(closed, 1, "an interaction that finished outside did not dismiss");
+  await until(() => closed === 1, "an interaction that finished outside did not dismiss");
 
   // Inside the panel is not outside, even though the panel is not inside the field's element: the
   // contract follows `aria-controls` out to it.
