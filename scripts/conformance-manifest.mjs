@@ -11,8 +11,8 @@
  * Renderers are observed one child process each; see `support/observe-renderer.mjs` for why.
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { MDY_WIDGET_CONTRACT_VERSION, MDY_WIDGET_KINDS } from "../packages/widgets/dist/index.js";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
@@ -89,23 +89,93 @@ for (const renderer of OBSERVED) {
 }
 
 /**
- * Every published adapter this harness does not produce a manifest for, and why.
+ * Every published adapter this harness does not produce a manifest for, why, and the check that
+ * fails when the why stops being true.
  *
  * Two different reasons, and the difference matters to anyone reading the list. Angular renders and
- * is checked — just not from here. The five below render nothing at all, so there is no manifest to
+ * is checked — just not from here. Some adapters draw nothing at all, so there is no manifest to
  * produce: a conformance manifest reports which kinds an adapter *draws*, and they draw none.
  * Listing them with the same silence as Angular would read as "not measured yet".
+ *
+ * **Each reason carries a `stillTrue`, because this list rotted.** It said of React and Vue
+ * "headless: renders no markup" long after both had started drawing — Vue eleven components, React
+ * five — so the two adapters moving fastest were the two excused, by a sentence that argued its case
+ * and was therefore read as a verification already done. A reason that merely names an absence goes
+ * quiet when the absence ends; a reason that can fail says so on the next run.
  */
 const notObserved = {
-  "@modyra/angular": "renders, and is checked — but its conformance suite runs under Jest with Angular's TestBed, which this harness does not drive",
-  "@modyra/react": "headless: renders no markup, so there are no kinds to report",
-  "@modyra/vue": "headless: renders no markup, so there are no kinds to report",
-  "@modyra/solid": "headless: renders no markup, so there are no kinds to report",
-  "@modyra/preact": "headless: renders no markup, so there are no kinds to report",
-  "@modyra/svelte": "headless: renders no markup, so there are no kinds to report",
+  "@modyra/angular": {
+    reason: "renders, and is checked — but its conformance suite runs under Jest with Angular's TestBed, which this harness does not drive",
+    stillTrue: () => !existsSync(resolve(root, "packages/angular/test/support/state-fixture.mjs")),
+    fails: "@modyra/angular now has a state fixture in this harness's shape — drive it from here instead",
+  },
+  "@modyra/react": {
+    reason: "draws, but has no `test/support/state-fixture.mjs` — the fixture this harness mounts a renderer through, and the same one its own conformance suite uses",
+    stillTrue: () => !existsSync(resolve(root, "packages/react/test/support/state-fixture.mjs")),
+    fails: "@modyra/react now has a state fixture — add it to OBSERVED in observe-renderer.mjs",
+  },
+  "@modyra/vue": {
+    reason: "draws, but has no `test/support/state-fixture.mjs` — the fixture this harness mounts a renderer through, and the same one its own conformance suite uses",
+    stillTrue: () => !existsSync(resolve(root, "packages/vue/test/support/state-fixture.mjs")),
+    fails: "@modyra/vue now has a state fixture — add it to OBSERVED in observe-renderer.mjs",
+  },
+  "@modyra/solid": {
+    reason: "headless: renders no markup, so there are no kinds to report",
+    stillTrue: () => declaresNoFieldComponent("solid"),
+    fails: "@modyra/solid exports components now, so it is no longer headless",
+  },
+  "@modyra/preact": {
+    reason: "headless: renders no markup, so there are no kinds to report",
+    stillTrue: () => declaresNoFieldComponent("preact"),
+    fails: "@modyra/preact exports components now, so it is no longer headless",
+  },
+  "@modyra/svelte": {
+    reason: "headless: renders no markup, so there are no kinds to report",
+    stillTrue: () => declaresNoFieldComponent("svelte"),
+    fails: "@modyra/svelte exports components now, so it is no longer headless",
+  },
 };
 
+/**
+ * Whether a component-style adapter publishes no component that draws a field.
+ *
+ * **Its subject is stated because it does not generalise.** Vue, React, Solid, Preact and Svelte draw
+ * by exporting components, so "declares no `Mdy…Field`" is the same sentence as "draws nothing" for
+ * them. It is *not* for Lit, which draws through registered custom elements, nor for Plain, which
+ * writes DOM directly — both answer "declares no component" while drawing all seventeen kinds. This
+ * must never be used to excuse those two, and it is not: they are observed.
+ *
+ * Two earlier versions of this were wrong, and the second is why the subject is written down. The
+ * first read `dist/index.d.ts` alone and called Vue, React and Lit headless — all three reach their
+ * components through `export *`, so the entry names none. The second read every declaration and was
+ * right about the five component-style adapters and wrong about the other two, which is the shape of
+ * a check that has quietly assumed one family is every family.
+ *
+ * A declaration, never a mention: a name in a comment or a re-export path is not a component.
+ */
+function declaresNoFieldComponent(pkg) {
+  const dist = resolve(root, `packages/${pkg}/dist`);
+  if (!existsSync(dist)) return false;
+  const declares = /(?:declare (?:const|function|class)|export declare (?:const|function|class))\s+Mdy[A-Za-z]*Field\b/;
+  const walk = (at) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      if (entry.name === "node_modules") continue;
+      const path = join(at, entry.name);
+      if (entry.isDirectory()) { if (walk(path)) return true; continue; }
+      if (!entry.name.endsWith(".d.ts")) continue;
+      if (declares.test(readFileSync(path, "utf8").replace(/\/\*[\s\S]*?\*\//g, " "))) return true;
+    }
+    return false;
+  };
+  // Never built is not "draws nothing": answering yes would excuse a package on the strength of a
+  // missing file, which is how an exemption outlives the thing it describes.
+  return !walk(dist);
+}
+
+const rotted = Object.entries(notObserved).filter(([, entry]) => !entry.stillTrue());
+
 let drift = false;
+
 for (const { renderer, manifest } of results) {
   const path = resolve(root, renderer.manifest);
   const next = `${JSON.stringify(manifest, null, 2)}\n`;
@@ -141,7 +211,24 @@ function diffLines(before, after) {
 }
 
 console.log(`\ncontract version ${MDY_WIDGET_CONTRACT_VERSION} · ${results.length} renderer(s) observed`);
-for (const [pkg, reason] of Object.entries(notObserved)) console.log(`  not observed: ${pkg} — ${reason}`);
+for (const [pkg, entry] of Object.entries(notObserved)) console.log(`  not observed: ${pkg} — ${entry.reason}`);
+
+// An exemption whose reason has stopped being true excuses the thing it no longer describes, and it
+// does so while looking like a decision somebody checked. Reported before the manifests, because a
+// renderer excused by a dead reason is a renderer nothing in this run measured.
+if (rotted.length > 0) {
+  console.error(`\nAN EXEMPTION OUTLIVED ITS REASON — ${rotted.length}\n`);
+  for (const [pkg, entry] of rotted) {
+    console.error(`  ${pkg}`);
+    console.error(`    written here: ${entry.reason}`);
+    console.error(`    but now:      ${entry.fails}`);
+  }
+  console.error(
+    "\n  Change the reason to the true one, or stop excusing the adapter. A reason that argues its"
+    + "\n  case reads as a verification somebody did, which is why a stale one is worse than silence.",
+  );
+  process.exit(1);
+}
 
 // Said before the verdict, because it decides what the verdict is worth: every line below was
 // produced while a manifest was being built from the renderer that printed it.
