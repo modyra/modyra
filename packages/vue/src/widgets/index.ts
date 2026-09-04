@@ -27,3 +27,4 @@ export { MdyFileField } from "./file-field.js";
 export { MdyOptionField } from "./option-field.js";
 export { MdySelectField } from "./select-field.js";
 export { MdyDatepickerField } from "./datepicker-field.js";
+export { MdyDaterangeField } from "./daterange-field.js";

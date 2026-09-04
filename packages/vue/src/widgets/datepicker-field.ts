@@ -11,7 +11,7 @@
  * answer to a question the contract already answers, and two answers is how two renderers come to
  * disagree about what someone typed.
  */
-import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
@@ -21,20 +21,10 @@ import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
+import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.datepicker;
-type MdyDeclaredPart = { readonly classes: readonly string[]; readonly role?: string | null };
-const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
-const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
-/**
- * The role the contract gives a part, written where the part is drawn.
- *
- * Typed out by hand instead, a role is a copy that agrees with the contract until the contract
- * changes its mind — and the copy that disagrees is the one a person's screen reader believes.
- */
-const roleOf = (part: string): string | undefined => declared[part]?.role ?? undefined;
-/** Seven per week, and the calendar hands back six weeks of them. */
-const DAYS_IN_WEEK = 7;
+const classesOf = (part: string): string => calendarClassesOf("datepicker", part);
 
 export const MdyDatepickerField = defineComponent({
   name: "MdyDatepickerField",
@@ -73,53 +63,15 @@ export const MdyDatepickerField = defineComponent({
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
-    /**
-     * The weekday headers, turned to start where the locale's week starts.
-     *
-     * `dayNamesNarrow` is Sunday-first whatever the locale, and the grid's first cell is the
-     * locale's `firstDayOfWeek`. Reading the names straight through therefore agrees with the cells
-     * only where the week already starts on Sunday — correct in English and wrong in most places,
-     * with every column labelled a day out and nothing to show for it but a calendar that reads
-     * wrong.
-     */
-    const weekdayLabels = (): readonly string[] => {
-      const names = dateLocale.dayNamesNarrow;
-      const first = dateLocale.firstDayOfWeek;
-      return names.map((_, column) => names[(column + first) % names.length]);
-    };
+    followTheReadingPosition(props.widgetId, () => ({
+      open: state.value.open,
+      focusedDate: state.value.focusedDate,
+    }));
 
-    /**
-     * Focus follows the reading position, not just the opening.
-     *
-     * The calendar answers an arrow by moving which cell is the tab stop, and that is the whole of
-     * what the contract can do: moving the *focus* is the renderer's half of the same act. Watching
-     * only the opening leaves a calendar whose `tabindex` walks and whose focus does not — the grid
-     * looks right, arrows appear to work to anyone reading the markup, and a person using a screen
-     * reader is told nothing at all, because focus never left the day they started on.
-     */
-    watch(() => [state.value.open, state.value.focusedDate], async ([open, focused]) => {
-      if (open !== true || typeof focused !== "string") return;
-      // The cell has to be drawn before it can take focus, and the controller's signals reach the
-      // renderer a beat after the dispatch.
-      await nextTick();
-      const target = document.getElementById(defaultWidgetIdFactory.item(props.widgetId, "day", focused));
-      if (target instanceof HTMLElement && target !== document.activeElement) target.focus();
-    }, { immediate: true });
-
-    const onKeydown = (event: KeyboardEvent): void => {
-      const before = state.value.open;
-      controller.dispatch({
-        type: "keydown",
-        key: event.key,
-        shiftKey: event.shiftKey,
-        ctrlKey: event.ctrlKey,
-        metaKey: event.metaKey,
-      });
-      // Tab keeps its meaning: this panel holds nothing worth staying for, so it closes and the
-      // browser moves on. Every other key the calendar answered is consumed, or it acts twice.
-      if (event.key === "Tab") return;
-      if (before !== state.value.open || before) event.preventDefault();
-    };
+    const onKeydown = forwardCalendarKeys(
+      () => state.value.open,
+      (press) => controller.dispatch(press),
+    );
 
     return () => {
       const parts = view.value.parts;
@@ -154,32 +106,14 @@ export const MdyDatepickerField = defineComponent({
         }),
       ]));
 
-      {
-        const weeks: VNode[] = [];
-        for (let start = 0; start < cells.length; start += DAYS_IN_WEEK) {
-          weeks.push(h("div", { class: classesOf("row"), role: roleOf("row") },
-            cells.slice(start, start + DAYS_IN_WEEK).map((cell) =>
-              h("button", partProps(parts[cell.iso], {
-                type: "button",
-                class: classesOf("gridcell"),
-                onClick: () => controller.dispatch({ type: "select-date", iso: cell.iso }),
-              }), String(cell.day)))));
-        }
-
-        // The grid stays in the document when the calendar is shut: the control names it with
-        // `aria-controls` on every render, and a grid that is removed leaves that pointing at
-        // nothing.
-        children.push(h("div", { class: classesOf("popup"), hidden: !state.value.open }, [
-          h("div", { class: classesOf("calendar"), role: roleOf("calendar") }, [
-            h("div", partProps(parts.grid, { class: classesOf("grid") }), [
-              h("div", { class: classesOf("weekdays"), role: roleOf("weekdays") },
-                weekdayLabels().map((name) =>
-                  h("span", { class: classesOf("weekday"), role: roleOf("weekday") }, name))),
-              ...weeks,
-            ]),
-          ]),
-        ]));
-      }
+      children.push(drawCalendar({
+        kind: "datepicker",
+        open: state.value.open,
+        cells,
+        parts,
+        locale: dateLocale,
+        onPick: (iso) => controller.dispatch({ type: "select-date", iso }),
+      }));
 
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
