@@ -121,6 +121,7 @@ export default defineConfig({
 						{ label: 'Reactivity capability matrix', slug: 'reactivity-capability-matrix' },
 						{ label: 'The deprecation harvest, measured', slug: 'deprecation-dossier' },
 						{ label: 'CSS properties nothing reads, measured', slug: 'css-orphan-dossier' },
+						{ label: 'Where renderers diverge, measured', slug: 'renderer-divergence-map' },
 					],
 				},
 				{

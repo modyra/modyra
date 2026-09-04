@@ -71,6 +71,7 @@ One definition of how a control behaves, shared by every renderer.
 - [Reactivity capability matrix](reactivity-capability-matrix.md) — generated, per adapter
 - [The deprecation harvest, measured](deprecation-dossier.md) — who names each alias and orphan candidate, and what a removal would cost
 - [CSS custom properties nothing here reads, measured](css-orphan-dossier.md) — the 90 with no reader in this repository, split by whether their scale is read, and what a removal would cost
+- [Where renderers diverge, and what the contract said about it](renderer-divergence-map.md) — each behavioural difference a person can feel, against the name in the contract that should have prevented it
 
 ## Architecture and integration
 
