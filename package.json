@@ -106,6 +106,7 @@
     "test:contract-adoption": "npm run build:packages && node scripts/audit-contract-adoption.mjs",
     "test:coverage-and-demo": "npm run build:packages && node scripts/audit-coverage-and-demo.mjs",
     "test:demo-parity": "node scripts/audit-demo-parity.mjs --check",
+    "test:declaration-peers": "node scripts/audit-declaration-peers.mjs --check",
     "test:lit-contract": "node scripts/tsc7.mjs packages/lit/tsconfig.json && node scripts/audit-lit-widget-contract.mjs",
     "test:angular-renderer-ownership": "node scripts/audit-angular-renderer-ownership.mjs",
     "test:public-doors": "node scripts/audit-public-doors.mjs",

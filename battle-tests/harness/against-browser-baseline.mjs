@@ -273,9 +273,29 @@ function assertPageIsCurrent() {
   const missing = [];
   // What the tier's own build step covers. A package outside it is stale until somebody builds it by
   // hand, and the message has to say so or the reader repeats the run that failed.
-  // Kept in step with what `battle:browser:ci` actually builds. It gained vue and react when their
-  // hosts did, and a name missing here sends a reader to run a build the tier already ran.
-  const BUILT_BY_THIS_TIER = new Set(["core", "styles", "widgets", "plain", "lit", "vue", "react"]);
+  // Derived from the script that does the building, because a list beside a growing command is a
+  // list that goes stale silently: this one still said `core styles widgets plain lit` after the
+  // tier had gained vue and react, so its remedy sent a reader to run a build the tier had just run.
+  //
+  // Followed through `npm run` rather than read off one line. `build:plain` compiles widgets as well
+  // as plain, and a reader that stopped at the first line would drop widgets — the derivation would
+  // then be wrong in the opposite direction from the hand-written list, which is not an improvement.
+  const scripts = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8")).scripts ?? {};
+  const BUILT_BY_THIS_TIER = new Set();
+  const readBuildStep = (command, seen = new Set()) => {
+    for (const [, name] of command.matchAll(/packages\/([a-z-]+)\/tsconfig\.json/g)) {
+      BUILT_BY_THIS_TIER.add(name);
+    }
+    for (const [, step] of command.matchAll(/npm run (build:[a-z-]+)/g)) {
+      if (seen.has(step)) continue;
+      seen.add(step);
+      // A step whose body this manifest does not carry still names its package: `build:styles` runs
+      // in the package's own directory, so the name is the only thing there is to read.
+      BUILT_BY_THIS_TIER.add(step.slice("build:".length));
+      if (scripts[step]) readBuildStep(scripts[step], seen);
+    }
+  };
+  readBuildStep(scripts["battle:browser:ci"] ?? "");
   const needsOwnBuild = new Set();
   const measured = packagesTheHostImports();
   for (const name of measured) {
