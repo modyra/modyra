@@ -23,6 +23,7 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
@@ -63,6 +64,9 @@ export const MdyDatepickerField = defineComponent({
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
+    // And what the field holds open, when the field itself goes. This package draws its panels
+    // outside the field, so nothing carries them away with it.
+    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 

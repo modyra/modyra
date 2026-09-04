@@ -19,6 +19,7 @@
  
 
 import type {
+  MdyFieldTeardown,
   MdyAccessibleNameSource,
   MdyAffordance,
   MdyAffordanceRole,
@@ -960,3 +961,6 @@ void held295;
 
 declare const held296: MdyMultiselectFieldProps<string>;
 void held296;
+
+declare const held297: MdyFieldTeardown;
+void held297;

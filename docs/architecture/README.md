@@ -220,6 +220,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0203: An audit that could not ask is not an audit that found nothing](0203-an-audit-that-could-not-ask.md) — a transport error and a security finding left through the same exit code; the asymmetry is announce on a push, refuse at the release boundary
 - [ADR 0204: A dependency the barrel cannot load without is not optional](0204-a-barrel-that-cannot-load-is-not-optional.md) — a single entry point resolves `react-dom` for everyone who imports it, so the peer is required; the separate headless entry point waits for a consumer who wants it
 - [ADR 0205: A document declares in two channels, and only one of them validates](0205-two-channels-for-what-a-document-declares.md) — rules judge a value, `config` draws the control; `step` is an affordance that gives way to the value, so it is not a rule
+- [ADR 0206: A field that leaves the scene closes what it holds open](0206-a-field-that-leaves-closes-what-it-holds-open.md) — the third species of closing, stated so it stops depending on where a renderer draws its panel; ADR 0131's freedom is untouched
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

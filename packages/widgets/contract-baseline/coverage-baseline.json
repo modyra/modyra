@@ -2,9 +2,9 @@
   "note": "Public names not yet asserted or not yet shown. The list may only get shorter. A name arrives here for one of two reasons and they are not the same: it was published without a check, or the surface this is measured against grew to include the package it was always in. The public names come from `type-surface.json`, which watches every published package rather than three of them, so an adapter's exports count here — most of this list arrived that way, not as newly published names nobody exercised.",
   "shownCeiling": "`shown` counts a name a panel was measured to run, not one a list claims. What is left is not all reachable: a file chooser and the platform's colour picker are windows outside the document, so the names behind them cannot be executed by any scripted run — that is a fact about the instrument's reach, not a gap in the demos. The rest — a chip dragged, a clock face, a range completed — a demo could drive and none does yet. Raising the number by listing a name a panel does not run would make it stop meaning what it says. Measured three ways and the answer held: what is left is not code the run failed to reach but code the demos do not contain — bundling the lab and looking for those names finds most of them absent, shaken out because nothing imports them. Raising this number means writing a demo that uses them, not driving the ones there harder.",
   "score": {
-    "published": 1122,
-    "asserted": 1027,
-    "showable": 420,
+    "published": 1123,
+    "asserted": 1028,
+    "showable": 421,
     "shown": 420
   },
   "uncovered": [
@@ -567,6 +567,13 @@
       "shown": true,
       "showable": false,
       "reason": "published and never asserted"
+    },
+    {
+      "name": "closeWhenFieldLeaves",
+      "asserted": true,
+      "shown": false,
+      "showable": true,
+      "reason": "published and never shown"
     },
     {
       "name": "defineMdyTextField",

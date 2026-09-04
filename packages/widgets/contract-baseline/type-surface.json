@@ -4986,6 +4986,10 @@
     "touched: boolean",
     "value: TValue"
   ],
+  "widgets:MdyFieldTeardown": [
+    "close: void",
+    "heldTheKeyboard?: boolean"
+  ],
   "widgets:MdyFieldVerdictSource": [
     "disabled: boolean",
     "errors: ReadonlyArray<MdyFieldError>"
@@ -6311,6 +6315,11 @@
   ],
   "widgets:closeOverlay": [
     "-> returns: MdyUiCommand"
+  ],
+  "widgets:closeWhenFieldLeaves": [
+    "(0) root: Element",
+    "(1) teardown: MdyFieldTeardown",
+    "-> returns: () => void"
   ],
   "widgets:collectStateMatrix": [
     "(0) options: MdyStateMatrixOptions",
