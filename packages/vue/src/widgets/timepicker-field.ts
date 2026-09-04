@@ -1,0 +1,194 @@
+/**
+ * The time field, and the first panel in this package that keeps Tab.
+ *
+ * Every other overlay here lets Tab through: it closes and the browser moves on, because there is
+ * nothing inside worth staying for. This one has its own controls — two spin boxes, a mode toggle
+ * and two actions — so `popupHoldsAnAction` answers `true`, and Tab has to be swallowed and turned
+ * into a walk *inside* the panel. Letting it out would leave a person half-way through setting a
+ * time, on a page behind an open dialog, with the confirm button reachable only by pointer.
+ *
+ * **The ring is declared, not listed here.** `timepickerTabOrder` says which parts are stops and in
+ * what order; `timepickerPartSelector` turns each name into the element, composing the wrapper's
+ * class with the control's — asked by the control's class alone, the hour and the minute box are
+ * the same selector, and a walk that names the minute lands on the hour while looking like it did
+ * nothing at all.
+ */
+import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import {
+  MDY_WIDGET_CONTRACTS,
+  createTimepickerFieldController,
+  defaultWidgetIdFactory,
+  timepickerFocusPart,
+  timepickerPartSelector,
+  timepickerTabOrder,
+} from "@modyra/widgets";
+import { observerFor } from "@modyra/core";
+import type { MdyFieldHandle } from "@modyra/core";
+import { partProps } from "./part.js";
+
+const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
+type MdyDeclaredPart = { readonly classes: readonly string[]; readonly role?: string | null };
+const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
+const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
+const roleOf = (part: string): string | undefined => declared[part]?.role ?? undefined;
+/** The class that narrows a repeated part to one of its states, as the ring's names spell it. */
+const modifierOf = (part: string, state: string): string => {
+  const base = declared[part]?.classes[0];
+  return base === undefined ? "" : `${base}--${state}`;
+};
+
+export const MdyTimepickerField = defineComponent({
+  name: "MdyTimepickerField",
+  props: {
+    field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
+    label: { type: String, default: "" },
+    widgetId: { type: String, required: true },
+  },
+  setup(props) {
+    const reactivity = observerFor(props.field);
+    const controller = createTimepickerFieldController({
+      handle: props.field,
+      widgetId: props.widgetId,
+    }, reactivity);
+
+    const state = shallowRef(controller.state());
+    const view = shallowRef(controller.view());
+    const watching = reactivity.effect(() => {
+      state.value = controller.state();
+      view.value = controller.view();
+      triggerRef(state);
+      triggerRef(view);
+    });
+    onScopeDispose(() => { watching.destroy(); controller.destroy(); });
+
+    const root = shallowRef<HTMLElement | null>(null);
+    /** The stops that are on the page, in the order the contract puts them. */
+    const stops = (): readonly HTMLElement[] => {
+      const host = root.value;
+      if (host === null) return [];
+      // The format decides the ring: a twelve-hour field has an AM/PM stop and a
+      // twenty-four-hour one does not. Asked without it, the answer is the same list both times,
+      // which is a ring missing a control a person has to reach.
+      return timepickerTabOrder(state.value.format)
+        .map((part) => timepickerPartSelector(part))
+        .map((selector) => (selector === null ? null : host.querySelector(selector)))
+        .filter((element): element is HTMLElement => element instanceof HTMLElement);
+    };
+
+    watch(() => state.value.open, async (open) => {
+      if (!open) return;
+      // Where the panel opens is the field being edited, and that question has its own answer.
+      await nextTick();
+      const selector = timepickerPartSelector(timepickerFocusPart(state.value.focusedField));
+      const target = selector === null ? null : root.value?.querySelector(selector);
+      if (target instanceof HTMLElement) target.focus();
+    });
+
+    const onKeydown = (event: KeyboardEvent): void => {
+      if (!state.value.open) return;
+      if (event.key === "Escape") {
+        controller.dispatch({ type: "cancel" });
+        event.preventDefault();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const ring = stops();
+      if (ring.length === 0) return;
+      // Swallowed, and turned into a step inside. The wrap is what makes it a ring rather than a
+      // dead end: without it the last stop hands focus to the page behind an open dialog.
+      event.preventDefault();
+      const here = ring.indexOf(document.activeElement as HTMLElement);
+      const step = event.shiftKey ? -1 : 1;
+      const next = here === -1 ? 0 : (here + step + ring.length) % ring.length;
+      ring[next]?.focus();
+    };
+
+    /** One spin box. Both are the same control with a different segment around them. */
+    const segment = (part: "hour" | "minute"): VNode =>
+      h("span", { class: classesOf(part) }, [
+        h("input", partProps(view.value.parts[`${part}Control`], {
+          type: "text",
+          onChange: (event: Event) => {
+            const typed = Number.parseInt((event.target as HTMLInputElement).value, 10);
+            if (Number.isNaN(typed)) return;
+            controller.dispatch(part === "hour" ? { type: "set-hour", hour: typed } : { type: "set-minute", minute: typed });
+          },
+        })),
+      ]);
+
+    return () => {
+      const parts = view.value.parts;
+      const children: VNode[] = [];
+
+      if (props.label !== "") {
+        children.push(h("label", {
+          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          for: parts.trigger?.id,
+          class: classesOf("label"),
+        }, props.label));
+      }
+
+      children.push(h("div", { class: classesOf("inputWrapper") }, [
+        h("input", partProps(parts.trigger, {
+          type: "text",
+          value: state.value.entryText,
+          onChange: (event: Event) =>
+            controller.dispatch({ type: "set-time", time: (event.target as HTMLInputElement).value }),
+        })),
+        h("button", {
+          type: "button",
+          class: classesOf("toggle"),
+          "aria-expanded": String(state.value.open),
+          "aria-label": props.label === "" ? "Choose time" : `Choose ${props.label}`,
+          onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
+        }),
+      ]));
+
+      // The panel stays in the document while it is shut: the control names it with `aria-controls`
+      // on every render, and a panel that is removed leaves that pointing at nothing.
+      // The popup *is* the dialog: one element carrying both parts' classes, the dialog's role and
+      // its modal relation. Drawn as two, the panel a person is inside and the panel the contract
+      // calls a dialog are different elements, and the one announced is the empty one.
+      children.push(h("div", partProps(parts.dialog, {
+        id: defaultWidgetIdFactory.part(props.widgetId, "popup"),
+        class: classesOf("popup"),
+        hidden: !state.value.open,
+      }), [
+        h("div", { class: classesOf("container") }, [
+          h("div", { class: classesOf("content") }, [
+            h("div", { class: classesOf("header") }, [
+              segment("hour"),
+              segment("minute"),
+              // Drawn only where the format has one, which is the same condition the ring is built
+              // from: a stop with nothing under it is a hole in the walk.
+              ...(state.value.format === "12h" ? [h("span", { class: classesOf("period") }, [
+                h("button", {
+                  type: "button", class: classesOf("periodOption"),
+                  onClick: () => controller.dispatch({ type: "set-period", period: state.value.display.includes("PM") ? "AM" : "PM" }),
+                }, state.value.display.includes("PM") ? "PM" : "AM"),
+              ])] : []),
+            ]),
+          ]),
+          h("div", { class: classesOf("actions"), role: roleOf("actions") }, [
+            h("button", { type: "button", class: classesOf("modeToggle") }, "Clock"),
+            h("button", {
+              type: "button", class: classesOf("action"),
+              onClick: () => controller.dispatch({ type: "cancel" }),
+            }, "Cancel"),
+            h("button", {
+              type: "button", class: `${classesOf("action")} ${modifierOf("action", "confirm")}`,
+              onClick: () => controller.dispatch({ type: "confirm" }),
+            }, "OK"),
+          ]),
+        ]),
+      ]));
+
+      children.push(h("p", {
+        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        class: classesOf("supportingText"),
+      }));
+
+      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
+    };
+  },
+});

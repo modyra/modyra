@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField, MdyDaterangeField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField, MdyDaterangeField, MdyTimepickerField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,7 +28,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select", "datepicker", "daterange"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select", "datepicker", "daterange", "timepicker"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
@@ -69,7 +69,9 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
     value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
   });
   const app = createApp({
-    render: () => (kind === "daterange"
+    render: () => (kind === "timepicker"
+      ? h(MdyTimepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      : kind === "daterange"
       ? h(MdyDaterangeField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
       : kind === "datepicker"
       ? h(MdyDatepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
