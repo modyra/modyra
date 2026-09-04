@@ -24,6 +24,7 @@ import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
+import { useLightDismiss } from "./light-dismiss.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.select;
 const classesOf = (part: string): string =>
@@ -68,6 +69,8 @@ export const MdySelectField = defineComponent({
     // The panel leaves the field and is positioned against the trigger: inside, it inherits the
     // `overflow` and the stacking of every ancestor, and a list clipped by a scrolling pane is a
     // list a person cannot finish reading. ADR 0130.
+    // The branch a dismissal starts from; the contract reaches out to the panel itself.
+    const root = ref<HTMLElement | null>(null);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -95,6 +98,13 @@ export const MdySelectField = defineComponent({
      * wrong with the lookup. Watching the state means the search happens after the panel exists,
      * and it covers every way of opening, including the ones this component does not handle.
      */
+    useLightDismiss({
+      kind: "select",
+      root,
+      isOpen: () => state.value.open,
+      close: () => controller.dispatch({ type: "close", restoreFocus: false }),
+    });
+
     useAnchoredPanel({ kind: "select", panel, anchor, isOpen: () => state.value.open });
 
     watch(() => state.value.open, async (open) => {
@@ -261,7 +271,7 @@ export const MdySelectField = defineComponent({
       }));
       if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), onKeydown }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };
   },
 });

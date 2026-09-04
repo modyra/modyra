@@ -26,6 +26,7 @@ import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
+import { useLightDismiss } from "./light-dismiss.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -53,11 +54,20 @@ export const MdyTimepickerField = defineComponent({
 
     // Measured and placed against the control that opens it, and drawn outside the field so it
     // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
+    // The branch a dismissal starts from; the contract reaches out to the panel itself.
+    const root = ref<HTMLElement | null>(null);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
+    useLightDismiss({
+      kind: "timepicker",
+      root,
+      isOpen: () => state.value.open,
+      close: () => controller.dispatch({ type: "close" }),
+    });
+
     useAnchoredPanel({ kind: "timepicker", panel, anchor, isOpen: () => state.value.open });
     const watching = reactivity.effect(() => {
       state.value = controller.state();
@@ -199,7 +209,7 @@ export const MdyTimepickerField = defineComponent({
         class: classesOf("supportingText"),
       }));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), onKeydown }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };
   },
 });

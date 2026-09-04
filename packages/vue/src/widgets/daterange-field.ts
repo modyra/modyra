@@ -23,6 +23,7 @@ import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
+import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.daterange;
@@ -52,6 +53,8 @@ export const MdyDaterangeField = defineComponent({
     // The panel's state does not live on the field handle, so a `computed` over it would read
     // correctly once and be stale from the second render on.
     // The panel is measured and placed against the control that opens it.
+    // The branch a dismissal starts from; the contract reaches out to the panel itself.
+    const root = ref<HTMLElement | null>(null);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -64,6 +67,13 @@ export const MdyDaterangeField = defineComponent({
       triggerRef(view);
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
+
+    useLightDismiss({
+      kind: "daterange",
+      root,
+      isOpen: () => state.value.open,
+      close: () => controller.dispatch({ type: "close" }),
+    });
 
     useAnchoredPanel({ kind: "daterange", panel, anchor, isOpen: () => state.value.open });
 
@@ -134,7 +144,7 @@ export const MdyDaterangeField = defineComponent({
         class: classesOf("supportingText"),
       }));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), onKeydown }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };
   },
 });
