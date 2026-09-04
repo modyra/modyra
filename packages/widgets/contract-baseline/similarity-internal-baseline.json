@@ -1,76 +1,34 @@
 {
- "threshold": 0.85,
- "note": "Bodies a package duplicates within itself. A typed variant of one shape is legitimate; a copy is not, and the list may only get shorter.",
- "pairs": [
-  {
-   "id": "angular:constructor@calendar.component.ts \u2261 angular:constructor@range-calendar.component.ts",
-   "score": 1,
-   "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:107",
-   "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:126",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "lit:weekdayNames@datepicker-field.ts \u2261 lit:weekdayNames@daterange-field.ts",
-   "score": 1,
-   "left": "packages/lit/src/components/datepicker-field.ts:154",
-   "right": "packages/lit/src/components/daterange-field.ts:184",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "plain:dispatch@datepicker-field.ts \u2261 plain:dispatch@select-field.ts",
-   "score": 1,
-   "left": "packages/plain/src/fields/datepicker-field.ts:146",
-   "right": "packages/plain/src/fields/select-field.ts:163",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "angular:constructor@conditional-options.directive.ts \u2261 angular:effect@conditional-options.directive.ts",
-   "score": 0.939,
-   "left": "packages/angular/src/lib/control/conditional-options.directive.ts:28",
-   "right": "packages/angular/src/lib/control/conditional-options.directive.ts:30",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "angular:constructor@mdy-disabled.directive.ts \u2261 angular:effect@mdy-disabled.directive.ts",
-   "score": 0.906,
-   "left": "packages/angular/src/lib/validators/directives/mdy-disabled.directive.ts:30",
-   "right": "packages/angular/src/lib/validators/directives/mdy-disabled.directive.ts:32",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "angular:constructor@overlay-panel.component.ts \u2261 angular:effect@overlay-panel.component.ts",
-   "score": 0.906,
-   "left": "packages/angular/src/lib/core/overlay-panel.component.ts:113",
-   "right": "packages/angular/src/lib/core/overlay-panel.component.ts:115",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "angular:constructor@mdy-form-wizard.component.ts \u2261 angular:effect@mdy-form-wizard.component.ts",
-   "score": 0.893,
-   "left": "packages/angular/src/lib/wizard/mdy-form-wizard.component.ts:107",
-   "right": "packages/angular/src/lib/wizard/mdy-form-wizard.component.ts:109",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "angular:afterNextRender@year-picker.component.ts \u2261 angular:constructor@year-picker.component.ts",
-   "score": 0.878,
-   "left": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:48",
-   "right": "packages/angular/src/lib/renderers/datepicker/year-picker.component.ts:46",
-   "reason": "recorded, not yet accounted for"
-  },
-  {
-   "id": "react:useMdyColorsField@colors-field.ts \u2261 react:useMdyTimepickerField@timepicker-field.ts",
-   "score": 0.862,
-   "left": "packages/react/src/widgets/colors-field.ts:27",
-   "right": "packages/react/src/widgets/timepicker-field.ts:27",
-   "reason": "Two hooks of a family of eleven, each mirroring field.ts's structure on purpose: build the controller once, hold the options while they say the same thing, subscribe to both signals, wrap each setter in a callback. These two match because they expose the same two setters and nothing else \u2014 the shape is the duplication, and it is the same shape a twelfth hook would have. A factory over it would have to be parameterised by controller type, setter list and queue targets, and React's hook rules make the generic version harder to read than the parallel one; the guide states the pattern rather than hiding it. Revisit if a hook ever needs to differ from the shape, which is the point at which the copy stops being the point."
-  },
-  {
-   "id": "angular:effect@mdy-form.component.ts \u2261 angular:untracked@mdy-form.component.ts",
-   "score": 0.851,
-   "left": "packages/angular/src/lib/form/mdy-form.component.ts:184",
-   "right": "packages/angular/src/lib/form/mdy-form.component.ts:191",
-   "reason": "recorded, not yet accounted for"
-  }
- ]
+  "threshold": 0.85,
+  "note": "Bodies a package duplicates within itself. A typed variant of one shape is legitimate; a copy is not, and the list may only get shorter.",
+  "pairs": [
+    {
+      "id": "angular:constructor@calendar.component.ts \u2261 angular:constructor@range-calendar.component.ts",
+      "score": 1,
+      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:109",
+      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:126",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "lit:weekdayNames@datepicker-field.ts \u2261 lit:weekdayNames@daterange-field.ts",
+      "score": 1,
+      "left": "packages/lit/src/components/datepicker-field.ts:179",
+      "right": "packages/lit/src/components/daterange-field.ts:200",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "plain:dispatch@datepicker-field.ts \u2261 plain:dispatch@select-field.ts",
+      "score": 1,
+      "left": "packages/plain/src/fields/datepicker-field.ts:167",
+      "right": "packages/plain/src/fields/select-field.ts:170",
+      "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "react:useMdyColorsField@colors-field.ts \u2261 react:useMdyTimepickerField@timepicker-field.ts",
+      "score": 0.862,
+      "left": "packages/react/src/widgets/colors-field.ts:27",
+      "right": "packages/react/src/widgets/timepicker-field.ts:27",
+      "reason": "Two hooks of a family of eleven, each mirroring field.ts's structure on purpose: build the controller once, hold the options while they say the same thing, subscribe to both signals, wrap each setter in a callback. These two match because they expose the same two setters and nothing else \u2014 the shape is the duplication, and it is the same shape a twelfth hook would have. A factory over it would have to be parameterised by controller type, setter list and queue targets, and React's hook rules make the generic version harder to read than the parallel one; the guide states the pattern rather than hiding it. Revisit if a hook ever needs to differ from the shape, which is the point at which the copy stops being the point."
+    }
+  ]
 }

@@ -28,8 +28,9 @@
  *
  *   node scripts/audit-cross-adapter-similarity.mjs [--write]
  */
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { publishedPackageDirs } from "./lib/published-packages.mjs";
 
 const root = new URL("..", import.meta.url).pathname;
 const BASELINE = join(root, "packages/widgets/contract-baseline/similarity-baseline.json");
@@ -46,7 +47,29 @@ const INTERNAL_BASELINE = join(root, "packages/widgets/contract-baseline/similar
 const INTERNAL_THRESHOLD = 0.85;
 
 /** The packages that derive from the contract. A copy inside one package is that package's business. */
-const ADAPTERS = ["plain", "angular", "lit", "react", "preact", "vue", "svelte", "solid"];
+/**
+ * Every published package with TypeScript source, derived rather than listed.
+ *
+ * The roster named the eight adapters. `@modyra/core` and `@modyra/widgets` were in neither the
+ * cross-package comparison nor the within-package one — **590 bodies, more than all eight adapters
+ * together, that this gate had never looked at** — and behind them sat two managers sharing bodies
+ * word for word. A list that names the packages it watches excuses the ones it does not, silently,
+ * and the biggest two were the ones it did not.
+ *
+ * Derived from what a release publishes, filtered to what this gate can read. The four that join
+ * beyond core and widgets — eslint-plugin, standard-schema, styles, zod — add 54 bodies and no
+ * findings, which is the point: their cost is nothing and their absence would have been a roster
+ * again, chosen by hand and defended by silence.
+ */
+const ADAPTERS = publishedPackageDirs().filter((name) => {
+  const src = join(root, "packages", name, "src");
+  if (!existsSync(src)) return false;
+  const holdsTypeScript = (dir) => readdirSync(dir, { withFileTypes: true })
+    .some((entry) => (entry.isDirectory()
+      ? holdsTypeScript(join(dir, entry.name))
+      : /\.ts$/.test(entry.name) && !/\.d\.ts$/.test(entry.name)));
+  return holdsTypeScript(src);
+});
 
 /** Below this a body is boilerplate — a getter, a one-line delegation — and every pair would match. */
 const MIN_TOKENS = 40;
@@ -106,7 +129,8 @@ function bodies(source, path) {
     if (KEYWORDS.has(match[1])) { SIGNATURE.lastIndex = open + 1; continue; }
     const tokens = text.slice(open + 1, end).match(TOKEN) ?? [];
     if (tokens.length >= MIN_TOKENS) {
-      found.push({ name: match[1], path, line: text.slice(0, match.index).split("\n").length, tokens });
+      // `open`/`end` travel with the body so a later comparison can tell nesting from resemblance.
+      found.push({ name: match[1], path, line: text.slice(0, match.index).split("\n").length, tokens, open, end });
     }
     SIGNATURE.lastIndex = open + 1;
   }
@@ -145,6 +169,22 @@ function comparePairs({ sameAdapter, threshold }) {
   for (let i = 0; i < units.length; i += 1) {
     for (let j = i + 1; j < units.length; j += 1) {
       if ((units[i].adapter === units[j].adapter) !== sameAdapter) continue;
+      // One body inside the other is not a body written twice.
+      //
+      // Brace matching stops at the outer closing brace, so an enclosing body carries the whole text
+      // of the functions declared inside it, and the signature matches those separately. The inner
+      // one's shingles are then a subset of the outer's by construction — `createCommandRuntime`
+      // against the `execute` it returns measured 157 of 157, an Angular `constructor` against the
+      // `effect` that is its whole body the same way. Reported as duplication it sends a reader to
+      // deduplicate a function from itself, and six such pairs sat in the recorded baseline being
+      // excused as known duplication.
+      //
+      // Recognised rather than removed: taking the nested text out of the enclosing body would
+      // shrink the shell below the floor and lose the real pairs that live in the combination — two
+      // were measured disappearing that way. The bodies stay whole; only the pair is skipped.
+      if (units[i].path === units[j].path
+        && ((units[i].open < units[j].open && units[i].end > units[j].end)
+          || (units[j].open < units[i].open && units[j].end > units[i].end))) continue;
       const [a, b] = [units[i].shingles.size, units[j].shingles.size];
       if (Math.min(a, b) / Math.max(a, b) < threshold) continue;
       const score = jaccard(units[i].shingles, units[j].shingles);
@@ -184,18 +224,47 @@ for (let i = 0; i < units.length; i += 1) {
 }
 pairs.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 
+/**
+ * A recorded pair keeps the reason someone wrote for it.
+ *
+ * `--write` stamped every entry with "recorded, not yet accounted for", including the ones an author
+ * had already explained — one entry carried a real argument about eleven hooks mirroring one
+ * structure on purpose, and the next regeneration would have replaced it with the placeholder. A
+ * tool that erases the reason for an exemption leaves the exemption and destroys what justified it,
+ * which is the opposite of what recording is for.
+ *
+ * The reason is keyed by the pair's id, so it follows the pair and disappears with it.
+ */
+const withKeptReason = (path) => {
+  // Read here rather than taken from the comparison below: `--write` runs before the baselines are
+  // loaded for comparing, so the reasons have to be fetched from disk on their own.
+  let held;
+  try { held = JSON.parse(readFileSync(path, "utf8")); } catch { held = undefined; }
+  const reasons = new Map((held?.pairs ?? []).map((pair) => [pair.id, pair.reason]));
+  return (pair) => {
+    const kept = reasons.get(pair.id);
+    return {
+      ...pair,
+      reason: kept === undefined || kept === "recorded, not yet accounted for"
+        ? "recorded, not yet accounted for"
+        : kept,
+    };
+  };
+};
+
 if (process.argv.includes("--write")) {
   writeFileSync(BASELINE, `${JSON.stringify({
     threshold: THRESHOLD,
     shingle: K,
     minTokens: MIN_TOKENS,
-    note: "Each entry is a duplication that exists today. The list may only get shorter.",
-    pairs: pairs.map((p) => ({ ...p, reason: "recorded, not yet accounted for" })),
+    note: "Each entry is a pair this gate found and someone accepted. The list may only get shorter, "
+      + "and a reason written here survives the next regeneration.",
+    pairs: pairs.map(withKeptReason(BASELINE)),
   }, null, 2)}\n`);
   writeFileSync(INTERNAL_BASELINE, `${JSON.stringify({
     threshold: INTERNAL_THRESHOLD,
     note: "Bodies a package duplicates within itself. A typed variant of one shape is legitimate; a copy is not, and the list may only get shorter.",
-    pairs: internal.map((p) => ({ ...p, reason: "recorded, not yet accounted for" })),
+    pairs: internal.map(withKeptReason(INTERNAL_BASELINE)),
   }, null, 2)}\n`);
   console.log(`Similarity baseline written: ${pairs.length} pair(s) over ${units.length} bodies.`);
   console.log(`Internal baseline written: ${internal.length} pair(s) at ${INTERNAL_THRESHOLD}.`);
@@ -226,6 +295,13 @@ console.log(`Within one package: ${internal.length} (recorded: ${internalBaselin
 if (internalAppeared.length) {
   console.error("\nA PACKAGE DUPLICATED ITSELF");
   for (const p of internalAppeared) console.error(`- ${p.id}  ${p.score}\n    ${p.left}\n    ${p.right}`);
+  // These findings had no remedy printed at all, which was survivable while the gate watched only
+  // adapters and became a hole the moment it watched `core` and `widgets`: "move it into core" is
+  // the advice above, and for a pair already inside core it is impossible. There is nowhere further
+  // in to move it — the pair is a helper waiting to be extracted where it already lives.
+  console.error("\nExtract a helper where it already lives: a pair inside one package has nowhere");
+  console.error("further in to move to, so the remedy above does not apply. Or record it with a");
+  console.error("reason:  node scripts/audit-cross-adapter-similarity.mjs --write");
 }
 if (internalResolved.length) {
   console.error("\nSTALE INTERNAL ENTRIES — these no longer match");
@@ -235,8 +311,11 @@ if (internalResolved.length) {
 if (appeared.length) {
   console.error("\nCROSS-ADAPTER DUPLICATION — a body was written twice");
   for (const p of appeared) console.error(`- ${p.id}  ${p.score}\n    ${p.left}\n    ${p.right}`);
-  console.error("\nMove it into @modyra/core or @modyra/widgets, or record it with a reason:");
-  console.error("  node scripts/audit-cross-adapter-similarity.mjs --write");
+  // Two packages sharing a body have somewhere to put it: the contract layer both depend on. This
+  // list holds only those — a same-package pair is skipped where the pairs are built — so the
+  // remedy here is always the same one, and the other perimeter states its own below.
+  console.error("\nMove it into @modyra/core or @modyra/widgets, which both depend on, or record it");
+  console.error("with a reason:  node scripts/audit-cross-adapter-similarity.mjs --write");
 }
 if (resolved.length) {
   console.error("\nSTALE ENTRIES — these no longer match and the list still claims they do");

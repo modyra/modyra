@@ -2,14 +2,35 @@
   "threshold": 0.72,
   "shingle": 6,
   "minTokens": 40,
-  "note": "Each entry is a duplication that exists today. The list may only get shorter.",
+  "note": "Each entry is a pair this gate found and someone accepted. The list may only get shorter, and a reason written here survives the next regeneration.",
   "pairs": [
     {
-      "id": "angular:isCellRangeEndpoint ≡ lit:isCellRangeEndpoint",
+      "id": "angular:isCellRangeEndpoint \u2261 lit:isCellRangeEndpoint",
       "score": 1,
       "left": "packages/angular/src/lib/renderers/datepicker/range-calendar-grid.component.ts:184",
-      "right": "packages/lit/src/components/daterange-field.ts:363",
+      "right": "packages/lit/src/components/daterange-field.ts:379",
       "reason": "recorded, not yet accounted for"
+    },
+    {
+      "id": "core:destroy \u2261 solid:destroy",
+      "score": 0.925,
+      "left": "packages/core/src/vanilla-reactivity.ts:258",
+      "right": "packages/solid/src/reactivity.ts:265",
+      "reason": "The eight common lines are the semantics MdyReactiveScope obliges, not a copy taken from one another. Extracting them needs an exported base class, a heavier coupling than the duplication it removes. Verified not a spreading family: vue shares 2 of the 8, measured."
+    },
+    {
+      "id": "angular:_buildHandle \u2261 core:_buildHandle",
+      "score": 0.811,
+      "left": "packages/angular/src/lib/core/typed-form.ts:291",
+      "right": "packages/core/src/typed-form.ts:1781",
+      "reason": "The base declares this abstract on purpose: angular's handle is `AsAngularSignals<\u2026>`, a different type, so the two bodies read alike over types that are not the same. Extraction was tried and does not compile (TS2322); the cast that would make it compile erases the mark that type exists to keep. The reason is written beside the duplication in the source, so the next reader does not repeat the experiment. A third copy was real and is gone (0.865 \u2192 0.811)."
+    },
+    {
+      "id": "core:scheduleEffect \u2261 vue:scheduleEffect",
+      "score": 0.773,
+      "left": "packages/core/src/vanilla-reactivity.ts:47",
+      "right": "packages/vue/src/reactivity.ts:46",
+      "reason": "Mirrored by design, and the design is stated where the mirror is \u2014 see the comment above `scheduleEffect` in packages/vue/src/reactivity.ts. Both have to make batch() and flush() real, and they cannot share one body: the vanilla one owns its queue, the vue one hands the same shape to @vue/reactivity's scheduler hook, which is the only reason batching is possible there."
     }
   ]
 }
