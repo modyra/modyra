@@ -25,3 +25,4 @@ export { MdyBooleanField } from "./boolean-field.js";
 export { MdySliderField } from "./slider-field.js";
 export { MdyFileField } from "./file-field.js";
 export { MdyOptionField } from "./option-field.js";
+export { MdySelectField } from "./select-field.js";

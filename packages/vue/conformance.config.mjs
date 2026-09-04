@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,11 +28,14 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
 const GROUP = new Set(["radio", "segmented"]);
+// The shape with a panel of ours. The other one is the platform's chooser, which this package does
+// not draw, so it is not among the variants declared below.
+const NEEDS_OPTIONS = new Set(["radio", "segmented", "select"]);
 /** Two options, because a group with one cannot show a roving focus moving. */
 const GROUP_OPTIONS = [{ value: "a", label: "First" }, { value: "b", label: "Second" }];
 
@@ -61,7 +64,9 @@ export const mount = async (kind, { rules, value } = {}) => {
     value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
   });
   const app = createApp({
-    render: () => (GROUP.has(kind)
+    render: () => (kind === "select"
+      ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, options: GROUP_OPTIONS })
+      : GROUP.has(kind)
       ? h(MdyOptionField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind, options: GROUP_OPTIONS })
       : kind === "file"
       ? h(MdyFileField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
@@ -88,7 +93,16 @@ export const mount = async (kind, { rules, value } = {}) => {
     ),
     // Nothing yet: the states the kit drives arrive with the units that make them reachable, and
     // saying so is what keeps a state nobody can reach out of the conformance count.
-    drive: () => false,
+    // Only what this renderer can actually be put into. `open` is answered for the kind that draws
+    // a panel; every other state is still `false`, which keeps a state nobody can reach out of the
+    // conformance count rather than reporting it as met.
+    drive: (state) => {
+      if (state !== "open" || kind !== "select") return false;
+      const trigger = host.querySelector(".mdy-select__trigger");
+      if (trigger === null) return false;
+      trigger.click();
+      return true;
+    },
     settle: async () => { await new Promise((resolve) => setTimeout(resolve, 0)); },
     dispose: () => { app.unmount(); host.remove(); },
     control: () => host.querySelector("input, textarea"),
