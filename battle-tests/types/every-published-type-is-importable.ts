@@ -329,7 +329,10 @@ import type {
   MdyDeclaredPart,
   MdyOptionFieldProps,
   MdyReactPartProps,
+  MdySelectFieldProps,
   MdyTextFieldProps,
+  UseMdyAnchoredPanelOptions,
+  UseMdyLightDismissOptions,
 } from "@modyra/react";
 import type { MdyDeclaredPart as MdyVueDeclaredPart } from "@modyra/vue";
 
@@ -944,3 +947,12 @@ void held291;
 
 declare const held292: MdyOptionFieldProps<string>;
 void held292;
+
+declare const held293: MdySelectFieldProps<string>;
+void held293;
+
+declare const held294: UseMdyAnchoredPanelOptions;
+void held294;
+
+declare const held295: UseMdyLightDismissOptions;
+void held295;

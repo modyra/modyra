@@ -7,7 +7,7 @@
  * through the handle and never through a setter.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MdyFieldHandle } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
@@ -18,7 +18,7 @@ import {
   type MdySelectState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
+import { useMdyCommandQueue, useMdyStableOptions, type MdyElementLookup } from "./runtime.js";
 import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdySelectFieldOptions<TValue> = Omit<
@@ -49,9 +49,18 @@ export interface MdyReactSelectFieldApi<TValue> {
   destroy(): void;
 }
 
+/**
+ * How the runtime turns a part the contract names into an element it can act on.
+ *
+ * A controller answers "close and put focus back on the trigger" as a command naming the part, not
+ * as a DOM call, so a host that supplies no lookup gets a command that resolves to nothing and
+ * silently does nothing. That is what an Escape looked like here before: the panel shut and the
+ * person was left on an element that no longer exists.
+ */
 export function useMdySelectField<TValue>(
   handle: MdyFieldHandle<TValue | null>,
   options: UseMdySelectFieldOptions<TValue>,
+  elements?: MdyElementLookup,
 ): MdyReactSelectFieldApi<TValue> {
   const reactivity = useMemo(() => observerFor(handle), [handle]);
 
@@ -63,8 +72,12 @@ export function useMdySelectField<TValue>(
     [stableOptions, handle, reactivity],
   );
 
+  // Held in a ref so the queue built once calls the lookup this render passed: a component's
+  // elements are refs that are still null on the render that creates the queue.
+  const lookupRef = useRef(elements);
+  lookupRef.current = elements;
   const { execute } = useMdyCommandQueue(
-    () => undefined,
+    (part, key) => lookupRef.current?.(part, key),
     {
       setOpen: () => undefined,
       onTouched: () => handle.markAsTouched(),

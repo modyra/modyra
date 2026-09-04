@@ -16,7 +16,7 @@ installDomGlobals();
 const React = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { createForm, field } = await import("./dist/index.js");
-const { MdyTextField, MdyBooleanField, MdyOptionField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdyOptionField, MdySelectField } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
@@ -24,7 +24,7 @@ const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 export const name = "@modyra/react";
 
 /** The kinds this adapter draws. */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "radio", "segmented"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "radio", "segmented", "select"];
 
 /** This config passes the kit's `rules` and `value` through to the field it builds. */
 export const declaresRules = true;
@@ -45,6 +45,9 @@ const DRAWN_BY = {
   toggle: [MdyBooleanField, {}],
   radio: [MdyOptionField, { options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
   segmented: [MdyOptionField, { options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
+  // Searchable, because that is the shape with a panel of ours. The chooser the platform draws is
+  // the same kind and a different control, and the kit judges whichever one is mounted.
+  select: [MdySelectField, { searchable: true, options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
 };
 
 /** Long enough for React to commit what was just rendered. */
@@ -80,7 +83,23 @@ export const mount = async (kind, { rules, value } = {}) => {
         .filter(([, found]) => found.length > 0)
         .map(([part, found]) => [part, found.length === 1 ? found[0] : found]),
     ),
-    drive: () => false,
+    // Only what this renderer can actually be put into. `open` is answered for the kind that draws
+    // a panel; every other state is still `false`, which keeps a state nobody can reach out of the
+    // conformance count rather than reporting it as met.
+    drive: (state) => {
+      if (state !== "open") return false;
+      // The element that opens a panel is the button that says it opens one. More than one element
+      // can carry `aria-expanded`, and pressing the one that is not a button does nothing at all —
+      // which would hand the kit a shut widget and let it call the emptiness conformant.
+      //
+      // The press is not verified here because it cannot be: this runs before React has drawn the
+      // result, and the kit settles afterwards. What catches a press that did nothing is the
+      // inspection that follows, where a panel that never opened is its required parts missing.
+      const opener = host.querySelector("button[aria-expanded]") ?? host.querySelector("[aria-expanded]");
+      if (opener === null) return false;
+      opener.click();
+      return true;
+    },
     settle: settled,
     dispose: () => { root.unmount(); host.remove(); },
     // The control the kind declares, resolved from the catalogue: the option kinds draw one input

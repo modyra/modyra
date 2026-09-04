@@ -275,3 +275,4 @@ export function measureOverlayContent(
     width: width + Math.max(0, popup.offsetWidth - popup.clientWidth),
   };
 }
+

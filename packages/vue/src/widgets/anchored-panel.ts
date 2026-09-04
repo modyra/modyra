@@ -15,29 +15,13 @@
 import { onScopeDispose, watch, type Ref } from "vue";
 import {
   anchorOverlay,
-  applyOverlayProperties,
+  applyAnchoredOverlay,
   inlineDirectionOf,
   overlayAnchoringFor,
-  popupAlignmentClass,
-  popupPlacementClass,
   trackAnchoredOverlay,
   viewportSize,
   type MdyPopupWidgetKind,
 } from "@modyra/widgets";
-
-/** Takes the placement classes off, so a panel never wears two answers at once. */
-const clearPlacement = (panel: HTMLElement, kind: MdyPopupWidgetKind): void => {
-  // Spelled from the declared unions rather than guessed: the first version of this list invented
-  // "start", "end" and "center", which the compiler refused — an alignment here is left or right.
-  for (const placement of ["below", "above", "overlay"] as const) {
-    const named = popupPlacementClass(kind, placement);
-    if (named) panel.classList.remove(named);
-  }
-  for (const alignment of ["left", "right"] as const) {
-    const named = popupAlignmentClass(kind, alignment);
-    if (named) panel.classList.remove(named);
-  }
-};
 
 /**
  * Positions `panel` against `anchor` while `isOpen` answers true, and follows it.
@@ -64,13 +48,9 @@ export function useAnchoredPanel(options: {
       direction: inlineDirectionOf(anchor),
     });
 
-    applyOverlayProperties(panel, anchoring.properties);
-    panel.dataset.placement = anchoring.placement;
-    clearPlacement(panel, options.kind);
-    const placement = popupPlacementClass(options.kind, anchoring.placement);
-    const alignment = popupAlignmentClass(options.kind, anchoring.decision.alignment);
-    if (placement) panel.classList.add(placement);
-    if (alignment) panel.classList.add(alignment);
+    // The coordinates and the classes that say where it went, written by the contract's own door:
+    // the four writes and the order they go in are the same in every renderer that places a popup.
+    applyAnchoredOverlay(panel, options.kind, anchoring);
   };
 
   let untrack: (() => void) | null = null;

@@ -3588,6 +3588,18 @@
     "state: MdySelectState<TValue>",
     "view: ReturnType<MdySelectController<TValue>[\"view\"]>"
   ],
+  "react:MdySelectField": [
+    "(0) props: MdySelectFieldProps<TValue>",
+    "-> returns: ReactElement"
+  ],
+  "react:MdySelectFieldProps": [
+    "field: MdyFieldHandle<TValue | null>",
+    "label?: string",
+    "options: readonly MdySelectOption<TValue>[]",
+    "placeholder?: string",
+    "searchable?: boolean",
+    "widgetId?: string"
+  ],
   "react:MdyStore": [
     "getSnapshot: number",
     "subscribe: () => void"
@@ -3609,6 +3621,12 @@
     "\"text\"",
     "\"textarea\""
   ],
+  "react:UseMdyAnchoredPanelOptions": [
+    "anchor: RefObject<HTMLElement | null>",
+    "isOpen: boolean",
+    "kind: MdyPopupWidgetKind",
+    "panel: RefObject<HTMLElement | null>"
+  ],
   "react:UseMdyBooleanFieldOptions": [
     "-> Omit"
   ],
@@ -3626,6 +3644,12 @@
   ],
   "react:UseMdyFileFieldOptions": [
     "-> Omit"
+  ],
+  "react:UseMdyLightDismissOptions": [
+    "close: () => void",
+    "isOpen: boolean",
+    "kind: MdyWidgetKind",
+    "root: RefObject<HTMLElement | null>"
   ],
   "react:UseMdyMultiselectFieldOptions": [
     "-> Omit"
@@ -3666,6 +3690,10 @@
   ],
   "react:reactReactivity": [
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
+  ],
+  "react:useMdyAnchoredPanel": [
+    "(0) options: UseMdyAnchoredPanelOptions",
+    "-> returns: void"
   ],
   "react:useMdyBooleanField": [
     "(0) handle: MdyFieldHandle<boolean>",
@@ -3711,6 +3739,10 @@
     "(1) options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, \"reactivity\">",
     "-> returns: MdyTypedForm<S>"
   ],
+  "react:useMdyLightDismiss": [
+    "(0) options: UseMdyLightDismissOptions",
+    "-> returns: void"
+  ],
   "react:useMdyMultiselectField": [
     "(0) handle: MdyFieldHandle<ReadonlyArray<TValue>>",
     "(1) options: UseMdyMultiselectFieldOptions<TValue>",
@@ -3730,6 +3762,7 @@
   "react:useMdySelectField": [
     "(0) handle: MdyFieldHandle<TValue | null>",
     "(1) options: UseMdySelectFieldOptions<TValue>",
+    "(2) elements?: MdyElementLookup",
     "-> returns: MdyReactSelectFieldApi<TValue>"
   ],
   "react:useMdyTextField": [
@@ -6101,6 +6134,12 @@
     "(0) door: MdyClassDoor",
     "(1) asked?: unknown",
     "-> returns: MdyDoorAnswer"
+  ],
+  "widgets:applyAnchoredOverlay": [
+    "(0) panel: HTMLElement",
+    "(1) kind: MdyPopupWidgetKind",
+    "(2) anchoring: MdyOverlayAnchoring",
+    "-> returns: void"
   ],
   "widgets:applyOverlayProperties": [
     "(0) element: HTMLElement",
