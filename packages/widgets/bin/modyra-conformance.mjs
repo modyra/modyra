@@ -74,7 +74,10 @@ const {
   idsUnder, inspectCoexistence, inspectUnmount, inspectWidgetDom,
 } = await import(pathToFileURL(resolve(packageRoot, "dist/testing/index.js")).href);
 
-const { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } = await import(pathToFileURL(resolve(packageRoot, "dist/index.js")).href);
+const { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, nativeConstraintAttributes } = await import(pathToFileURL(resolve(packageRoot, "dist/index.js")).href);
+// The empty constraint set, so a rule this suite does not declare reads as "nothing declared"
+// rather than as `undefined` — which the door would spell onto the control.
+const { NO_CONSTRAINTS } = await import(pathToFileURL(resolve(packageRoot, "../core/dist/index.js")).href);
 
 // Loaded with its own diagnosis. A config that throws on import is the normal first experience of
 // this tool — a missing DOM, a path that does not exist, a renderer that fails to construct — and a
@@ -259,16 +262,47 @@ if (config.declaresRules === true) {
     return control?.getAttribute?.(attribute) ?? null;
   };
 
-  const expectations = [
-    { kind: "text", rules: { maxLength: 8, minLength: 2 }, expect: { maxlength: "8", minlength: "2" } },
-    { kind: "textarea", rules: { maxLength: 8 }, expect: { maxlength: "8" } },
-    { kind: "number", rules: { min: 1, max: 9 }, expect: { min: "1", max: "9" } },
-  ];
+  /**
+   * Every rule this suite declares, and what each kind is then owed.
+   *
+   * Asked of `nativeConstraintAttributes` rather than listed. The list this replaced named three
+   * kinds and, between them, four attributes — and the kind it did not name was the one where the
+   * defect lived: a slider whose bounds never reached its control answered Home with 0 and End with
+   * 100 on a field declared 10-20, and was reported CONFORMANT because nothing asked. A derivation
+   * covers a kind the day the contract says it carries something, instead of the day someone
+   * remembers to add it here.
+   *
+   * The held value goes in because it is part of the answer: a slider's track spans what the field
+   * holds where nothing declared a bound, and its `step` gives way to a value that is not on one.
+   */
+  const DECLARED = { min: 1, max: 9, minLength: 2, maxLength: 8 };
+  /**
+   * `step` is absent on purpose, and the absence is a finding rather than an omission.
+   *
+   * A field declares rules through validators, and the validator vocabulary has no `step` — the
+   * engine refuses to build one. A slider's step therefore arrives by another road entirely, so no
+   * check driven by `rules` can reach it, and this section says so instead of appearing to have
+   * asked.
+   */
+  const owed = (kind, held) => Object.fromEntries(
+    Object.entries(nativeConstraintAttributes(kind, { ...NO_CONSTRAINTS, ...DECLARED }, held))
+      .filter(([, value]) => value !== null && value !== undefined),
+  );
 
-  for (const { kind, rules, expect } of expectations) {
-    if (!kinds.includes(kind)) continue;
-    const fixture = await mount(kind, { rules });
+  let asked = 0;
+  for (const kind of kinds) {
+    const fixture = await mount(kind, { rules: DECLARED });
     await fixture.settle?.();
+    const held = typeof fixture.value?.() === "number" ? fixture.value() : null;
+    const expect = owed(kind, held);
+    if (Object.keys(expect).length === 0) {
+      // This kind's control understands none of them, which is an answer rather than a gap: a
+      // `maxlength` on a number input is ignored by the platform, and offering it would be a
+      // promise the widget does not keep.
+      fixture.dispose();
+      continue;
+    }
+    asked += 1;
     for (const [attribute, wanted] of Object.entries(expect)) {
       const found = attributeOf(fixture, attribute);
       if (found !== wanted) {
@@ -281,7 +315,13 @@ if (config.declaresRules === true) {
     fixture.dispose();
   }
 
-  record("Declared rules reach the control", findings);
+  record(
+    "Declared rules reach the control",
+    findings,
+    asked === 0
+      ? "no kind this adapter draws carries a native constraint, so nothing was asked"
+      : `${asked} kind(s) asked; not step, which no validator vocabulary declares`,
+  );
 } else {
   record(
     "Declared rules reach the control",
