@@ -13,6 +13,7 @@ import {
   Signal,
 } from "@angular/core";
 import type { MdySelectOption } from "@modyra/core";
+import { getFieldHandleOwner } from "@modyra/core";
 import {
   createSelectFieldController,
   type MdySelectFieldController,
@@ -64,8 +65,18 @@ export class MdyAngularSelectAdapter<TValue = string> {
   ) {
     this.runtime = runtime;
 
-    const reactivity = angularReactivity(injector);
-    this.controller = createSelectFieldController(options, reactivity);
+    // The runtime that owns the handle, and only a fresh one where nothing owns it yet.
+    //
+    // `angularReactivity` returns a new instance on every call, so building one here handed the
+    // controller a second owner with the same name — and a runtime is refused the signals of one it
+    // does not own. What that costs is not the complaint: it is a widget that renders once and then
+    // ignores every change made anywhere else, which is what a field handle exists to deliver.
+    //
+    // The fallback stays Angular's rather than the shared default: a control in this package needs
+    // this framework's scheduling, and `observerFor` would hand back a vanilla runtime whose signals
+    // an Angular template cannot see.
+    const owner = getFieldHandleOwner(options.handle);
+    this.controller = createSelectFieldController(options, owner ?? angularReactivity(injector));
 
     // Bridge Modyra signals to Angular signals so templates can read them
     // idiomatically.
