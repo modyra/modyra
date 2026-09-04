@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-04T21:21:01Z",
-  "openReds": 110,
+  "recordedAt": "2026-09-04T23:08:48Z",
+  "openReds": 109,
   "bySeverity": {
     "S0": 4,
-    "S1": 88,
+    "S1": 87,
     "S2": 18
   },
   "knownRed": [
@@ -14,7 +14,6 @@
     "an-entry-error-is-an-error-like-any-other.spec.ts › an entry a field cannot read is an error like any other, vue",
     "what-a-field-declares-about-itself.spec.ts › vue: a bound the field declared binds the browser and the form alike",
     "a-calendar-behind-a-closed-picker.spec.ts › vue: a closed popup is closed for everyone",
-    "a-capability-declared-and-demanded-by-nobody.spec.ts › an overlay dismisses the way its kind declares, vue",
     "a-chip-that-does-not-say-where-it-is.spec.ts › every chip says which one it is and how many there are, vue",
     "a-choice-that-takes-three-presses-to-undo.spec.ts › unselecting a choice unselects it, vue",
     "a-choice-that-writes-another.spec.ts › choosing the second option writes the second option, vue",
