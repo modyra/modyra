@@ -239,6 +239,12 @@ export function projectFieldShellA11y(
         // announcing it disabled tells a screen-reader user they cannot interact with something
         // they can.
         "aria-disabled": String(flags.disabled),
+        // And the native refusal beside the announced one. `aria-disabled` says a control cannot be
+        // used; only `disabled` makes that true. A kind that carried the first without the second
+        // announced a refusal it did not enforce — the control stayed operable, and a press changed
+        // a value the model refuses. Two kinds reached their renderers that way, because the
+        // projections that add it themselves are the ones that happened to.
+        disabled: flags.disabled,
         // Read-only in its own word, on the kinds that declare the state. A control that refuses
         // every change while staying focusable and submitted looks identical to one that does not;
         // `file` is the kind that declares no read-only — its picker is the browser's and its role
