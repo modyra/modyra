@@ -32,6 +32,23 @@ const CONTRACT = MDY_WIDGET_CONTRACTS.select;
 const classesOf = (part: string): string =>
   (CONTRACT.parts as Readonly<Record<string, { classes: readonly string[] } | undefined>>)[part]?.classes.join(" ") ?? "";
 
+/**
+ * The errors part this kind's projection does not publish.
+ *
+ * `createSelectFieldController` projects the trigger, the filter and the list, and none of the
+ * shell — no label, no description, no errors. Every renderer therefore spells those ids itself,
+ * which this file already does for the first two; this is the third. The id is the factory's, so it
+ * matches what `aria-describedby` points at.
+ *
+ * A finding rather than a design: a kind whose shell parts are absent from its projection cannot be
+ * drawn from the contract, and four renderers each invent the same three ids.
+ */
+const errorsPartFor = (widgetId: string) => ({
+  id: defaultWidgetIdFactory.part(widgetId, "errors"),
+  classes: CONTRACT.parts.errors?.classes ?? [],
+  attributes: {},
+});
+
 export const MdySelectField = defineComponent({
   name: "MdySelectField",
   props: {
@@ -205,6 +222,10 @@ export const MdySelectField = defineComponent({
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
         class: classesOf("supportingText"),
       }));
+      // The same list the combobox shape draws. A kind does not stop owing an explanation because
+      // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
+      // them had it.
+      children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
       return h("div", { class: CONTRACT.rootClasses.join(" ") }, children);
     };
 
@@ -278,9 +299,9 @@ export const MdySelectField = defineComponent({
       }));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
-      if (parts.error !== undefined) {
-        children.push(drawErrors(parts.error, props.field, "select"));
-      }
+      // The same list the platform-chooser shape draws, and from the same place: this kind's
+      // projection publishes no shell parts, so the id is the factory's in both shapes.
+      children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
 
       return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };

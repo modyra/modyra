@@ -125,6 +125,10 @@ export const MdyDaterangeField = defineComponent({
         h("button", partProps(parts.toggle, {
           ref: anchor,
           type: "button",
+          // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
+          // staying pressable opens a panel over a field the model has taken out of play.
+          disabled: props.field.disabled(),
+          "aria-disabled": String(props.field.disabled()),
           onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
         })),
       ]));

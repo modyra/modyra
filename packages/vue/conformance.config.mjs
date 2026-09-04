@@ -16,7 +16,28 @@ installDomGlobals();
 const { createApp, h } = await import("vue");
 const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField, MdyDaterangeField, MdyTimepickerField, MdyColorsField, MdyMultiselectField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
-const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
+const { MDY_CANONICAL_EMPTY, MDY_CANONICAL_FILLED, findPartElements } = await import("@modyra/widgets/testing");
+
+/**
+ * What a kind holds when it holds nothing, and when it holds something.
+ *
+ * Copies are handed out because a driver that returns the shared table lets this renderer mutate the
+ * one every other adapter is compared against. A `File` is the one value that cannot be written down
+ * centrally — two files with the same bytes are still two different values — so it is made here.
+ */
+const emptyFor = (kind) => {
+  const empty = MDY_CANONICAL_EMPTY[kind];
+  if (Array.isArray(empty)) return [...empty];
+  if (empty && typeof empty === "object") return { ...empty };
+  return empty;
+};
+const filledFor = (kind) => {
+  if (kind === "file") return [new File(["content"], "report.txt", { type: "text/plain" })];
+  const filled = MDY_CANONICAL_FILLED[kind];
+  if (Array.isArray(filled)) return [...filled];
+  if (filled && typeof filled === "object") return { ...filled };
+  return filled;
+};
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
 export const name = "@modyra/vue";
@@ -74,7 +95,22 @@ export const mount = async (kind, { rules, value, variant, config } = {}) => {
   // The empty the kind declares, so the form starts where the contract says it starts rather than at
   // a string this file chose.
   const form = createVueForm({
-    value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
+    /**
+     * A rule by default, because "invalid" is a state a field with no rules cannot be in.
+     *
+     * Without one, driving a field empty and touching it leaves it *correctly* valid, and the kit
+     * reads `aria-invalid="false"` as a renderer that will not say it is wrong — a finding about a
+     * fixture that never asked a question. The reference renderer's fixture defaults the same way,
+     * and for the same reason.
+     *
+     * A slider is never empty, so `required` alone can never fail on one: its bound is what makes
+     * the invalid row reachable rather than green-because-unreachable.
+     */
+    value: field(
+      value === undefined ? MDY_CANONICAL_EMPTY[kind] : value,
+      [],
+      { rules: rules ?? (kind === "slider" ? { required: true, min: 1 } : { required: true }) },
+    ),
   });
   const app = createApp({
     render: () => (kind === "multiselect"
@@ -127,8 +163,37 @@ export const mount = async (kind, { rules, value, variant, config } = {}) => {
     // Only what this renderer can actually be put into. `open` is answered for the kind that draws
     // a panel; every other state is still `false`, which keeps a state nobody can reach out of the
     // conformance count rather than reporting it as met.
+    /**
+     * Put the widget in a state, or say plainly that this renderer cannot be.
+     *
+     * Read from the reference renderer's own fixture rather than invented: the same nine states,
+     * reached the same way — the value through the handle, the refusals through the form, the
+     * opening through the element the catalogue names as the opener. A driver that answers `false`
+     * is not a neutral answer: the kit skips the pair, and the section that would have caught five
+     * components rendering once and never again only works where it can drive.
+     *
+     * The canonical values come from the table every renderer is measured against, so "filled"
+     * means the same thing here as it does there. A driver that handed every kind `""` would be
+     * telling the truth for a text field and, for a daterange, putting a string where an object
+     * belongs — a row green about a state the widget was never in.
+     */
     drive: (state) => {
-      if (state !== "open") return false;
+      switch (state) {
+        case "pristine": return true;
+        case "empty": form.f.value.set(emptyFor(kind)); return true;
+        case "filled": case "selected": form.f.value.set(filledFor(kind)); return true;
+        case "touched": form.f.value.markAsTouched(); return true;
+        case "invalid": form.f.value.set(emptyFor(kind)); form.f.value.markAsTouched(); return true;
+        case "focused":
+          (host.querySelector("input, textarea, select") ?? host.querySelector("button, [tabindex]"))?.focus?.();
+          return true;
+        case "disabled": form.setDisabled("value", () => true); return true;
+        case "readonly": form.setReadonly("value", () => true); return true;
+        case "open": break;
+        // `loading` needs a remount with the flag, which this config does not offer: said as false
+        // rather than as a silent true, so the report counts it among what nobody is checking.
+        default: return false;
+      }
       // The element that opens a panel is the button that says it opens one. More than one element
       // can carry `aria-expanded` — a datepicker's text control says so as well as the button
       // beside it — and pressing the one that is not a button does nothing at all, which would

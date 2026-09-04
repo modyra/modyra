@@ -125,6 +125,10 @@ export const MdyDatepickerField = defineComponent({
         })),
         h("button", {
           ref: anchor,
+          // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
+          // staying pressable opens a panel over a field the model has taken out of play.
+          disabled: props.field.disabled(),
+          "aria-disabled": String(props.field.disabled()),
           type: "button",
           class: classesOf("toggle"),
           "aria-expanded": String(state.value.open),

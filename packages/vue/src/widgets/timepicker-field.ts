@@ -166,6 +166,10 @@ export const MdyTimepickerField = defineComponent({
           type: "button",
           ref: anchor,
         class: classesOf("toggle"),
+          // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
+          // staying pressable opens a panel over a field the model has taken out of play.
+          disabled: props.field.disabled(),
+          "aria-disabled": String(props.field.disabled()),
           "aria-expanded": String(state.value.open),
           "aria-label": props.label === "" ? "Choose time" : `Choose ${props.label}`,
           onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),

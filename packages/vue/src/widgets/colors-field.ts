@@ -145,6 +145,7 @@ export const MdyColorsField = defineComponent({
           type: "button",
           ref: anchor,
           class: classesOf("nativePicker"),
+          disabled: props.field.disabled(),
           "aria-expanded": String(state.value.open),
           "aria-controls": defaultWidgetIdFactory.part(props.widgetId, "popup"),
           "aria-label": props.label === "" ? "Choose colour" : `Choose ${props.label}`,
@@ -173,6 +174,18 @@ export const MdyColorsField = defineComponent({
           // control whose error text is on the page and announced to nobody.
           "aria-describedby": defaultWidgetIdFactory.part(props.widgetId, "description"),
           ...(props.label === "" ? { "aria-label": "Hex colour" } : {}),
+          // The states this box is in, announced on it and enforced on it. It is a control the
+          // contract names, and a control that says it refuses while accepting what a person types
+          // is worse than one that says nothing: the value it takes is one the model will not hold.
+          // The verdict the projection already computed for the control beside it, not the raw
+          // state: what is *shown* is not what is wrong, and a field nobody has touched is not
+          // wrong yet. Read from the state, this box announced an error at rest that no other part
+          // of the widget was announcing.
+          "aria-invalid": parts.control?.attributes?.["aria-invalid"] ?? "false",
+          "aria-disabled": String(props.field.disabled()),
+          "aria-readonly": String(props.field.readonly()),
+          disabled: props.field.disabled(),
+          readonly: props.field.readonly(),
           onChange: (event: Event) =>
             controller.dispatch({ type: "text", value: (event.target as HTMLInputElement).value }),
         }),
