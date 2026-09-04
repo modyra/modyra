@@ -281,8 +281,35 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
  * that widened lacks the key for *every* kind, while a declaration genuinely added to one kind sits
  * beside the same key present on the others.
  */
+/**
+ * Every field a kind record carries, and what compares it.
+ *
+ * The scalar list below was written by hand and named two fields. That was right when it was
+ * written and it is right today — but a field added to a kind tomorrow would be compared by nothing
+ * and classify as `patch`, and the list would go on looking complete. This roster is the species
+ * this repository has spent the week removing: what a hand-written list does not name, it excuses.
+ *
+ * So the accounting is closed instead of assumed. Each kind-level field is either compared
+ * structurally by a block of its own, or scalar and compared below; a field that is neither is
+ * reported, because the alternative is a change to the contract that no verdict can see.
+ */
+const COMPARED_STRUCTURALLY = new Set(["parts", "relations", "capabilities", "variants", "keyboard"]);
+// Fields the loop below compares generically. `valueSlot` is not among them: it has a comparison of
+// its own further down, with wording this loop cannot produce, and listing it in both reported one
+// change twice — the accounting is a question about coverage, not an instruction to compare.
+const COMPARED_AS_A_VALUE = ["controlType", "concealed"];
+const COMPARED_BY_ITS_OWN_BRANCH = new Set(["valueSlot"]);
+const accountedFor = new Set([...COMPARED_STRUCTURALLY, ...COMPARED_AS_A_VALUE, ...COMPARED_BY_ITS_OWN_BRANCH]);
+const unaccountedFields = [...new Set(
+  [...Object.values(baseline.kinds), ...Object.values(current.kinds)].flatMap((kind) => Object.keys(kind)),
+)].filter((field) => !accountedFor.has(field)).sort();
+for (const field of unaccountedFields) {
+  record("major", "contract", `kinds carry \`${field}\` and nothing compares it — give it a `
+    + "comparison, or say here why a change to it cannot break a consumer");
+}
+
 const newToTheSnapshot = new Set(
-  ["controlType", "concealed"].filter(
+  COMPARED_AS_A_VALUE.filter(
     (field) => !Object.values(baseline.kinds).some((held) => field in held),
   ),
 );
@@ -290,7 +317,7 @@ const newToTheSnapshot = new Set(
 for (const [kind, held] of Object.entries(baseline.kinds)) {
   const now = current.kinds[kind];
   if (!now) continue;
-  for (const field of ["controlType", "concealed"]) {
+  for (const field of COMPARED_AS_A_VALUE) {
     const was = held[field];
     const is = now[field];
     if (was === is) continue;
