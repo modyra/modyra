@@ -13,30 +13,9 @@ import { MDY_LAYOUT_CLASSES, layoutNodeAttributes } from "@modyra/widgets";
 import { assertLayoutWithinDepth } from "@modyra/core";
 import { parseDynamicForm, assertSafeDynamicFieldNames, buildDynamicFieldValidators, createLitForm, field, mdyEmptyValueFor, parseDynamicFields } from "@modyra/lit/adapter";
 import { defineMdyElements, mdyLitTagFor } from "@modyra/lit/ui";
-import { documentProbes } from "./document-probes.mjs";
+import { createBattleHost } from "./shared-host.mjs";
 
 defineMdyElements();
-
-const mounted = new Map();
-
-/**
- * The handle for a name, walked rather than looked up.
- *
- * A name is a **path**: `createForm({ "a.b": field("") })` nests, so the value is `{ a: { b: "" } }`
- * and the handle lives at `f.a.b` — `f["a.b"]` is `undefined`. A flat lookup leaves the element with
- * no handle, drawing nothing and saying nothing, which reads as the renderer dropping a field. The
- * Plain door walks the name for the same reason.
- */
-function handleFor(form, name) {
-  let at = form.f;
-  for (const segment of String(name).split(".")) {
-    if (at === undefined || at === null) return undefined;
-    at = at[segment];
-  }
-  return at;
-}
-
-/** The element that renders each kind, as a consumer would write it. */
 
 /**
  * The control type a text-family kind needs said out loud.
@@ -50,302 +29,52 @@ const CONTROL_TYPE = {
   password: "password",
 };
 
-window.battleLit = {
-  // What the page says about itself: dangling references, duplicate ids, where focus is, how many
-  // controls the stage holds. No adapter appears in any of them, so all three hosts answer alike.
-  ...documentProbes,
 
-  /** Build a form over `fields` and render one element per field. */
-  mountFields(id, fields, options = {}) {
-    const host = document.createElement("section");
-    host.dataset.form = id;
-    document.querySelector("#stage").append(host);
-    try {
-      // The names first, through the same guard the Plain door runs before it builds anything. A host
-      // that skips it collapses a duplicate name into one schema key and hands two elements the same
-      // handle, which reads in a spec as the renderer choosing that binding — and no renderer chose
-      // it. `@modyra/lit` publishes no door that mounts a document, so this host *is* the door, and a
-      // door that does not refuse what the contract refuses is measuring itself.
-      assertSafeDynamicFieldNames(fields);
+function mountOneField({ declared, handle, into, idPrefix }) {
 
-      // A field's rules come from the document the same way a consumer's would: the contract parser
-      // reads them and the validator builder compiles them. Building the schema without that step
-      // makes every field unconstrained, which looks like the renderer losing them.
-      // The same two doors the plain host offers, and the same default: raw unless the caller asks
-      // to come through the parser. Symmetry matters more than which default is chosen — when the
-      // two hosts disagreed about who parses, three renderer "defects" were the disagreement.
-      const parsed = options.parse === true
-        ? parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })))
-        : fields.map((each) => ({ ...each, name: each.name }));
-      const rules = parseDynamicFields(fields.map((each) => ({ ...each, name: each.name })));
-      const rulesFor = (name) => {
-        const declared = rules.find((each) => each.name === name);
-        return declared === undefined ? { validators: [] } : buildDynamicFieldValidators(declared);
-      };
-      // The form is built from what the parser returned, not from what the caller handed in. A field
-      // the contract refuses never reaches a consumer's form, so a host that mounts it anyway is
-      // measuring a document the contract does not describe — and a spec reads that as the renderer
-      // accepting something it never saw.
-      const schema = Object.fromEntries(
-        parsed.map((each) => {
-          const built = rulesFor(each.name);
-          return [
-            each.name,
-            // `marksRequired` is not one of `field()`'s options — it is the fourth argument of
-            // `upsertValidators(name, key, validators, marksRequired)`, which is how `applyFlatValidators`
-            // hands it over for Plain. Passed here it was refused three times per mount with
-            // `field() was given "marksRequired", which it does not read` — noise on the console
-            // channel a spec now reads for warnings that matter. The required marker is derived from
-            // the validator regardless, so nothing is lost by not saying it twice.
-            // The starting value is the contract's own, which refuses an initial the kind cannot
-            // hold and names the mismatch on the console. A host that computes its own blank
-            // answers differently from the adapters that call this, and the difference reads as an
-            // adapter defect rather than as a host writing its own rule.
-            field(mdyEmptyValueFor(each), built.validators ?? []),
-          ];
-        }),
-      );
-      // The structure and its rules are this host's to build; the form does not read them, and
-      // handing them over prints a warning on the channel other specs read for warnings that matter.
-      const { layout: _layout, rules: _rules, ...forForm } = options;
-      const form = createLitForm(schema, forForm);
-
-      // Lit publishes no form component: a Lit form is whatever the host writes, so the summary
-      // region is an element the host places. It goes first, because a summary found by scrolling
-      // past the fields is one nobody reads.
-      const summary = document.createElement("mdy-form-errors");
-      summary.form = form;
-      host.append(summary);
-
-      // **A structure the document asked for, built by the host because the package publishes no door
-      // that mounts one.** A grouping element carries a name and encloses what depends on it, which
-      // is what lets a person who cannot see the indentation hear where they are. A host that drops
-      // the structure draws a flat page and reports it mounted, and a check comparing this host with
-      // one that nests is comparing its own harnesses.
-      const holderFor = new Map();
-      const buildLayout = (nodes, into) => {
-        for (const node of nodes ?? []) {
-          if (typeof node === "string") { holderFor.set(node, into); continue; }
-          if (node === null || typeof node !== "object" || !Array.isArray(node.children)) continue;
-          // **Every grouping node, not only the one this host was written for.** `columns` is a layout
-          // kind the contract dresses like any other, and a host that skips the kinds it does not
-          // recognise drops the fields inside them: a document mounts short, and a check reads the
-          // missing fields as the renderer's doing rather than the harness's.
-          //
-          // The dressing is the contract's, not this host's. A group the harness styles by hand gets
-          // the browser's own padding on a bare `fieldset` — twelve pixels and a border per level —
-          // and a width check then reports a renderer for what the harness put there.
-          //
-          // The label decides the element, not the kind's name: a `<legend>` is only a group's name
-          // inside a `<fieldset>`, and put in a `<div>` it is invalid and announces nothing. A
-          // grouping that names nothing is a `<div>`, because an unnamed `fieldset` announces a group
-          // a person is then given no way to identify.
-          const named = node.label !== undefined && node.label !== null;
-          const group = document.createElement(named ? "fieldset" : "div");
-          const dressing = layoutNodeAttributes(node);
-          group.className = dressing.className ?? MDY_LAYOUT_CLASSES.section;
-          for (const [key, value] of Object.entries(dressing.dataset ?? {})) group.dataset[key] = value;
-          for (const [key, value] of Object.entries(dressing.style ?? {})) group.style.setProperty(key, String(value));
-          if (named) {
-            const name = document.createElement("legend");
-            name.className = MDY_LAYOUT_CLASSES.sectionLabel;
-            name.textContent = String(node.label);
-            group.append(name);
-          }
-          into.append(group);
-          buildLayout(node.children, group);
-        }
-      };
-      // The package publishes the depth rule and the check that applies it. This host is the door for
-      // Lit, and a door that does not refuse what the contract refuses measures its own permissiveness
-      // rather than the library's.
-      assertLayoutWithinDepth(options.layout ?? []);
-      buildLayout(options.layout, host);
-
-      for (const declared of parsed) {
-        // **The package says which element draws a kind, and says `null` for one it does not.**
-        // This host kept a map of its own with a text field as the fallback, so a document
-        // declaring `passwordd` mounted a text input and put the value on the screen — a refusal
-        // invented by the harness, not a behaviour of `@modyra/lit`. `mdyLitTagFor` is published
-        // for exactly this, and `null` is what lets the host refuse the way the plain door does
-        // rather than guess.
-        const tag = mdyLitTagFor(declared.kind);
-        if (tag === null || tag === undefined) {
-          throw new Error(`[modyra] Unknown dynamic field kind: ${JSON.stringify(declared)}`);
-        }
-        const element = document.createElement(tag);
-        element.setAttribute("label", declared.label ?? declared.name);
-        // A host with two forms on one page is what gives them separate identities, and this host is
-        // the door — so a scope the caller asked for reaches the element the way a consumer's would.
-        // Without it a spec measuring two scoped forms is measuring two unscoped ones and reads the
-        // renderer as ignoring an option it was never handed.
-        if (options.idPrefix !== undefined && options.idPrefix !== null) {
-          element.setAttribute("id-scope", String(options.idPrefix));
-        }
-        const controlType = CONTROL_TYPE[declared.kind];
-        if (controlType !== undefined) element.setAttribute("type", controlType);
-        if (declared.options !== undefined) element.options = declared.options;
-
-        // Everything else a document says about the field is the element's to render — a bound, a
-        // step, a placeholder. Forwarding only what this host happens to name makes a renderer look
-        // like it ignores a property the document declared.
-        for (const [name, value] of Object.entries(declared)) {
-          if (["name", "kind", "label", "options", "initialValue", "validators"].includes(name)) continue;
-          if (value === undefined || value === null) continue;
-          element[name] = value;
-        }
-        element.field = handleFor(form, declared.name);
-        // Into the group the document put it in, or straight onto the form when it named none.
-        (holderFor.get(declared.name) ?? host).append(element);
-      }
-      mounted.set(id, { form, host, submitted: [] });
-      return { mounted: true, tags: parsed.map((each) => mdyLitTagFor(each.kind)) };
-    } catch (error) {
-      return { mounted: false, message: String(error?.message ?? error) };
+    // **The package says which element draws a kind, and says `null` for one it does not.**
+    // This host kept a map of its own with a text field as the fallback, so a document
+    // declaring `passwordd` mounted a text input and put the value on the screen — a refusal
+    // invented by the harness, not a behaviour of `@modyra/lit`. `mdyLitTagFor` is published
+    // for exactly this, and `null` is what lets the host refuse the way the plain door does
+    // rather than guess.
+    const tag = mdyLitTagFor(declared.kind);
+    if (tag === null || tag === undefined) {
+      throw new Error(`[modyra] Unknown dynamic field kind: ${JSON.stringify(declared)}`);
     }
-  },
-
-  /** Submit with an answer, so a spec can ask what a refusal looks like here. */
-  async submitAnswering(id, answer) {
-    const entry = mounted.get(id);
-    await entry.form.submit((value) => {
-      entry.submitted.push(structuredClone(value));
-      if (answer !== null && typeof answer === "object" && answer.__throw !== undefined) {
-        throw new Error(String(answer.__throw));
-      }
-      return answer;
-    });
-  },
-
-  /**
-   * Submit the way a page does, and keep what was handed over.
-   *
-   * "What the page sent" is a question about the page rather than about which convenience a spec
-   * mounted through, and it has to be askable of both renderers or a difference between them reads
-   * as a silence.
-   */
-  async submit(id) {
-    const entry = mounted.get(id);
-    await entry.form.submit((value) => {
-      entry.submitted.push(structuredClone(value));
-      return null;
-    });
-    return entry.submitted.length;
-  },
-
-  /** Every value this form has handed to its submit action, in order. */
-  submittedBy(id) {
-    return mounted.get(id)?.submitted ?? [];
-  },
-
-  lastSubmitErrorsOf(id) {
-    return mounted.get(id).form.state.lastSubmitErrors().map((entry) => ({
-      path: entry.path ?? null,
-      message: typeof entry.message === "string" ? entry.message : String(entry.message),
-    }));
-  },
-
-  /**
-   * Turn a field off, the way an application turns one off.
-   *
-   * A disabled widget is a state the contract makes promises about, and asking one renderer without
-   * being able to ask the other makes a silence look like an answer.
-   */
-  disable(id, path) {
-    mounted.get(id).form.setDisabled(path, () => true);
-  },
-
-  /**
-   * Put a field out of play without hiding it, the way an application makes one read-only.
-   *
-   * Readonly and disabled are different states with different promises — a read-only field is still
-   * submitted — and asking one renderer without being able to ask the other makes a silence look
-   * like an answer.
-   */
-  /**
-   * Mount a form the way an application mounts one that arrived as data.
-   *
-   * The door this host did not have, so a question asked of the document path could only reach two
-   * renderers — and the one it could not reach is the one that keeps a value its kind cannot hold.
-   * A refusal is answered with the diagnostics rather than with an empty form: a document the
-   * contract will not carry is a different outcome from one it carries badly.
-   */
-  async mountDocument(id, envelope, options = {}) {
-    const parsed = parseDynamicForm(envelope, { mode: options.mode ?? "strict" });
-    if (!parsed.ok) {
-      return {
-        mounted: false,
-        diagnostics: parsed.diagnostics.map((each) => ({ code: each.code, path: each.path, message: each.message })),
-      };
+    const element = document.createElement(tag);
+    element.setAttribute("label", declared.label ?? declared.name);
+    // A host with two forms on one page is what gives them separate identities, and this host is
+    // the door — so a scope the caller asked for reaches the element the way a consumer's would.
+    // Without it a spec measuring two scoped forms is measuring two unscoped ones and reads the
+    // renderer as ignoring an option it was never handed.
+    if (idPrefix !== null && idPrefix !== undefined) {
+      element.setAttribute("id-scope", String(idPrefix));
     }
-    // The parse yields more than fields: the structure the document asked for and the rules that
-    // govern it come out of the same call. A host that forwards only the fields mounts a flat page
-    // and reports it mounted, which is the same page a document with no structure would produce.
-    const result = await this.mountFields(id, parsed.fields, {
-      ...options,
-      layout: options.layout ?? parsed.layout,
-      rules: options.rules ?? parsed.rules,
-    });
-    return result.mounted === false
-      ? result
-      : { mounted: true, accepted: parsed.acceptedCount, rejected: parsed.rejectedCount };
-  },
+    const controlType = CONTROL_TYPE[declared.kind];
+    if (controlType !== undefined) element.setAttribute("type", controlType);
+    if (declared.options !== undefined) element.options = declared.options;
 
-  readonly(id, path) {
-    mounted.get(id).form.setReadonly(path, () => true);
-  },
+    // Everything else a document says about the field is the element's to render — a bound, a
+    // step, a placeholder. Forwarding only what this host happens to name makes a renderer look
+    // like it ignores a property the document declared.
+    for (const [name, value] of Object.entries(declared)) {
+      if (["name", "kind", "label", "options", "initialValue", "validators"].includes(name)) continue;
+      if (value === undefined || value === null) continue;
+      element[name] = value;
+    }
+    element.field = handle;
+    // Into the group the document put it in, or straight onto the form when it named none.
+    into.append(element);
+      
+  return element;
+}
 
-  /**
-   * End the form and leave the controls in the document.
-   *
-   * The window a framework opens between destroying its model and removing its nodes: an element
-   * still holds a handle to a form that has ended, and whatever the user does in that window reaches
-   * it. Asking one renderer and not the other makes a difference there look like a silence.
-   */
-  destroyFormOnly(id) {
-    mounted.get(id).form.destroy();
-  },
-
-  /**
-   * Change the value from outside, the way an application does.
-   *
-   * Everything else this host offers drives the page and reads the model. This is the other
-   * direction — a value arriving from a fetch, a reset, a patch — and a control that does not follow
-   * it shows the user something the form no longer holds.
-   */
-  setValue(id, patch) {
-    mounted.get(id).form.patchValue(patch);
-  },
-
-  /** Put the form back where it started. */
-  reset(id) {
-    mounted.get(id).form.reset();
-  },
-
-  /**
-   * What the engine says is wrong with one field, and whether the form may be sent.
-   *
-   * The page is a projection of this. Asking both in the same breath is what makes a verdict the
-   * model holds but the page never shows into a measurable difference rather than an impression.
-   */
-  errorsOf(id, path) {
-    return mounted.get(id).form.errorsFor(path)();
-  },
-
-  canSubmitOf(id) {
-    return mounted.get(id).form.state.canSubmit();
-  },
-
-  valueOf(id) {
-    return mounted.get(id).form.getValue();
-  },
-
-  dispose(id) {
-    const entry = mounted.get(id);
-    entry.form.destroy?.();
-    entry.host.remove();
-    mounted.delete(id);
-  },
-};
+window.battleLit = createBattleHost({
+  createForm: createLitForm,
+  mountOneField,
+  errorSummaryElement: () => document.createElement("mdy-form-errors"),
+  tagFor: (kind) => mdyLitTagFor(kind),
+});
 
 window.battleLitReady = true;
