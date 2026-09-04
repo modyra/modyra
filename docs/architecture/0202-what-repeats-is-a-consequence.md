@@ -1,6 +1,6 @@
 # ADR 0202: What repeats is derived from the anatomy, not listed by name
 
-Status: Accepted
+Status: Accepted (amended)
 
 ## Context
 
@@ -83,6 +83,23 @@ theoretical one — see below.
   the per-parent rule the same plant fails by name in both group kinds: *"optionControl is drawn once
   per option, and the DOM has 2 of those but 1 of it"*. The plant was then removed and the suite
   re-run green.
+
+## Amendment: at least once per parent, not exactly once
+
+The count rule below was written as *exactly* one child per parent instance. That is too strict, and
+the kind that proves it is the one it was never tried against: a multiselect in its `multi` shape
+draws `optionStep` as a **pair** on every row — one button that takes away and one that adds — and
+both `@modyra/plain` and `@modyra/vue` were reported non-conforming for drawing it correctly.
+
+The rule now fires when a required repeating child appears **fewer** times than its parent, which is
+the direction the defect actually lies in: a parent with nothing to operate it. Drawing a part more
+than once inside one parent stays legitimate, because nothing about repetition says a parent may
+hold only one.
+
+Verified in both directions after the change: the original defect — an option group rendering two
+choices and one radio button — still fails by name in both group kinds, and the multiselect's pair
+of steppers passes. Found the honest way: the rule was written before any kind that had such a part
+was drawn, and the first one to exercise it disproved it.
 
 ## Security and privacy
 

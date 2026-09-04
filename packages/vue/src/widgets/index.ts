@@ -30,3 +30,4 @@ export { MdyDatepickerField } from "./datepicker-field.js";
 export { MdyDaterangeField } from "./daterange-field.js";
 export { MdyTimepickerField } from "./timepicker-field.js";
 export { MdyColorsField } from "./colors-field.js";
+export { MdyMultiselectField } from "./multiselect-field.js";

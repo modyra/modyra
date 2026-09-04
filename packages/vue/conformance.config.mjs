@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField, MdyDaterangeField, MdyTimepickerField, MdyColorsField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField, MdyDaterangeField, MdyTimepickerField, MdyColorsField, MdyMultiselectField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,7 +28,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select", "datepicker", "daterange", "timepicker", "colors"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select", "datepicker", "daterange", "timepicker", "colors", "multiselect"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
@@ -55,7 +55,7 @@ export const declaresRules = true;
 // Both shapes of the select are drawn here, so both are declared: the combobox this package builds
 // and the platform's chooser it hands a non-filtering field to. A shape left off this list is one
 // the suite never mounts — a defect in it stays green, which was measured rather than assumed.
-export const variants = { select: ["native", "custom"] };
+export const variants = { select: ["native", "custom"], multiselect: ["single", "multi"] };
 
 export const mount = async (kind, { rules, value, variant } = {}) => {
   if (!kinds.includes(kind)) {
@@ -69,7 +69,10 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
     value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
   });
   const app = createApp({
-    render: () => (kind === "colors"
+    render: () => (kind === "multiselect"
+      ? h(MdyMultiselectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`,
+          options: GROUP_OPTIONS, mode: variant === "multi" ? "multi" : "single" })
+      : kind === "colors"
       ? h(MdyColorsField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
       : kind === "timepicker"
       ? h(MdyTimepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })

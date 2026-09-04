@@ -507,23 +507,29 @@ export function inspectWidgetDom(
       });
     }
 
-    // A part that repeats because its parent does appears once per parent, and the contract already
-    // says how many parents there are: the DOM holds them. Without this, "repeated" means "any
-    // number", so a group drawing two choices and one control conforms — the choice a person cannot
-    // make is invisible to every check here. Required children only: an optional one is absent by
-    // permission, and a part that lives behind an overlay is counted when the overlay is open.
+    // A part that repeats because its parent does appears **at least** once per parent, and the
+    // contract already says how many parents there are: the DOM holds them. Without this, "repeated"
+    // means "any number", so a group drawing two choices and one control conforms — the choice a
+    // person cannot make is invisible to every check here. Required children only: an optional one is
+    // absent by permission, and a part that lives behind an overlay is counted when the overlay is
+    // open.
+    //
+    // At least, not exactly: one part can legitimately be drawn more than once inside a single
+    // parent. A multiselect's `optionStep` is a pair on every row — one button that takes away and
+    // one that adds — and demanding one per row reported both renderers that draw it correctly. The
+    // defect this rule exists for is the other direction, a parent with nothing to operate it.
     const parentNode = definition.structure.nodes.find((other) => other.part === node.parent);
     const parentsDrawn = node.parent === undefined ? [] : resolved.get(node.parent) ?? [];
     const requiredHere = !node.optional || (variant?.required.includes(node.part) ?? false);
     if (
       node.repeated === true && parentNode?.repeated === true && requiredHere
-      && parentsDrawn.length > 0 && elements.length !== parentsDrawn.length
+      && parentsDrawn.length > 0 && elements.length < parentsDrawn.length
     ) {
       issues.push({
         code: "PART_CARDINALITY",
         part: node.part,
-        message: `${node.part} is drawn once per ${String(node.parent)}, and the DOM has `
-          + `${parentsDrawn.length} of those but ${elements.length} of it`,
+        message: `${node.part} is drawn on every ${String(node.parent)}, and the DOM has `
+          + `${parentsDrawn.length} of those but only ${elements.length} of it`,
       });
     }
 
