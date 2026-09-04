@@ -20,8 +20,30 @@ disagree with it in one search.
 | **Advisory** | prose that recommends, with no shape that could fail |
 | **Silent** | the question has no answer in the contract at all |
 
-**Not one row in this map is "declares and guards".** That is the finding. Every divergence a person
-could feel was either declared with nothing to enforce it, or never asked.
+## What "status" asserts
+
+Each row below carries a **status**, and the word is defined here because a status column maintained
+by hand becomes the next undated number — a document that describes yesterday with yesterday's
+authority.
+
+| status | what it asserts, and how a reader checks it |
+| --- | --- |
+| **guarded** | the row names a claim, and **a red exists that falls if the repair is removed**. Not "someone fixed it": a check that goes red again when the fix goes away. |
+| **open** | the divergence is still measurable, or the guard does not exist yet |
+
+**Two grades of evidence for `guarded`, and a reader is owed the difference.** The strong one is a
+*mutation*: the repair is removed and the check is watched going red. The ordinary one is *history*:
+the check was red, the repair landed, the check closed in a measured run — which establishes the same
+dependency in the direction it actually happened. The rows below rest on history; none has been
+re-mutated, and that is stated rather than implied.
+
+A row moves to **guarded** in the same commit that makes it true. If nobody can point at the red that
+would fall, the row is **open**, whatever the code now does.
+
+**When this map was written, not one row was "declares and guards".** That was the finding: every
+divergence a person could feel was either declared with nothing to enforce it, or never asked. Three
+rows have since been promoted — each with a red that falls if its repair is removed — and the rows
+that remain say so in their status.
 
 ---
 
@@ -69,6 +91,9 @@ the form every other exemption in this repository now carries.
 
 ### Bounds and properties never reach the control
 
+**Status: guarded** — `VAL-004`, `UI-011`. The bounds reach the control now, and the browser tier closed the reds that measured it; removing the wiring puts them back.
+
+
 **Felt as**: a slider the document bounds to 10–20 went to **0** on Home and **100** on End, and one
 arrow moved it by 1 where the document said 5. The form held values the document declares impossible.
 `placeholder`, `ariaLabel` and `step` never arrived either.
@@ -82,6 +107,9 @@ slider is almost always 0–100, so the defaults coincide with the declaration a
 **invisible exactly where it is most looked at**. It takes a range unlike the default to see it.
 
 ### Focus after a field is taken out of play
+
+**Status: guarded** — `A11Y-005`. `keepKeyboardInPlay` is called by every renderer, and the spec that measures where the keyboard lands falls if a renderer stops calling it.
+
 
 **Felt as**: a person typing in a field that a rule disables is left with the keyboard nowhere; the
 next Tab starts from the top of the document.
@@ -98,6 +126,9 @@ reached for different reasons.
 
 ### Which element opens a popup
 
+**Status: guarded** — `A11Y-008`, `UI-010`. The door the contract names first opens, and the reds that measured it closed on `c9ba61ef`.
+
+
 **Felt as**: pressing a date field does nothing; only the small button beside it opens the calendar.
 
 **Contract**: `MDY_POPUP_OPENERS` declares, per kind, `opener: "control"` for `datepicker` and
@@ -105,6 +136,9 @@ reached for different reasons.
 opener. Nothing checked that the primary one works.
 
 ### A panel shown before anyone opened it
+
+**Status: open** — and still **Probable**: it is not established whether the canonical at-rest reading covers panel visibility or whether the fixture never exposed the panel to it. Nothing here has been promoted.
+
 
 **Felt as**: a Vue select displayed its option list on mount, while its trigger reported
 `aria-expanded="false"` — shown open, declared shut.
@@ -120,6 +154,9 @@ the difference decides where the repair goes.
 
 ### Where focus goes after a panel closes
 
+**Status: open** — `MDY_WIDGET_TRANSITIONS` promises `restoresFocus`, and no door performs it. The third species of closing is now contract (ADR 0206) and this one is not.
+
+
 **Felt as**: Escape closes the panel and the keyboard is left outside the field; the next Tab restarts
 from the top.
 
@@ -129,6 +166,9 @@ there is no door that performs it the way `focusPartOnOpen` does for opening, an
 `restoreFocusTrigger` is a mechanism no declaration binds to a kind. Half declared, unbuilt.
 
 ### What a renderer may decline to answer
+
+**Status: open** — abstention is now visible per kind, which is what made the drive worth landing; but a declined state still costs nothing in the exit code.
+
 
 **Contract**: silent, and this is the one that lets all the others hide. Nothing declares which
 questions a renderer must be able to answer. `CONFORMANT WHERE CHECKED` is a verdict the kit can
