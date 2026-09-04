@@ -294,8 +294,16 @@ for (const name of untiered) {
     // a user's own theme can read one in its own CSS where no scan of ours will ever see it. Whether
     // a property with no reader here is dead or is surface nobody has exercised is a question the
     // repository cannot answer, so it is reported and never failed on.
+    // What this measures is a name, and the label says so. It used to read "a step of a scale whose
+    // siblings are read", which asserts membership in something this repository declares elsewhere —
+    // and not one of the thirty-five is in `modyra-scale.css`. They are `--mdy-ios-orange` beside
+    // `--mdy-ios-red`, `--mdy-z-modal` beside `--mdy-z-sticky`: a shared prefix, which is a weaker
+    // fact than a scale and the only one available here. A reader sent to the scale sheet to find
+    // `--mdy-ios-orange` would not find it, and would be right to distrust the next line too.
     const siblings = (familyOf.get(family(name)) ?? []).filter((s) => s !== name && readBy.has(s));
-    classified.set(name, siblings.length > 0 ? "no reader here — a step of a scale whose siblings are read" : "no reader here — alone in its family");
+    classified.set(name, siblings.length > 0
+      ? "no reader here — another property sharing its prefix is read"
+      : "no reader here — nothing shares its prefix either");
     continue;
   }
   if (who.has("an example or app")) classified.set(name, "read by an example or app");
@@ -347,6 +355,9 @@ for (const [kind, list] of [...groups].sort((a, b) => b[1].length - a[1].length)
   console.log(`  ${String(list.length).padStart(4)}  ${kind}`);
   console.log(`        e.g. ${list.slice(0, 3).join(", ")}`);
 }
+console.log("  A shared prefix is a name, not a declaration: it groups `--mdy-ios-orange` with");
+console.log("  `--mdy-ios-red` because they are spelled alike, and none of those are in the declared");
+console.log("  scale — that is a separate line above, read from the sheet that declares it.");
 console.log("  Who declares one is as telling as who reads it: the foundation declaring its own is");
 console.log("  plumbing, a theme declaring what the foundation consumes is a contract pointing at");
 console.log("  whoever writes the next theme. None is owed documentation until the header names its tier.");
