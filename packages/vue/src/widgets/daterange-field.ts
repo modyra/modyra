@@ -22,6 +22,7 @@ import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
@@ -55,6 +56,7 @@ export const MdyDaterangeField = defineComponent({
     // The panel is measured and placed against the control that opens it.
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 

@@ -12,7 +12,7 @@
  * that discriminates, so the projection is applied to it like any other part. Before it had those,
  * a renderer had to know to draw a hidden input and what to put on it.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createBooleanFieldController,
@@ -21,6 +21,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { drawDeclaredUnder, partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
 export const MdyBooleanField = defineComponent({
   name: "MdyBooleanField",
@@ -49,6 +50,9 @@ export const MdyBooleanField = defineComponent({
     // total for everything only a render writes, so `aria-invalid` and every state class stay at
     // whatever they were when the field was mounted.
     const reactivity = observerFor(props.field);
+    // The widget's own element, held so the keyboard has a place to be put back to.
+    const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       view.value = controller.view();
@@ -96,7 +100,7 @@ export const MdyBooleanField = defineComponent({
       if (parts.description !== undefined) outer.push(h("p", partProps(parts.description)));
       if (parts.error !== undefined) outer.push(h("ul", partProps(parts.error)));
 
-      return h("div", { class: contract.rootClasses.join(" ") }, outer);
+      return h("div", { class: contract.rootClasses.join(" "), ref: root }, outer);
     };
   },
 });

@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 
@@ -71,6 +72,7 @@ export const MdySelectField = defineComponent({
     // list a person cannot finish reading. ADR 0130.
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -247,7 +249,11 @@ export const MdySelectField = defineComponent({
         // Out of the field and against the trigger. Inside, the panel inherits the `overflow` and
         // the stacking of every ancestor: a list clipped by a scrolling pane is a list a person
         // cannot finish reading. ADR 0130.
-        children.push(h(Teleport, { to: "body" }, [h("div", { ref: panel, class: classesOf("popup"), onKeydown }, [
+        // Shut until it is opened. The panel stays in the document while it is closed, so that what
+        // names it keeps naming something — and without this it stayed *shown* as well: the list
+        // was on the page from the moment the field was mounted while the trigger said it was
+        // closed, so a person looking and a person listening were told different things.
+        children.push(h(Teleport, { to: "body" }, [h("div", { ref: panel, class: classesOf("popup"), hidden: !open, onKeydown }, [
           h("input", partProps(parts.search, {
             value: state.value.query,
             onInput: (event: Event) =>

@@ -21,15 +21,16 @@
  * would be deciding again what the catalogue decided, and would need editing the day a fifth kind
  * joins the shape rather than simply accepting it.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
   type MdyTextFieldController,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
-import type { MdyFieldHandle } from "@modyra/core";
+import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
 /**
  * Which tag a control is, asked of the semantic the part declares.
@@ -48,6 +49,12 @@ export const MdyTextField = defineComponent({
     widgetId: { type: String, required: true },
     /** Which of the kinds that share this anatomy is being drawn. */
     kind: { type: String as PropType<"text" | "email" | "password" | "textarea" | "number">, default: "text" },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
+    placeholder: { type: String, default: "" },
+    min: { type: Number, default: undefined },
+    max: { type: Number, default: undefined },
+    step: { type: Number, default: undefined },
   },
   setup(props) {
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
@@ -56,10 +63,26 @@ export const MdyTextField = defineComponent({
     // `inputType` comes from the catalogue, not from this file: `controlType` is what the contract
     // says a text field's native input is, and a renderer spelling "text" here would be a second
     // statement of it — the one that stops moving when the declaration does.
+    /**
+     * What this control asks for on top of the field's own rules.
+     *
+     * Handed to the controller rather than written onto the element: the projection composes the
+     * two and puts the attributes on the control part, so a bound is decided in one place. The
+     * `kind` is what tells it which native constraints this control may carry at all.
+     *
+     * Read inside the function, not captured: a document may narrow a field while it is on screen.
+     */
+    const narrowing = (): Partial<MdyFieldConstraints> => ({
+      min: props.min ?? null,
+      max: props.max ?? null,
+      step: props.step ?? null,
+    });
     const controller: MdyTextFieldController<string> = createTextFieldController<string>({
       handle: props.field,
       widgetId: props.widgetId,
       inputType: contract.controlType,
+      kind: props.kind,
+      constraints: narrowing,
     });
     // Observed through the runtime that owns the handle, never through a Vue `computed`.
     //
@@ -69,6 +92,9 @@ export const MdyTextField = defineComponent({
     // total for everything only a render writes, so `aria-invalid` and every state class stay at
     // whatever they were when the field was mounted.
     const reactivity = observerFor(props.field);
+    // The widget's own element, held so the keyboard has a place to be put back to.
+    const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       view.value = controller.view();
@@ -88,6 +114,10 @@ export const MdyTextField = defineComponent({
 
       children.push(h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, [
         h(tag, partProps(parts.input, {
+          // Two the projection does not carry, and both belong on the control a person types into:
+          // a hint shown inside the empty box, and the name it has where nothing captions it.
+          ...(props.placeholder === "" ? {} : { placeholder: props.placeholder }),
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           onInput: (event: Event) => controller.dispatch({
             type: "input",
             value: (event.target as HTMLInputElement).value,
@@ -98,7 +128,7 @@ export const MdyTextField = defineComponent({
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
       if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
 
-      return h("div", { class: contract.rootClasses.join(" ") }, children);
+      return h("div", { class: contract.rootClasses.join(" "), ref: root }, children);
     };
   },
 });

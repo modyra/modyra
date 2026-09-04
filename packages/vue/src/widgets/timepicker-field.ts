@@ -25,6 +25,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 
@@ -56,6 +57,7 @@ export const MdyTimepickerField = defineComponent({
     // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 

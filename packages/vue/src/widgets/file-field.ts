@@ -10,7 +10,7 @@
  * are parts this file has something to put in. Everything else beneath them is drawn by the same walk
  * the other components use, at whatever depth the contract declares.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createFileFieldController,
@@ -19,6 +19,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { drawDeclaredUnder, partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.file;
 
@@ -42,6 +43,9 @@ export const MdyFileField = defineComponent({
     // total for everything only a render writes, so `aria-invalid` and every state class stay at
     // whatever they were when the field was mounted.
     const reactivity = observerFor(props.field);
+    // The widget's own element, held so the keyboard has a place to be put back to.
+    const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       view.value = controller.view();
@@ -78,7 +82,7 @@ export const MdyFileField = defineComponent({
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
       if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
-      return h("div", { class: CONTRACT.rootClasses.join(" ") }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root }, children);
     };
   },
 });

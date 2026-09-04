@@ -19,7 +19,7 @@
  * one line and survives a third kind of the same shape; naming the two costs the same line and stops
  * being true the moment one arrives.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
@@ -29,6 +29,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
 export const MdyOptionField = defineComponent({
   name: "MdyOptionField",
@@ -66,6 +67,9 @@ export const MdyOptionField = defineComponent({
     // total for everything only a render writes, so `aria-invalid` and every state class stay at
     // whatever they were when the field was mounted.
     const reactivity = observerFor(props.field);
+    // The widget's own element, held so the keyboard has a place to be put back to.
+    const root = ref<HTMLElement | null>(null);
+    useKeyboardInPlay(props.field as never, root);
     const view = shallowRef(controller.view());
     const state = shallowRef(controller.state());
     const watching = reactivity.effect(() => {
@@ -113,7 +117,7 @@ export const MdyOptionField = defineComponent({
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
       if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
-      return h("div", { class: contract.rootClasses.join(" ") }, children);
+      return h("div", { class: contract.rootClasses.join(" "), ref: root }, children);
     };
   },
 });
