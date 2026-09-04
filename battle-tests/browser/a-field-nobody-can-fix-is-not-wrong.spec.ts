@@ -92,20 +92,31 @@ for (const host of HOSTS) {
     }, { api: host.api });
     await page.waitForTimeout(320);
 
+    // **All three carriers, in the order the platform resolves them.** A name can be carried by
+    // `aria-labelledby`, by `aria-label`, or by a `<label for>` — and the third is a name to a
+    // screen reader exactly as much as the other two are. Reading only the ARIA pair asserted a
+    // mechanism while the comment below claimed to accept any: a renderer that labels its control
+    // the plain HTML way was reported as announcing nothing, which is a defect in the reading.
     const named = await page.evaluate(() => {
       const root = document.querySelector('[data-form="n"]');
       const control = root?.querySelector("input") as HTMLInputElement | null;
+      const within = control?.getRootNode() as Document | ShadowRoot | undefined;
+      const textOf = (id: string) => (within?.getElementById?.(id) ?? document.getElementById(id))?.textContent ?? "";
       const labelledby = control?.getAttribute("aria-labelledby");
+      const forLabel = control?.id === undefined || control.id === ""
+        ? null
+        : (within?.querySelector?.(`label[for="${control.id}"]`) ?? null);
       return {
-        ariaLabel: control?.getAttribute("aria-label") ?? null,
         labelledbyText: labelledby === null || labelledby === undefined
           ? null
-          : (document.getElementById(labelledby)?.textContent ?? "").trim(),
+          : labelledby.split(/\s+/).map(textOf).join(" ").trim(),
+        ariaLabel: control?.getAttribute("aria-label") ?? null,
+        labelText: forLabel === null ? null : (forLabel.textContent ?? "").trim(),
       };
     });
 
     // However it is carried, the control is announced as something rather than as nothing.
-    const announced = named.ariaLabel ?? named.labelledbyText;
+    const announced = named.labelledbyText ?? named.ariaLabel ?? named.labelText;
     expect(announced, "a field nobody labelled is announced as nothing at all").toBe(fieldAccessibleName(sources));
   });
 }
