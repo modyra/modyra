@@ -18,6 +18,7 @@ import {
   defaultWidgetIdFactory,
   focusPartOnOpen,
   keyBindingFor,
+  variantOf,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
@@ -35,6 +36,14 @@ export const MdySelectField = defineComponent({
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
     placeholder: { type: String, default: "Select…" },
+    /**
+     * Whether this select filters. It decides the shape rather than an option on it: `variantOf`
+     * answers `custom` for a select that filters and `native` for one that does not, and the two
+     * are different controls — a combobox this package draws, and the chooser the platform draws
+     * and owns the keyboard of. The default is the contract's default, so a field configured the
+     * same way is the same control in every adapter.
+     */
+    searchable: { type: Boolean, default: false },
   },
   setup(props) {
     // The runtime the handle already owns, never a fresh one: two instances of the same factory
@@ -45,9 +54,7 @@ export const MdySelectField = defineComponent({
       handle: props.field,
       widgetId: props.widgetId,
       options: props.options,
-      // This component draws the filter box, so it renders the shape that has one. A select that
-      // does not filter is the platform's chooser and belongs to a different rendering entirely.
-      searchable: true,
+      searchable: props.searchable,
       // The panel's open/closed, the filter text and the reading position live inside the
       // controller, not on the field handle, so this component has to hand it the runtime that
       // makes them observable here. Without it the controller still works and every read is
@@ -82,7 +89,7 @@ export const MdySelectField = defineComponent({
      * and it covers every way of opening, including the ones this component does not handle.
      */
     watch(() => state.value.open, async (open) => {
-      const part = open ? focusPartOnOpen("select", { searchable: true }) : null;
+      const part = open ? focusPartOnOpen("select", { searchable: props.searchable }) : null;
       if (part === null) return;
       await nextTick();
       // By the id the projection publishes, never by class: two selects carry the same classes and
@@ -131,7 +138,56 @@ export const MdySelectField = defineComponent({
       }
     };
 
+    /**
+     * The platform's chooser.
+     *
+     * A `<select>` is the control, the list and the keyboard model at once, so there is nothing here
+     * to open and nothing to put focus into — which is why `focusPartOnOpen` answers `null` for this
+     * shape. It must not claim otherwise either: `aria-expanded`, `aria-controls` and
+     * `aria-haspopup` on a `<select>` describe a combobox that is not there, and the projection
+     * leaves them out for a field that does not filter.
+     *
+     * The entry for "nothing chosen" has to exist, because a native chooser can only show that state
+     * by having an option for it: without one, index 0 is a real choice, the control reads the first
+     * label while the form holds nothing, and the field looks answered when it is not.
+     */
+    const drawNative = (): VNode => {
+      const parts = view.value.parts;
+      const children: VNode[] = [];
+      if (props.label !== "") {
+        children.push(h("label", {
+          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          for: defaultWidgetIdFactory.part(props.widgetId, "trigger"),
+          class: classesOf("label"),
+        }, props.label));
+      }
+      children.push(h("div", { class: classesOf("inputWrapper") }, [
+        h("select", partProps(parts.trigger, {
+          name: props.widgetId,
+          onChange: (event: Event) =>
+            controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value }),
+        }), [
+          h("option", { class: classesOf("placeholder"), value: "", disabled: true,
+            selected: state.value.selectedKey === null }, props.placeholder),
+          ...state.value.options.map((option) => h("option", {
+            value: String(option.value),
+            selected: String(option.value) === state.value.selectedKey,
+          }, option.label)),
+        ]),
+        // The foundation takes the platform's arrow off every native chooser so a page of them
+        // reads as one page, and a kind that removes an affordance owes one back. Beside the
+        // control, never inside it: an `<option>` is the only thing a `<select>` may contain.
+        h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
+      ]));
+      children.push(h("p", {
+        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        class: classesOf("supportingText"),
+      }));
+      return h("div", { class: CONTRACT.rootClasses.join(" ") }, children);
+    };
+
     return () => {
+      if (variantOf("select", { searchable: props.searchable }) === "native") return drawNative();
       const parts = view.value.parts;
       const open = state.value.open;
       const selected = props.options.find((option) => String(option.value) === state.value.selectedKey);

@@ -28,7 +28,9 @@ const draw = () => {
   const host = document.createElement("div");
   document.body.append(host);
   const app = createApp({
-    render: () => h(MdySelectField, { field: form.f.value, widgetId: "s", label: "Pick", options: OPTIONS }),
+    // The shape with a panel. A select is non-filtering by default — that is the contract's
+    // default and this package follows it — so a fixture that wants the combobox asks for it.
+    render: () => h(MdySelectField, { field: form.f.value, widgetId: "s", label: "Pick", options: OPTIONS, searchable: true }),
   });
   app.mount(host);
   return { host, form, trigger: host.querySelector(`.${cls("trigger")}`), dispose: () => { app.unmount(); host.remove(); } };
@@ -105,5 +107,61 @@ test("the panel is still referenced when it is shut", () => {
   const controls = trigger.getAttribute("aria-controls");
   assert.ok(controls, "the trigger names no list at all");
   assert.ok(host.ownerDocument.getElementById(controls), `aria-controls points at ${controls}, which is not in the document`);
+  dispose();
+});
+
+/**
+ * The other shape: the chooser the platform draws.
+ *
+ * `variantOf` decides it — a select that does not filter is native — and the contract is explicit
+ * about what it must not do: *"nothing may carry `aria-expanded`, `aria-controls` or
+ * `aria-haspopup` — a `<select>` that claims to be a combobox is lying about what it is."* That is
+ * asserted here rather than trusted, because those attributes arrive from a shared projection and
+ * would be invisible in a rendering that otherwise looks right.
+ */
+const drawNative = () => {
+  const form = createVueForm({ value: field(null) });
+  const host = document.createElement("div");
+  document.body.append(host);
+  const app = createApp({
+    render: () => h(MdySelectField, {
+      field: form.f.value, widgetId: "n", label: "Pick", options: OPTIONS, searchable: false,
+    }),
+  });
+  app.mount(host);
+  return { host, dispose: () => { app.unmount(); host.remove(); } };
+};
+
+test("a select that does not filter is the platform's chooser", () => {
+  const { host, dispose } = drawNative();
+
+  const chooser = host.querySelector("select");
+  assert.ok(chooser, "no native chooser was drawn for a field that does not filter");
+  assert.ok(chooser.classList.contains(cls("trigger")), "the chooser is not the declared trigger part");
+  dispose();
+});
+
+test("the chooser does not claim to be a combobox", () => {
+  const { host, dispose } = drawNative();
+
+  const chooser = host.querySelector("select");
+  for (const attribute of ["aria-expanded", "aria-controls", "aria-haspopup"]) {
+    assert.equal(
+      chooser.getAttribute(attribute), null,
+      `the chooser carries ${attribute}, which describes a combobox that is not there`,
+    );
+  }
+  dispose();
+});
+
+test("the chooser has an entry for nothing chosen, and it cannot be chosen back into", () => {
+  const { host, dispose } = drawNative();
+
+  // Without it, index 0 is a real option: the control reads the first label while the form holds
+  // nothing, which is a field that looks answered and is not.
+  const placeholder = host.querySelector(`.${cls("placeholder")}`);
+  assert.ok(placeholder, "the chooser has no entry standing for an unanswered field");
+  assert.equal(placeholder.tagName, "OPTION", "the placeholder is not inside the chooser");
+  assert.equal(placeholder.disabled, true, "the placeholder can be chosen, so 'nothing' is a value");
   dispose();
 });

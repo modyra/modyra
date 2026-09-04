@@ -72,12 +72,17 @@ export const absentParts = contractParts.ABSENT;
  */
 export const declaresRules = true;
 
-// A renderer declares the shapes *it* draws, not every shape the kind has. This one draws the
-// combobox whichever way the field is configured — deliberately, and the reason six cross-renderer
-// findings looked like divergences: two renderers hand a non-filtering select to the platform and
-// this one does not. Listing `native` here would report it non-conforming for a shape it never
-// claims to render.
-export const variants = { multiselect: ["single", "multi"], select: ["custom"] };
+// A renderer declares the shapes *it* draws, and this one draws both: a field that filters becomes
+// the combobox below, and one that does not is handed to the platform by `variantOf` — the same
+// derivation every adapter reads, in `select-field.ts`.
+//
+// It was listed as `custom` alone, on the reasoning that native was "a shape it never claims to
+// render". That was measured false: a select is non-filtering by default, so the platform's chooser
+// is the shape this renderer draws unless a field asks otherwise. The exclusion was not free
+// either — with `native` off this list, removing the trigger's declared classes from the native
+// path leaves the suite green, and putting it back names the defect as
+// `select[native].trigger: PART_MISSING`.
+export const variants = { multiselect: ["single", "multi"], select: ["native", "custom"] };
 
 
 const { mountMdyForm } = await import("./dist/index.js");

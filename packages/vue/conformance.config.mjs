@@ -52,7 +52,12 @@ const GROUP_OPTIONS = [{ value: "a", label: "First" }, { value: "b", label: "Sec
  */
 export const declaresRules = true;
 
-export const mount = async (kind, { rules, value } = {}) => {
+// Both shapes of the select are drawn here, so both are declared: the combobox this package builds
+// and the platform's chooser it hands a non-filtering field to. A shape left off this list is one
+// the suite never mounts — a defect in it stays green, which was measured rather than assumed.
+export const variants = { select: ["native", "custom"] };
+
+export const mount = async (kind, { rules, value, variant } = {}) => {
   if (!kinds.includes(kind)) {
     throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
@@ -65,7 +70,10 @@ export const mount = async (kind, { rules, value } = {}) => {
   });
   const app = createApp({
     render: () => (kind === "select"
-      ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, options: GROUP_OPTIONS })
+      ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, options: GROUP_OPTIONS,
+          // `custom` is the shape that filters; asked for neither, the state matrix means the one
+          // whose states it describes, which is the one with an `open`.
+          searchable: variant === undefined || variant === "custom" })
       : GROUP.has(kind)
       ? h(MdyOptionField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind, options: GROUP_OPTIONS })
       : kind === "file"
