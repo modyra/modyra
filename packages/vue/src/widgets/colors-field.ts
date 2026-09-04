@@ -60,8 +60,12 @@ export const MdyColorsField = defineComponent({
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
     const root = shallowRef<HTMLElement | null>(null);
+    // `Array.from`, not a spread: what `querySelectorAll` returns is array-like without being
+    // iterable unless the project asks for `DOM.Iterable`, and none of this repository's packages
+    // do. Spread here compiles under the compiler this package is built with and fails under the
+    // one a consumer may hold, which makes it a portability defect rather than a matter of style.
     const swatches = (): readonly HTMLElement[] =>
-      [...(root.value?.querySelectorAll(`.${classesOf("swatch").split(" ")[0]}`) ?? [])]
+      Array.from(root.value?.querySelectorAll(`.${classesOf("swatch").split(" ")[0]}`) ?? [])
         .filter((element): element is HTMLElement => element instanceof HTMLElement);
     const entry = (): HTMLElement | null => {
       const found = root.value?.querySelector(`.${classesOf("customEntry").split(" ")[0]}`);
