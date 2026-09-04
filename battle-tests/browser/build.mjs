@@ -99,6 +99,22 @@ await build({
   logLevel: "warning",
 });
 
+// A fourth host, rendered by `@modyra/vue`. It is the first renderer in this tier that draws a kind
+// with a component and a prop rather than a registered element per kind, so it is what tells the
+// suite which of its questions were about the contract and which were about custom elements.
+//
+// `@modyra/vue` and `vue` are both root dependencies, so nothing is aliased: this is a consumer build.
+await build({
+  entryPoints: [join(BATTLE_ROOT, "browser", "host", "vue-entry.mjs")],
+  outfile: join(OUT_DIR, "vue-host.js"),
+  bundle: true,
+  format: "esm",
+  target: "es2022",
+  nodePaths: NODE_PATHS,
+  alias: withMutant({}),
+  logLevel: "warning",
+});
+
 // A third host, rendered by `@modyra/angular`. Until this existed the tier had two renderers of
 // three, and every question about Angular's rendered geometry — paint order, pointer behaviour, what
 // a dial actually draws — could only be answered by reading its source.
@@ -150,6 +166,24 @@ writeFileSync(
   <body>
     <main id="stage"></main>
     <script type="module" src="./lit-host.js"></script>
+  </body>
+</html>
+`,
+  "utf8",
+);
+
+writeFileSync(
+  join(OUT_DIR, "vue.html"),
+  `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Modyra battle host (vue)</title>
+    <link rel="stylesheet" href="./modyra.css" />
+  </head>
+  <body>
+    <main id="stage"></main>
+    <script type="module" src="./vue-host.js"></script>
   </body>
 </html>
 `,

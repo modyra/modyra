@@ -142,12 +142,15 @@ const CONTROL_TYPE = {
       const { layout: _layout, rules: _rules, ...forForm } = options;
       const form = createForm(schema, forForm);
 
-      // Lit publishes no form component: a Lit form is whatever the host writes, so the summary
-      // region is an element the host places. It goes first, because a summary found by scrolling
-      // past the fields is one nobody reads.
+      // A renderer that publishes no form component leaves the summary region to the host, and one
+      // that publishes its own does not want a second. So the element is the adapter's to offer:
+      // offered, it goes first, because a summary found by scrolling past the fields is one nobody
+      // reads; declined, the page simply has none and every check below still applies.
       const summary = errorSummaryElement?.() ?? null;
-      summary.form = form;
-      host.append(summary);
+      if (summary !== null) {
+        summary.form = form;
+        host.append(summary);
+      }
 
       // **A structure the document asked for, built by the host because the package publishes no door
       // that mounts one.** A grouping element carries a name and encloses what depends on it, which
@@ -194,6 +197,7 @@ const CONTROL_TYPE = {
       assertLayoutWithinDepth(options.layout ?? []);
       buildLayout(options.layout, host);
 
+      const teardowns = [];
       for (const declared of parsed) {
         // The one step that differs between adapters, and the only reason this file takes a
         // parameter. Lit creates a registered element and sets `.field`; Vue mounts a component with
@@ -201,14 +205,19 @@ const CONTROL_TYPE = {
         //
         // The adapter is handed the group the document put the field in — or the form itself when it
         // named none — because where a field lands is the document's answer, not the adapter's.
-        mountOneField({
+        const drawn = mountOneField({
           declared,
           handle: handleFor(form, declared.name),
           into: holderFor.get(declared.name) ?? host,
           idPrefix: options.idPrefix ?? null,
         });
+        // A renderer that mounts an application owns nodes this host never sees: a panel a framework
+        // teleports to the body outlives the element it was opened from, so removing the host is not
+        // a teardown. An adapter that has something to undo says so by returning it; one whose nodes
+        // die with the host — a registered element does — returns nothing and nothing is called.
+        if (typeof drawn?.dispose === "function") teardowns.push(drawn.dispose);
       }
-      mounted.set(id, { form, host, submitted: [] });
+      mounted.set(id, { form, host, submitted: [], teardowns });
       return { mounted: true, tags: parsed.map((each) => tagFor?.(each.kind) ?? null) };
     } catch (error) {
       return { mounted: false, message: String(error?.message ?? error) };
@@ -352,6 +361,9 @@ const CONTROL_TYPE = {
 
   dispose(id) {
     const entry = mounted.get(id);
+    // Before the host goes: an application still mounted into a node that is about to be detached
+    // cannot reach what it put elsewhere on the page.
+    for (const teardown of entry.teardowns ?? []) teardown();
     entry.form.destroy?.();
     entry.host.remove();
     mounted.delete(id);
