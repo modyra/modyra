@@ -109,7 +109,17 @@ export function emptyFor(kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export function mount(kind, { validators = true, variant, rules, value } = {}) {
+/**
+ * `config` is the document's declarations that are not rules.
+ *
+ * A field says two different kinds of thing about itself and they travel differently. `rules` are
+ * validators: they decide whether a value is acceptable, and the engine builds them. `config` is
+ * what the document declares so the control can be *drawn* — a step, a placeholder, a name where
+ * nothing captions it — and no validator vocabulary carries them, because they do not judge a
+ * value. Handing both through one door would make the kit unable to say which of the two a renderer
+ * dropped.
+ */
+export function mount(kind, { validators = true, variant, rules, value, config } = {}) {
   const host = document.createElement("div");
   document.body.append(host);
   const fieldFor = (extra) => ({
@@ -139,6 +149,9 @@ export function mount(kind, { validators = true, variant, rules, value } = {}) {
       : kind === "select"
         ? { searchable: variant === "custom" }
         : { mode: variant }),
+    // The document's non-rule declarations, spread as the field's own properties, which is how a
+    // document states them.
+    ...(config ?? {}),
     ...extra,
   });
   let mounted = mountMdyForm(host, [fieldFor({})], { submitLabel: null });

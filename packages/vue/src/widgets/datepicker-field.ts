@@ -35,6 +35,8 @@ export const MdyDatepickerField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
     locale: { type: String, default: "en" },
   },
   setup(props) {
@@ -110,6 +112,10 @@ export const MdyDatepickerField = defineComponent({
         // the control: the combobox role, the relation to the grid it opens, and the one to the
         // description. Written by hand instead, it carried none of them.
         h("input", partProps(parts.trigger, {
+          // The name, where nothing on the page captions the control. The projection names a
+          // control against a caption that exists; this is the other case, and without it a
+          // captionless control is announced as nothing at all.
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           type: "text",
           value: state.value.entryText,
           // Handed over as typed. What a date looks like is the contract's question.

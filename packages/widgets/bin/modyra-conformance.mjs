@@ -78,6 +78,7 @@ const { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, nativeConstraintAttributes } 
 // The empty constraint set, so a rule this suite does not declare reads as "nothing declared"
 // rather than as `undefined` — which the door would spell onto the control.
 const { NO_CONSTRAINTS } = await import(pathToFileURL(resolve(packageRoot, "../core/dist/index.js")).href);
+const { MDY_CANONICAL_FILLED, readAccessibleName } = await import(pathToFileURL(resolve(packageRoot, "dist/testing/index.js")).href);
 
 // Loaded with its own diagnosis. A config that throws on import is the normal first experience of
 // this tool — a missing DOM, a path that does not exist, a renderer that fails to construct — and a
@@ -115,6 +116,24 @@ const sections = [];
  * finding it is. What is not judged is now its own mark and its own line, so a report says what it
  * did not look at as plainly as what it did.
  */
+/**
+ * The element the attributes belong on, named in the contract's vocabulary.
+ *
+ * `parts()` is the one thing every config provides, and the catalogue calls this part `input` on a
+ * text-like kind and `control` elsewhere. Asking the root instead would read the renderer's outer
+ * element and report "carries nothing" about a control that carries everything.
+ */
+const controlOf = (fixture) => {
+  const parts = fixture.parts?.() ?? {};
+  return parts["input"] ?? parts["control"] ?? fixture.control?.() ?? fixture.root ?? null;
+};
+
+const attributeOfControl = (fixture, attribute) => {
+  const parts = fixture.parts?.() ?? {};
+  const control = parts["input"] ?? parts["control"] ?? fixture.control?.() ?? fixture.root;
+  return control?.getAttribute?.(attribute) ?? null;
+};
+
 const record = (title, findings, note, abstained) =>
   sections.push({ title, findings, note, abstained: abstained ?? [] });
 
@@ -268,18 +287,6 @@ const record = (title, findings, note, abstained) =>
 // and reporting the first when it is the second is an accusation it cannot support.
 if (config.declaresRules === true) {
   const findings = [];
-  /**
-   * The element the attributes belong on, named in the contract's vocabulary.
-   *
-   * `parts()` is the one thing every config provides, and the catalogue calls this part `input` on a
-   * text-like kind and `control` elsewhere. Asking the root instead would read the renderer's outer
-   * element and report "carries nothing" about a control that carries everything.
-   */
-  const attributeOf = (fixture, attribute) => {
-    const parts = fixture.parts?.() ?? {};
-    const control = parts["input"] ?? parts["control"] ?? fixture.control?.() ?? fixture.root;
-    return control?.getAttribute?.(attribute) ?? null;
-  };
 
   /**
    * Every rule this suite declares, and what each kind is then owed.
@@ -323,7 +330,7 @@ if (config.declaresRules === true) {
     }
     asked += 1;
     for (const [attribute, wanted] of Object.entries(expect)) {
-      const found = attributeOf(fixture, attribute);
+      const found = attributeOfControl(fixture, attribute);
       if (found !== wanted) {
         findings.push(
           `${kind}: the field declares ${attribute}=${wanted}, the control carries ` +
@@ -346,6 +353,100 @@ if (config.declaresRules === true) {
     "Declared rules reach the control",
     null,
     "not run — the config does not export `declaresRules`, so it may not pass `rules` to its fixture",
+  );
+}
+
+// ── Declarations that are not rules reach the control ─────────────────────────────────────
+//
+// A document says two different kinds of thing about a field, and they travel differently.
+//
+// **Rules validate.** `min`, `maxLength`, `pattern` — the engine builds a validator for each, they
+// decide whether a value is acceptable, and the section above asks whether they reach the control.
+//
+// **These draw.** A `step`, a `placeholder`, a name where nothing captions the control. No validator
+// vocabulary carries them, and that is not an omission: the engine refuses to build a `step` rule,
+// because a step does not judge a value. `nativeConstraintAttributes` says the same thing from the
+// other side — a slider's step *gives way* to a value that is not on one, which a rule could never
+// do. An affordance cedes to the value; a rule does not. So they are a second channel, and this
+// section is the one that asks about it.
+//
+// The day a document needs to *validate* a step rather than draw one — to refuse a value off the
+// grid rather than snap the thumb — that is a rule, it belongs in the vocabulary, and it gets its
+// own record. Until then, promoting it would answer a question no document is asking.
+if (config.declaresConfig === true) {
+  const findings = [];
+  let asked = 0;
+  /** The words a document declares as the control's name, where nothing else captions it. */
+  const NAME = "Conformance name";
+
+  /** What each kind's control can be told, asked of the contract rather than listed. */
+  const owedFor = (kind, held) => {
+    const control = MDY_WIDGET_CONTRACTS[kind]?.parts?.["input"] ?? MDY_WIDGET_CONTRACTS[kind]?.parts?.["control"];
+    if (!control) return null;
+    // `step` where the kind's own control understands one, which is the same door the projection
+    // asks; every other kind is told nothing about it rather than told null.
+    const stepped = nativeConstraintAttributes(kind, { ...NO_CONSTRAINTS, step: 2 }, held)["step"] !== undefined
+      && nativeConstraintAttributes(kind, { ...NO_CONSTRAINTS, step: 2 }, held)["step"] !== null;
+    return {
+      // The caption is taken away with the same breath. A name declared where a caption also exists
+      // is a different question — the caption may well win — and a check that declared both would
+      // be asserting a direction nobody has established.
+      declare: { label: "", ariaLabel: NAME, ...(stepped ? { step: 2 } : {}) },
+      attributes: stepped ? { step: "2" } : {},
+    };
+  };
+
+  for (const kind of kinds) {
+    const probe = owedFor(kind, MDY_CANONICAL_FILLED[kind] ?? null);
+    if (probe === null) continue;
+    const fixture = await mount(kind, { config: probe.declare });
+    await fixture.settle?.();
+    asked += 1;
+    for (const [attribute, wanted] of Object.entries(probe.attributes)) {
+      const found = attributeOfControl(fixture, attribute);
+      if (found !== wanted) {
+        findings.push(
+          `${kind}: the document declares ${attribute}=${wanted}, the control carries ` +
+          `${found === null ? "nothing" : `"${found}"`}`,
+        );
+      }
+    }
+    /**
+     * The name is read as a name, not as an attribute.
+     *
+     * `aria-label` is one of four ways an element gets one, and the reference renderer uses a
+     * different one for two of its kinds: a caption element carrying the words, associated by
+     * `for`. Reading the attribute reported those two as nameless — a control that a browser
+     * announces correctly, accused by a check looking in one place. `readAccessibleName` resolves
+     * it the way the naming rules do.
+     *
+     * Contained rather than equal, because the contract adds a required marker to the caption it
+     * writes, and the marker is the field's, not the document's.
+     */
+    const control = controlOf(fixture);
+    const resolved = control === null
+      ? null
+      : readAccessibleName(control, kind, control.ownerDocument ?? null)?.value?.name ?? null;
+    if (control !== null && !(resolved ?? "").includes(NAME)) {
+      findings.push(
+        `${kind}: the document declares the name ${JSON.stringify(NAME)} and nothing captions the ` +
+        `control, and it is announced as ${resolved === null || resolved === "" ? "nothing" : JSON.stringify(resolved)}`,
+      );
+    }
+    fixture.dispose();
+  }
+
+  record(
+    "Declarations that are not rules reach the control",
+    findings,
+    `${asked} kind(s) asked`,
+  );
+} else {
+  record(
+    "Declarations that are not rules reach the control",
+    null,
+    "not run — the config does not export `declaresConfig`, so it may not pass a document's "
+    + "non-rule declarations to its fixture",
   );
 }
 

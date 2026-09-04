@@ -29,6 +29,8 @@ export const MdyFileField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<readonly File[]>>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
   },
   setup(props) {
     const controller: MdyFileFieldController<File> = createFileFieldController<File>({
@@ -67,6 +69,10 @@ export const MdyFileField = defineComponent({
 
       children.push(h("div", partProps(parts.dropzone, { class: CONTRACT.parts.dropzone.classes.join(" ") }), [
         h("input", partProps(parts.control, {
+          // The name, where nothing on the page captions the control. The projection names a
+          // control against a caption that exists; this is the other case, and without it a
+          // captionless control is announced as nothing at all.
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           id: props.widgetId,
           type: CONTRACT.controlType,
           class: CONTRACT.parts.control.classes.join(" "),

@@ -72,6 +72,15 @@ export const absentParts = contractParts.ABSENT;
  */
 export const declaresRules = true;
 
+/**
+ * This config also passes the kit's `config` — a document's declarations that are not rules.
+ *
+ * A step, a placeholder and a name where nothing captions the control are things a document states
+ * so the widget can be drawn, not rules that judge a value. They travel as the field's own
+ * properties, which is how a document states them.
+ */
+export const declaresConfig = true;
+
 // A renderer declares the shapes *it* draws, and this one draws both: a field that filters becomes
 // the combobox below, and one that does not is handed to the platform by `variantOf` — the same
 // derivation every adapter reads, in `select-field.ts`.

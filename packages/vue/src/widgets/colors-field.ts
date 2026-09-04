@@ -38,6 +38,8 @@ export const MdyColorsField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<string>>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
     presets: { type: Array as PropType<readonly string[]>, default: undefined },
   },
   setup(props) {
@@ -152,6 +154,9 @@ export const MdyColorsField = defineComponent({
         // here — without it the part is on the page and no check can find it.
         h("input", partProps(parts.control, {
           type: "color",
+          // The name, where nothing on the page captions the control. Without it the swatch a
+          // person operates is announced as nothing at all.
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           class: classesOf("control"),
           value: state.value.value,
           onInput: (event: Event) =>

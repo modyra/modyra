@@ -52,12 +52,20 @@ const GROUP_OPTIONS = [{ value: "a", label: "First" }, { value: "b", label: "Sec
  */
 export const declaresRules = true;
 
+/**
+ * This config also passes the kit's `config` — a document's declarations that are not rules.
+ *
+ * They arrive as props, which is how a document reaches a component here, and after the defaults
+ * this file sets so a declared caption can replace the one it would otherwise draw.
+ */
+export const declaresConfig = true;
+
 // Both shapes of the select are drawn here, so both are declared: the combobox this package builds
 // and the platform's chooser it hands a non-filtering field to. A shape left off this list is one
 // the suite never mounts — a defect in it stays green, which was measured rather than assumed.
 export const variants = { select: ["native", "custom"], multiselect: ["single", "multi"] };
 
-export const mount = async (kind, { rules, value, variant } = {}) => {
+export const mount = async (kind, { rules, value, variant, config } = {}) => {
   if (!kinds.includes(kind)) {
     throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
@@ -70,30 +78,30 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
   });
   const app = createApp({
     render: () => (kind === "multiselect"
-      ? h(MdyMultiselectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`,
+      ? h(MdyMultiselectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}),
           options: GROUP_OPTIONS, mode: variant === "multi" ? "multi" : "single" })
       : kind === "colors"
-      ? h(MdyColorsField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdyColorsField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : kind === "timepicker"
-      ? h(MdyTimepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdyTimepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : kind === "daterange"
-      ? h(MdyDaterangeField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdyDaterangeField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : kind === "datepicker"
-      ? h(MdyDatepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdyDatepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : kind === "select"
-      ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, options: GROUP_OPTIONS,
+      ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}), options: GROUP_OPTIONS,
           // `custom` is the shape that filters; asked for neither, the state matrix means the one
           // whose states it describes, which is the one with an `open`.
           searchable: variant === undefined || variant === "custom" })
       : GROUP.has(kind)
-      ? h(MdyOptionField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind, options: GROUP_OPTIONS })
+      ? h(MdyOptionField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}), kind, options: GROUP_OPTIONS })
       : kind === "file"
-      ? h(MdyFileField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdyFileField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : kind === "slider"
-      ? h(MdySliderField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      ? h(MdySliderField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}) })
       : BOOLEAN.has(kind)
-      ? h(MdyBooleanField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind })
-      : h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, kind })),
+      ? h(MdyBooleanField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}), kind })
+      : h(MdyTextField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, ...(config ?? {}), kind })),
   });
   app.mount(host);
 

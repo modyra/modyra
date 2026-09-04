@@ -45,6 +45,8 @@ export const MdyTimepickerField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
   },
   setup(props) {
     const reactivity = observerFor(props.field);
@@ -150,6 +152,10 @@ export const MdyTimepickerField = defineComponent({
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("input", partProps(parts.trigger, {
+          // The name, where nothing on the page captions the control. The projection names a
+          // control against a caption that exists; this is the other case, and without it a
+          // captionless control is announced as nothing at all.
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           type: "text",
           value: state.value.entryText,
           onChange: (event: Event) =>

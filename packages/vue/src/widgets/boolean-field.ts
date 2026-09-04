@@ -29,6 +29,8 @@ export const MdyBooleanField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<boolean>>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
+    /** The name a control has when nothing on the page captions it. */
+    ariaLabel: { type: String, default: "" },
     kind: { type: String as PropType<"checkbox" | "toggle">, default: "checkbox" },
   },
   setup(props) {
@@ -75,6 +77,10 @@ export const MdyBooleanField = defineComponent({
         // control declares none, so a renderer reading only the projection is right there and wrong
         // wherever a kind dresses its control — which is every kind that paints one.
         h("input", partProps(parts.input, {
+          // The name, where nothing on the page captions the control. The projection names a
+          // control against a caption that exists; this is the other case, and without it a
+          // captionless control is announced as nothing at all.
+          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           class: contract.parts.control.classes.join(" "),
           // The intent the kind declares for a press, not a value written over the top: `check` and
           // `uncheck` are what the controller answers, and a renderer that set the value directly
