@@ -26,6 +26,7 @@ import { partProps } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
+import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 
@@ -99,6 +100,15 @@ export const MdySelectField = defineComponent({
     const anchor = ref<HTMLElement | null>(null);
 
     const state = shallowRef(controller.state());
+    // And when the keyboard settles somewhere else: every kind with a popup declares it, and this
+    // package honoured it nowhere.
+    useDismissOnFocusOutside({
+      kind: "select",
+      root,
+      panel,
+      isOpen: () => state.value.open,
+      close: () => controller.dispatch({ type: "close", restoreFocus: false }),
+    });
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       state.value = controller.state();

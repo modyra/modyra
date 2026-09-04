@@ -192,6 +192,7 @@ export const dynamicPanel = {
     "datepickerFieldRootClasses",
     "decideOverlayAlignment",
     "decideOverlayPlacement",
+    "bindDismissOnFocusOutside",
     "defaultOptionKey",
     "defaultWidgetIdFactory",
     "dialRingOf",

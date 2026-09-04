@@ -5049,6 +5049,11 @@
     "remember: void",
     "restore: HTMLElement | null"
   ],
+  "widgets:MdyFocusDismissalOptions": [
+    "document?: Document",
+    "markVisited?: () => void",
+    "pointer?: { interactionFromInside(): boolean; }"
+  ],
   "widgets:MdyFormResetBinding": [
     "element: Element",
     "reset: () => void",
@@ -6194,6 +6199,14 @@
     "(1) chip: HTMLElement",
     "(2) options: MdyChipReorderOptions",
     "-> returns: void"
+  ],
+  "widgets:bindDismissOnFocusOutside": [
+    "(0) kind: MdyWidgetKind",
+    "(1) branch: () => ReadonlyArray<Element | null | undefined>",
+    "(2) isOpen: () => boolean",
+    "(3) close: () => void",
+    "(4) options?: MdyFocusDismissalOptions",
+    "-> returns: () => void"
   ],
   "widgets:bindFormReset": [
     "(0) binding: MdyFormResetBinding",

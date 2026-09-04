@@ -5,7 +5,7 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { capabilityOf, applyAnchoredOverlay, applyOverlayProperties, clearAnchoredOverlay, inlineDirectionOf, measureOverlayContent, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, viewportSize, type MdyI18nMessages } from "@modyra/widgets";
+import { bindDismissOnFocusOutside, applyAnchoredOverlay, applyOverlayProperties, clearAnchoredOverlay, inlineDirectionOf, measureOverlayContent, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, viewportSize, type MdyI18nMessages } from "@modyra/widgets";
 import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayDecision, type MdyPopupWidgetKind, type MdyWidgetKind } from "@modyra/widgets";
 
 import { announcePlain } from "./command-runtime.js";
@@ -217,23 +217,10 @@ export function dismissOnOutsidePointer(
 /**
  * Closes an overlay when focus settles outside the widget, where the kind declares that it should.
  *
- * `dismissOnFocusOutside` is declared by every kind that has a popup and was honoured by one field
- * out of six: written out at each renderer, it was written out once. A panel left open behind a
- * field somebody has tabbed away from covers the next question and answers to a keyboard that has
- * gone elsewhere.
- *
- * **`focusin` on the document, not `focusout` on the parts.** The question is where focus *landed*,
- * and only the arrival answers it. A departure does not: a panel that repaints — a calendar swapping
- * its day grid for its months — destroys the element holding focus, which fires a departure with
- * nowhere named, indistinguishable from somebody leaving the field. Bound that way, opening the
- * month view closed the calendar it belonged to.
- *
- * It is also one listener for a widget whose parts are in two places, since a portalled panel is
- * outside the wrapper and a listener on the wrapper never sees focus reach it.
- *
- * **A pointer outranks it.** A drag begun inside the branch takes focus out on the way past, and
- * closing there would reinstate through the focus path exactly the dismissal the pointer policy
- * refuses. The field is still marked as visited: the person has been here either way.
+ * The deciding is `bindDismissOnFocusOutside`'s, in `@modyra/widgets`. It was written out here, and
+ * being written out here is why it was honoured by one renderer out of four: a rule that lives in a
+ * renderer is a rule the next renderer has to be told about. This keeps the signature this package's
+ * fields already call and hands the question to the contract.
  */
 export function dismissOnFocusOutside(
   kind: MdyWidgetKind,
@@ -242,57 +229,5 @@ export function dismissOnFocusOutside(
   close: () => void,
   options: { readonly pointer?: MdyOverlayDismissal; readonly markVisited?: () => void } = {},
 ): () => void {
-  // Asked of the kind rather than of any kind: they all declare it today, and a kind that stops
-  // declaring it must stop being closed this way without anybody editing a renderer.
-  if (!capabilityOf(kind, "dismissOnFocusOutside")) return noop;
-  if (typeof document === "undefined") return noop;
-
-  /**
-   * Structural, never `instanceof`. This module is loaded by suites that run outside a browser,
-   * where `Element` is not a global at all — a check written that way throws on the mere shape of
-   * the argument, in a function that was supposed to bind one listener.
-   */
-  const isElement = (part: unknown): part is Element =>
-    typeof part === "object" && part !== null
-    && typeof (part as { nodeType?: unknown }).nodeType === "number"
-    && typeof (part as { contains?: unknown }).contains === "function";
-  const bound = parts.filter(isElement);
-
-  /**
-   * The widget's panel, wherever the document put it, found the way the contract says to find it:
-   * the opener names it. A renderer that portals its panel out of the field does not thereby stop
-   * owning it, and a list of elements written at the call site cannot know where it went.
-   */
-  const controlledPanel = (): Element | null => {
-    for (const part of bound) {
-      const opener = part.matches("[aria-controls]") ? part : part.querySelector("[aria-controls]");
-      const id = opener?.getAttribute("aria-controls");
-      if (id) {
-        const panel = document.getElementById(id);
-        if (panel) return panel;
-      }
-    }
-    return null;
-  };
-
-  const onFocusIn = (event: Event): void => {
-    // Nothing to dismiss, so nothing to say. The listener is on the document — it hears every focus
-    // move on the page — and without this every field with a panel dispatched a close on every one
-    // of them. Six fields answering a movement in a seventh is not a no-op: a close carries a focus
-    // policy, and six of them landing on one gesture fight over where focus ends up. Its pointer
-    // twin has taken `isOpen` since it was written; this is the same question.
-    if (!isOpen()) return;
-    const landed = (event.target as Node | null) ?? null;
-    if (landed === null) return;
-    if (bound.some((part) => part.contains(landed))) return;
-    if (controlledPanel()?.contains(landed) === true) return;
-    if (options.pointer?.interactionFromInside() === true) {
-      options.markVisited?.();
-      return;
-    }
-    close();
-  };
-
-  document.addEventListener("focusin", onFocusIn);
-  return () => document.removeEventListener("focusin", onFocusIn);
+  return bindDismissOnFocusOutside(kind, () => parts, isOpen, close, options);
 }

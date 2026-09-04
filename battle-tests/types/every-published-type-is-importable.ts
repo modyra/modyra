@@ -20,6 +20,7 @@
 
 import type {
   MdyFieldTeardown,
+  MdyFocusDismissalOptions,
   MdyAccessibleNameSource,
   MdyAffordance,
   MdyAffordanceRole,
@@ -964,3 +965,6 @@ void held296;
 
 declare const held297: MdyFieldTeardown;
 void held297;
+
+declare const held298: MdyFocusDismissalOptions;
+void held298;

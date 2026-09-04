@@ -29,6 +29,7 @@ import { partProps, type MdyDeclaredPart } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
+import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 
@@ -70,6 +71,15 @@ export const MdyTimepickerField = defineComponent({
     const anchor = ref<HTMLElement | null>(null);
 
     const state = shallowRef(controller.state());
+    // And when the keyboard settles somewhere else: every kind with a popup declares it, and this
+    // package honoured it nowhere.
+    useDismissOnFocusOutside({
+      kind: "timepicker",
+      root,
+      panel,
+      isOpen: () => state.value.open,
+      close: () => controller.dispatch({ type: "close" }),
+    });
     const view = shallowRef(controller.view());
     useLightDismiss({
       kind: "timepicker",
