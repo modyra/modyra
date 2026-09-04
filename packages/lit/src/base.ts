@@ -440,6 +440,27 @@ export abstract class MdyFieldElement<T> extends LitElement {
       }
       this._unboundFrame = null;
       if (this.field !== undefined || !this.isConnected) return;
+      /**
+       * One more look, when the page has nothing left to do.
+       *
+       * Three frames is a count, and a count is a guess about how fast a machine is. Measured: the
+       * suite that binds one frame after appending is green three times out of three on an idle
+       * machine and red inside the full tier — the spec is identical in both, so what the deadline
+       * was measuring was the load. The element was then told nobody had bound it, by a page that
+       * had; a warning that says something untrue about the element it names is worse than silence,
+       * because it exists to be believed.
+       *
+       * Idle is a boundary rather than a number: the page has finished the work it had, so an
+       * element still unbound is one nobody is going to bind. A page that never goes idle never
+       * hears this — silence, which is the safe side of a warning that cannot be sure.
+       */
+      const idle = (globalThis as { requestIdleCallback?: (fn: () => void) => void }).requestIdleCallback;
+      if (idle !== undefined && !this._waitedForIdle) {
+        this._waitedForIdle = true;
+        idle(() => { this._unboundFrame = requestAnimationFrame(look); });
+        return;
+      }
+      if (this.field !== undefined || !this.isConnected) return;
       this._saidUnbound = true;
       const named = this.label ? ` labelled "${this.label}"` : "";
       console.warn(
@@ -450,6 +471,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
     };
     this._unboundFrame = requestAnimationFrame(look);
   }
+
+  /** Whether the one extra look, taken after the page went idle, has already happened. */
+  private _waitedForIdle = false;
 
   private _unbindFormReset: (() => void) | null = null;
 
