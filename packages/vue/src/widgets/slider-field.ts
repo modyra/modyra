@@ -102,7 +102,17 @@ export const MdySliderField = defineComponent({
         })),
         // The rest of what the contract puts in that holder, drawn as declared. For this kind that is
         // the value readout; a kind that declared two would get both without an edit here.
-        ...(drawDeclaredUnder(CONTRACT, holder, (tag, attrs, kids) => h(tag, attrs, kids as VNode[]), new Set(["control"])) as VNode[]),
+        // The value readout is told what to read. Drawn from the shape alone it was a box with the
+        // right class and nothing in it: the field held 50 and the person saw only the caption.
+        ...(drawDeclaredUnder(
+          CONTRACT,
+          holder,
+          (tag, attrs, kids) => h(tag, attrs, kids as VNode[]),
+          new Set(["control"]),
+          "slider",
+          props.field.disabled?.() === true,
+          (part) => (part === "value" ? String(props.field.value() ?? "") : undefined),
+        ) as VNode[]),
       ]));
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));

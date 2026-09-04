@@ -14,6 +14,7 @@ import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type P
 import {
   MDY_WIDGET_CONTRACTS,
   createFileFieldController,
+  MDY_I18N_MESSAGES_DEFAULT,
   type MdyFileFieldController,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
@@ -84,7 +85,28 @@ export const MdyFileField = defineComponent({
         })),
         // Everything else the dropzone declares, to whatever depth: the content box, the button
         // inside it, and any required part a later release adds beneath either.
-        ...(drawDeclaredUnder(CONTRACT, holder, (tag, attrs, kids) => h(tag, attrs, kids as VNode[]), new Set(["control"]), "file", props.field.disabled?.() === true) as VNode[]),
+        // And what those parts show. Drawn from the shape alone, the prompt said nothing and the
+        // button that empties the field had no mark on it — a control a person cannot read is a
+        // control they cannot use, whatever classes it carries.
+        ...(drawDeclaredUnder(
+          CONTRACT,
+          holder,
+          (tag, attrs, kids) => h(tag, attrs, kids as VNode[]),
+          new Set(["control"]),
+          "file",
+          props.field.disabled?.() === true,
+          (part) => {
+            if (part === "clear") return "\u00d7";
+            if (part !== "content") return undefined;
+            const held = props.field.value();
+            const names = Array.isArray(held) ? held.map((file) => (file as File).name) : [];
+            // The words the contract ships, not a string chosen here: a renderer that wrote its own
+            // prompt would be a fourth translation of a sentence the package already localises.
+            return names.length > 0
+              ? names.join(", ")
+              : MDY_I18N_MESSAGES_DEFAULT.fileSelect;
+          },
+        ) as VNode[]),
       ]));
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));

@@ -63,6 +63,12 @@ const TAG_FOR_ELEMENT: Readonly<Record<string, string>> = Object.freeze({
  *
  * `except` is for the parts a component places itself: the control goes where its projection and its
  * handlers can reach it, and drawing it twice would give a field two inputs.
+ *
+ * **`content` is what a part shows.** The walk knows the shape a kind declares and nothing about the
+ * value a field holds, so a part whose whole job is to display something was drawn as an empty box
+ * with the right classes: a slider with no number beside it, a file field whose prompt says nothing,
+ * a clear button with no mark on it. The parts that show a value are precisely the ones components
+ * delegate here, which is why the defect landed on exactly those three kinds and on no other.
  */
 export function drawDeclaredUnder(
   contract: { structure: { nodes: readonly { part: string; parent?: string; optional?: boolean; element?: string }[] };
@@ -79,17 +85,28 @@ export function drawDeclaredUnder(
    */
   kind?: string,
   disabled = false,
+  /** What a part shows, asked of the component that holds the value. */
+  content?: (part: string) => unknown,
 ): unknown[] {
   return contract.structure.nodes
     .filter((node) => node.parent === parent && node.optional !== true && !except.has(node.part))
-    .map((node) => render(
-      TAG_FOR_ELEMENT[String(node.element)] ?? "span",
-      {
-        class: contract.parts[node.part]?.classes.join(" "),
-        ...(kind !== undefined && MDY_ARIA_DISABLED_PARTS.includes(`${kind}.${node.part}`)
-          ? { "aria-disabled": String(disabled) }
-          : {}),
-      },
-      drawDeclaredUnder(contract, node.part, render, except, kind, disabled),
-    ));
+    .map((node) => {
+      const shown = content?.(node.part);
+      const below = drawDeclaredUnder(contract, node.part, render, except, kind, disabled, content);
+      return render(
+        TAG_FOR_ELEMENT[String(node.element)] ?? "span",
+        {
+          class: contract.parts[node.part]?.classes.join(" "),
+          ...(kind !== undefined && MDY_ARIA_DISABLED_PARTS.includes(`${kind}.${node.part}`)
+            ? { "aria-disabled": String(disabled) }
+            : {}),
+        },
+        // What a part shows, and then what the structure declares beneath it. Both, because a part
+        // can be a box that says something *and* holds something: the file field's prompt is text
+        // with the button that empties the field inside it. Written as one or the other, supplying
+        // the prompt deleted the button — and a probe that read an absent element as empty text
+        // called that a success.
+        shown === undefined || shown === null ? below : [shown, ...below],
+      );
+    });
 }
