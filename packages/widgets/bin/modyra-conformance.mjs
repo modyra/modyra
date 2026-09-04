@@ -424,10 +424,21 @@ if (config.declaresConfig === true) {
      * writes, and the marker is the field's, not the document's.
      */
     const control = controlOf(fixture);
-    const resolved = control === null
+    /**
+     * An element the page has hidden has no name to ask about.
+     *
+     * `aria-hidden` removes an element from the tree a screen reader walks, so a name on it means
+     * nothing — and a kind may hide its declared control deliberately: the colour field's native
+     * picker is kept for the people who want it and hidden from the rest, which the contract says
+     * out loud in the class it gives that part, `native-hidden`. Asked anyway, this section reported
+     * two renderers as nameless for doing what the reference renderer does, and the third was
+     * "repaired" into diverging from all of them.
+     */
+    const hidden = control?.getAttribute?.("aria-hidden") === "true";
+    const resolved = control === null || hidden
       ? null
       : readAccessibleName(control, kind, control.ownerDocument ?? null)?.value?.name ?? null;
-    if (control !== null && !(resolved ?? "").includes(NAME)) {
+    if (control !== null && !hidden && !(resolved ?? "").includes(NAME)) {
       findings.push(
         `${kind}: the document declares the name ${JSON.stringify(NAME)} and nothing captions the ` +
         `control, and it is announced as ${resolved === null || resolved === "" ? "nothing" : JSON.stringify(resolved)}`,

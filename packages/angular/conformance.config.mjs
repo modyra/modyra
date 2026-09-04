@@ -96,6 +96,14 @@ export const absentParts = {};
  */
 export const declaresRules = true;
 
+/**
+ * This config also passes the kit's `config` — a document's declarations that are not rules.
+ *
+ * They arrive as component inputs, which is how a document reaches a component here, and a number
+ * goes in a binding rather than an attribute so the component holds a number. ADR 0205.
+ */
+export const declaresConfig = true;
+
 // Both shapes: this renderer hands a non-filtering select to the platform, which has no trigger and
 // no popup, and draws the combobox when it filters.
 export const variants = { multiselect: ["single", "multi"], select: ["native", "custom"] };
@@ -139,7 +147,7 @@ const seedFor = (kind) => valueFor(kind, "empty");
  * behind — which is the failure `Multi-instance isolation` exists to detect, introduced by the
  * harness rather than found in the renderer.
  */
-async function mountKind(kind, { variant, idPrefix, validators = true, rules, value } = {}) {
+async function mountKind(kind, { variant, idPrefix, validators = true, rules, value, config } = {}) {
   // The variant name *is* the mode: `MdyWidgetVariant` aliases core's `MdyMultiselectMode`, so the
   // kit's variant key and this input's value cannot drift apart. Nothing translates between them.
   const mode = variant;
@@ -182,6 +190,26 @@ async function mountKind(kind, { variant, idPrefix, validators = true, rules, va
       : kind === "slider"
         ? `mdyRequired [mdyMin]="1"`
         : "mdyRequired";
+  /**
+   * The document's declarations that are not rules, as this renderer takes them: inputs.
+   *
+   * `rules` become directives because a validator is a rule; a step, a placeholder and the name a
+   * control has where nothing captions it are none of those — they are what a document states so the
+   * widget can be drawn. Written as inputs here because that is how a document reaches a component
+   * in this framework; the kit knows only that it handed them over. ADR 0205.
+   *
+   * A number goes in a binding and a string in an attribute: `step="2"` on a numeric input would
+   * hand Angular the string, and the component's own type would then be a lie about what it holds.
+   */
+  const configured = config ?? {};
+  const configAttrs = Object.entries(configured)
+    .filter(([name]) => name !== "label")
+    .map(([name, value]) => (typeof value === "number" ? `[${name}]="${value}"` : `${name}="${value}"`))
+    .join(" ");
+  // The caption the document declares, which may be the empty one: a name asked of a control that
+  // also has a caption is a different question from a name asked of one that has none.
+  const caption = configured.label ?? "Field";
+
   const fieldName = idPrefix ? `${idPrefix}-field` : "field";
 
   class ConformanceHost {
@@ -208,7 +236,7 @@ async function mountKind(kind, { variant, idPrefix, validators = true, rules, va
       ng[control.component],
     ],
     template: `<mdy-form [adapter]="adapter">`
-      + `<${control.tag} name="${fieldName}" label="Field" ${validation} ${attrs}${modeInput} />`
+      + `<${control.tag} name="${fieldName}" label="${caption}" ${validation} ${configAttrs} ${attrs}${modeInput} />`
       + `</mdy-form>`,
   })(ConformanceHost);
 

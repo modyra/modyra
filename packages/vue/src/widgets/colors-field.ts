@@ -170,9 +170,12 @@ export const MdyColorsField = defineComponent({
         // here — without it the part is on the page and no check can find it.
         h("input", partProps(parts.control, {
           type: "color",
-          // The name, where nothing on the page captions the control. Without it the swatch a
-          // person operates is announced as nothing at all.
-          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
+          // Out of the reading order and out of the tree, as the other renderers draw it and as the
+          // contract's own class name says: `mdy-colors__native-hidden`. It is the platform's picker
+          // kept for the people who want it, not the control a person is announced. What carries the
+          // name is the hex box below, which is what a caption points at.
+          "aria-hidden": "true",
+          tabindex: -1,
           class: classesOf("control"),
           value: state.value.value,
           onInput: (event: Event) =>
@@ -187,7 +190,8 @@ export const MdyColorsField = defineComponent({
           // has to say where its description is: named by a label and described by nothing is a
           // control whose error text is on the page and announced to nobody.
           "aria-describedby": defaultWidgetIdFactory.part(props.widgetId, "description"),
-          ...(props.label === "" ? { "aria-label": "Hex colour" } : {}),
+          ...(props.ariaLabel !== "" ? { "aria-label": props.ariaLabel }
+            : props.label === "" ? { "aria-label": "Hex colour" } : {}),
           // The states this box is in, announced on it and enforced on it. It is a control the
           // contract names, and a control that says it refuses while accepting what a person types
           // is worse than one that says nothing: the value it takes is one the model will not hold.
