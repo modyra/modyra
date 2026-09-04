@@ -48,6 +48,27 @@ export interface MdyWidgetTransition {
  */
 export const MDY_DISABLED_BLOCKS_TRANSITIONS = true;
 
+/**
+ * Whether a widget is open, given that a disabled one makes no move its table declares.
+ *
+ * The constant above says what a disabled widget does not do; this is what that means for the one
+ * state it can already be *in*. Holding `open` while out of play is the same violation seen from the
+ * other side: the panel is not the result of a transition it is about to make, it is the residue of
+ * one it made while it still could.
+ *
+ * What it costs to get wrong is not tidiness. A document rule takes a field out of play when another
+ * field changes, and the panel that stays is over a control nobody can operate — reachable by the
+ * keyboard, describing choices that lead nowhere.
+ *
+ * Read where the state is assembled rather than answered by each renderer: three renderers appeared
+ * to honour this because their panel is drawn inside the field and vanishes with the field's own
+ * treatment, which is a consequence of placement rather than a decision — the same accident that
+ * ADR 0206 ends for a field leaving the document.
+ */
+export function staysOpen(open: boolean, disabled: boolean): boolean {
+  return open && !(MDY_DISABLED_BLOCKS_TRANSITIONS && disabled);
+}
+
 function transitionsFor(kind: MdyWidgetKind): readonly MdyWidgetTransition[] {
   const definition = MDY_WIDGET_CONTRACTS[kind];
   const opener = MDY_POPUP_OPENERS[kind];

@@ -7185,6 +7185,11 @@
     "(0) kind: MdyWidgetKind",
     "-> returns: readonly string[]"
   ],
+  "widgets:staysOpen": [
+    "(0) open: boolean",
+    "(1) disabled: boolean",
+    "-> returns: boolean"
+  ],
   "widgets:stepOutOfOverlay": [
     "(0) opener: HTMLElement | null | undefined",
     "(1) close: () => void",

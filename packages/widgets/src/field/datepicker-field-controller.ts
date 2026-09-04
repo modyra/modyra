@@ -1,4 +1,5 @@
 import { calendarDayId } from "../ids.js";
+import { staysOpen } from "../transitions.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 /**
  * Headless datepicker field controller.
@@ -127,7 +128,7 @@ export function createDatepickerFieldController(
       viewMonth: month,
       focusedDate: focused,
       cells,
-      open: open(),
+      open: staysOpen(open(), handle.disabled()),
       // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
     // failing would show a verdict the form itself ignores. See verdict.ts.
     invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),

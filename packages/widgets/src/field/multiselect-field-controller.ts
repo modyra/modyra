@@ -10,6 +10,7 @@
  * `filterOptionsByQuery`, shared with select so one search behaves the same in both.
  */
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
+import { staysOpen } from "../transitions.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
@@ -173,7 +174,7 @@ export function createMultiselectFieldController<TValue>(
       counts,
       query: query(),
       activeKey: activeKey(),
-      open: open(),
+      open: staysOpen(open(), handle.disabled()),
       // Out of play, no verdict: a disabled field is not validated by the form, so painting it as
     // failing would show a verdict the form itself ignores. See verdict.ts.
     invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),

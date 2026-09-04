@@ -3,6 +3,7 @@
  */
 
 import { vanillaReactivity } from "@modyra/core";
+import { staysOpen } from "../transitions.js";
 import { filterOptionsByQuery, defaultOptionKey } from "../options-utils.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 
@@ -177,7 +178,7 @@ export function createSelectController<TValue>(
   const state: MdySignal<MdySelectState<TValue>> = reactivity.computed(() => ({
     options: paintedOptions(),
     optionKeys: paintedOptions().map(keyOf),
-    open: open(),
+    open: staysOpen(open(), disabled()),
     query: query(),
     activeKey: activeKey(),
     selectedValue: valueForKey(selectedKey()),

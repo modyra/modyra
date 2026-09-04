@@ -267,6 +267,7 @@ export const dynamicPanel = {
     "showsAsInvalid",
     "ssrRuntimeCapabilities",
     "stabilizeOverlayPlacement",
+    "staysOpen",
     "stateClass",
     "stepTimeField",
     "submissionNames",

@@ -1,4 +1,5 @@
 import { projectCalendarDayCellA11y } from "./calendar-view-a11y.js";
+import { staysOpen } from "../transitions.js";
 import { calendarDayId } from "../ids.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 /**
@@ -149,7 +150,7 @@ export function createDaterangeFieldController(
       viewMonth: month,
       focusedDate: focused,
       cells,
-      open: open(),
+      open: staysOpen(open(), handle.disabled()),
       picking: picking(),
       entryText: { start: startEntry(), end: endEntry() },
       // Out of play, no verdict: a disabled field is not validated by the form, so painting it as

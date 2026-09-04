@@ -11,6 +11,7 @@
  * same functions.
  */
 import type { MdyReactivity, MdySignal } from "@modyra/core";
+import { staysOpen } from "../transitions.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { observerFor } from "@modyra/core";
 import {
@@ -139,7 +140,7 @@ export function createTimepickerFieldController(
     value: handle.value(),
     format,
     draft: draft(),
-    open: open(),
+    open: staysOpen(open(), handle.disabled()),
     focusedField: focusedField(),
     viewMode: viewMode(),
     invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),

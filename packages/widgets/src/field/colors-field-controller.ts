@@ -11,6 +11,7 @@
  * range picker's draft has and for the same reason.
  */
 import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
+import { staysOpen } from "../transitions.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import { colorValueEquals, colorValueTransition } from "../behavior.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
@@ -67,7 +68,7 @@ export function createColorsFieldController(
       value,
       text: text(),
       presets: offered,
-      open: open(),
+      open: staysOpen(open(), handle.disabled()),
       // Out of play, no verdict. See verdict.ts.
       invalid: showsAsInvalid({ valid: handle.valid(), disabled: handle.disabled() }),
       disabled: handle.disabled(),

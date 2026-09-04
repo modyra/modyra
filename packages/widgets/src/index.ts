@@ -61,6 +61,7 @@ export {
   MDY_ANY_PRINTABLE_KEY,
   MDY_DISABLED_BLOCKS_TRANSITIONS,
   MDY_WIDGET_KEYBOARD,
+  staysOpen,
   MDY_WIDGET_TRANSITIONS,
   keyBindingFor, matchesKeyGesture, type MdyKeyOrPress,
   transitionsFrom,
