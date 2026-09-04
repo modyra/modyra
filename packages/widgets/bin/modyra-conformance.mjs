@@ -106,7 +106,17 @@ if (!Array.isArray(kinds) || typeof mount !== "function") {
 
 /** A section's findings, in the contract's vocabulary. Empty is a pass. */
 const sections = [];
-const record = (title, findings, note) => sections.push({ title, findings, note });
+/**
+ * A section's result.
+ *
+ * `abstained` is the third answer, and it exists because the first two could not tell it apart from
+ * the second. A section that judged six pairs out of a hundred and fifty printed a tick with a
+ * count beside it, and a tick is what a reader acts on: the count read as detail rather than as the
+ * finding it is. What is not judged is now its own mark and its own line, so a report says what it
+ * did not look at as plainly as what it did.
+ */
+const record = (title, findings, note, abstained) =>
+  sections.push({ title, findings, note, abstained: abstained ?? [] });
 
 // ── DOM anatomy and relationships ─────────────────────────────────────────────────────────
 {
@@ -207,11 +217,20 @@ const record = (title, findings, note) => sections.push({ title, findings, note 
   for (const kind of matrix.unsupportedAria) {
     findings.push(`${kind}: exposes ARIA for a state it does not declare`);
   }
+  // Counted per kind, because "144 undrivable" is a number nobody can act on and "datepicker: 0 of
+  // 12" names the next piece of work.
+  const perKind = new Map();
+  for (const pair of matrix.undrivable) {
+    const kind = pair.split(" ")[0];
+    perKind.set(kind, (perKind.get(kind) ?? 0) + 1);
+  }
   record(
     "State matrix",
     findings,
-    `${matrix.asserted} of ${matrix.expected} pairs asserted`
-      + (matrix.undrivable.length ? `, ${matrix.undrivable.length} undrivable` : ""),
+    `${matrix.asserted} of ${matrix.expected} pairs asserted`,
+    [...perKind.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([kind, count]) => `${kind}: ${count} state(s) this renderer cannot be driven into`),
   );
 }
 
@@ -668,13 +687,18 @@ if (typeof config.disposeBrowser === "function") await config.disposeBrowser();
 // ── Report ────────────────────────────────────────────────────────────────────────────────
 console.log(`\nModyra conformance — ${name}\n${"─".repeat(40)}`);
 let failed = 0;
-for (const { title, findings, note } of sections) {
+for (const { title, findings, note, abstained } of sections) {
   if (findings === null) {
     console.log(`  ~ ${title}\n      ${note}`);
     continue;
   }
+  const held = abstained ?? [];
   if (findings.length === 0) {
-    console.log(`  ✓ ${title}${note ? `\n      ${note}` : ""}`);
+    // A tick only where nothing was left unasked. A section that judged part of its subject says so
+    // with its own mark: what it could not reach is the next unit of work, not a footnote.
+    console.log(`  ${held.length === 0 ? "✓" : "◐"} ${title}${note ? `\n      ${note}` : ""}`);
+    for (const line of held.slice(0, 12)) console.log(`      ${line}`);
+    if (held.length > 12) console.log(`      … ${held.length - 12} more`);
     continue;
   }
   failed += findings.length;
@@ -696,11 +720,19 @@ const ran = sections.length - skipped.length;
 // — a config whose renderer does not exist yet reads as a renderer that passed. The exit code has to
 // agree, because that is the half a CI reads.
 const measuredNothing = kinds.length === 0;
+// A section that ran and could not reach most of its subject is a third state, and the verdict has
+// to carry it: a run that judged six pairs of a hundred and fifty and prints an unqualified word has
+// told a reader something the numbers above it contradict.
+const partial = sections.reduce((total, section) => total + (section.abstained?.length ?? 0), 0);
+const partialTitles = sections
+  .filter((section) => (section.abstained?.length ?? 0) > 0)
+  .map((section) => section.title)
+  .join(", ");
 const verdict = measuredNothing
   ? "NOTHING MEASURED — the config declares no kinds"
   : failed > 0
     ? `NOT CONFORMANT — ${failed} finding(s)`
-    : skipped.length === 0
+    : skipped.length === 0 && partial === 0
       ? "CONFORMANT"
       : "CONFORMANT WHERE CHECKED";
 
@@ -709,9 +741,13 @@ console.log(
   + (measuredNothing
     ? "  A kind joins `kinds` in the commit that makes it mountable, so an empty list is a renderer\n"
       + "  that is unwritten rather than one that passed.\n"
-    : skipped.length === 0
-    ? ""
-    : `  Not established: ${skipped.map((section) => section.title).join(", ")}.\n`
-      + "  Run the browser suites for these; this exit code does not cover them.\n"),
+    : (skipped.length === 0
+      ? ""
+      : `  Not established: ${skipped.map((section) => section.title).join(", ")}.\n`
+        + "  Run the browser suites for these; this exit code does not cover them.\n")
+      + (partial === 0
+        ? ""
+        : `  Reached in part: ${partialTitles}, over ${partial} kind(s) listed above.\n`
+          + "  What a section could not reach is a check nobody is running, not a detail.\n")),
 );
 process.exit(failed === 0 && !measuredNothing ? 0 : 1);
