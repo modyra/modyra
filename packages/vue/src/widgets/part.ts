@@ -15,6 +15,19 @@ import { MDY_ARIA_DISABLED_PARTS, type MdyPartContract } from "@modyra/widgets";
 
 export type MdyVuePartProps = Record<string, unknown>;
 
+/**
+ * What a component reads off a declared part: the classes it must carry, and the role the contract
+ * gives it where it gives one.
+ *
+ * Narrower than the catalogue's own part type on purpose — a component that draws a part needs these
+ * two and nothing else — and declared once here because four components needed the same two. Copied
+ * per file, the four agreed until the day one of them was widened.
+ */
+export interface MdyDeclaredPart {
+  readonly classes: readonly string[];
+  readonly role?: string | null;
+}
+
 export function partProps(part: MdyPartContract | undefined, extra: MdyVuePartProps = {}): MdyVuePartProps {
   if (part === undefined) return { ...extra };
   const attributes = Object.fromEntries(

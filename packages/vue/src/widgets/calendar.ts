@@ -13,14 +13,16 @@ import { h, nextTick, watch, type VNode } from "vue";
 import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory } from "@modyra/widgets";
 import type { MdyPartContract } from "@modyra/widgets";
 import type { MdyDateLocale } from "@modyra/core/datetime";
-import { partProps } from "./part.js";
+import { partProps, type MdyDeclaredPart } from "./part.js";
 
 /** Seven per week, and the calendar hands back six weeks of them. */
 const DAYS_IN_WEEK = 7;
 
-type MdyDeclaredPart = { readonly classes: readonly string[]; readonly role?: string | null };
 type MdyCalendarKind = "datepicker" | "daterange";
-type MdyCalendarCell = { readonly iso: string; readonly day: number };
+interface MdyCalendarCell {
+  readonly iso: string;
+  readonly day: number;
+}
 type MdyProjectedParts = Readonly<Record<string, MdyPartContract | undefined>>;
 
 const partsOf = (kind: MdyCalendarKind): Readonly<Record<string, MdyDeclaredPart | undefined>> =>

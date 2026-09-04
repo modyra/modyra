@@ -24,10 +24,9 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps } from "./part.js";
+import { partProps, type MdyDeclaredPart } from "./part.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
-type MdyDeclaredPart = { readonly classes: readonly string[]; readonly role?: string | null };
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
 const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
 const roleOf = (part: string): string | undefined => declared[part]?.role ?? undefined;
