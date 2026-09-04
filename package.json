@@ -111,7 +111,7 @@
     "test:public-doors": "node scripts/audit-public-doors.mjs",
     "test:commit-affordance": "node scripts/audit-commit-affordance.mjs",
     "test:styles": "npm run build:styles && node --test packages/styles/test/*.test.mjs",
-    "test:battle-types": "tsc --noEmit -p battle-tests/types/tsconfig.json"
+    "test:battle-types": "node scripts/check-battle-types.mjs"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^21.2.19",
