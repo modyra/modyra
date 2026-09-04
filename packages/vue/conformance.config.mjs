@@ -14,7 +14,7 @@ import { installDomGlobals } from "./test/support/dom-env.mjs";
 installDomGlobals();
 
 const { createApp, h } = await import("vue");
-const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdySliderField, MdyFileField, MdyOptionField, MdySelectField, MdyDatepickerField } = await import("./dist/index.js");
 const { createVueForm, field } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
@@ -28,7 +28,7 @@ export const name = "@modyra/vue";
  * it cannot mount reports a renderer that is broken rather than one that is unwritten, and those
  * need opposite work.
  */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file", "radio", "segmented", "select", "datepicker"];
 
 /** Which component draws a kind, read from the shape rather than from a list of names. */
 const BOOLEAN = new Set(["checkbox", "toggle"]);
@@ -69,7 +69,9 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
     value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
   });
   const app = createApp({
-    render: () => (kind === "select"
+    render: () => (kind === "datepicker"
+      ? h(MdyDatepickerField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}` })
+      : kind === "select"
       ? h(MdySelectField, { field: form.f.value, label: "Given", widgetId: `vue-${kind}`, options: GROUP_OPTIONS,
           // `custom` is the shape that filters; asked for neither, the state matrix means the one
           // whose states it describes, which is the one with an `open`.
@@ -105,10 +107,19 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
     // a panel; every other state is still `false`, which keeps a state nobody can reach out of the
     // conformance count rather than reporting it as met.
     drive: (state) => {
-      if (state !== "open" || kind !== "select") return false;
-      const trigger = host.querySelector(".mdy-select__trigger");
-      if (trigger === null) return false;
-      trigger.click();
+      if (state !== "open") return false;
+      // The element that opens a panel is the button that says it opens one. More than one element
+      // can carry `aria-expanded` — a datepicker's text control says so as well as the button
+      // beside it — and pressing the one that is not a button does nothing at all, which would
+      // hand the suite a shut widget and let it call the emptiness conformant.
+      //
+      // The press is not verified here because it cannot be: this runs before the renderer has
+      // drawn the result, and the kit settles afterwards. What catches a press that did nothing is
+      // the inspection that follows — a panel that never opened is reported as its required parts
+      // missing, which is how the wrong element was found in the first place.
+      const opener = host.querySelector("button[aria-expanded]") ?? host.querySelector("[aria-expanded]");
+      if (opener === null) return false;
+      opener.click();
       return true;
     },
     settle: async () => { await new Promise((resolve) => setTimeout(resolve, 0)); },
