@@ -100,6 +100,7 @@ const mount = async (kind, { open = false, close = () => undefined } = {}) => {
 
 test("an open panel wears the placement the contract decided", async () => {
   const bench = await mount("select", { open: true });
+  try {
   const panel = bench.host.querySelector("#panel");
   // Placement is written by an effect, which runs after the commit that drew the panel.
   await until(() => panel.dataset.placement !== undefined, "the panel carries no placement at all");
@@ -108,7 +109,7 @@ test("an open panel wears the placement the contract decided", async () => {
     panel.classList.contains(popupPlacementClass("select", placement)),
     `placement ${placement} was decided and its class is not on the panel`,
   );
-  bench.dispose();
+  } finally { bench.dispose(); }
 });
 
 test("a shut panel is placed by nothing", async () => {
@@ -122,11 +123,16 @@ test("a pointer finishing outside closes what is open", async () => {
   const bench = await mount("select", { open: true, close: () => { closed += 1; } });
   const outside = document.createElement("button");
   document.body.append(outside);
+  try {
 
   // The whole interaction, not the last half of it: dismissal is decided by where a press *and* its
   // release land, so a bench that only fires the release proves nothing about the rule.
-  pressOn(outside);
-  await until(() => closed === 1, "an interaction that finished outside did not dismiss");
+  // Pressed until it takes, not once and hoped. The listener is bound by an effect, and an effect
+  // runs after the commit that drew the panel — so a bench that waits for the panel and then presses
+  // has waited for the wrong thing. It held on an idle machine and failed on a loaded runner, where
+  // the gap between the two is wide enough to fall into.
+  await until(() => { pressOn(outside); return closed === 1; },
+    "an interaction that finished outside did not dismiss");
 
   // Inside the panel is not outside, even though the panel is not inside the field's element: the
   // contract follows `aria-controls` out to it.
@@ -135,8 +141,7 @@ test("a pointer finishing outside closes what is open", async () => {
   await bench.settle();
   assert.equal(closed, 1, "an interaction inside the panel dismissed it");
 
-  outside.remove();
-  bench.dispose();
+  } finally { outside.remove(); bench.dispose(); }
 });
 
 test("closing gives the listeners back", async () => {
