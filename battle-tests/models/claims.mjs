@@ -809,6 +809,17 @@ const CLAIMS = [
       "@modyra/widgets createFocusCustodian — placing focus is something this package already does",
     ],
   },
+  {
+    id: "A11Y-008",
+    title: "A popup a kind declares can be opened from the keyboard, by a control the keyboard can reach.",
+    area: "accessibility",
+    severity: "S1",
+    publicEvidence: [
+      "@modyra/widgets MDY_WIDGET_KEYBOARD — the keys that open each kind's popup while it is closed",
+      "@modyra/widgets MDY_POPUP_OPENERS — the part that opens each popup, and the role that part takes",
+      "@modyra/widgets MDY_WIDGET_TRANSITIONS — the moves a widget makes, per kind, and what triggers them",
+    ],
+  },
 ];
 
 const BY_ID = new Map();

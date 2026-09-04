@@ -12,6 +12,8 @@
  *
  * The control is the same field left alone, which must open. Without it a renderer that had simply
  * stopped opening anything would pass this as a disabled field behaving perfectly.
+ *
+ * Claims under attack: UI-012, UI-010.
  */
 
 import { expect, test } from "@playwright/test";

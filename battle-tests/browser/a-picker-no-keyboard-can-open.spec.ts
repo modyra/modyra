@@ -17,6 +17,8 @@
  *
  * A field the browser draws is excluded: its popup is not in the document and the platform owns the
  * keys.
+ *
+ * Claims under attack: A11Y-008, UI-002.
  */
 
 import { expect, test } from "@playwright/test";

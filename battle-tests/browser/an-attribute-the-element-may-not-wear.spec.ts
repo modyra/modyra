@@ -16,6 +16,8 @@
  *
  * The rule is checked rather than the construction, so the same mistake on another kind fails the
  * same test.
+ *
+ * Claims under attack: A11Y-004, UI-009.
  */
 
 import { expect, test } from "@playwright/test";

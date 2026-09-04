@@ -14,6 +14,8 @@
  * that gap themselves — lit builds the id in `base.ts`, and plain's select field carries a comment
  * saying the controller's view has no description part. Whether the bridge is complete is a question
  * about the document, not about either table, so it is asked here.
+ *
+ * Claims under attack: A11Y-001.
  */
 
 import { expect, test } from "@playwright/test";

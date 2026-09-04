@@ -16,6 +16,8 @@
  *
  * Every other kind is clean in both renderers, which is what makes this a missing role rather than a
  * habit: where the contract names one, the state has somewhere to live.
+ *
+ * Claims under attack: A11Y-004.
  */
 
 import { expect, test } from "@playwright/test";

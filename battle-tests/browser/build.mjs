@@ -99,6 +99,26 @@ await build({
   logLevel: "warning",
 });
 
+// A fifth host, rendered by `@modyra/react`. It draws nine of the seventeen kinds today, and the
+// eight it does not are refused by name rather than skipped — a host that mounts what it can and
+// stays quiet about the rest reports a renderer that fails, instead of one still being written.
+//
+// `@modyra/react`, `react` and `react-dom` are all root dependencies, so nothing is aliased.
+await build({
+  entryPoints: [join(BATTLE_ROOT, "browser", "host", "react-entry.mjs")],
+  outfile: join(OUT_DIR, "react-host.js"),
+  bundle: true,
+  format: "esm",
+  target: "es2022",
+  // React ships its development and production builds behind this condition, and a bundle that
+  // leaves it unset gets the development one — which warns, checks and behaves differently under
+  // Strict Mode. A battle measuring that is measuring the wrong build.
+  define: { "process.env.NODE_ENV": '"production"' },
+  nodePaths: NODE_PATHS,
+  alias: withMutant({}),
+  logLevel: "warning",
+});
+
 // A fourth host, rendered by `@modyra/vue`. It is the first renderer in this tier that draws a kind
 // with a component and a prop rather than a registered element per kind, so it is what tells the
 // suite which of its questions were about the contract and which were about custom elements.
@@ -184,6 +204,24 @@ writeFileSync(
   <body>
     <main id="stage"></main>
     <script type="module" src="./vue-host.js"></script>
+  </body>
+</html>
+`,
+  "utf8",
+);
+
+writeFileSync(
+  join(OUT_DIR, "react.html"),
+  `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Modyra battle host (react)</title>
+    <link rel="stylesheet" href="./modyra.css" />
+  </head>
+  <body>
+    <main id="stage"></main>
+    <script type="module" src="./react-host.js"></script>
   </body>
 </html>
 `,

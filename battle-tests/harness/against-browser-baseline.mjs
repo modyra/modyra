@@ -273,7 +273,9 @@ function assertPageIsCurrent() {
   const missing = [];
   // What the tier's own build step covers. A package outside it is stale until somebody builds it by
   // hand, and the message has to say so or the reader repeats the run that failed.
-  const BUILT_BY_THIS_TIER = new Set(["core", "styles", "widgets", "plain", "lit"]);
+  // Kept in step with what `battle:browser:ci` actually builds. It gained vue and react when their
+  // hosts did, and a name missing here sends a reader to run a build the tier already ran.
+  const BUILT_BY_THIS_TIER = new Set(["core", "styles", "widgets", "plain", "lit", "vue", "react"]);
   const needsOwnBuild = new Set();
   const measured = packagesTheHostImports();
   for (const name of measured) {
