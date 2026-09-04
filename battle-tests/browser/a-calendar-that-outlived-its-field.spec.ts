@@ -52,11 +52,17 @@ for (const host of HOSTS) {
         // check after this loop, so a press that does not land is a step of the sweep, not a fault.
       });
       await page.waitForTimeout(230);
-      if (await page.locator('[role="gridcell"]').count() > 6) { opened = true; break; }
+      // Visible, for the same reason the reading below is: a calendar drawn behind a hidden panel
+      // would satisfy a count and leave the premise false.
+      if (await page.locator('[role="gridcell"]').filter({ visible: true }).count() > 6) { opened = true; break; }
     }
 
+    // **Visible cells, never present ones.** A renderer may draw the whole calendar once and hide the
+    // panel around it, so the cells are in the document whether or not anyone can see them. Counting
+    // what is there reports such a renderer as never closing — the panel goes to `display: none` and
+    // the count does not move. What a person meets is what has a box on the page.
     const onScreen = () => page.evaluate(() => ({
-      cells: document.querySelectorAll('[role="gridcell"]').length,
+      cells: [...document.querySelectorAll('[role="gridcell"]')].filter((cell) => cell.getClientRects().length > 0).length,
       expanded: document.querySelector('[aria-expanded]')?.getAttribute("aria-expanded") ?? null,
     }));
 
