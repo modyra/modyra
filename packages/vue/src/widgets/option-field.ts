@@ -19,13 +19,14 @@
  * one line and survives a third kind of the same shape; naming the two costs the same line and stops
  * being true the moment one arrives.
  */
-import { computed, defineComponent, h, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
   defaultOptionKey,
   type MdyOptionFieldVariant,
 } from "@modyra/widgets";
+import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
 
@@ -57,8 +58,23 @@ export const MdyOptionField = defineComponent({
       options: props.options,
       keyFor,
     });
-    const view = computed(() => controller.view());
-    const state = computed(() => controller.state());
+    // Observed through the runtime that owns the handle, never through a Vue `computed`.
+    //
+    // The controller's signals belong to the handle's runtime, and a `computed` has nothing of
+    // Vue's to track inside one: the first render is correct and every later one is stale. That is
+    // invisible in the value, because the control is uncontrolled and shows what was typed — and
+    // total for everything only a render writes, so `aria-invalid` and every state class stay at
+    // whatever they were when the field was mounted.
+    const reactivity = observerFor(props.field);
+    const view = shallowRef(controller.view());
+    const state = shallowRef(controller.state());
+    const watching = reactivity.effect(() => {
+      view.value = controller.view();
+      triggerRef(view);
+      state.value = controller.state();
+      triggerRef(state);
+    });
+    onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
     const classesOf = (part: string): string =>
       (contract.parts as Readonly<Record<string, { classes: readonly string[] }>>)[part]?.classes.join(" ") ?? "";

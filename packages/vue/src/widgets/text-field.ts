@@ -21,12 +21,13 @@
  * would be deciding again what the catalogue decided, and would need editing the day a fifth kind
  * joins the shape rather than simply accepting it.
  */
-import { computed, defineComponent, h, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
   type MdyTextFieldController,
 } from "@modyra/widgets";
+import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
 
@@ -60,7 +61,20 @@ export const MdyTextField = defineComponent({
       widgetId: props.widgetId,
       inputType: contract.controlType,
     });
-    const view = computed(() => controller.view());
+    // Observed through the runtime that owns the handle, never through a Vue `computed`.
+    //
+    // The controller's signals belong to the handle's runtime, and a `computed` has nothing of
+    // Vue's to track inside one: the first render is correct and every later one is stale. That is
+    // invisible in the value, because the control is uncontrolled and shows what was typed — and
+    // total for everything only a render writes, so `aria-invalid` and every state class stay at
+    // whatever they were when the field was mounted.
+    const reactivity = observerFor(props.field);
+    const view = shallowRef(controller.view());
+    const watching = reactivity.effect(() => {
+      view.value = controller.view();
+      triggerRef(view);
+    });
+    onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
     return () => {
       const parts = view.value.parts;
