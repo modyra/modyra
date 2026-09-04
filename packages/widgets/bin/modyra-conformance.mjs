@@ -134,8 +134,58 @@ const attributeOfControl = (fixture, attribute) => {
   return control?.getAttribute?.(attribute) ?? null;
 };
 
-const record = (title, findings, note, abstained) =>
-  sections.push({ title, findings, note, abstained: abstained ?? [] });
+/**
+ * Which public promise each section defends, named in the registry's own vocabulary.
+ *
+ * The adversarial suite binds its checks to claims as data, and the browser tier is being promoted to
+ * it. This kit bound nothing: its sections had names of their own, and none of them said which
+ * promise it was keeping — so a run could find six real defects, as one did, and none of them had a
+ * name anybody could look up. The registry is meant to be the vocabulary of what the house knows how
+ * to find, and a tool outside it is a tool whose findings cannot be counted.
+ *
+ * Keyed by title and **checked**: a section whose title is not here fails the run rather than
+ * silently losing its link, which is what a rename would otherwise do. An empty list is a real
+ * answer — it says the registry has no name for what this section defends, and that gap is reported
+ * rather than filled by inventing one here. Registering a claim belongs to whoever keeps the
+ * charter.
+ */
+const SECTION_CLAIMS = Object.freeze({
+  // `aria-controls` pointing at something that is not there is the shape this pass reports.
+  "DOM anatomy and relationships": ["A11Y-001"],
+  "DOM anatomy while open": ["A11Y-001"],
+  // A widget asserts only the ARIA states its kind declares, on the part that carries them.
+  "State matrix": ["A11Y-004"],
+  // No claim names this. What it defends is that renderers agree with the catalogue rather than with
+  // each other, which is the thesis of this phase and has no entry.
+  "Renderer equivalence (at rest)": [],
+  // A native constraint never promises less than the validators it came from.
+  "Declared rules reach the control": ["VAL-004"],
+  // No claim names this either: the second channel is newer than the registry (ADR 0205).
+  "Declarations that are not rules reach the control": [],
+  // A choice the list no longer offers is still shown as the choice it is.
+  "A value the options do not contain is shown": ["UI-004"],
+  // Destroy leaves no observable reactive or asynchronous work.
+  "Lifecycle (nothing survives unmount)": ["LIF-001"],
+  // No claim names identity: whether two instances can share an id is the subject of a whole family
+  // of open findings and the registry has no word for it.
+  "Multi-instance isolation": [],
+  // The same key does the same thing on every widget offering the same affordance.
+  "Keyboard behaviour": ["UI-002"],
+  "Accessibility audit": ["A11Y-001"],
+});
+
+const record = (title, findings, note, abstained) => {
+  if (!Object.hasOwn(SECTION_CLAIMS, title)) {
+    console.error(
+      `\nThis kit has a section named ${JSON.stringify(title)} and no record of what it defends.\n\n`
+      + "  Every section names its claims in `SECTION_CLAIMS`, so a run's findings can be counted in\n"
+      + "  the same vocabulary as every other tool's. An empty list is an answer — it says the\n"
+      + "  registry has no name for this yet — but silence is not.\n",
+    );
+    process.exit(2);
+  }
+  sections.push({ title, findings, note, abstained: abstained ?? [], claims: SECTION_CLAIMS[title] });
+};
 
 // ── DOM anatomy and relationships ─────────────────────────────────────────────────────────
 {
@@ -799,22 +849,33 @@ if (typeof config.disposeBrowser === "function") await config.disposeBrowser();
 // ── Report ────────────────────────────────────────────────────────────────────────────────
 console.log(`\nModyra conformance — ${name}\n${"─".repeat(40)}`);
 let failed = 0;
-for (const { title, findings, note, abstained } of sections) {
+/**
+ * What a section defends, beside its name.
+ *
+ * A section with no claim says so rather than printing nothing: an empty bracket is the finding —
+ * the registry has no word for what this one is keeping — and a reader who cannot see the difference
+ * between "defends nothing named" and "nobody wrote the link" learns neither.
+ */
+const claimNote = (claims) => (claims === undefined ? "" : claims.length > 0
+  ? `  [${claims.join(", ")}]`
+  : "  [no claim names this]");
+
+for (const { title, findings, note, abstained, claims } of sections) {
   if (findings === null) {
-    console.log(`  ~ ${title}\n      ${note}`);
+    console.log(`  ~ ${title}${claimNote(claims)}\n      ${note}`);
     continue;
   }
   const held = abstained ?? [];
   if (findings.length === 0) {
     // A tick only where nothing was left unasked. A section that judged part of its subject says so
     // with its own mark: what it could not reach is the next unit of work, not a footnote.
-    console.log(`  ${held.length === 0 ? "✓" : "◐"} ${title}${note ? `\n      ${note}` : ""}`);
+    console.log(`  ${held.length === 0 ? "✓" : "◐"} ${title}${claimNote(claims)}${note ? `\n      ${note}` : ""}`);
     for (const line of held.slice(0, 12)) console.log(`      ${line}`);
     if (held.length > 12) console.log(`      … ${held.length - 12} more`);
     continue;
   }
   failed += findings.length;
-  console.log(`  ✗ ${title}${note ? `\n      ${note}` : ""}`);
+  console.log(`  ✗ ${title}${claimNote(claims)}${note ? `\n      ${note}` : ""}`);
   for (const finding of findings.slice(0, 10)) console.log(`      ${finding}`);
   if (findings.length > 10) console.log(`      … ${findings.length - 10} more`);
 }
