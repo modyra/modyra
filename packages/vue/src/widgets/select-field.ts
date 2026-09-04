@@ -27,6 +27,7 @@ import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
+import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 
@@ -102,6 +103,10 @@ export const MdySelectField = defineComponent({
     const state = shallowRef(controller.state());
     // And when the keyboard settles somewhere else: every kind with a popup declares it, and this
     // package honoured it nowhere.
+    // Shown through the door that also makes it a popover, which is what the foundation reads
+    // to lay it out against the viewport — the system `anchorOverlay` measured in.
+    useOverlayOpen(panel, () => state.value.open);
+
     useDismissOnFocusOutside({
       kind: "select",
       root,
