@@ -345,6 +345,14 @@ for (const [kind, held] of Object.entries(baseline.kinds)) {
  *
  * Taken contract-wide because the vocabulary is: an intent already declared by another kind is one
  * a consumer's switch has an arm for, whichever kind it turns up on next.
+ *
+ * **`intent` and nothing else, and that was measured rather than assumed.** A binding also carries
+ * `when` and `on`, which are read too — but every read of those is an equality test: `binding.when
+ * !== phase`, `binding.on !== opener`, `!parts.includes(binding.on)`. A value new to either simply
+ * fails to match, and nothing that worked stops working. `intent` is dispatched instead — `switch
+ * (binding.intent)` with an arm per value and no arm for a stranger — so a value new to it makes a
+ * declared gesture do nothing at a consumer who has not been rebuilt. Extending this rule to the
+ * other two would report a break where none exists, which is the same defect as missing one.
  */
 const intentsOf = (contract) => new Set(
   Object.values(contract.kinds).flatMap((kind) => (kind.keyboard ?? []).map(
