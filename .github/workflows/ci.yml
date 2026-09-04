@@ -221,4 +221,4 @@ jobs:
         continue-on-error: true
 
       - name: Production dependency audit
-        run: pnpm audit --prod
+        run: node scripts/audit-production-dependencies.mjs

@@ -217,6 +217,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0200: A lint rule is loosened only to keep an intention already stated](0200-a-linter-nobody-runs.md) — a red check nobody runs and a green one bought by loosening protect equally; each exemption names the sentence it keeps
 - [ADR 0201: The custom properties nothing reads are removed, and seven that look alike are kept](0201-the-properties-nothing-reads.md) — a var() is not the only way a property is surface: seven are set by a theme rather than read by the library
 - [ADR 0202: What repeats is derived from the anatomy, not listed by name](0202-what-repeats-is-a-consequence.md)
+- [ADR 0203: An audit that could not ask is not an audit that found nothing](0203-an-audit-that-could-not-ask.md) — a transport error and a security finding left through the same exit code; the asymmetry is announce on a push, refuse at the release boundary
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
