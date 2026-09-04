@@ -16,6 +16,7 @@ import {
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
   defaultWidgetIdFactory,
+  keyBindingFor,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
@@ -126,6 +127,26 @@ export const MdyDatepickerField = defineComponent({
           // Handed over as typed. What a date looks like is the contract's question.
           onChange: (event: Event) =>
             controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value }),
+          // The door the contract names first. `MDY_POPUP_OPENERS` declares the *control* as this
+          // kind's opener and the toggle beside it as a second way in; drawn without a handler, the
+          // declared one was dead and a person pressing the field got nothing.
+          onClick: () => { if (!state.value.open) controller.dispatch({ type: "open" }); },
+          // And by key, because a control that only opens under a pointer is one a keyboard cannot
+          // reach the calendar through at all. Which key is the contract's answer, not a list here.
+          onKeydown: (event: KeyboardEvent) => {
+            if (state.value.open) return;
+            // Asked *at the part*: this kind declares the key `on: "control"`, and a binding
+            // declared on a part is invisible from the widget. Asked without it, the lookup
+            // finds nothing and the keyboard never reaches the panel.
+            const binding = keyBindingFor("datepicker", event, false, "control");
+            if (binding?.intent !== "open") return;
+            event.preventDefault();
+            // And stopped here. The root forwards keys to the panel once it is open, and this press
+            // would arrive there in the same turn — opening and then being read as a move inside the
+            // panel it just opened, which left the widget shut again.
+            event.stopPropagation();
+            controller.dispatch({ type: "open" });
+          },
         })),
         h("button", {
           ref: anchor,
