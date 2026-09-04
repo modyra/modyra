@@ -69,3 +69,5 @@ export type {
   MdyReactTimepickerFieldApi,
   UseMdyTimepickerFieldOptions,
 } from "./timepicker-field.js";
+export { MdyTextField, type MdyTextFieldProps, type MdyTextLikeKind } from "./text-field.js";
+export { partProps, type MdyReactPartProps, type MdyDeclaredPart } from "./part.js";

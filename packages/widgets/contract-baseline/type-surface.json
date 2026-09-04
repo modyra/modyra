@@ -3463,6 +3463,10 @@
     "(1) options: UseMdyTextFieldOptions<TValue>",
     "-> returns: MdyPreactTextFieldApi<TValue>"
   ],
+  "react:MdyDeclaredPart": [
+    "classes: readonly string[]",
+    "role?: string | null"
+  ],
   "react:MdyReactBooleanFieldApi": [
     "destroy: void",
     "dispatch: void",
@@ -3514,6 +3518,9 @@
     "setValue: void",
     "state: MdyOptionFieldState<TValue>"
   ],
+  "react:MdyReactPartProps": [
+    "-> Record"
+  ],
   "react:MdyReactSelectFieldApi": [
     "destroy: void",
     "dispatch: void",
@@ -3549,6 +3556,23 @@
   "react:MdyStore": [
     "getSnapshot: number",
     "subscribe: () => void"
+  ],
+  "react:MdyTextField": [
+    "(0) props: MdyTextFieldProps<TValue>",
+    "-> returns: ReactElement"
+  ],
+  "react:MdyTextFieldProps": [
+    "field: MdyFieldHandle<TValue>",
+    "kind?: MdyTextLikeKind",
+    "label?: string",
+    "widgetId?: string"
+  ],
+  "react:MdyTextLikeKind": [
+    "\"email\"",
+    "\"number\"",
+    "\"password\"",
+    "\"text\"",
+    "\"textarea\""
   ],
   "react:UseMdyBooleanFieldOptions": [
     "-> Omit"
@@ -3599,6 +3623,11 @@
     "(0) signals: ReadonlyArray<MdySignal<unknown>>",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyStore & { destroy(): void; }"
+  ],
+  "react:partProps": [
+    "(0) part: MdyPartContract | undefined",
+    "(1) extra?: MdyReactPartProps",
+    "-> returns: MdyReactPartProps"
   ],
   "react:reactReactivity": [
     "-> returns: MdyReactivity & MdyBatchingCapability & MdyFlushCapability & MdyObserveCapability"
@@ -4009,6 +4038,10 @@
   ],
   "vue:MdyDaterangeField": [
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<MdyDateRangeValue>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    locale: {\n        type: StringConstructor;\n        default: string;\n    };\n    separator: {\n        type: StringConstructor;\n        default: string;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<MdyDateRangeValue>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    locale: {\n        type: StringConstructor;\n        default: string;\n    };\n    separator: {\n        type: StringConstructor;\n        default: string;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    locale: string;\n    separator: string;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
+  ],
+  "vue:MdyDeclaredPart": [
+    "classes: readonly string[]",
+    "role?: string | null"
   ],
   "vue:MdyFileField": [
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly File[]>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly File[]>>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"

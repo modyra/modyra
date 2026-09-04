@@ -1,7 +1,7 @@
 {
   "name": "@modyra/react",
   "version": "0.8.0",
-  "description": "React binding for the Modyra form engine — type-safe forms via useSyncExternalStore.",
+  "description": "React binding for the Modyra form engine \u2014 type-safe forms via useSyncExternalStore.",
   "keywords": [
     "react",
     "forms",
@@ -10,7 +10,7 @@
     "validation"
   ],
   "license": "MIT",
-  "author": "Lorenzo Muscherà",
+  "author": "Lorenzo Muscher\u00e0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/modyra/modyra.git",
@@ -46,8 +46,11 @@
     "react": ">=18.0.0"
   },
   "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^27.0.0",
     "react": "^19.0.0",
-    "@types/react": "^19.0.0"
+    "react-dom": "^19.0.0"
   },
   "publishConfig": {
     "access": "public"
