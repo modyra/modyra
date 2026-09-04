@@ -2,7 +2,7 @@
   "name": "modyra-workspace",
   "version": "0.1.0",
   "private": true,
-  "description": "Modyra monorepo \u2014 a typed form engine: one form contract, every framework, any backend.",
+  "description": "Modyra monorepo — a typed form engine: one form contract, every framework, any backend.",
   "scripts": {
     "setup": "pnpm install && pnpm run build:packages && pnpm run build:angular",
     "start": "npm run demo:angular",
@@ -42,7 +42,7 @@
     "docs:conformance-manifest": "npm run build:plain && node scripts/tsc7.mjs packages/lit/tsconfig.json && node scripts/conformance-manifest.mjs",
     "test:conformance-manifest": "node scripts/conformance-manifest.mjs --check",
     "test:harness-exceptions": "node scripts/audit-harness-exceptions.mjs --check",
-    "test:conformance": "npm run build:plain && node scripts/tsc7.mjs packages/lit/tsconfig.json && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.config.mjs && node packages/widgets/bin/modyra-conformance.mjs packages/lit/conformance.config.mjs && npm run test:conformance-angular",
+    "test:conformance": "npm run build:plain && node scripts/tsc7.mjs packages/lit/tsconfig.json && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.config.mjs && node packages/widgets/bin/modyra-conformance.mjs packages/lit/conformance.config.mjs && node packages/widgets/bin/modyra-conformance.mjs packages/vue/conformance.config.mjs && npm run test:conformance-angular",
     "test:conformance-angular": "node packages/widgets/bin/modyra-conformance.mjs packages/angular/conformance.config.mjs",
     "test:conformance-browser": "npm run build:examples -- plain && node packages/widgets/bin/modyra-conformance.mjs packages/plain/conformance.browser.config.mjs",
     "contract:diff": "npm run build:packages && node scripts/contract-diff.mjs",

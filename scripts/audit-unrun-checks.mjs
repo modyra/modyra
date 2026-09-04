@@ -24,7 +24,10 @@
  * legitimate, which is why the exemption list below carries a reason per entry rather than a name —
  * an exemption that does not say why is a silence with a comment on it.
  */
-import { isACheck, reachableFrom, scriptGraph, workflowRoots } from "./lib/script-graph.mjs";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { ROOT, conformanceConfigs, filesRunByWorkflows, isACheck, reachableFrom, scriptGraph, workflowRoots }
+  from "./lib/script-graph.mjs";
 
 const CHECK = process.argv.includes("--check");
 
@@ -51,8 +54,28 @@ const { scripts, edges } = scriptGraph();
 
 /** Workflow steps are the roots: what CI actually asks for. */
 const rootsByFile = workflowRoots();
+// A workflow that runs a script *file* does not thereby run every npm script built on that file.
+// `release.yml` runs `contract-diff.mjs --since` to write a release summary; `contract:diff` and
+// `contract:snapshot` are two other invocations of the same file, and `--write` is one CI must never
+// run. Marking a script reached because a workflow touched its file deleted that exemption on
+// evidence that was about a different command — so reachability stays a question about invocations,
+// and the files below are reported rather than folded into it.
+const directFiles = filesRunByWorkflows();
 const roots = new Set([...rootsByFile.values()].flatMap((named) => [...named]));
 const reached = reachableFrom(edges, roots);
+
+/**
+ * Checks that are not scripts, asked the same question.
+ *
+ * A conformance configuration is run by pointing the binary at its path, so it is reached when some
+ * script or workflow names that path and unreached when none does. `@modyra/vue` published one that
+ * nothing named — a check nobody runs, arriving through the one door this gate did not watch.
+ */
+const workflowText = [...rootsByFile.keys()]
+  .map((file) => readFileSync(join(ROOT, ".github/workflows", file), "utf8")).join("\n");
+const scriptText = Object.values(scripts).join("\n");
+const unrunConfigs = conformanceConfigs()
+  .filter((path) => !workflowText.includes(path) && !scriptText.includes(path));
 
 const checks = Object.keys(scripts).filter((name) => isACheck(name, scripts[name]));
 const unrun = checks.filter((name) => !reached.has(name));
@@ -61,7 +84,16 @@ const unexplained = unrun.filter((name) => !DELIBERATELY_OUTSIDE.has(name));
 console.log("# Checks no workflow runs\n");
 console.log(`Workflows read: ${[...rootsByFile.keys()].join(", ")}`);
 console.log(`Scripts named directly by a workflow: ${roots.size}`);
-console.log(`Check-shaped scripts: ${checks.length} · reached through those roots: ${checks.length - unrun.length}\n`);
+console.log(`Check-shaped scripts: ${checks.length} · reached through those roots: ${checks.length - unrun.length}`);
+console.log(`Checks a workflow runs as a file, with no npm script: `
+  + `${[...directFiles].filter((f) => !Object.values(scripts).some((c) => c.includes(f))).join(", ") || "(none)"}`);
+console.log(`Conformance configurations: ${conformanceConfigs().length} · named by a script or workflow: `
+  + `${conformanceConfigs().length - unrunConfigs.length}\n`);
+if (unrunConfigs.length > 0) {
+  console.log("Conformance configurations nothing names:\n");
+  for (const path of unrunConfigs) console.log(`  ! ${path}`);
+  console.log("");
+}
 
 if (unrun.length > 0) {
   console.log("Outside every workflow:\n");
@@ -84,10 +116,11 @@ if (staleExemptions.length > 0) {
   console.log(`Exemptions that no longer describe anything: ${staleExemptions.join(", ")}\n`);
 }
 
-if (unexplained.length === 0 && staleExemptions.length === 0) {
+if (unexplained.length === 0 && staleExemptions.length === 0 && unrunConfigs.length === 0) {
   console.log(`EVERY CHECK IS REACHED OR EXPLAINED — ${unrun.length} deliberately outside, each with a reason.`);
 } else {
-  console.log(`UNRUN CHECKS — ${unexplained.length} with no stated reason, ${staleExemptions.length} stale exemption(s)`);
+  console.log(`UNRUN CHECKS — ${unexplained.length} with no stated reason, ${staleExemptions.length} stale `
+    + `exemption(s), ${unrunConfigs.length} conformance configuration(s) nothing names`);
   console.log("\n  A check no workflow runs cannot be distinguished from one that passes. Either put it in"
     + "\n  a workflow, or record here why it is outside — the reason is what makes the absence reviewable.");
   if (CHECK) process.exit(1);

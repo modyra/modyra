@@ -10,7 +10,7 @@
  * own list, which names its gates as commands inside a JavaScript array. A parser that reads only
  * `package.json` misses every one of those, and they are twenty-eight real edges.
  */
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -91,6 +91,41 @@ export function reachableFrom(edges, roots) {
 }
 
 /** What each workflow file asks for by name. */
+/**
+ * Script files a workflow executes directly, without going through an npm script.
+ *
+ * `- run: node scripts/verify-tarballs.mjs` is a check CI runs, and nothing in `package.json`
+ * mentions it. A reachability question asked only of script *names* answers "nobody runs that" about
+ * a file CI runs on every push, and — worse in the other direction — "that check is unrun" about one
+ * whose npm script exists but whose workflow invokes the file instead.
+ */
+export function filesRunByWorkflows() {
+  const dir = join(ROOT, ".github/workflows");
+  const found = new Set();
+  for (const file of readdirSync(dir).filter((n) => /\.ya?ml$/.test(n))) {
+    const text = readFileSync(join(dir, file), "utf8");
+    for (const [, path] of text.matchAll(/\bnode\s+((?:scripts|packages)\/[\w./-]+\.mjs)/g)) found.add(path);
+  }
+  return found;
+}
+
+/**
+ * Conformance configurations, which are checks that happen not to be scripts.
+ *
+ * A renderer's `conformance.config.mjs` is run by pointing the conformance binary at it. It carries
+ * no npm script of its own, so a gate that walks `package.json` cannot see it — and `@modyra/vue`
+ * published one that no command reached at all. A subject that is not a script is exactly the shape
+ * this gate exists to catch, arriving through the door it was not watching.
+ */
+export function conformanceConfigs() {
+  const packages = join(ROOT, "packages");
+  return readdirSync(packages, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `packages/${entry.name}/conformance.config.mjs`)
+    .filter((path) => existsSync(join(ROOT, path)))
+    .sort();
+}
+
 export function workflowRoots() {
   const dir = join(ROOT, ".github/workflows");
   const byFile = new Map();
