@@ -7,6 +7,11 @@ import { computed, createApp, onMounted, onUnmounted, ref, watchEffect } from "v
 import {
   createVueForm, crossField, email, field, minLength, required,
   serverValidator,
+  // The controls themselves. Everything a widget owes — its parts, classes, ARIA relations, the
+  // native input its kind asks for — lives in these and is derived from the published contract.
+  MdyBooleanField, MdyColorsField, MdyDatepickerField, MdyDaterangeField, MdyFileField,
+  MdyMultiselectField, MdyOptionField, MdySelectField, MdySliderField, MdyTextField,
+  MdyTimepickerField,
 } from "@modyra/vue";
 // The inspector is a development tool, not part of a form. `IfWanted` mounts it when the build
 // says development and skips it otherwise — and takes `true` or `false` when you want to decide
@@ -14,6 +19,7 @@ import {
 import { mountMdyDevtoolsIfWanted } from "@modyra/core/devtools";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 import { legendWhenReady } from "../shared/legend.js";
+import { everyKind } from "../shared/scenarios/every-kind.js";
 
 // Simulated availability endpoint. The abort signal cancels the request
 // when a newer keystroke supersedes the run (last-wins), so stale replies
@@ -56,39 +62,58 @@ const form = createVueForm(
   },
 );
 
-const TextField = {
-  props: { label: String, handle: Object, type: { type: String, default: "text" } },
-  setup(props) {
-    return {
-      value: computed(() => props.handle.value() ?? ""),
-      errors: computed(() => (props.handle.touched() ? props.handle.errors() : [])),
-      invalid: computed(() => !props.handle.valid()),
-      isRequired: computed(() => props.handle.required()),
-      touched: computed(() => props.handle.touched()),
-      // Async validators keep the field pending until the run settles.
-      pending: computed(() => props.handle.pending()),
-    };
-  },
-  template: `
-    <div class="mdy-renderer mdy-renderer--text" :class="{ 'mdy-renderer--touched': touched }">
-      <label class="mdy-label">
-        {{ label }}<span v-if="isRequired" class="mdy-label__required" aria-hidden="true">*</span>
-      </label>
-      <div class="mdy-input-wrapper">
-        <input :type="type" :value="value" :aria-invalid="invalid" :aria-required="isRequired"
-               @input="handle.set($event.target.value)" @blur="handle.markAsTouched()" />
-      </div>
-      <div v-if="pending" class="mdy-supporting-text" role="status">checking…</div>
-      <ul v-if="errors.length" class="mdy-control__errors" role="alert">
-        <li v-for="er in errors" :key="er.message" class="mdy-control__error">{{ er.message }}</li>
-      </ul>
-    </div>`,
+/**
+ * Which component draws which kind.
+ *
+ * The only thing this demo knows that the contract does not: how *this framework* mounts a control.
+ * Everything below that line — the classes, the ARIA, the native input a kind asks for, which parts
+ * a widget owes — belongs to the components and is not written here. It used to be: this file
+ * hand-rolled a text field, copying `mdy-renderer--text`, `mdy-label`, `mdy-input-wrapper`,
+ * `aria-invalid` and `aria-required` beside a package that ships seventeen components deriving all
+ * of them. A demo doing what the library exists to stop is the worst place for it to happen.
+ */
+const DRAWN_BY = {
+  text: ["mdy-text-field", { kind: "text" }],
+  email: ["mdy-text-field", { kind: "email" }],
+  password: ["mdy-text-field", { kind: "password" }],
+  textarea: ["mdy-text-field", { kind: "textarea" }],
+  number: ["mdy-text-field", { kind: "number" }],
+  checkbox: ["mdy-boolean-field", { kind: "checkbox" }],
+  toggle: ["mdy-boolean-field", { kind: "toggle" }],
+  radio: ["mdy-option-field", { kind: "radio" }],
+  segmented: ["mdy-option-field", { kind: "segmented" }],
+  select: ["mdy-select-field", { searchable: true }],
+  multiselect: ["mdy-multiselect-field", { mode: "single" }],
+  slider: ["mdy-slider-field", {}],
+  file: ["mdy-file-field", {}],
+  datepicker: ["mdy-datepicker-field", {}],
+  daterange: ["mdy-daterange-field", {}],
+  timepicker: ["mdy-timepicker-field", {}],
+  colors: ["mdy-colors-field", {}],
 };
+
+/** The catalogue scenario, as this page needs it: the fields, and the component for each. */
+const SHOWCASE = everyKind.fields().map((field) => {
+  const drawn = DRAWN_BY[field.kind];
+  // Refused rather than skipped: a kind the shared declaration carries and this page cannot draw is
+  // a hole in the demo, and a page that quietly renders sixteen looks finished.
+  if (!drawn) throw new Error(`[vue demo] no component declared for kind "${field.kind}"`);
+  const [is, extra] = drawn;
+  return { ...field, is, extra: { ...extra, ...(field.options ? { options: field.options } : {}) } };
+});
+
+const showcase = createVueForm(
+  Object.fromEntries(SHOWCASE.map((entry) => [entry.name, field(entry.initial)])),
+);
 
 const THEMES = { modern: "modyra-modern.css", default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
 createApp({
-  components: { TextField },
+  components: {
+    MdyTextField, MdyBooleanField, MdyOptionField, MdySelectField, MdyMultiselectField,
+    MdySliderField, MdyFileField, MdyDatepickerField, MdyDaterangeField, MdyTimepickerField,
+    MdyColorsField,
+  },
   setup() {
     // Swaps the theme stylesheet at runtime — every packaged theme works
     // with the same markup, so switching is just a different href.
@@ -103,6 +128,8 @@ createApp({
       theme,
       themes: THEMES,
       form,
+      showcase,
+      SHOWCASE,
       canSubmit: computed(() => form.state.canSubmit()),
       canUndo: computed(() => form.canUndo()),
       canRedo: computed(() => form.canRedo()),
@@ -127,16 +154,24 @@ createApp({
       </label>
       <p>Try username <code>admin</code> for a cancellable server check, <code>taken@example.com</code> for a server error. Reload mid-typing: the draft survives.</p>
       <form class="mdy-form" @submit.prevent="submit()">
-        <text-field label="Username" :handle="form.f.username" />
-        <text-field label="Name" :handle="form.f.name" />
-        <text-field label="Email" :handle="form.f.email" type="email" />
-        <text-field label="Password" :handle="form.f.password" type="password" />
-        <text-field label="Confirm password" :handle="form.f.confirm" type="password" />
+        <mdy-text-field label="Username" :field="form.f.username" widget-id="signup-username" />
+        <mdy-text-field label="Name" :field="form.f.name" widget-id="signup-name" />
+        <mdy-text-field label="Email" :field="form.f.email" kind="email" widget-id="signup-email" />
+        <mdy-text-field label="Password" :field="form.f.password" kind="password" widget-id="signup-password" />
+        <mdy-text-field label="Confirm password" :field="form.f.confirm" kind="password" widget-id="signup-confirm" />
         <div style="display:flex;gap:.5rem">
           <button type="submit" :disabled="!canSubmit">Sign up</button>
           <button type="button" :disabled="!canUndo" @click="form.undo()">Undo</button>
           <button type="button" :disabled="!canRedo" @click="form.redo()">Redo</button>
         </div>
+      </form>
+      <h2>Every kind the catalogue declares</h2>
+      <p>Declared once in <code>examples/shared/scenarios</code> and rendered by every demo: the
+         pages differ in how a form is mounted, not in what a form is.</p>
+      <form class="mdy-form">
+        <component v-for="entry in SHOWCASE" :key="entry.name" :is="entry.is"
+                   :field="showcase.f[entry.name]" :label="entry.label"
+                   :widget-id="'showcase-' + entry.name" v-bind="entry.extra" />
       </form>
       <div id="devtools"></div>
     </main>`,
