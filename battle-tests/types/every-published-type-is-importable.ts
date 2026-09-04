@@ -327,6 +327,7 @@ import type {
   MdyBooleanFieldProps,
   MdyBooleanKind,
   MdyDeclaredPart,
+  MdyMultiselectFieldProps,
   MdyOptionFieldProps,
   MdyReactPartProps,
   MdySelectFieldProps,
@@ -956,3 +957,6 @@ void held294;
 
 declare const held295: UseMdyLightDismissOptions;
 void held295;
+
+declare const held296: MdyMultiselectFieldProps<string>;
+void held296;

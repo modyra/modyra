@@ -5,6 +5,7 @@
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
+import { defaultOptionKey } from "../options-utils.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 
@@ -47,7 +48,12 @@ export function createOptionFieldController<TValue>(
     widgetId,
     handle,
     options: initialOptions,
-    keyFor = (option) => String(option.value),
+    // The same derivation the select and the multiselect controllers already default to. This one
+    // defaulted to `String`, under which every plain object is `[object Object]`: an object-valued
+    // list gave every choice one key, so two choices became one and holding either marked both.
+    // Every renderer in this repository passed a `keyFor` to work around it, which is what kept the
+    // divergence invisible — a consumer holding the controller directly got the collapse.
+    keyFor = (option) => defaultOptionKey(option.value),
     variant = "radio",
     readonly: initialReadonly = false,
   } = options;

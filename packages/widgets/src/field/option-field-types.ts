@@ -21,7 +21,7 @@ export interface MdyOptionFieldControllerOptions<TValue> {
   readonly handle: MdyFieldHandle<TValue | null>;
   /** Full list of options. */
   readonly options: readonly MdySelectOption<TValue>[];
-  /** Maps an option to a stable string key. Defaults to `String(option.value)`. */
+  /** Maps an option to a stable string key. Defaults to {@link defaultOptionKey}. */
   readonly keyFor?: (option: MdySelectOption<TValue>) => string;
   /** Visual variant: native radio group or segmented buttons. */
   readonly variant?: MdyOptionFieldVariant;

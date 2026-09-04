@@ -16,7 +16,7 @@ installDomGlobals();
 const React = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { createForm, field } = await import("./dist/index.js");
-const { MdyTextField, MdyBooleanField, MdyOptionField, MdySelectField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdyOptionField, MdySelectField, MdyMultiselectField } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
@@ -24,7 +24,7 @@ const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 export const name = "@modyra/react";
 
 /** The kinds this adapter draws. */
-export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "radio", "segmented", "select"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "radio", "segmented", "select", "multiselect"];
 
 /** This config passes the kit's `rules` and `value` through to the field it builds. */
 export const declaresRules = true;
@@ -48,6 +48,9 @@ const DRAWN_BY = {
   // Searchable, because that is the shape with a panel of ours. The chooser the platform draws is
   // the same kind and a different control, and the kit judges whichever one is mounted.
   select: [MdySelectField, { searchable: true, options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
+  // `single` is the mode's default and the shape a set of toggles has; the bag is the same component
+  // with a stepper and a count per row, and the kit judges whichever one is mounted.
+  multiselect: [MdyMultiselectField, { searchable: true, options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
 };
 
 /** Long enough for React to commit what was just rendered. */

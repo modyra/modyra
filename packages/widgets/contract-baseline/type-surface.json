@@ -3481,6 +3481,19 @@
     "classes: readonly string[]",
     "role?: string | null"
   ],
+  "react:MdyMultiselectField": [
+    "(0) props: MdyMultiselectFieldProps<TValue>",
+    "-> returns: ReactElement"
+  ],
+  "react:MdyMultiselectFieldProps": [
+    "field: MdyFieldHandle<readonly TValue[]>",
+    "label?: string",
+    "mode?: MdyMultiselectMode",
+    "options: readonly MdySelectOption<TValue>[]",
+    "placeholder?: string",
+    "searchable?: boolean",
+    "widgetId?: string"
+  ],
   "react:MdyOptionField": [
     "(0) props: MdyOptionFieldProps<TValue>",
     "-> returns: ReactElement"
@@ -3746,6 +3759,7 @@
   "react:useMdyMultiselectField": [
     "(0) handle: MdyFieldHandle<ReadonlyArray<TValue>>",
     "(1) options: UseMdyMultiselectFieldOptions<TValue>",
+    "(2) elements?: MdyElementLookup",
     "-> returns: MdyReactMultiselectFieldApi<TValue>"
   ],
   "react:useMdyOptionField": [

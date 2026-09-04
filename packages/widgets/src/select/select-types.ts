@@ -9,7 +9,7 @@ export interface MdySelectControllerOptions<TValue> {
   readonly widgetId: string;
   /** Full list of options. */
   readonly options: readonly MdySelectOption<TValue>[];
-  /** Maps an option to a stable string key. Defaults to `String(option.value)`. */
+  /** Maps an option to a stable string key. Defaults to {@link defaultOptionKey}. */
   readonly keyFor?: (option: MdySelectOption<TValue>) => string;
   /** Initial selected value; null means nothing selected. */
   readonly value?: TValue | null;
