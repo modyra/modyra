@@ -201,7 +201,10 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       const handle = this.field;
       if (handle) this.closePopup(handle);
     });
-    this.classList.add(CLASS.root);
+    // Spread, because `classList` takes one token per argument and the catalogue answers with a
+    // list. Joined, this kind's three root classes are a single string with spaces in it, which the
+    // DOM refuses — and refuses by throwing, so the element kept none of them.
+    this.classList.add(...partClasses("daterange", "root"));
   }
 
   /** The host's choice if it made one, the locale's otherwise. */

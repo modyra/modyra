@@ -6,7 +6,7 @@
  */
 
 import type { MdySelectOption } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor } from "@modyra/core";
 import {
   createSelectFieldController,
   type MdySelectFieldController,
@@ -49,7 +49,11 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     // driven by setters. The setters are not less typing to skip: they are a window between a value
     // changing anywhere else — a draft restored, a server correction, a cross-field rule — and
     // somebody in this file remembering to push it in.
-    this.controller = createSelectFieldController(options, vanillaReactivity());
+    // Observed through the runtime that owns the handle, never a fresh one. Two instances of the
+    // same factory are two different owners, and the second is refused the first's signals at
+    // runtime — a complaint on the way past, and a widget that renders once and then ignores every
+    // change made anywhere else.
+    this.controller = createSelectFieldController(options, observerFor(options.handle));
   }
 
   get state(): MdySelectState<TValue> {
