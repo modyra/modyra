@@ -443,6 +443,17 @@
         pointer-events: none;
     }
 
+    /* And the box beneath it belongs to what opens.
+
+       The caret is drawn over the end of the field — the contract puts it beside the trigger, not
+       inside it — so the element under that corner decides what a press there does. Where the
+       trigger is the platform's own chooser it already fills the line; a renderer that draws its own
+       leaves the wrapper underneath, and a press at the caret lands on a container with no handler.
+       Stretching the trigger costs nothing where it already stretches. */
+    .mdy-select__trigger {
+        flex: 1 1 auto;
+    }
+
     /* The control stays where the flex line puts it: what is centred and taken out of the flow is
        the target below, not the button. Merged into one rule, each toggle took `position: absolute`
        and `left: 50%` and floated to the middle of the field — where it covered the point a person
