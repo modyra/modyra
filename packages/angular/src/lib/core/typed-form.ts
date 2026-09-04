@@ -354,6 +354,15 @@ export class MdyTypedForm<S extends MdyFormSchema>
     return this._adapter.fieldNames as Signal<readonly string[]>;
   }
 
+  /**
+   * Angular's handle, built here rather than by the base.
+   *
+   * The body reads the same as the core form's, and it is not the same code: the signals it hands
+   * out are Angular's, so the handle this returns is a different type from the one core builds —
+   * which is why `_buildHandle` is abstract and the base is generic over it. Moving the shape into
+   * the base does not compile, and making it compile would need a cast that erases exactly the
+   * distinction the brand exists to keep.
+   */
   protected _buildHandle(path: string): MdyFieldHandle<unknown> {
     const ref = this._adapter.getField(path);
     if (!ref) {
@@ -370,23 +379,14 @@ export class MdyTypedForm<S extends MdyFormSchema>
       pending: state.pending,
       required: state.required,
       constraints: state.constraints,
-      // What the user may do, and its two derived halves. These were missing: the handle satisfied
-      // this file's own copy of the type, and threw the moment a widget controller read them.
       interactivity: state.interactivity,
       disabled: state.disabled,
       readonly: state.readonly,
       set: (v: unknown): void => state.value.set(v),
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
-      // Forwarded to the engine rather than kept beside it: an entry the control could not read is
-      // folded into the field's errors, and a copy held here would be a verdict the form does not
-      // count.
       reportEntry: (problem: string | null): void => this._adapter.reportEntry(path, problem),
     };
-    // Owner as well as form. A widget controller resolves the runtime that owns its handle, and an
-    // unregistered one resolves to a fresh vanilla runtime whose signals an Angular computed cannot
-    // read — so the controller's state moves and nothing re-renders. Zone.js hides it by redrawing
-    // on every event; without Zone.js the display simply freezes.
     return this._own(handle);
   }
 }

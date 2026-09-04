@@ -2252,7 +2252,9 @@ export class MdyTypedForm<S extends MdyFormSchema>
       throw new Error(`[modyra] Field "${path}" was not registered`);
     }
     const state = ref();
-    const handle: MdyFieldHandle<unknown> = {
+    // Through `_own`, which is what the base offers for exactly this: written out here instead, the
+    // two registrations were a third copy of a two-line rule the base already keeps.
+    return this._own<MdyFieldHandle<unknown>>({
       path,
       value: state.value,
       errors: state.errors,
@@ -2269,10 +2271,7 @@ export class MdyTypedForm<S extends MdyFormSchema>
       markAsTouched: (): void => state.touched.set(true),
       markAsDirty: (): void => state.dirty.set(true),
       reportEntry: (problem: string | null): void => this._adapter.reportEntry(path, problem),
-    };
-    registerHandleOwner(handle, this._adapter.reactivity);
-    registerHandleForm(handle, this);
-    return handle;
+    });
   }
 
   /** Core validates the unflattened value against the schema shape. */
