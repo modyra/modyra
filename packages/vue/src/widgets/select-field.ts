@@ -263,8 +263,14 @@ export const MdySelectField = defineComponent({
           selected === undefined
             ? h("span", { class: classesOf("placeholder") }, props.placeholder)
             : h("span", { class: classesOf("value") }, selected.label),
+          // Inside the button, not beside it. The contract names `control` as this kind's opener,
+          // and the opener is the control's whole visual box — which is how the platform's own
+          // chooser behaves in every other renderer, where a press anywhere on it opens the list.
+          // Drawn as a sibling, the caret is a hole in that box: a press at its centre landed on
+          // the wrapper, reached no handler, and did nothing. The foundation also stops it taking a
+          // pointer at all, which is the belt to this braces.
+          h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
         ]),
-        h("span", { class: classesOf("arrow") }),
       ]));
 
       {

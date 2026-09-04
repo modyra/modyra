@@ -425,12 +425,24 @@
      * measured, three kinds grew to 46px while the rest stayed at 38 — so the target is an overlay
      * instead: centred on the control, outside the flow, affecting nothing it sits in.
      *
-     * The select caret is absent deliberately. It is `pointer-events: none` and the trigger behind
-     * it is already the target, so an overlay there would only steal the press.
+     * The select caret is absent deliberately. It is `pointer-events: none` — stated below for
+     * every renderer rather than assumed of one — and the opener is already the target, so an
+     * overlay there would only steal the press.
      *
      * The steppers are absent too: two controls stacked inside one 3.5rem field cannot both be
      * 44px. They take WCAG 2.5.8's 24px, which is the AA level this project ships against.
      */
+    /* A decoration never intercepts a pointer, wherever a renderer draws it.
+
+       Stated here rather than in a theme because it is not a look: the caret sits over the area
+       that opens the list, and a press it swallows is a press the widget never hears. One renderer
+       drew it as a sibling of its trigger rather than inside it, and the centre of the caret became
+       a hole in the control — the press landed on the wrapper and nothing happened. The renderer
+       owns its box; this makes the mark on top of it inert either way. */
+    .mdy-select__arrow {
+        pointer-events: none;
+    }
+
     /* The control stays where the flex line puts it: what is centred and taken out of the flow is
        the target below, not the button. Merged into one rule, each toggle took `position: absolute`
        and `left: 50%` and floated to the middle of the field — where it covered the point a person
