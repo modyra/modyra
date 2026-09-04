@@ -11,7 +11,7 @@
  * the panel closes behind it. A renderer that instead lists key names drifts from the contract the
  * moment the contract gains one, and nothing tells it.
  */
-import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { Teleport, defineComponent, h, nextTick, onScopeDispose, ref, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createSelectFieldController,
@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.select;
 const classesOf = (part: string): string =>
@@ -64,6 +65,12 @@ export const MdySelectField = defineComponent({
     // rather than on the field handle. A `computed` over them reads correctly once and never again:
     // it has nothing of vue's to track, so the first render is right and every later one is stale —
     // which on screen is a control that ignores the click that opened it.
+    // The panel leaves the field and is positioned against the trigger: inside, it inherits the
+    // `overflow` and the stacking of every ancestor, and a list clipped by a scrolling pane is a
+    // list a person cannot finish reading. ADR 0130.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
@@ -88,6 +95,8 @@ export const MdySelectField = defineComponent({
      * wrong with the lookup. Watching the state means the search happens after the panel exists,
      * and it covers every way of opening, including the ones this component does not handle.
      */
+    useAnchoredPanel({ kind: "select", panel, anchor, isOpen: () => state.value.open });
+
     watch(() => state.value.open, async (open) => {
       const part = open ? focusPartOnOpen("select", { searchable: props.searchable }) : null;
       if (part === null) return;
@@ -190,7 +199,10 @@ export const MdySelectField = defineComponent({
       if (variantOf("select", { searchable: props.searchable }) === "native") return drawNative();
       const parts = view.value.parts;
       const open = state.value.open;
-      const selected = props.options.find((option) => String(option.value) === state.value.selectedKey);
+      // The controller's list, not the prop: it has already reconciled a held value the options do
+      // not contain, and looking in the prop list leaves that value invisible — the field shows a
+      // placeholder while holding something a person can neither see nor replace.
+      const selected = state.value.options.find((option) => String(option.value) === state.value.selectedKey);
       const children: VNode[] = [];
 
       // The trigger's name is a relation to this element, and the projection points it at the id
@@ -208,6 +220,7 @@ export const MdySelectField = defineComponent({
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("button", partProps(parts.trigger, {
+          ref: anchor,
           type: "button",
           onClick: () => {
             controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" });
@@ -221,7 +234,10 @@ export const MdySelectField = defineComponent({
       ]));
 
       {
-        children.push(h("div", { class: classesOf("popup") }, [
+        // Out of the field and against the trigger. Inside, the panel inherits the `overflow` and
+        // the stacking of every ancestor: a list clipped by a scrolling pane is a list a person
+        // cannot finish reading. ADR 0130.
+        children.push(h(Teleport, { to: "body" }, [h("div", { ref: panel, class: classesOf("popup"), onKeydown }, [
           h("input", partProps(parts.search, {
             value: state.value.query,
             onInput: (event: Event) =>
@@ -234,7 +250,7 @@ export const MdySelectField = defineComponent({
             state.value.options.map((option) => h("li", partProps(parts[String(option.value)], {
                 onClick: () => controller.dispatch({ type: "select", optionKey: String(option.value) }),
             }), option.label))),
-        ]));
+        ])]));
       }
 
       // Named by `aria-describedby` on every render, so it exists on every render: a description a

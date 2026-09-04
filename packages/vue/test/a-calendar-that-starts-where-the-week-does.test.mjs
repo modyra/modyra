@@ -22,6 +22,9 @@ const { partClasses, popupHoldsAnAction } = await import("../../widgets/dist/ind
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("datepicker", part)[0];
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = (locale = "en") => {
   const form = createVueForm({ value: field(null) });
   const host = document.createElement("div");
@@ -35,8 +38,9 @@ const draw = (locale = "en") => {
 
 const open = async (fixture) => { fixture.toggle.click(); await settle(); };
 /** The day of the week a cell's date falls on, read from the id the contract spells. */
-const weekdayOfFirstCell = (host) => {
-  const iso = host.querySelector("[role=gridcell]").id.replace(/^.*__day__/, "");
+const weekdayOfFirstCell = () => {
+  // In the document: the calendar is drawn outside the field (ADR 0130).
+  const iso = document.querySelector("[role=gridcell]").id.replace(/^.*__day__/, "");
   return new Date(`${iso}T00:00:00Z`).getUTCDay();
 };
 
@@ -47,11 +51,11 @@ for (const locale of ["en", "it"]) {
 
     const expected = buildDateLocale(locale).firstDayOfWeek;
     assert.equal(
-      weekdayOfFirstCell(fixture.host), expected,
-      `the grid starts on weekday ${weekdayOfFirstCell(fixture.host)} and this locale's week starts on ${expected}`,
+      weekdayOfFirstCell(), expected,
+      `the grid starts on weekday ${weekdayOfFirstCell()} and this locale's week starts on ${expected}`,
     );
 
-    const headers = [...fixture.host.querySelectorAll("[role=columnheader]")].map((e) => e.textContent);
+    const headers = [...document.querySelectorAll("[role=columnheader]")].map((e) => e.textContent);
     const names = buildDateLocale(locale).dayNamesNarrow;
     assert.equal(headers.length, names.length, "there is not one header per column");
     assert.equal(
@@ -107,7 +111,7 @@ test("the grid is still referenced when the calendar is shut", () => {
 
   // The control names the grid with `aria-controls` on every render, so the grid has to exist while
   // the calendar is shut. Removing it on close leaves the control pointing at nothing.
-  const control = fixture.host.querySelector(`.${cls("control")}`);
+  const control = document.querySelector(`.${cls("control")}`);
   const controls = control.getAttribute("aria-controls");
   assert.ok(controls, "the control names no grid at all");
   assert.ok(

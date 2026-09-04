@@ -24,6 +24,9 @@ const { partClasses, popupHoldsAnAction, keyBindingFor } = await import("../../w
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("colors", part)[0];
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = () => {
   const form = createVueForm({ value: field("#4361ee") });
   const host = document.createElement("div");
@@ -100,7 +103,7 @@ test("the grid is one stop, not one per colour", async () => {
 
   // The arrows are what move within the palette; a stop per swatch would make Tab the way to walk
   // colours, and reaching the action would take as many presses as there are presets.
-  const reachable = [...fixture.host.querySelectorAll(`.${cls("swatch")}`)]
+  const reachable = [...document.querySelectorAll(`.${cls("swatch")}`)]
     .filter((swatch) => swatch.tabIndex === 0);
   assert.equal(reachable.length, 1, `${reachable.length} swatches are Tab stops; the grid is meant to be one`);
   fixture.dispose();

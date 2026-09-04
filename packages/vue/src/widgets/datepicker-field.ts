@@ -11,7 +11,7 @@
  * answer to a question the contract already answers, and two answers is how two renderers come to
  * disagree about what someone typed.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
@@ -21,6 +21,7 @@ import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.datepicker;
@@ -53,6 +54,10 @@ export const MdyDatepickerField = defineComponent({
     // The calendar's own state — which month is in view, where the reading position is, whether the
     // panel is open — does not live on the field handle, so a `computed` over it would read
     // correctly once and be stale from the second render on.
+    // The panel is measured and placed against the control that opens it.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
@@ -62,6 +67,8 @@ export const MdyDatepickerField = defineComponent({
       triggerRef(view);
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
+
+    useAnchoredPanel({ kind: "datepicker", panel, anchor, isOpen: () => state.value.open });
 
     followTheReadingPosition(props.widgetId, () => ({
       open: state.value.open,
@@ -98,6 +105,7 @@ export const MdyDatepickerField = defineComponent({
             controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value }),
         })),
         h("button", {
+          ref: anchor,
           type: "button",
           class: classesOf("toggle"),
           "aria-expanded": String(state.value.open),
@@ -108,6 +116,8 @@ export const MdyDatepickerField = defineComponent({
 
       children.push(drawCalendar({
         kind: "datepicker",
+        panel,
+        onKeydown,
         open: state.value.open,
         cells,
         parts,

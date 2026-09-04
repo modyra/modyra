@@ -9,7 +9,7 @@
  * Not exported from this package. It is the shape these components share, and a published name
  * nobody outside can exercise is surface that has to be kept without ever being checked.
  */
-import { h, nextTick, watch, type VNode } from "vue";
+import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
 import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory } from "@modyra/widgets";
 import type { MdyPartContract } from "@modyra/widgets";
 import type { MdyDateLocale } from "@modyra/core/datetime";
@@ -92,6 +92,16 @@ export const drawCalendar = (options: {
   readonly onPreview?: (iso: string | null) => void;
   /** The id whatever opens this panel points `aria-controls` at, where it names the panel itself. */
   readonly popupId?: string;
+  /** Where the drawn panel lands, so it can be measured and placed against its control. */
+  readonly panel?: Ref<HTMLElement | null>;
+  /**
+   * The field's key handler, attached to the panel as well as to the field.
+   *
+   * A teleported panel bubbles its events through the document, not through the field it belongs
+   * to, so a handler that sits only on the field stops hearing every key pressed inside the panel —
+   * silently, and only once the panel has been moved out.
+   */
+  readonly onKeydown?: (event: KeyboardEvent) => void;
 }): VNode => {
   const { kind, cells, parts } = options;
   const cls = (part: string): string => calendarClassesOf(kind, part);
@@ -114,7 +124,16 @@ export const drawCalendar = (options: {
         }), String(cell.day)))));
   }
 
-  return h("div", { class: cls("popup"), hidden: !options.open, ...(options.popupId === undefined ? {} : { id: options.popupId }) }, [
+  // Out of the field, against the control. Inside, a calendar inherits the `overflow` and the
+  // stacking of every ancestor, and one clipped by a scrolling pane loses the rows a person is
+  // reaching for. ADR 0130.
+  return h(Teleport, { to: "body" }, [h("div", {
+    class: cls("popup"),
+    hidden: !options.open,
+    ...(options.panel === undefined ? {} : { ref: options.panel }),
+    ...(options.onKeydown === undefined ? {} : { onKeydown: options.onKeydown }),
+    ...(options.popupId === undefined ? {} : { id: options.popupId }),
+  }, [
     h("div", { class: cls("calendar"), role: role("calendar") }, [
       h("div", partProps(parts.grid, { class: cls("grid") }), [
         h("div", { class: cls("weekdays"), role: role("weekdays") },
@@ -123,7 +142,7 @@ export const drawCalendar = (options: {
         ...weeks,
       ]),
     ]),
-  ]);
+  ])]);
 };
 
 /**

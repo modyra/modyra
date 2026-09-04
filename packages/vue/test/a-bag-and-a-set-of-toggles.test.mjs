@@ -24,6 +24,9 @@ const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("multiselect", part)[0];
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = (mode) => {
   const form = createVueForm({ value: field([]) });
   const host = document.createElement("div");
@@ -48,7 +51,7 @@ for (const mode of ["single", "multi"]) {
     assert.ok(owed.length > 0, `the ${mode} shape declares nothing, so this test asserts nothing`);
     for (const part of owed) {
       assert.ok(
-        fixture.host.querySelector(`.${cls(part)}`),
+        document.querySelector(`.${cls(part)}`),
         `the ${mode} shape owes ${part} and the page has none`,
       );
     }
@@ -91,12 +94,12 @@ test("multi: a key on the active row changes its quantity", async () => {
     await settle();
   };
   await press("ArrowDown");
-  const before = fixture.host.querySelector(`.${cls("optionCount")}`).textContent;
+  const before = document.querySelector(`.${cls("optionCount")}`).textContent;
 
   await press("ArrowRight");
 
   assert.notEqual(
-    fixture.host.querySelector(`.${cls("optionCount")}`).textContent, before,
+    document.querySelector(`.${cls("optionCount")}`).textContent, before,
     "the declared key did not change the quantity of the active row",
   );
   fixture.dispose();
@@ -109,7 +112,7 @@ test("the always-drawn actions say whether they can act, and stay on the page", 
   // order — rather than with `disabled`, which removes them the moment there is nothing to do. A
   // control that comes and goes moves the one beside it under the hands of somebody aiming at it.
   for (const part of ["wayBackAction", "clearAll"]) {
-    const element = fixture.host.querySelector(`.${cls(part)}`);
+    const element = document.querySelector(`.${cls(part)}`);
     assert.ok(element, `${part} is not on the page`);
     assert.equal(element.getAttribute("aria-disabled"), "true", `${part} does not say it cannot act`);
     assert.equal(element.hasAttribute("hidden"), false, `${part} takes itself off the page`);

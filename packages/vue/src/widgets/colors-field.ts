@@ -12,7 +12,7 @@
  * walking out of it the way you walk out of a page leaves the action behind. `Escape` is the way
  * out, and it still is.
  */
-import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   colorPresetsOf,
@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.colors;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -48,8 +49,14 @@ export const MdyColorsField = defineComponent({
       presets: palette.map((entry) => entry.value),
     }, reactivity);
 
+    // Measured and placed against the control that opens it, and drawn outside the field so it
+    // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
+    useAnchoredPanel({ kind: "colors", panel, anchor, isOpen: () => state.value.open });
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -58,16 +65,18 @@ export const MdyColorsField = defineComponent({
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
-    const root = shallowRef<HTMLElement | null>(null);
     // `Array.from`, not a spread: what `querySelectorAll` returns is array-like without being
     // iterable unless the project asks for `DOM.Iterable`, and none of this repository's packages
     // do. Spread here compiles under the compiler this package is built with and fails under the
     // one a consumer may hold, which makes it a portability defect rather than a matter of style.
     const swatches = (): readonly HTMLElement[] =>
-      Array.from(root.value?.querySelectorAll(`.${classesOf("swatch").split(" ")[0]}`) ?? [])
+      // Inside the *panel*, not inside the field: the panel is drawn outside it (ADR 0130), so a
+      // lookup scoped to the field's own element finds nothing and reads as "the control is not
+      // there" — which is what it did the moment the panel was moved out.
+      Array.from(panel.value?.querySelectorAll(`.${classesOf("swatch").split(" ")[0]}`) ?? [])
         .filter((element): element is HTMLElement => element instanceof HTMLElement);
     const entry = (): HTMLElement | null => {
-      const found = root.value?.querySelector(`.${classesOf("customEntry").split(" ")[0]}`);
+      const found = panel.value?.querySelector(`.${classesOf("customEntry").split(" ")[0]}`);
       return found instanceof HTMLElement ? found : null;
     };
 
@@ -119,6 +128,7 @@ export const MdyColorsField = defineComponent({
         // around it and is declared presentation, so it presses nothing.
         h("button", {
           type: "button",
+          ref: anchor,
           class: classesOf("nativePicker"),
           "aria-expanded": String(state.value.open),
           "aria-controls": defaultWidgetIdFactory.part(props.widgetId, "popup"),
@@ -155,7 +165,9 @@ export const MdyColorsField = defineComponent({
       ]));
 
       // The panel stays in the document while it is shut, so what names it keeps naming something.
-      children.push(h("div", {
+      children.push(h(Teleport, { to: "body" }, [h("div", {
+        ref: panel,
+        onKeydown,
         id: defaultWidgetIdFactory.part(props.widgetId, "popup"),
         class: classesOf("popup"),
         hidden: !state.value.open,
@@ -183,14 +195,14 @@ export const MdyColorsField = defineComponent({
           h("span", { class: classesOf("customTint") }),
           "Custom…",
         ]),
-      ]));
+      ])]));
 
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
         class: classesOf("supportingText"),
       }));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), onKeydown }, children);
     };
   },
 });

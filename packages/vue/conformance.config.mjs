@@ -104,9 +104,13 @@ export const mount = async (kind, { rules, value, variant } = {}) => {
     // map written for one kind: the first version named the text field's wrapper class and was right
     // for four kinds by resemblance, then reported a checkbox's wrapper as missing while it was on
     // the page. `findPartElements` is the same lookup the kit uses on itself.
+    // Searched from the document, not from the host: a panel is drawn outside the field it belongs
+    // to (ADR 0130), so parts inside it are not under the mount point. Scoped to the host, they read
+    // as absent — and the kit, which knows a part may be portalled, was being handed nothing to
+    // recognise.
     parts: () => Object.fromEntries(
       MDY_WIDGET_CONTRACTS[kind].structure.nodes
-        .map((node) => [node.part, findPartElements(host, kind, node.part)])
+        .map((node) => [node.part, findPartElements(document.body, kind, node.part)])
         .filter(([, found]) => found.length > 0)
         .map(([part, found]) => [part, found.length === 1 ? found[0] : found]),
     ),

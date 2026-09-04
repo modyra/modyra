@@ -23,6 +23,9 @@ const OPTIONS = [{ value: "a", label: "First" }, { value: "b", label: "Second" }
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("select", part)[0];
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = () => {
   const form = createVueForm({ value: field(null) });
   const host = document.createElement("div");

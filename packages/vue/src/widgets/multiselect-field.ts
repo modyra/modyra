@@ -12,7 +12,7 @@
  * for the shape quietly stop applying. That is why this component takes the declared type rather
  * than a string.
  */
-import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.multiselect;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -48,8 +49,14 @@ export const MdyMultiselectField = defineComponent({
       mode: props.mode,
     }, reactivity);
 
+    // Measured and placed against the control that opens it, and drawn outside the field so it
+    // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
+    useAnchoredPanel({ kind: "multiselect", panel, anchor, isOpen: () => state.value.open });
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -161,7 +168,9 @@ export const MdyMultiselectField = defineComponent({
         }, props.label));
       }
 
-      const held = props.options.filter((option) => state.value.selectedKeys.has(String(option.value)));
+      // The controller's list, for the same reason: a chip is how a held value is seen and removed,
+      // and a value missing from the declared options would otherwise be held with no chip at all.
+      const held = state.value.options.filter((option) => state.value.selectedKeys.has(String(option.value)));
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("div", { class: classesOf("box") }, [
           // What is held, as a grid: one row of cells, which is how a screen reader counts them and
@@ -180,6 +189,7 @@ export const MdyMultiselectField = defineComponent({
           // A button, not a text box: the placeholder lives *inside* it, and an `<input>` cannot
           // hold anything. What a person types goes in the panel's filter, not here.
           h("button", partProps(parts.trigger, {
+            ref: anchor,
             type: "button",
             onClick: () => controller.dispatch({ type: "toggleOpen" }),
           }), [
@@ -209,7 +219,7 @@ export const MdyMultiselectField = defineComponent({
         ]),
       ]));
 
-      children.push(h("div", partProps(parts.popup, { class: classesOf("popup") }), [
+      children.push(h(Teleport, { to: "body" }, [h("div", partProps(parts.popup, { ref: panel, class: classesOf("popup"), onKeydown }), [
         ...(props.searchable
           ? [h("input", partProps(parts.search, {
             type: "text",
@@ -220,7 +230,7 @@ export const MdyMultiselectField = defineComponent({
           : []),
         h("div", partProps(parts.group, { class: classesOf("options"), role: roleOf("options") }),
           state.value.options.map(optionRow)),
-      ]));
+      ])]));
 
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),

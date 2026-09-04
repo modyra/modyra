@@ -20,6 +20,9 @@ const { partClasses } = await import("../../widgets/dist/index.js");
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("daterange", part)[0];
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = (locale = "it") => {
   const form = createVueForm({ value: field(null) });
   const host = document.createElement("div");
@@ -40,7 +43,7 @@ test("the grid starts where this locale's week starts", async () => {
   const fixture = draw("it");
   await open(fixture);
 
-  const iso = fixture.host.querySelector("[role=gridcell]").id.replace(/^.*__day__/, "");
+  const iso = document.querySelector("[role=gridcell]").id.replace(/^.*__day__/, "");
   assert.equal(
     new Date(`${iso}T00:00:00Z`).getUTCDay(), buildDateLocale("it").firstDayOfWeek,
     "the range's grid does not start on the day this locale's week starts on",
@@ -51,7 +54,7 @@ test("the grid starts where this locale's week starts", async () => {
 test("two presses make a range, and one press does not", async () => {
   const fixture = draw();
   await open(fixture);
-  const cells = [...fixture.host.querySelectorAll("[role=gridcell]")];
+  const cells = [...document.querySelectorAll("[role=gridcell]")];
   const first = cells[10];
   const second = cells[14];
 
@@ -75,7 +78,7 @@ test("two presses make a range, and one press does not", async () => {
 test("both ends are named, and the separator is not read out", async () => {
   const fixture = draw();
 
-  const inputs = [...fixture.host.querySelectorAll("input")];
+  const inputs = [...document.querySelectorAll("input")];
   assert.equal(inputs.length, 2, "a range has two boxes");
   for (const input of inputs) {
     const named = input.getAttribute("aria-label") ?? input.getAttribute("aria-labelledby");
@@ -86,7 +89,7 @@ test("both ends are named, and the separator is not read out", async () => {
 
   // What the dash means is already said by the two boxes having their own names; announcing
   // "en dash" between them tells a person nothing they need.
-  const separator = fixture.host.querySelector(`.${cls("separator")}`);
+  const separator = document.querySelector(`.${cls("separator")}`);
   assert.equal(separator?.getAttribute("aria-hidden"), "true", "the separator is read out between the two ends");
   fixture.dispose();
 });

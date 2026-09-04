@@ -24,7 +24,18 @@ const { partClasses, popupHoldsAnAction, timepickerTabOrder, timepickerPartSelec
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const cls = (part) => partClasses("timepicker", part)[0];
+/**
+ * The open panel, wherever it is drawn.
+ *
+ * It is not inside the field: a panel that stays there inherits the `overflow` and the stacking of
+ * every ancestor (ADR 0130), so "focus stayed in the widget" cannot be asked of the field's own
+ * element. What the ring promises is that focus stays inside the *panel*, and that is what is asked.
+ */
+const openPanel = () => document.querySelector(`.${partClasses("timepicker", "popup")[0]}`);
 
+  // The panel is drawn outside the field — it leaves so it does not inherit an ancestor's
+  // `overflow` or stacking (ADR 0130) — so what is inside it is looked for in the document,
+  // not under the host. A query scoped to the host finds nothing and reads as "not drawn".
 const draw = () => {
   const form = createVueForm({ value: field(null) });
   const host = document.createElement("div");
@@ -64,7 +75,7 @@ test("Tab is swallowed and walks inside the panel", async () => {
     "Tab was let through: a person setting a time is put back on the page with the dialog still open",
   );
   assert.notEqual(document.activeElement, started, "Tab was swallowed and focus did not move, which is a dead end");
-  assert.ok(fixture.host.contains(document.activeElement), "Tab moved focus out of the open panel");
+  assert.ok(openPanel()?.contains(document.activeElement), "Tab moved focus out of the open panel");
   fixture.dispose();
 });
 
@@ -76,7 +87,7 @@ test("the walk visits every stop the contract declares, and comes back", async (
   // AM/PM stop, and that is the stop a walk written against the wrong list never reaches.
   const expected = timepickerTabOrder("12h")
     .map((part) => timepickerPartSelector(part))
-    .filter((selector) => selector !== null && fixture.host.querySelector(selector) !== null);
+    .filter((selector) => selector !== null && document.querySelector(selector) !== null);
   assert.ok(expected.length >= 3, `only ${expected.length} of the declared stops are on the page`);
 
   const seen = [document.activeElement];
@@ -103,7 +114,7 @@ test("Shift+Tab walks the other way and stays inside", async () => {
 
   assert.equal(event.defaultPrevented, true, "Shift+Tab was let through");
   assert.equal(document.activeElement, started, "Shift+Tab did not come back to the stop before");
-  assert.ok(fixture.host.contains(document.activeElement), "Shift+Tab left the open panel");
+  assert.ok(openPanel()?.contains(document.activeElement), "Shift+Tab left the open panel");
   fixture.dispose();
 });
 
@@ -113,7 +124,7 @@ test("the confirm button is reachable by keyboard alone", async () => {
 
   // The reason the ring exists. Confirm is the last stop, and with Tab let through it is the one
   // control in this panel a person can only reach with a pointer.
-  const confirm = fixture.host.querySelector(timepickerPartSelector("action--confirm"));
+  const confirm = document.querySelector(timepickerPartSelector("action--confirm"));
   assert.ok(confirm, "the panel draws no confirm button at all");
 
   let reached = false;

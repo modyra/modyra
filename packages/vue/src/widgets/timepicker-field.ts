@@ -13,7 +13,7 @@
  * the same selector, and a walk that names the minute lands on the hour while looking like it did
  * nothing at all.
  */
-import { defineComponent, h, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createTimepickerFieldController,
@@ -25,6 +25,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -50,8 +51,14 @@ export const MdyTimepickerField = defineComponent({
       widgetId: props.widgetId,
     }, reactivity);
 
+    // Measured and placed against the control that opens it, and drawn outside the field so it
+    // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
+    useAnchoredPanel({ kind: "timepicker", panel, anchor, isOpen: () => state.value.open });
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -60,10 +67,12 @@ export const MdyTimepickerField = defineComponent({
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
 
-    const root = shallowRef<HTMLElement | null>(null);
     /** The stops that are on the page, in the order the contract puts them. */
     const stops = (): readonly HTMLElement[] => {
-      const host = root.value;
+      // Inside the *panel*, not inside the field: the panel is drawn outside it (ADR 0130), so a
+      // lookup scoped to the field's own element finds nothing and reads as "the control is not
+      // there" — which is what it did the moment the panel was moved out.
+      const host = panel.value;
       if (host === null) return [];
       // The format decides the ring: a twelve-hour field has an AM/PM stop and a
       // twenty-four-hour one does not. Asked without it, the answer is the same list both times,
@@ -79,7 +88,7 @@ export const MdyTimepickerField = defineComponent({
       // Where the panel opens is the field being edited, and that question has its own answer.
       await nextTick();
       const selector = timepickerPartSelector(timepickerFocusPart(state.value.focusedField));
-      const target = selector === null ? null : root.value?.querySelector(selector);
+      const target = selector === null ? null : panel.value?.querySelector(selector);
       if (target instanceof HTMLElement) target.focus();
     });
 
@@ -136,7 +145,8 @@ export const MdyTimepickerField = defineComponent({
         })),
         h("button", {
           type: "button",
-          class: classesOf("toggle"),
+          ref: anchor,
+        class: classesOf("toggle"),
           "aria-expanded": String(state.value.open),
           "aria-label": props.label === "" ? "Choose time" : `Choose ${props.label}`,
           onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
@@ -148,7 +158,9 @@ export const MdyTimepickerField = defineComponent({
       // The popup *is* the dialog: one element carrying both parts' classes, the dialog's role and
       // its modal relation. Drawn as two, the panel a person is inside and the panel the contract
       // calls a dialog are different elements, and the one announced is the empty one.
-      children.push(h("div", partProps(parts.dialog, {
+      children.push(h(Teleport, { to: "body" }, [h("div", partProps(parts.dialog, {
+        ref: panel,
+        onKeydown,
         id: defaultWidgetIdFactory.part(props.widgetId, "popup"),
         class: classesOf("popup"),
         hidden: !state.value.open,
@@ -180,14 +192,14 @@ export const MdyTimepickerField = defineComponent({
             }, "OK"),
           ]),
         ]),
-      ]));
+      ])]));
 
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
         class: classesOf("supportingText"),
       }));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
+      return h("div", { class: CONTRACT.rootClasses.join(" "), onKeydown }, children);
     };
   },
 });

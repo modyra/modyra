@@ -11,7 +11,7 @@
  * contract already answers, and the two would differ at the edges — the day before the start, a
  * range picked backwards — which is exactly where a person notices.
  */
-import { defineComponent, h, onScopeDispose, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -22,6 +22,7 @@ import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps } from "./part.js";
+import { useAnchoredPanel } from "./anchored-panel.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.daterange;
@@ -50,6 +51,10 @@ export const MdyDaterangeField = defineComponent({
 
     // The panel's state does not live on the field handle, so a `computed` over it would read
     // correctly once and be stale from the second render on.
+    // The panel is measured and placed against the control that opens it.
+    const panel = ref<HTMLElement | null>(null);
+    const anchor = ref<HTMLElement | null>(null);
+
     const state = shallowRef(controller.state());
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
@@ -59,6 +64,8 @@ export const MdyDaterangeField = defineComponent({
       triggerRef(view);
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
+
+    useAnchoredPanel({ kind: "daterange", panel, anchor, isOpen: () => state.value.open });
 
     followTheReadingPosition(props.widgetId, () => ({
       open: state.value.open,
@@ -103,6 +110,7 @@ export const MdyDaterangeField = defineComponent({
         // open, the panel it names and the label it is named by. Written by hand it carried a
         // guess at three of them and the panel relation not at all.
         h("button", partProps(parts.toggle, {
+          ref: anchor,
           type: "button",
           onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
         })),
@@ -110,6 +118,8 @@ export const MdyDaterangeField = defineComponent({
 
       children.push(drawCalendar({
         kind: "daterange",
+        panel,
+        onKeydown,
         open: state.value.open,
         cells: state.value.cells,
         parts,
