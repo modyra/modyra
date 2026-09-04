@@ -29,6 +29,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { scaleStepNames } from "./lib/scale-steps.mjs";
+import { themeSheetFiles } from "./lib/published-sheets.mjs";
 import { join, relative, resolve } from "node:path";
 
 const ROOT = resolve(new URL("..", import.meta.url).pathname);
@@ -274,6 +275,7 @@ for (const name of inCss.keys()) {
 }
 
 const classified = new Map();
+const THEME_SHEETS = themeSheetFiles();
 const scaleSteps = new Set(scaleStepNames());
 
 for (const name of untiered) {
@@ -307,8 +309,12 @@ for (const name of untiered) {
     // Supplied by a theme only when **every** sheet that declares it is a theme: where the
     // foundation declares it too, the theme is overriding a default, not meeting a requirement.
     const sheets = [...(inCss.get(name) ?? [])];
-    const fromATheme = sheets.length > 0
-      && sheets.every((sheet) => /^modyra-(ios|material|ionic|modern|salience|default)\.css$/.test(sheet));
+    // Which sheets are themes comes from the package manifest, not from a pattern written here. The
+    // pattern that used to be here spelled six file names and matched none of them wrongly — except
+    // `modyra-salience.theme.css`, whose name carries an extra segment, so the salience theme was
+    // not a theme as far as this gate was concerned and everything it alone declared read as the
+    // foundation's own plumbing.
+    const fromATheme = sheets.length > 0 && sheets.every((sheet) => THEME_SHEETS.has(sheet));
     classified.set(name, fromATheme
       ? "declared by a theme, consumed by the foundation — what a theme must supply"
       : "declared and read between the foundation's own sheets");

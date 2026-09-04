@@ -20,6 +20,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { SHEET_ROLES, publishedSheets, unclassifiedSheets } from "./lib/published-sheets.mjs";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const SRC = join(ROOT, "packages/styles/src");
@@ -37,44 +38,14 @@ const SRC = join(ROOT, "packages/styles/src");
  * to `exports` with no entry here fails, because the alternative is that publishing a new theme is
  * how you stop being audited.
  */
-const ROLES = {
-  // The foundation a consumer imports, and the half it imports in turn. Both decide how a control
-  // works, so both are held to what a foundation may not assume.
-  "foundation.css": "foundation",
-  // Not published on its own; loaded by the sheet above. Kept in the roster because the rules are
-  // about the tier, not about which file a consumer names.
-  "modyra.css": "foundation",
-  // The brand token tier (`--mdy-ref-*`). Reference tokens are exactly the raw brand values a
-  // foundation must not contain and something has to declare, so this one is neither.
-  "base.css": "neither",
-  "default.css": "theme",
-  "modern.css": "theme",
-  "material.css": "theme",
-  "ios.css": "theme",
-  "salience.css": "theme",
-  "ionic.css": "theme",
-};
-
-/** The file each published subpath resolves to, read from the manifest rather than guessed. */
-function publishedSheets() {
-  const manifest = JSON.parse(readFileSync(join(ROOT, "packages/styles/package.json"), "utf8"));
-  const sheets = new Map();
-  for (const [subpath, target] of Object.entries(manifest.exports ?? {})) {
-    const file = typeof target === "string" ? target : target?.default;
-    if (typeof file !== "string" || !file.endsWith(".css")) continue;
-    sheets.set(subpath.replace(/^\.\//, ""), file.replace(/^.*\//, ""));
-  }
-  return sheets;
-}
-
 const SHEETS = publishedSheets();
-const unclassified = [...SHEETS.keys()].filter((subpath) => !(subpath in ROLES));
-const roleOf = (name) => ROLES[[...SHEETS].find(([, file]) => file === name)?.[0] ?? name];
+const unclassified = unclassifiedSheets();
+const roleOf = (name) => SHEET_ROLES[[...SHEETS].find(([, file]) => file === name)?.[0] ?? name];
 
-const FOUNDATION = Object.keys(ROLES)
-  .filter((key) => ROLES[key] === "foundation")
+const FOUNDATION = Object.keys(SHEET_ROLES)
+  .filter((key) => SHEET_ROLES[key] === "foundation")
   .map((key) => SHEETS.get(key) ?? key);
-const THEMES = [...SHEETS].filter(([subpath]) => ROLES[subpath] === "theme").map(([, file]) => file);
+const THEMES = [...SHEETS].filter(([subpath]) => SHEET_ROLES[subpath] === "theme").map(([, file]) => file);
 
 /**
  * Accepted debt, each with the reason it is still here. The audit asserts every entry is still a
@@ -289,7 +260,7 @@ const stale = DEBT.filter((debt) => !debtSeen.has(debt.id));
 process.stdout.write("# Styles architecture audit\n\n");
 process.stdout.write(`Read from packages/styles/package.json: ${SHEETS.size} published sheet(s).\n`);
 process.stdout.write(`Foundation: ${FOUNDATION.join(", ")}\nThemes: ${THEMES.join(", ")}\n`);
-process.stdout.write(`Neither: ${Object.keys(ROLES).filter((k) => ROLES[k] === "neither").join(", ") || "(none)"}\n\n`);
+process.stdout.write(`Neither: ${Object.keys(SHEET_ROLES).filter((k) => SHEET_ROLES[k] === "neither").join(", ") || "(none)"}\n\n`);
 for (const debt of DEBT) {
   if (debtSeen.has(debt.id)) process.stdout.write(`  debt: ${debt.id} — ${debt.reason}\n`);
 }
