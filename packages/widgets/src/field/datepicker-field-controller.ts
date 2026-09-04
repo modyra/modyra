@@ -18,6 +18,8 @@ import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { keyBindingFor } from "../transitions.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
+import { moveCalendarFocus } from "./calendar-view.js";
+import { closePickerPanel } from "./picker-close.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
 import {
@@ -100,11 +102,7 @@ export function createDatepickerFieldController(
   const focusedDate = reactivity.signal(formatIsoDate(initialFocus));
 
   function moveFocus(target: CalendarDate): void {
-    focusedDate.set(formatIsoDate(target));
-    if (target.year !== viewYear() || target.month !== viewMonth()) {
-      viewYear.set(target.year);
-      viewMonth.set(target.month);
-    }
+    moveCalendarFocus({ focusedDate, viewYear, viewMonth }, target);
   }
 
   const state: MdySignal<MdyDatepickerFieldState> = reactivity.computed(() => {
@@ -260,14 +258,7 @@ export function createDatepickerFieldController(
   }
 
   function closePicker(restoreFocus: boolean): readonly MdyUiCommand[] {
-    open.set(false);
-    // Opening the panel and closing it is an act on the value — the panel's version of typing and
-    // deleting: the person saw what was on offer and took none of it. Touched and not dirty, because
-    // nothing about the value changed. ADR 0167.
-    handle.markAsTouched();
-    return restoreFocus
-      ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "trigger" } }]
-      : [{ type: "close-overlay" }];
+    return closePickerPanel({ open, handle }, restoreFocus);
   }
 
   function dispatch(intent: MdyDatepickerFieldIntent): readonly MdyUiCommand[] {

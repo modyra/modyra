@@ -38,7 +38,7 @@ import type {
   MdyCollectionKind,
   MdyNestedCollection,
 } from "./contracts/collection-manager.js";
-import { registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
+import { destroyNestedUnder, nestedAt, registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
 
 /**
  * A row's own schema node.
@@ -328,29 +328,12 @@ export class MdyRecordManager implements MdyNestedCollection {
 
   /** The manager for a collection declared inside one of these rows, wherever it sits below. */
   nested(path: string): MdyNestedCollection | undefined {
-    const own = this._nested.get(path);
-    if (own) return own;
-    for (const [at, manager] of this._nested) {
-      if (path.startsWith(`${at}.`)) {
-        const found = manager.nested(path);
-        if (found) return found;
-      }
-    }
-    return undefined;
+    return nestedAt(this._nested, path);
   }
 
   /** Everything a row owned, the collections it declared included. */
   private _destroyNestedUnder(prefix: string): void {
-    for (const [path, manager] of [...this._nested]) {
-      if (path === prefix || path.startsWith(`${prefix}.`)) {
-        manager.destroy();
-        this._nested.delete(path);
-        // The collection's own phantom field goes with it: registered so collection-level errors
-        // have somewhere to surface, it would otherwise outlive the row and read as a value.
-        this._deps.engine.disownField(path);
-        this._deps.engine.removeField(path);
-      }
-    }
+    destroyNestedUnder(this._nested, this._deps.engine, prefix);
   }
 
   remove(key: string): void {

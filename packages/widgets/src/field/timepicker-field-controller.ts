@@ -40,6 +40,7 @@ import type {
   MdyTimepickerViewMode,
 } from "./timepicker-field-types.js";
 import { showsAsInvalid } from "./verdict.js";
+import { closePickerPanel } from "./picker-close.js";
 
 export interface MdyTimepickerFieldController
   extends MdyWidgetController<MdyTimepickerFieldState, MdyTimepickerFieldIntent> {
@@ -275,14 +276,7 @@ export function createTimepickerFieldController(
   }
 
   function closePicker(restoreFocus: boolean): readonly MdyUiCommand[] {
-    open.set(false);
-    // Opening the panel and closing it is an act on the value — the panel's version of typing and
-    // deleting: the person saw what was on offer and took none of it. Touched and not dirty, because
-    // nothing about the value changed. ADR 0167.
-    handle.markAsTouched();
-    return restoreFocus
-      ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "trigger" } }]
-      : [{ type: "close-overlay" }];
+    return closePickerPanel({ open, handle }, restoreFocus);
   }
 
   /**

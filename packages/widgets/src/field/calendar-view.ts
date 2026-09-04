@@ -9,6 +9,8 @@
  * The mode is state, so it belongs to the controller for the kind rather than to each renderer, for
  * the reason the timepicker already demonstrates: it holds `viewMode` and its renderers ask.
  */
+import { formatIsoDate, type CalendarDate } from "@modyra/core/datetime";
+
 export const MDY_CALENDAR_VIEW_MODES = Object.freeze(["days", "months", "years"] as const);
 
 export type MdyCalendarViewMode = (typeof MDY_CALENDAR_VIEW_MODES)[number];
@@ -55,4 +57,27 @@ export function calendarViewOnZoom(mode: MdyCalendarViewMode, by: -1 | 1): MdyCa
   const at = MDY_CALENDAR_VIEW_MODES.indexOf(mode);
   const next = Math.min(Math.max(at + by, 0), MDY_CALENDAR_VIEW_MODES.length - 1);
   return MDY_CALENDAR_VIEW_MODES[next]!;
+}
+
+/**
+ * Moves the reading position, bringing the month in view with it.
+ *
+ * The two halves are one act: a position that leaves the visible month without the view following
+ * puts the focus on a cell nobody is looking at, and the arrows appear to stop working at the edge
+ * of the grid. Written twice — once per calendar kind — the two halves stayed together only for as
+ * long as nobody edited one of them.
+ */
+export function moveCalendarFocus(
+  view: {
+    readonly focusedDate: { set(value: string): void };
+    readonly viewYear: { (): number; set(value: number): void };
+    readonly viewMonth: { (): number; set(value: number): void };
+  },
+  target: CalendarDate,
+): void {
+  view.focusedDate.set(formatIsoDate(target));
+  if (target.year !== view.viewYear() || target.month !== view.viewMonth()) {
+    view.viewYear.set(target.year);
+    view.viewMonth.set(target.month);
+  }
 }

@@ -33,7 +33,7 @@ import type {
   MdyDaterangeFieldState,
 } from "./daterange-field-types.js";
 import { showsAsInvalid } from "./verdict.js";
-import { calendarViewAfterPick, type MdyCalendarViewMode } from "./calendar-view.js";
+import { calendarViewAfterPick, moveCalendarFocus, type MdyCalendarViewMode } from "./calendar-view.js";
 
 export interface MdyDaterangeFieldController
   extends MdyWidgetController<MdyDaterangeFieldState, MdyDaterangeFieldIntent> {
@@ -93,11 +93,7 @@ export function createDaterangeFieldController(
   const focusedDate = reactivity.signal(formatIsoDate(anchor));
 
   function moveFocus(target: CalendarDate): void {
-    focusedDate.set(formatIsoDate(target));
-    if (target.year !== viewYear() || target.month !== viewMonth()) {
-      viewYear.set(target.year);
-      viewMonth.set(target.month);
-    }
+    moveCalendarFocus({ focusedDate, viewYear, viewMonth }, target);
   }
 
   /** Whether the next pick opens a range or closes one. */

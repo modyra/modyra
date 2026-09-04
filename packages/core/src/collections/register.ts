@@ -12,6 +12,7 @@
  */
 import { composeConditions, type MdyCondition } from "../conditions.js";
 import type { MdyCollectionHost } from "../contracts/collection-host.js";
+import type { MdyNestedCollection } from "../contracts/collection-manager.js";
 import type {
   MdyAnyArrayDescriptor,
   MdyAnyFieldDescriptor,
@@ -175,4 +176,49 @@ export function registerRowNode(
   for (const [key, child] of Object.entries(node.children)) {
     registerRowNode(deps, `${fullPath}.${key}`, child as MdyRowDescriptor, rec[key], rowPath, nested);
   }
+}
+
+/**
+ * Ends every collection at or under `prefix`, and takes its field with it.
+ *
+ * The same act for a keyed collection and a positional one: what differs between the two managers is
+ * how a row is addressed, and this reaches them by path, which is the one address both agree on. The
+ * collection's own field is registered so that collection-level errors have somewhere to surface, so
+ * it has to go too — left behind it outlives the row and reads as a value.
+ */
+export function destroyNestedUnder(
+  nested: Map<string, MdyNestedCollection>,
+  engine: MdyCollectionHost,
+  prefix: string,
+): void {
+  for (const [path, manager] of [...nested]) {
+    if (path === prefix || path.startsWith(`${prefix}.`)) {
+      manager.destroy();
+      nested.delete(path);
+      engine.disownField(path);
+      engine.removeField(path);
+    }
+  }
+}
+
+/**
+ * The collection at `path`, however deep — asking each collection above it in turn.
+ *
+ * A collection owns the paths directly under it and nothing further: the one two levels down belongs
+ * to the one between, so the search descends rather than reading a flat table. Which is why there is
+ * no flat table to go stale.
+ */
+export function nestedAt(
+  nested: ReadonlyMap<string, MdyNestedCollection>,
+  path: string,
+): MdyNestedCollection | undefined {
+  const own = nested.get(path);
+  if (own) return own;
+  for (const [at, manager] of nested) {
+    if (path.startsWith(`${at}.`)) {
+      const found = manager.nested(path);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }

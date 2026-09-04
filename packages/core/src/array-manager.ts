@@ -33,7 +33,7 @@ import type {
   MdyCollectionKind,
   MdyNestedCollection,
 } from "./contracts/collection-manager.js";
-import { registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
+import { destroyNestedUnder, nestedAt, registerRowNode, rowDeclaresCell, type MdyRowRegistration } from "./collections/register.js";
 import { MDY_DEV } from "./dev-flags.js";
 
 /** A row's own schema node. A record may sit inside an array's item; another array may not. */
@@ -58,7 +58,7 @@ export interface MdyArrayManagerDeps {
   /** A row's shape: a field, a group, or a collection of either kind. */
   readonly item: MdyRowNode | MdyAnyArrayDescriptor | MdyAnyRecordDescriptor;
   /** The host's development channel, so `devWarnings: false` silences these too. */
-  readonly warn?: (message: string) => void;
+  readonly warn: (message: string) => void;
   /** The whole form value, for a row-level condition that reads back out of its row. */
   readonly readRoot?: () => Record<string, unknown>;
   /** How to build a collection declared inside one of this collection's rows. */
@@ -514,7 +514,10 @@ export class MdyArrayManager implements MdyNestedCollection {
         positionalAncestor: true,
         // Nothing here has a name to complain about that the engine has not already reported, so a
         // nested record's diagnostics go where the engine's do.
-        warn: (message: string) => void message,
+        // Forwarded, not swallowed. Discarded here, a collection declared inside a row lost every
+        // diagnostic it tried to emit — the same mistake reported at the top level and inside a
+        // keyed row said nothing at all inside a positional one.
+        warn: this._deps.warn,
         // A row's collection is out of play with the row: an array's rows are positional, so what
         // says the row exists is the count, not a declaration.
         sections: [
@@ -534,29 +537,12 @@ export class MdyArrayManager implements MdyNestedCollection {
 
   /** Everything a row owned, the collections it declared included. */
   private _destroyNestedUnder(prefix: string): void {
-    for (const [path, manager] of [...this._nested]) {
-      if (path === prefix || path.startsWith(`${prefix}.`)) {
-        manager.destroy();
-        this._nested.delete(path);
-        // The collection's own phantom field goes with it: registered so collection-level errors
-        // have somewhere to surface, it would otherwise outlive the row and read as a value.
-        this._deps.engine.disownField(path);
-        this._deps.engine.removeField(path);
-      }
-    }
+    destroyNestedUnder(this._nested, this._deps.engine, prefix);
   }
 
   /** The manager for a collection a row declared below this one, if it is still alive. */
   nested(path: string): MdyNestedCollection | undefined {
-    const own = this._nested.get(path);
-    if (own) return own;
-    for (const [at, manager] of this._nested) {
-      if (path.startsWith(`${at}.`)) {
-        const found = manager.nested(path);
-        if (found) return found;
-      }
-    }
-    return undefined;
+    return nestedAt(this._nested, path);
   }
 
   /**
@@ -683,7 +669,11 @@ export class MdyArrayManager implements MdyNestedCollection {
       return rowNode.kind === "array" ? [] : {};
     }
     if (rowNode.kind === "field") {
-      const ref = this._deps.engine.getField(fullPath);
+      // `peekField`, not `getField`: this is a read, and the creating door would bring a field
+      // into being as a side effect of being asked what the collection holds. The record manager
+      // has always read through the door that creates nothing, and the host contract states the
+      // difference in as many words.
+      const ref = this._deps.engine.peekField(fullPath);
       return ref ? ref().value() : null;
     }
     const out: Record<string, unknown> = {};
