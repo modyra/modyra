@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps } from "./part.js";
+import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
@@ -275,7 +276,11 @@ export const MdySelectField = defineComponent({
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
         class: classesOf("supportingText"),
       }));
-      if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
+      // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
+      // points at that explains nothing.
+      if (parts.error !== undefined) {
+        children.push(drawErrors(parts.error, props.field, "select"));
+      }
 
       return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };

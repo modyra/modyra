@@ -23,6 +23,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart } from "./part.js";
+import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
@@ -218,6 +219,10 @@ export const MdyColorsField = defineComponent({
         id: defaultWidgetIdFactory.part(props.widgetId, "description"),
         class: classesOf("supportingText"),
       }));
+
+      // The list the description points at, and what is in it. Absent, `aria-describedby`
+      // named an id no element had: a promise of an explanation, kept by nothing.
+      if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "colors"));
 
       return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
     };

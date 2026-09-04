@@ -19,6 +19,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { drawDeclaredUnder, partProps } from "./part.js";
+import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.file;
@@ -87,7 +88,11 @@ export const MdyFileField = defineComponent({
       ]));
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
-      if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));
+      // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
+      // points at that explains nothing.
+      if (parts.error !== undefined) {
+        children.push(drawErrors(parts.error, props.field, "file"));
+      }
       return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root }, children);
     };
   },
