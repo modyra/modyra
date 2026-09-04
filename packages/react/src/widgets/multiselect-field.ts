@@ -14,6 +14,7 @@ import {
 } from "@modyra/widgets";
 
 import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
+import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdyMultiselectFieldOptions<TValue> = Omit<
   MdyMultiselectFieldControllerOptions<TValue>,
@@ -22,6 +23,16 @@ export type UseMdyMultiselectFieldOptions<TValue> = Omit<
 
 export interface MdyReactMultiselectFieldApi<TValue> {
   readonly state: MdyMultiselectFieldState<TValue>;
+  /**
+   * The parts the controller projects: ids, roles, ARIA relations and the classes each part
+   * carries.
+   *
+   * Published because drawing is what a consumer of a headless hook does, and every answer here
+   * is one they would otherwise write themselves — which is the contract logic this library
+   * exists to keep out of their code. The text hook published it from the start; the other eight
+   * did not, so a component built on them had the state and none of the anatomy.
+   */
+  readonly view: MdyWidgetViewContract;
   readonly filteredOptions: ReadonlyArray<{ readonly value: TValue; readonly label: string; readonly disabled?: boolean }>;
   dispatch(intent: MdyMultiselectFieldIntent): void;
   setValue(values: ReadonlyArray<TValue>): void;
@@ -85,6 +96,7 @@ export function useMdyMultiselectField<TValue>(
 
   return {
     state: controller.state(),
+    view: controller.view(),
     filteredOptions: controller.filteredOptions(),
     dispatch,
     setValue,

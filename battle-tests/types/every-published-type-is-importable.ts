@@ -323,7 +323,14 @@ import type {
 } from "@modyra/core/datetime";
 
 import type { MdyCvaDirective } from "@modyra/angular/interop";
-import type { MdyDeclaredPart, MdyReactPartProps, MdyTextFieldProps } from "@modyra/react";
+import type {
+  MdyBooleanFieldProps,
+  MdyBooleanKind,
+  MdyDeclaredPart,
+  MdyOptionFieldProps,
+  MdyReactPartProps,
+  MdyTextFieldProps,
+} from "@modyra/react";
 import type { MdyDeclaredPart as MdyVueDeclaredPart } from "@modyra/vue";
 
 /** Each name, stood in a type position so its absence is a compile error. */
@@ -928,3 +935,12 @@ void held288;
 
 declare const held289: MdyVueDeclaredPart;
 void held289;
+
+declare const held290: MdyBooleanFieldProps;
+void held290;
+
+declare const held291: MdyBooleanKind;
+void held291;
+
+declare const held292: MdyOptionFieldProps<string>;
+void held292;

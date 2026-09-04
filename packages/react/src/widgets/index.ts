@@ -70,4 +70,6 @@ export type {
   UseMdyTimepickerFieldOptions,
 } from "./timepicker-field.js";
 export { MdyTextField, type MdyTextFieldProps, type MdyTextLikeKind } from "./text-field.js";
+export { MdyBooleanField, type MdyBooleanFieldProps, type MdyBooleanKind } from "./boolean-control.js";
+export { MdyOptionField, type MdyOptionFieldProps } from "./option-control.js";
 export { partProps, type MdyReactPartProps, type MdyDeclaredPart } from "./part.js";

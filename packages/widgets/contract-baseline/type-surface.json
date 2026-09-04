@@ -3463,30 +3463,59 @@
     "(1) options: UseMdyTextFieldOptions<TValue>",
     "-> returns: MdyPreactTextFieldApi<TValue>"
   ],
+  "react:MdyBooleanField": [
+    "(0) props: MdyBooleanFieldProps",
+    "-> returns: ReactElement"
+  ],
+  "react:MdyBooleanFieldProps": [
+    "field: MdyFieldHandle<boolean>",
+    "kind?: MdyBooleanKind",
+    "label?: string",
+    "widgetId?: string"
+  ],
+  "react:MdyBooleanKind": [
+    "\"checkbox\"",
+    "\"toggle\""
+  ],
   "react:MdyDeclaredPart": [
     "classes: readonly string[]",
     "role?: string | null"
+  ],
+  "react:MdyOptionField": [
+    "(0) props: MdyOptionFieldProps<TValue>",
+    "-> returns: ReactElement"
+  ],
+  "react:MdyOptionFieldProps": [
+    "field: MdyFieldHandle<TValue | null>",
+    "kind?: MdyOptionFieldVariant",
+    "label?: string",
+    "name?: string",
+    "options: readonly MdySelectOption<TValue>[]",
+    "widgetId?: string"
   ],
   "react:MdyReactBooleanFieldApi": [
     "destroy: void",
     "dispatch: void",
     "setChecked: void",
     "setReadonly: void",
-    "state: MdyBooleanFieldState"
+    "state: MdyBooleanFieldState",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactColorsFieldApi": [
     "destroy: void",
     "dispatch: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyColorsFieldState"
+    "state: MdyColorsFieldState",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactDatepickerFieldApi": [
     "destroy: void",
     "dispatch: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyDatepickerFieldState"
+    "state: MdyDatepickerFieldState",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactDaterangeFieldApi": [
     "destroy: void",
@@ -3494,14 +3523,16 @@
     "setBounds: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyDaterangeFieldState"
+    "state: MdyDaterangeFieldState",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactFileFieldApi": [
     "destroy: void",
     "dispatch: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyFileFieldState<TFile>"
+    "state: MdyFileFieldState<TFile>",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactMultiselectFieldApi": [
     "destroy: void",
@@ -3509,14 +3540,16 @@
     "filteredOptions: ReadonlyArray<{ readonly value: TValue; readonly label: string; readonly disabled?: boolean; }>",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyMultiselectFieldState<TValue>"
+    "state: MdyMultiselectFieldState<TValue>",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactOptionFieldApi": [
     "destroy: void",
     "dispatch: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyOptionFieldState<TValue>"
+    "state: MdyOptionFieldState<TValue>",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactPartProps": [
     "-> Record"
@@ -3529,7 +3562,8 @@
     "setOpen: void",
     "setPopupRendered: void",
     "setReadonly: void",
-    "state: MdySelectState<TValue>"
+    "state: MdySelectState<TValue>",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdyReactTextFieldApi": [
     "destroy: void",
@@ -3544,7 +3578,8 @@
     "dispatch: void",
     "setReadonly: void",
     "setValue: void",
-    "state: MdyTimepickerFieldState"
+    "state: MdyTimepickerFieldState",
+    "view: MdyWidgetViewContract"
   ],
   "react:MdySelectApi": [
     "dispatch: (intent: MdySelectIntent) => void",
@@ -4050,7 +4085,7 @@
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly string[]>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    mode: {\n        type: PropType<MdyMultiselectMode>;\n        default: string;\n    };\n    searchable: {\n        type: BooleanConstructor;\n        default: boolean;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<readonly string[]>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    mode: {\n        type: PropType<MdyMultiselectMode>;\n        default: string;\n    };\n    searchable: {\n        type: BooleanConstructor;\n        default: boolean;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    mode: MdyMultiselectMode;\n    searchable: boolean;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
   ],
   "vue:MdyOptionField": [
-    "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string | null>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<MdyOptionFieldVariant>;\n        default: string;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string | null>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<MdyOptionFieldVariant>;\n        default: string;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    kind: MdyOptionFieldVariant;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
+    "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<unknown>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<unknown>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<MdyOptionFieldVariant>;\n        default: string;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<unknown>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<unknown>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    kind: {\n        type: PropType<MdyOptionFieldVariant>;\n        default: string;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    kind: MdyOptionFieldVariant;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"
   ],
   "vue:MdySelectField": [
     "const: import(\"vue\").DefineComponent<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string | null>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    placeholder: {\n        type: StringConstructor;\n        default: string;\n    };\n    /**\n     * Whether this select filters. It decides the shape rather than an option on it: `variantOf`\n     * answers `custom` for a select that filters and `native` for one that does not, and the two\n     * are different controls — a combobox this package draws, and the chooser the platform draws\n     * and owns the keyboard of. The default is the contract's default, so a field configured the\n     * same way is the same control in every adapter.\n     */\n    searchable: {\n        type: BooleanConstructor;\n        default: boolean;\n    };\n}>, () => VNode<import(\"vue\").RendererNode, import(\"vue\").RendererElement, {\n    [key: string]: any;\n}>, {}, {}, {}, import(\"vue\").ComponentOptionsMixin, import(\"vue\").ComponentOptionsMixin, {}, string, import(\"vue\").PublicProps, Readonly<import(\"vue\").ExtractPropTypes<{\n    field: {\n        type: PropType<MdyFieldHandle<string | null>>;\n        required: true;\n    };\n    options: {\n        type: PropType<readonly MdySelectOption<string>[]>;\n        required: true;\n    };\n    label: {\n        type: StringConstructor;\n        default: string;\n    };\n    widgetId: {\n        type: StringConstructor;\n        required: true;\n    };\n    placeholder: {\n        type: StringConstructor;\n        default: string;\n    };\n    /**\n     * Whether this select filters. It decides the shape rather than an option on it: `variantOf`\n     * answers `custom` for a select that filters and `native` for one that does not, and the two\n     * are different controls — a combobox this package draws, and the chooser the platform draws\n     * and owns the keyboard of. The default is the contract's default, so a field configured the\n     * same way is the same control in every adapter.\n     */\n    searchable: {\n        type: BooleanConstructor;\n        default: boolean;\n    };\n}>> & Readonly<{}>, {\n    label: string;\n    placeholder: string;\n    searchable: boolean;\n}, {}, {}, {}, string, import(\"vue\").ComponentProvideOptions, true, {}, any>"

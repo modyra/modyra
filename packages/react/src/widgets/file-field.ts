@@ -19,6 +19,7 @@ import {
 } from "@modyra/widgets";
 
 import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
+import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdyFileFieldOptions<TFile extends MdyFileCandidate> = Omit<
   MdyFileFieldControllerOptions<TFile>,
@@ -27,6 +28,16 @@ export type UseMdyFileFieldOptions<TFile extends MdyFileCandidate> = Omit<
 
 export interface MdyReactFileFieldApi<TFile extends MdyFileCandidate> {
   readonly state: MdyFileFieldState<TFile>;
+  /**
+   * The parts the controller projects: ids, roles, ARIA relations and the classes each part
+   * carries.
+   *
+   * Published because drawing is what a consumer of a headless hook does, and every answer here
+   * is one they would otherwise write themselves — which is the contract logic this library
+   * exists to keep out of their code. The text hook published it from the start; the other eight
+   * did not, so a component built on them had the state and none of the anatomy.
+   */
+  readonly view: MdyWidgetViewContract;
   dispatch(intent: MdyFileFieldIntent<TFile>): void;
   setValue(files: readonly TFile[]): void;
   setReadonly(readonly: boolean): void;
@@ -85,6 +96,7 @@ export function useMdyFileField<TFile extends MdyFileCandidate>(
 
   return {
     state: controller.state(),
+    view: controller.view(),
     dispatch,
     setValue,
     setReadonly,

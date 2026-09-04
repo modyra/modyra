@@ -16,7 +16,7 @@ installDomGlobals();
 const React = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { createForm, field } = await import("./dist/index.js");
-const { MdyTextField } = await import("./dist/index.js");
+const { MdyTextField, MdyBooleanField, MdyOptionField } = await import("./dist/index.js");
 const { MDY_CANONICAL_EMPTY, findPartElements } = await import("@modyra/widgets/testing");
 const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 
@@ -24,12 +24,28 @@ const { MDY_WIDGET_CONTRACTS } = await import("@modyra/widgets");
 export const name = "@modyra/react";
 
 /** The kinds this adapter draws. */
-export const kinds = ["text", "email", "password", "textarea", "number"];
+export const kinds = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "radio", "segmented"];
 
 /** This config passes the kit's `rules` and `value` through to the field it builds. */
 export const declaresRules = true;
 
-const TEXT_LIKE = new Set(kinds);
+/**
+ * Which component draws each kind, and what it is told beyond the field.
+ *
+ * One entry per kind rather than a chain of conditions: a kind added to `kinds` and to no component
+ * fails here by name, instead of being drawn by whichever branch happened to be last.
+ */
+const DRAWN_BY = {
+  text: [MdyTextField, {}],
+  email: [MdyTextField, {}],
+  password: [MdyTextField, {}],
+  textarea: [MdyTextField, {}],
+  number: [MdyTextField, {}],
+  checkbox: [MdyBooleanField, {}],
+  toggle: [MdyBooleanField, {}],
+  radio: [MdyOptionField, { options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
+  segmented: [MdyOptionField, { options: [{ value: "a", label: "A" }, { value: "b", label: "B" }] }],
+};
 
 /** Long enough for React to commit what was just rendered. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
@@ -46,8 +62,9 @@ export const mount = async (kind, { rules, value } = {}) => {
     value: field(value === undefined ? MDY_CANONICAL_EMPTY[kind] : value, [], rules ? { rules } : undefined),
   });
   const root = createRoot(host);
-  root.render(React.createElement(TEXT_LIKE.has(kind) ? MdyTextField : MdyTextField, {
-    field: form.f.value, kind, label: "Given", widgetId: `react-${kind}`,
+  const [Component, extra] = DRAWN_BY[kind];
+  root.render(React.createElement(Component, {
+    field: form.f.value, kind, label: "Given", widgetId: `react-${kind}`, ...extra,
   }));
   // React commits on its own schedule, and one macrotask is not always enough: read too early and
   // the host is still empty, which the kit reports as a widget that drew nothing.
@@ -66,7 +83,11 @@ export const mount = async (kind, { rules, value } = {}) => {
     drive: () => false,
     settle: settled,
     dispose: () => { root.unmount(); host.remove(); },
-    control: () => host.querySelector("input, textarea"),
+    // The control the kind declares, resolved from the catalogue: the option kinds draw one input
+    // per choice, and a bare `querySelector` would answer with whichever came first as though it
+    // were the widget's control.
+    control: () => findPartElements(document.body, kind, MDY_WIDGET_CONTRACTS[kind].parts.optionControl ? "optionControl" : "control")[0]
+      ?? host.querySelector("input, textarea"),
     // The field's value, not the control's text: what a kind holds when it holds nothing is the
     // kind's own answer, and reading the DOM string reports `""` for both a number and a text field.
     value: () => form.f.value.value(),

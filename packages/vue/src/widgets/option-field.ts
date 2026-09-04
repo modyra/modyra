@@ -23,6 +23,7 @@ import { computed, defineComponent, h, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
+  defaultOptionKey,
   type MdyOptionFieldVariant,
 } from "@modyra/widgets";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
@@ -31,22 +32,33 @@ import { partProps } from "./part.js";
 export const MdyOptionField = defineComponent({
   name: "MdyOptionField",
   props: {
-    field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
-    options: { type: Array as PropType<readonly MdySelectOption<string>[]>, required: true },
+    field: { type: Object as PropType<MdyFieldHandle<unknown>>, required: true },
+    options: { type: Array as PropType<readonly MdySelectOption<unknown>[]>, required: true },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
     kind: { type: String as PropType<MdyOptionFieldVariant>, default: "radio" },
   },
   setup(props) {
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
-    const controller = createOptionFieldController<string>({
+    /**
+     * The key the contract derives, not `String()`.
+     *
+     * Every plain object renders through `String` as `[object Object]`, so an object-valued list
+     * gives every option one key: two different choices become one, and a group holding one value
+     * marks all of them. For a primitive the two answers agree exactly, which is why a fixture built
+     * on strings cannot tell them apart.
+     */
+    const keyFor = (option: MdySelectOption<unknown>): string => defaultOptionKey(option.value);
+    const controller = createOptionFieldController<unknown>({
       handle: props.field,
       widgetId: props.widgetId,
       label: props.label === "" ? null : props.label,
       variant: props.kind,
       options: props.options,
+      keyFor,
     });
     const view = computed(() => controller.view());
+    const state = computed(() => controller.state());
 
     const classesOf = (part: string): string =>
       (contract.parts as Readonly<Record<string, { classes: readonly string[] }>>)[part]?.classes.join(" ") ?? "";
@@ -60,23 +72,28 @@ export const MdyOptionField = defineComponent({
       if (props.label !== "") children.push(h("label", partProps(parts.label), props.label));
 
       children.push(h("div", partProps(parts.group),
-        props.options.map((option) => h("label", { class: classesOf("option") }, [
-          // The control the submission table names, carrying the option's projected id and state.
-          // The projection describes the choice; its ARIA and its identity go to the native control,
-          // which is what assistive tech reads and what a form submits. Its *classes* belong to the
-          // row instead — the contract paints the option on the `option` element — so the control
-          // carries only the classes its own part declares.
-          h("input", partProps({ ...parts[String(option.value)], classes: [] }, {
-            type: "radio",
-            class: classesOf("optionControl"),
-            name: props.widgetId,
-            value: String(option.value),
-            checked: props.field.value() === option.value,
-            onChange: () => controller.dispatch({ type: "select", optionKey: String(option.value) }),
-          })),
-          h("span", { class: classesOf("optionCheck") }),
-          h("span", { class: classesOf(wordsPart) }, option.label),
-        ]))));
+        props.options.map((option) => {
+          const key = keyFor(option);
+          return h("label", { class: classesOf("option") }, [
+            // The control the submission table names, carrying the option's projected id and state.
+            // The projection describes the choice; its ARIA and its identity go to the native
+            // control, which is what assistive tech reads and what a form submits. Its *classes*
+            // belong to the row instead — the contract paints the option on the `option` element —
+            // so the control carries only the classes its own part declares.
+            h("input", partProps({ ...parts[key], classes: [] }, {
+              type: "radio",
+              class: classesOf("optionControl"),
+              name: props.widgetId,
+              value: key,
+              // Compared by key, not by value: two structurally equal objects are two choices, and
+              // `===` between the held value and a fresh option object marks neither.
+              checked: state.value.selectedKey === key,
+              onChange: () => controller.dispatch({ type: "select", optionKey: key }),
+            })),
+            h("span", { class: classesOf("optionCheck") }),
+            h("span", { class: classesOf(wordsPart) }, option.label),
+          ]);
+        })));
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
       if (parts.error !== undefined) children.push(h("ul", partProps(parts.error)));

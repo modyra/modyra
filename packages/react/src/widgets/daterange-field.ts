@@ -21,6 +21,7 @@ import {
 } from "@modyra/widgets";
 
 import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
+import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdyDaterangeFieldOptions = Omit<
   MdyDaterangeFieldControllerOptions,
@@ -29,6 +30,16 @@ export type UseMdyDaterangeFieldOptions = Omit<
 
 export interface MdyReactDaterangeFieldApi {
   readonly state: MdyDaterangeFieldState;
+  /**
+   * The parts the controller projects: ids, roles, ARIA relations and the classes each part
+   * carries.
+   *
+   * Published because drawing is what a consumer of a headless hook does, and every answer here
+   * is one they would otherwise write themselves — which is the contract logic this library
+   * exists to keep out of their code. The text hook published it from the start; the other eight
+   * did not, so a component built on them had the state and none of the anatomy.
+   */
+  readonly view: MdyWidgetViewContract;
   dispatch(intent: MdyDaterangeFieldIntent): void;
   setValue(value: MdyDateRangeValue): void;
   setReadonly(readonly: boolean): void;
@@ -90,6 +101,7 @@ export function useMdyDaterangeField(
 
   return {
     state: controller.state(),
+    view: controller.view(),
     dispatch,
     setValue,
     setReadonly,
