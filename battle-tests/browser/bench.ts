@@ -113,6 +113,46 @@ export async function inside(page: Page, root: string, ancestor: AncestorName) {
   await page.waitForTimeout(200);
   return `[data-ancestor="${marker}"]`;
 }
+
+/**
+ * Put a mounted field far down a tall page and scroll the window to it.
+ *
+ * **The bench's blind spot, made visible.** Every other fixture mounts a field alone at the top of an
+ * empty page: the control is already in view, nothing has scrolled, and a panel positioned against
+ * the wrong origin lands in the right place by arithmetic accident — the error is worth zero pixels.
+ * A real page stacks fields; the first panel opened near its foot is where an origin mistake finally
+ * costs something.
+ *
+ * That is not hypothetical. Four kinds in the Vue demo opened their panel between 490 and 3246 pixels
+ * above the window while the browser tier, measuring the same renderers, saw nothing wrong.
+ *
+ * The window is scrolled rather than an ancestor, because that is the case `inside()` cannot make: an
+ * ancestor that scrolls tests clipping, a document that scrolls tests the origin a panel is measured
+ * from. They are different blindnesses and this suite has now been caught by both.
+ *
+ * Asserts the control is genuinely in view before returning: a measurement taken with the field off
+ * screen describes the scroll position, not the anchoring.
+ */
+export async function farDownThePage(page: Page, root: string) {
+  const applied = await page.evaluate((root) => {
+    const field = document.querySelector(root) as HTMLElement | null;
+    if (field === null) return false;
+    const filler = document.createElement("div");
+    filler.dataset.filler = "tall";
+    filler.style.cssText = "height:2400px";
+    field.parentElement?.insertBefore(filler, field);
+    field.scrollIntoView({ block: "center" });
+    return true;
+  }, root);
+  expect(applied, `${root} was not on the page to push down`).toBe(true);
+  await page.waitForTimeout(250);
+  const inView = await page.evaluate((root) => {
+    const box = document.querySelector(root)?.getBoundingClientRect();
+    return box !== undefined && box.top >= 0 && box.bottom <= window.innerHeight;
+  }, root);
+  expect(inView, `${root} is not in view after scrolling, so nothing measured below is about anchoring`).toBe(true);
+}
+
 let wrapped = 0;
 
 /**
