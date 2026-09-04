@@ -50,6 +50,23 @@ export function applyAnchoredOverlay(
   applyOverlayProperties(panel, anchoring.properties);
   panel.dataset["placement"] = anchoring.placement;
   // Off before on: a panel that has moved must not wear two answers at once.
+  clearAnchoredOverlay(panel, kind);
+  const placement = popupPlacementClass(kind, anchoring.placement);
+  const alignment = popupAlignmentClass(kind, anchoring.decision.alignment);
+  if (placement) panel.classList.add(placement);
+  if (alignment) panel.classList.add(alignment);
+}
+
+/**
+ * Takes every anchoring state class off a panel, so it says nothing about where it is.
+ *
+ * The half of {@link applyAnchoredOverlay} a renderer needs on its own when its panel stays in the
+ * document while shut: a closed popup is not sitting above anything, and one that keeps the class
+ * from its last opening tells a theme it is somewhere it is not. A renderer whose panel is removed
+ * or rebuilt on each opening never needs this — which is why it took a renderer that keeps one to
+ * notice that the clearing written locally covered placement and forgot alignment.
+ */
+export function clearAnchoredOverlay(panel: HTMLElement, kind: MdyPopupWidgetKind): void {
   for (const placement of Object.keys(EVERY_PLACEMENT) as MdyOverlayPlacement[]) {
     const named = popupPlacementClass(kind, placement);
     if (named) panel.classList.remove(named);
@@ -58,8 +75,4 @@ export function applyAnchoredOverlay(
     const named = popupAlignmentClass(kind, alignment);
     if (named) panel.classList.remove(named);
   }
-  const placement = popupPlacementClass(kind, anchoring.placement);
-  const alignment = popupAlignmentClass(kind, anchoring.decision.alignment);
-  if (placement) panel.classList.add(placement);
-  if (alignment) panel.classList.add(alignment);
 }

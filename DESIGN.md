@@ -319,6 +319,31 @@ specular layer inherits; on the surface it is appearance.
 `capabilities.overlayScrolls: false`. The test is the whole box on both axes: no side holds its
 height, or no edge holds its width. A list may be clamped, because that is what scrolling is.
 
+### The anchoring state classes are hooks, and emitting one is not painting it
+
+**A renderer always emits the class for where a panel ended up** — `--above` when it flipped,
+`--right` when it hangs from the other inline edge, `--overlay` when it covers rather than hangs.
+That is not a request for a rule; it is the positioning saying what it decided, and it is the same
+statement in every adapter because the contract derives it.
+
+**A class earns a rule where the popup has an asymmetry to answer, and not otherwise.** The select
+and the multiselect paint `--above`, because a panel that opens upward puts its filter box nearest
+the trigger and no arrangement of coordinates says that. A calendar has nothing to flip, so its
+`--above` is emitted and painted by nobody; no kind yet looks different for hanging off the other
+edge, so every `--right` is. That is the finished state and not a gap: a rule written so a class has
+a reader in this repository is CSS maintained to quiet a report.
+
+**So the two halves answer to different owners.** Emitting is the contract's — an adapter that omits
+a state class is wrong even where no stylesheet matches it, because a theme outside this repository
+may match it today, and the information ("this panel is anchored right") is true whether or not
+anything here acts on it. Painting is this document's, and the day a right-anchored panel should look
+different, the class is already there and the rule has a place to go.
+
+*Enforced by* `npm run test:contract-coverage`, whose `_unpainted` list may only shrink, so a class
+that stops being painted cannot arrive unnoticed. Its entries for this family cite this section
+rather than restating it: an exemption argued in two places stops agreeing with itself the moment
+either moves.
+
 ---
 
 ## Elevation

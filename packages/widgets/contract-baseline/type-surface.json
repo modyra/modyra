@@ -6301,6 +6301,11 @@
     "(0) state: { readonly counts: ReadonlyMap<string, number>; }",
     "-> returns: readonly string[]"
   ],
+  "widgets:clearAnchoredOverlay": [
+    "(0) panel: HTMLElement",
+    "(1) kind: MdyPopupWidgetKind",
+    "-> returns: void"
+  ],
   "widgets:clearFileSelection": [
     "-> returns: MdyFileSelectionTransition<TFile>"
   ],

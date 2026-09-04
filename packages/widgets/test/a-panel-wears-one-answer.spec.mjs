@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
-import { applyAnchoredOverlay, popupAlignmentClass, popupPlacementClass } from "../dist/index.js";
+import { applyAnchoredOverlay, clearAnchoredOverlay, popupAlignmentClass, popupPlacementClass } from "../dist/index.js";
 
 const KIND = "select";
 
@@ -59,4 +59,19 @@ test("a panel keeps the classes that are not about where it is", () => {
   applyAnchoredOverlay(panel, KIND, decided("above", "right"));
   // The part's own class is not a placement, and a door that cleared by shape would take it too.
   assert.equal(panel.classList.contains("mdy-select__popup"), true);
+});
+
+test("a panel can be made to say nothing about where it is", () => {
+  const { panel } = panelIn();
+  const above = popupPlacementClass(KIND, "above");
+  const right = popupAlignmentClass(KIND, "right");
+  applyAnchoredOverlay(panel, KIND, decided("above", "right"));
+
+  // The half a renderer needs on its own: one whose panel stays in the document while shut, where a
+  // class kept from the last opening tells a theme it is somewhere it is not. Both axes, because the
+  // clearing written locally in the reference renderer covered placement and forgot alignment.
+  clearAnchoredOverlay(panel, KIND);
+  assert.equal(panel.classList.contains(above), false);
+  assert.equal(panel.classList.contains(right), false);
+  assert.equal(panel.classList.contains("mdy-select__popup"), true, "it took a class that is not about placement");
 });

@@ -5,8 +5,8 @@
  * coordinates that follow — is `anchorOverlay` in `@modyra/widgets`. This file measures the anchor
  * and writes the `--mdy-overlay-*` properties it returns, and decides nothing of its own.
  */
-import { capabilityOf, applyOverlayProperties, inlineDirectionOf, measureOverlayContent, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, viewportSize, type MdyI18nMessages } from "@modyra/widgets";
-import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, popupPlacementClass, type MdyOverlayDecision, type MdyPopupWidgetKind, type MdyWidgetKind } from "@modyra/widgets";
+import { capabilityOf, applyAnchoredOverlay, applyOverlayProperties, clearAnchoredOverlay, inlineDirectionOf, measureOverlayContent, trackAnchoredOverlay, bindLightDismiss, setOverlayOpen, syncOverlayBackdrop, viewportSize, type MdyI18nMessages } from "@modyra/widgets";
+import { anchorOverlay, createLightDismiss, MDY_WIDGET_CONTRACTS, overlayLifecycleTransition, type MdyOverlayDecision, type MdyPopupWidgetKind, type MdyWidgetKind } from "@modyra/widgets";
 
 import { announcePlain } from "./command-runtime.js";
 
@@ -57,30 +57,6 @@ export function reflectOverlayOpen(
 }
 
 /**
- * The placement, written onto the popup as the state the catalog declares for it.
- *
- * The coordinates alone are enough to *put* the popup somewhere; they cannot tell a stylesheet
- * which side it ended up on. A multiselect opening upwards wants its filter box nearest the
- * trigger, and no amount of `top`/`left` expresses that. The catalog already declares `above` and
- * `overlay` as states of every popup part, so this asks `partClasses` for the answer rather than
- * spelling a modifier here — which is how `mdy-overlay-panel--above`, a name no stylesheet has ever
- * matched, came to exist in two adapters at once.
- *
- * "below" is the ordinary case and carries no class, exactly as the catalog documents.
- */
-function reflectPlacement(popup: HTMLElement, kind: MdyPopupWidgetKind, placement: MdyOverlayDecision["placement"]): void {
-  for (const state of ["above", "overlay"] as const) {
-    const modifier = popupPlacementClass(kind, state);
-    if (modifier) popup.classList.toggle(modifier, placement === state);
-  }
-}
-
-/** Removes whichever placement state a popup is wearing, so a closed popup carries none. */
-function clearPlacement(popup: HTMLElement, kind: MdyPopupWidgetKind): void {
-  reflectPlacement(popup, kind, "below");
-}
-
-/**
  * The shape an open popup was given, kept so repositioning follows the anchor without re-deciding
  * the popup's side and height on every scroll frame. Cleared when it closes.
  */
@@ -98,7 +74,7 @@ interface MdyContentSize {
  */
 export function releaseOverlayPlacement(popup: HTMLElement): void {
   const held = heldDecisions.get(popup);
-  if (held?.kind) clearPlacement(popup, held.kind);
+  if (held?.kind) clearAnchoredOverlay(popup, held.kind);
   heldDecisions.delete(popup);
 }
 
@@ -145,12 +121,19 @@ export function positionOverlay(
     },
   );
   heldDecisions.set(popup, { decision: anchoring.decision, content, ...(options.kind ? { kind: options.kind } : {}) });
-  applyOverlayProperties(popup, anchoring.properties);
-  popup.dataset.placement = anchoring.placement;
+  if (options.kind) {
+    // The coordinates and every class that says where the popup went, written by the contract's own
+    // door. Written here instead, this reflected the placement and never the alignment, so a popup
+    // hanging off the other inline edge said nothing about it — true of a theme in this repository,
+    // which paints none of them, and false for any theme outside it.
+    applyAnchoredOverlay(popup, options.kind, anchoring);
+  } else {
+    applyOverlayProperties(popup, anchoring.properties);
+    popup.dataset.placement = anchoring.placement;
+  }
   // A modal dims what is behind it, and which placement is modal is the contract's answer. Here
   // rather than in each field: the placement is only known once the popup has been measured.
   syncOverlayBackdrop(popup, anchoring.decision.placement === "overlay");
-  if (options.kind) reflectPlacement(popup, options.kind, anchoring.placement);
   return anchoring.decision;
 }
 
