@@ -36,6 +36,7 @@ const GATES = [
   "npm run test:lit-contract",
   "npm run test:contract-adoption",
   "npm run test:coverage-and-demo",
+  "npm run test:demo-parity",
   "npm run test:angular-renderer-ownership",
   "npm run test:angular-renderer-budget",
   "npm run test:plain",

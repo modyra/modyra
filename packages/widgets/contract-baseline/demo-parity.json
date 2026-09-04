@@ -1,0 +1,16 @@
+{
+  "note": "Where each renderer's demo stands against the shared scenarios. A number may only go up: a demo drawing fewer kinds than it did has lost a control. Rewrite with `node scripts/audit-demo-parity.mjs --write`.",
+  "reads": "Demo source with comments stripped, so a kind named rather than a kind drawn. A page naming a kind it never mounts passes here.",
+  "recordedAt": "2026-09-04T12:26:54Z",
+  "kindsCovered": 17,
+  "renderers": {
+    "angular": 17,
+    "lit": 17,
+    "plain": 17,
+    "preact": 4,
+    "react": 4,
+    "solid": 4,
+    "svelte": 4,
+    "vue": 17
+  }
+}
