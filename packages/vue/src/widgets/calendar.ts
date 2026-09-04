@@ -10,7 +10,10 @@
  * nobody outside can exercise is surface that has to be kept without ever being checked.
  */
 import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
-import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
+  keyBindingFor,
+  type MdyWidgetKind,
+} from "@modyra/widgets";
 import type { MdyPartContract } from "@modyra/widgets";
 import type { MdyDateLocale } from "@modyra/core/datetime";
 import { partProps, type MdyDeclaredPart } from "./part.js";
@@ -159,6 +162,7 @@ export const drawCalendar = (options: {
  * it would make the field a place a person can enter and not leave.
  */
 export const forwardCalendarKeys = (
+  kind: MdyWidgetKind,
   isOpen: () => boolean,
   dispatch: (press: {
     readonly type: "keydown";
@@ -168,6 +172,22 @@ export const forwardCalendarKeys = (
     readonly metaKey: boolean;
   }) => void,
 ) => (event: KeyboardEvent): void => {
+  /**
+   * A key declared on a part belongs to that part.
+   *
+   * This handler serves both the field and the panel, and it forwarded everything: a key the
+   * catalogue declares `on: "gridcell"` was taken from the control as well. `Space` is that key —
+   * it commits the day a calendar is on, and on the field it means nothing the contract states, so
+   * pressing it there consumed the press and closed the panel.
+   *
+   * Inside the panel every declared key is the calendar's, and the press is forwarded. Outside it,
+   * only what the widget itself declares is taken; `.mdy-popup` is the primitive class every popup
+   * part carries, so this asks where the press came from rather than naming a kind's own panel.
+   */
+  const target = event.target;
+  const insidePanel = target instanceof Element && target.closest(".mdy-popup") !== null;
+  if (!insidePanel && keyBindingFor(kind, event, isOpen()) === null) return;
+
   const before = isOpen();
   dispatch({
     type: "keydown",

@@ -96,6 +96,7 @@ export const MdyDatepickerField = defineComponent({
     }));
 
     const onKeydown = forwardCalendarKeys(
+      "datepicker",
       () => state.value.open,
       (press) => controller.dispatch(press),
     );

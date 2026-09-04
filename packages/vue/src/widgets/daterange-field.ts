@@ -90,6 +90,7 @@ export const MdyDaterangeField = defineComponent({
     }));
 
     const onKeydown = forwardCalendarKeys(
+      "daterange",
       () => state.value.open,
       (press) => controller.dispatch(press),
     );
