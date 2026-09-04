@@ -47,6 +47,7 @@ const DELIBERATELY_OUTSIDE = new Map([
   ["audit:unwatched-changes", "asks which checks a change can break before it is pushed, which is a question about a working tree; in CI the change is already pushed and every check it names is running anyway"],
   ["battle", "the whole battle population under node's own reporter, in the form a person runs while working; CI drives the identical suite through the baseline harness as `battle:ci`, which is the form that has a verdict"],
   ["lint", "run by no workflow and currently failing: 92 errors and 15 warnings across 73 files, none of them introduced by a recent change - it has simply never gated anything. Wiring it in before it is green would put main red on the first push, so it stays outside until the files are clean. This exemption is temporary and its condition is written down: when `npm run lint` exits zero, delete this line and give it a workflow"],
+  ["test:conformance-angular", "one package's conformance run, for a person diagnosing angular alone; CI reaches the same configuration through `test:conformance`, which drives every configuration there is, so invoking this from a workflow too would repeat the run. It is named by ADR 0030 and by the ordering comment in ci.yml, both of which describe what it does rather than asking CI to call it"],
   ["test:perf", "asserts absolute wall-clock thresholds, the tightest at 20ms - a number calibrated on a developer machine, which on a shared runner measures the runner's load rather than this code"],
 ]);
 
@@ -74,7 +75,16 @@ const reached = reachableFrom(edges, roots);
 const workflowText = [...rootsByFile.keys()]
   .map((file) => readFileSync(join(ROOT, ".github/workflows", file), "utf8")).join("\n");
 const scriptText = Object.values(scripts).join("\n");
-const unrunConfigs = conformanceConfigs()
+// Named, or driven by the runner that drives them all.
+//
+// This asked only whether some script or workflow spelled the path — right while each configuration
+// was named one by one, and wrong the moment `run-conformance.mjs` started deriving the list from
+// the filesystem. A configuration it drives is run; nothing names it, and nothing needs to. The
+// question a gate asks has to survive the repair it caused: naming was the evidence, being run was
+// always the point.
+const runnerDrivesThemAll = /run-conformance\.mjs\s*(?:"|$|\s)/m.test(scriptText)
+  || /run-conformance\.mjs\s*(?:"|$|\s)/m.test(workflowText);
+const unrunConfigs = runnerDrivesThemAll ? [] : conformanceConfigs()
   .filter((path) => !workflowText.includes(path) && !scriptText.includes(path));
 
 const checks = Object.keys(scripts).filter((name) => isACheck(name, scripts[name]));
