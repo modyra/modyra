@@ -119,7 +119,11 @@ function splitTopLevel(text, separator) {
     }
     if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
     if (ch === "<" || ch === "(" || ch === "{" || ch === "[") depth += 1;
-    else if (ch === ">" || ch === ")" || ch === "}" || ch === "]") depth -= 1;
+    // `>` closes a generic, except when it is the tail of `=>`. Counting it there sends the depth
+    // negative for the rest of the type, which both invents unions inside a generic and hides a
+    // real one at the top level -- the two directions were measured on `() => ReadonlyArray<A | B>`
+    // and `(() => void) | null`.
+    else if (ch === ">" ? text[at - 1] !== "=" : (ch === ")" || ch === "}" || ch === "]")) depth -= 1;
     else if (ch === separator && depth === 0) { parts.push(text.slice(start, at)); start = at + 1; }
   }
   parts.push(text.slice(start));
@@ -626,7 +630,18 @@ for (const { pkg, file: entry } of ENTRIES) {
       // inline type literal naming which parts it hands back, so "which parts does this projection
       // return" was a fact the declarations already carried and nothing read. Withdrawing one, or
       // changing what a renderer receives, classified as patch.
-      surface[`${pkg}:${node.name.text}`] = signatureOf(node);
+      // An overload set is the declaration, not its last line. A plain assignment let the second
+      // overload erase the first, so adding one — the canonical way to widen what a function accepts
+      // without breaking a caller — was reported as a substitution of the signature that is still
+      // there, word for word. Later overloads are recorded as additional entries, which is what they
+      // are: a single-signature function records exactly as before, so no baseline moves for this.
+      {
+        const key = `${pkg}:${node.name.text}`;
+        const signature = signatureOf(node);
+        surface[key] = key in surface
+          ? [...surface[key], ...signature.map((entry) => `overload ${surface[key].filter((one) => /^overload /.test(one)).length === 0 ? 2 : "n"}: ${entry}`)]
+          : signature;
+      }
     }
     ts.forEachChild(node, visit);
   };
@@ -802,5 +817,21 @@ if (changes.length === 0) {
 const major = changes.filter(([level]) => level === "major");
 for (const [level, what] of changes) console.log(`  ${what}  [${level}]`);
 console.log(`\nclassification: ${major.length > 0 ? "major" : "minor"}`);
+
+// What this tool does not judge, said in its own output rather than only in a comment. A reader who
+// takes `major` for "a caller breaks" will chase a migration that is not owed; a reader who takes it
+// for "the tool is wrong" will start ignoring it. Both are worse than knowing the perimeter.
+console.log(
+  "\nOutside this tool's perimeter, and reported `major` for caution rather than from evidence:"
+  + "\n  - **structural assignability.** A parameter whose type name changes is compared by name."
+  + "\n    Whether the old type still satisfies the new one is a question for a type checker, and"
+  + "\n    there is none here. `Element` satisfying an interface that asks only for `contains` is"
+  + "\n    the shape that reaches this line: no caller breaks, and this tool cannot know that."
+  + "\n  - **a widening nested inside a generic or a return type.** The parameter rule reads"
+  + "\n    top-level union arms; `() => ReadonlyArray<A>` becoming `() => ReadonlyArray<A | B>` is a"
+  + "\n    widening it cannot see, and reports as a substitution."
+  + "\n  Both are `major` because a false `major` costs a migration note, and a false `minor` costs a"
+  + "\n  consumer their build. The asymmetry is deliberate; the perimeter is not a defect list.",
+);
 console.log("TYPE SURFACE MOVED — review the classification above, then accept it with --write.");
 process.exit(1);
