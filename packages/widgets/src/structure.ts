@@ -345,6 +345,11 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   chip: "valueIsPresent",
   chipRemove: "valueIsPresent",
   chipMove: "valueIsPresent",
+  // The words inside a chip, and how many of that value is held: they exist exactly when the chip
+  // does. The words were drawn by every renderer and named by none, so nothing could ask for them —
+  // and one renderer drew them with no class at all until a width moved.
+  chipLabel: "valueIsPresent",
+  chipCount: "valueIsPresent",
   // One entry per chosen file. The list that holds them is built once and is not this.
   fileItem: "valueIsPresent",
   // What a chosen value is shown as, where the control is not a text box.

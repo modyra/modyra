@@ -89,9 +89,24 @@ export function findPartElements(
     const single = findPartElement(root, kind, part, options);
     return single ? [single] : [];
   }
-  // A part sharing its classes with another is not repeated in the sense this serves — the group
-  // would include the sibling part's elements too, so fall back to the single, ordered answer.
+  // A part sharing its classes with another cannot be found by that selector alone: the matches
+  // include the sibling part's elements too. What separates them is where the contract says each
+  // one lives, so the search is narrowed to the declared parent — and only where that fails to
+  // separate them does it fall back to the single, ordered answer.
+  //
+  // Answering "the first match" for a *repeated* part is worse than ambiguous: it reports one of
+  // however many are on screen, and a check counting them against their container is then told the
+  // renderer drew one label for two options.
   if (partsSharingClassesWith(kind, part).length > 1) {
+    const withinParent = elementsInsideDeclaredParent(root, kind, part, selector, options);
+    if (withinParent.length > 0) return withinParent;
+    // **A parent that is not on screen cannot be holding this part.** Where the contract gives that
+    // parent classes to be found by and none of it is drawn, the answer is nothing — never the
+    // positional guess below, which would hand this part an element belonging to the one it shares
+    // classes with. A multiselect at rest has no chips, and the chip's words then took the words out
+    // of the first *option* instead, leaving the option's own part resolved to null and reported
+    // missing: two wrong answers from one guess.
+    if (declaredParentIsAbsent(root, kind, part, options)) return [];
     const single = findPartElement(root, kind, part, options);
     return single ? [single] : [];
   }
@@ -105,6 +120,54 @@ export function findPartElements(
     if (all.length > 0) return all;
   }
   return [];
+}
+
+/**
+ * Whether this part's declared parent has classes to be found by and nothing on screen carrying them.
+ *
+ * Distinguished from "the parent cannot be looked for at all": a parent with no classes tells us
+ * nothing either way, and the caller keeps whatever it did before.
+ */
+function declaredParentIsAbsent(
+  root: ParentNode,
+  kind: MdyWidgetKind,
+  part: string,
+  options: MdyPartLookupOptions,
+): boolean {
+  const parent = MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((node) => node.part === part)?.parent as string | undefined;
+  if (parent === undefined) return false;
+  const parentSelector = partSelector(kind, parent);
+  if (parentSelector === null) return false;
+  return scopesFor(root, kind, part, options)
+    .every((scope) => scope.querySelectorAll(parentSelector).length === 0);
+}
+
+/**
+ * The matches for `selector` that sit inside an element of this part's declared parent.
+ *
+ * Empty where the parent has no classes to find it by, or where nothing of it is on screen — both of
+ * which mean containment cannot separate this part from the one it shares classes with, and the
+ * caller falls back to what it did before.
+ */
+function elementsInsideDeclaredParent(
+  root: ParentNode,
+  kind: MdyWidgetKind,
+  part: string,
+  selector: string,
+  options: MdyPartLookupOptions,
+): readonly Element[] {
+  const definition = MDY_WIDGET_CONTRACTS[kind];
+  const parent = definition.structure.nodes.find((node) => node.part === part)?.parent as string | undefined;
+  if (parent === undefined) return [];
+  const parentSelector = partSelector(kind, parent);
+  if (parentSelector === null) return [];
+  const found: Element[] = [];
+  for (const scope of scopesFor(root, kind, part, options)) {
+    for (const container of Array.from(scope.querySelectorAll(parentSelector))) {
+      found.push(...Array.from(container.querySelectorAll(selector)));
+    }
+  }
+  return found;
 }
 
 /** Where a part may legitimately be looked for: the root, plus this widget's popup if portalled. */
@@ -166,6 +229,18 @@ export function findPartElement(
   const siblings = partsSharingClassesWith(kind, part);
   const index = siblings.indexOf(part);
   if (index < 0) return null;
+
+  if (siblings.length > 1) {
+    // Told apart by where the contract says each one lives, before any tie-break on order. Two parts
+    // may carry the same classes and still be unmistakable — a chip's words live in a chip and a
+    // list entry's in an entry — and the tie-break below can only be right about them by luck.
+    const inside = elementsInsideDeclaredParent(root, kind, part, selector, options);
+    if (inside.length > 0) return inside[0] ?? null;
+    // A parent with classes and nothing on screen carrying them is not holding this part. Answering
+    // with document order here handed the chip's words the first *option's* label, and the option's
+    // own part was then resolved to nothing and reported missing: one guess, two wrong answers.
+    if (declaredParentIsAbsent(root, kind, part, options)) return null;
+  }
 
   for (const scope of scopes) {
     // The scope itself counts. When the part being looked up *is* the portalled popup, the scope

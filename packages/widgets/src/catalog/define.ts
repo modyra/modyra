@@ -105,6 +105,7 @@ const REQUIRED_PARTS: ReadonlySet<string> = new Set(["control", "startControl", 
  */
 const REPEATED_PARTS: ReadonlySet<string> = new Set([
   "option", "optionWrapper", "optionLabel", "optionCheck", "optionStep", "optionCount",
+  "chipLabel", "chipCount",
   "errorItem", "chip", "gridcell", "row", "weekday", "swatch", "fileItem", "dialNumber", "action",
   "monthCell", "yearCell",
 ]);

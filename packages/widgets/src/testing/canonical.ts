@@ -15,6 +15,7 @@
  *   attribute lands on. That an id matches is an implementation detail; that the label points at the
  *   control is the contract.
  */
+import { partsSharingClassesWith } from "./semantic-elements.js";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "../catalog.js";
 import { MDY_WIDGET_RELATIONS } from "../relations.js";
 import { MDY_FIELD_STATE_CLASSES } from "../structure.js";
@@ -210,9 +211,28 @@ export function canonicalWidgetSnapshot(
       if (scope !== root && scope.matches?.(selector)) found.push(scope);
       found.push(...Array.from(scope.querySelectorAll(selector)));
     }
-    return found.filter(
+    const observable = found.filter(
       (element) => isObservable(element, root) && (isOpen || !insideClosedOverlay(element, root)),
     );
+    // **Two parts may carry the same classes**, and then a selector cannot say which of them an
+    // element is. What separates them is where the contract puts each one: a chip's words live in a
+    // chip and a list entry's words in an entry, so the matches are narrowed to those inside this
+    // part's declared parent — and where that parent is nowhere on screen, this part is nowhere
+    // either. Without it the words of the first *option* were reported as a chip's, in a widget
+    // holding nothing, and the observation named a part the page did not have.
+    const siblings = partsSharingClassesWith(kind, part);
+    if (siblings.length <= 1 || observable.length === 0) return observable;
+    const parentPart = nodeFor.get(part)?.parent as string | undefined;
+    const parentClasses = parentPart === undefined
+      ? []
+      : definition.parts[parentPart as keyof typeof definition.parts]?.classes ?? [];
+    if (parentClasses.length === 0) return observable;
+    const parentSelector = parentClasses.map((one: string) => `.${escapeClass(one)}`).join("");
+    const containers = scopes.flatMap((scope) => [
+      ...(scope.matches?.(parentSelector) ? [scope] : []),
+      ...Array.from(scope.querySelectorAll(parentSelector)),
+    ]);
+    return observable.filter((element) => containers.some((container) => container.contains(element)));
   };
 
   const resolved = new Map<string, readonly Element[]>();
@@ -556,7 +576,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       // The options live in the popup now, so at rest they are absent by construction — the same
       // reason every other overlay kind lists its popup's contents as optional.
       parts: Object.freeze(["root", "label", "inputWrapper", "box", "trigger", "arrow", "announcement"]),
-      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "chipMove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBackAction", "chipTooltip", "chips", "chipRow"]),
+      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "chipMove", "chipLabel", "chipCount", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBackAction", "chipTooltip", "chips", "chipRow"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },
         { from: "trigger", attribute: "aria-controls", to: null },

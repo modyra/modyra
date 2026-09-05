@@ -58,6 +58,10 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   supportingText: "text",
   // Text the user reads.
   value: "text", placeholder: "text", optionLabel: "text", optionText: "text", optionCount: "text",
+  // The words inside a value chip, and how many of that value is held. The entry in the list
+  // has carried both from the start; the chip drew them and the contract had no name for them,
+  // so nothing could ask a renderer whether it drew them at all — and one renderer did not.
+  chipLabel: "text", chipCount: "text",
   separator: "text", requiredMarker: "text",
   weekday: "columnheader",
   // Decoration: it carries meaning for the eye, and none for assistive technology.

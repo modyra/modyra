@@ -2315,8 +2315,34 @@
           ],
           "states": []
         },
-        "chipRemove": {
+        "chipLabel": {
           "order": 9,
+          "element": "text",
+          "parent": "chip",
+          "optional": true,
+          "presentWhen": "valueIsPresent",
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__label"
+          ],
+          "states": []
+        },
+        "chipCount": {
+          "order": 10,
+          "element": "text",
+          "parent": "chip",
+          "optional": true,
+          "presentWhen": "valueIsPresent",
+          "repeated": true,
+          "role": null,
+          "classes": [
+            "mdy-chip__count"
+          ],
+          "states": []
+        },
+        "chipRemove": {
+          "order": 11,
           "element": "button",
           "parent": "chip",
           "optional": true,
@@ -2329,7 +2355,7 @@
           "states": []
         },
         "trigger": {
-          "order": 10,
+          "order": 12,
           "element": "input",
           "parent": "box",
           "optional": false,
@@ -2348,7 +2374,7 @@
           ]
         },
         "placeholder": {
-          "order": 11,
+          "order": 13,
           "element": "text",
           "parent": "trigger",
           "optional": true,
@@ -2361,7 +2387,7 @@
           "states": []
         },
         "overflowCount": {
-          "order": 12,
+          "order": 14,
           "element": "button",
           "parent": "box",
           "optional": true,
@@ -2374,7 +2400,7 @@
           "states": []
         },
         "wayBackAction": {
-          "order": 13,
+          "order": 15,
           "element": "button",
           "parent": "box",
           "optional": false,
@@ -2389,7 +2415,7 @@
           ]
         },
         "clearAll": {
-          "order": 14,
+          "order": 16,
           "element": "button",
           "parent": "box",
           "optional": false,
@@ -2404,7 +2430,7 @@
           ]
         },
         "arrow": {
-          "order": 15,
+          "order": 17,
           "element": "presentation",
           "parent": "box",
           "optional": true,
@@ -2419,7 +2445,7 @@
           ]
         },
         "announcement": {
-          "order": 16,
+          "order": 18,
           "element": "status",
           "parent": "box",
           "optional": false,
@@ -2432,7 +2458,7 @@
           "states": []
         },
         "chipTooltip": {
-          "order": 17,
+          "order": 19,
           "element": "text",
           "parent": "box",
           "optional": true,
@@ -2445,7 +2471,7 @@
           "states": []
         },
         "popup": {
-          "order": 18,
+          "order": 20,
           "element": "popup",
           "parent": "root",
           "optional": true,
@@ -2465,7 +2491,7 @@
           ]
         },
         "search": {
-          "order": 19,
+          "order": 21,
           "element": "input",
           "parent": "popup",
           "optional": true,
@@ -2478,7 +2504,7 @@
           "states": []
         },
         "options": {
-          "order": 20,
+          "order": 22,
           "element": "group",
           "parent": "popup",
           "optional": false,
@@ -2492,7 +2518,7 @@
           "states": []
         },
         "optionWrapper": {
-          "order": 21,
+          "order": 23,
           "element": "group",
           "parent": "options",
           "optional": true,
@@ -2505,7 +2531,7 @@
           "states": []
         },
         "option": {
-          "order": 22,
+          "order": 24,
           "element": "presentation",
           "parent": "optionWrapper",
           "optional": false,
@@ -2522,7 +2548,7 @@
           ]
         },
         "optionCheck": {
-          "order": 23,
+          "order": 25,
           "element": "presentation",
           "parent": "option",
           "optional": true,
@@ -2535,7 +2561,7 @@
           "states": []
         },
         "optionStep": {
-          "order": 24,
+          "order": 26,
           "element": "button",
           "parent": "option",
           "optional": true,
@@ -2548,7 +2574,7 @@
           "states": []
         },
         "optionLabel": {
-          "order": 25,
+          "order": 27,
           "element": "text",
           "parent": "option",
           "optional": false,
@@ -2561,7 +2587,7 @@
           "states": []
         },
         "optionCount": {
-          "order": 26,
+          "order": 28,
           "element": "text",
           "parent": "option",
           "optional": true,
@@ -2574,7 +2600,7 @@
           "states": []
         },
         "loading": {
-          "order": 27,
+          "order": 29,
           "element": "status",
           "parent": "inputWrapper",
           "optional": true,
@@ -2587,7 +2613,7 @@
           "states": []
         },
         "empty": {
-          "order": 28,
+          "order": 30,
           "element": "status",
           "parent": "popup",
           "optional": true,
@@ -2600,7 +2626,7 @@
           "states": []
         },
         "inlineError": {
-          "order": 29,
+          "order": 31,
           "element": "image",
           "parent": "label",
           "optional": true,
@@ -2613,7 +2639,7 @@
           "states": []
         },
         "supportingText": {
-          "order": 30,
+          "order": 32,
           "element": "text",
           "parent": "root",
           "optional": true,
@@ -2626,7 +2652,7 @@
           "states": []
         },
         "errors": {
-          "order": 31,
+          "order": 33,
           "element": "status",
           "parent": "root",
           "optional": true,
@@ -2639,7 +2665,7 @@
           "states": []
         },
         "errorItem": {
-          "order": 32,
+          "order": 34,
           "element": "status",
           "parent": "errors",
           "optional": true,
