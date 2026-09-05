@@ -150,6 +150,51 @@ the difference decides where the repair goes.
 
 ---
 
+## Advisory
+
+### When a door is called, not whether
+
+**Status: open** — no check reads a call's position in time. The vue case below is **Observed**
+(measured on the equivalence bench 2026-09-05, 17 rows); that Lit and Angular are safe is **read from source**,
+from where their calls sit, and has not been driven.
+
+**Felt as**: a disabled field on a page nobody has touched pulls the keyboard into itself. Not a
+field the person was standing in — one they never visited.
+
+**Contract**: **advisory**, and the prose is *correct*. `keepKeyboardInPlay` says in its own doc
+comment: *"Call it before taking the control out of play"*, and `afterBlur` explains what the flag
+costs when it is wrong — *"'nowhere' matches a field nobody was ever standing in, and putting focus
+on such a widget's root moves the keyboard to a control the person never visited."* That sentence
+describes the vue defect exactly, and it was written before the defect existed.
+
+**What makes this its own species**: every other advisory row here is prose nobody read. This one was
+read, and still bought nothing — because **`afterBlur: true` is a claim about where the caller stands
+in time, and a literal cannot carry a location.**
+
+Three renderers pass the identical value:
+
+| renderer | where the call sits | is `true` honest? |
+| --- | --- | --- |
+| Lit | inside the blur listener, one microtask later | yes — the handler *is* the evidence a blur happened |
+| Angular | inside `onFocusLost`, `relatedTarget === null` | yes — same |
+| Vue | inside a render effect | **no** — nothing had blurred |
+
+Plain passes no options at all, and is also correct: it calls *before* disabling, so the control is
+still focused and `afterBlur` is never consulted. Four renderers, three shapes, one rule — and the
+rule is satisfied by **position**, which the argument list cannot express. Vue's repair recovers the
+evidence a blur handler gets for free, by sampling *"was the keyboard here?"* before the change.
+
+The contract already demonstrates the right shape in its own code — `field-teardown.ts` tests `held`
+first and only then calls — so the library both states the rule and follows it, while requiring
+neither.
+
+**What would close it**: a signature that cannot be called from the wrong moment — the sampled answer
+as the argument, rather than a boolean asserting that someone sampled it — or a kit section that
+drives a widget nobody has touched and asserts the keyboard stays out of it. The second is the
+cheaper one and it tests the felt symptom rather than the shape.
+
+---
+
 ## Silent
 
 ### Where focus goes after a panel closes
@@ -178,9 +223,10 @@ reach with almost nothing checked, and its name is honest while its exit code is
 
 ## What this map does not claim
 
-- **The 126 pinned browser reds are not all classified here.** This maps the families behind the
+- **The pinned browser reds are not all classified here.** This maps the families behind the
   divergences a person can feel, which is what the directive asked for; the register orders the rest
-  by severity.
+  by severity. The count is deliberately not written here: a number in prose has no maintainer, and
+  this one was already stale by twenty when it was noticed. `known-red-browser.json` is the figure.
 - **One row is Probable** — the at-rest panel — and it is marked. Everything else was reproduced.
 - **The contract column is read from source, not from a run.** A name quoted here exists; whether a
   check *would* have failed is stated only where I drove it.
