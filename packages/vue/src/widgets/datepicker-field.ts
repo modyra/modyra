@@ -21,7 +21,7 @@ import {
 import { observerFor } from "@modyra/core";
 import { buildDateLocale } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps } from "./part.js";
+import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -198,7 +198,7 @@ export const MdyDatepickerField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "datepicker"));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
     };
   },
 });

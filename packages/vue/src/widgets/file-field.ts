@@ -18,7 +18,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import { drawDeclaredUnder, partProps } from "./part.js";
+import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
@@ -105,7 +105,7 @@ export const MdyFileField = defineComponent({
       if (parts.error !== undefined) {
         children.push(drawErrors(parts.error, props.field, "file"));
       }
-      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root }, children);
+      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }), ref: root }, children);
     };
   },
 });

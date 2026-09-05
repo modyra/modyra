@@ -11,7 +11,29 @@
  * already; the filter is here so the intent is stated rather than inherited from a framework's
  * coincidence.
  */
-import { MDY_ARIA_DISABLED_PARTS, type MdyPartContract } from "@modyra/widgets";
+import { MDY_ARIA_DISABLED_PARTS, shellStateClasses, type MdyPartContract } from "@modyra/widgets";
+
+/**
+ * The widget root's classes: the ones the contract declares, and the states the shell reflects.
+ *
+ * The state half is not decoration. A theme keys off `--touched` to stop showing a field as pristine
+ * once somebody has been in it, and off `--open` to style a field whose panel is up; a root carrying
+ * only its base classes says a widget nobody has touched, whatever has happened to it.
+ *
+ * `shellStateClasses` answers which classes are on *and which are off*, which is what makes this
+ * composable rather than a list to add to: a field that stops being open loses the class that says
+ * it is.
+ */
+export function rootClasses(
+  contract: { readonly rootClasses: readonly string[] },
+  state: { readonly touched?: boolean; readonly open?: boolean },
+): string {
+  const shell = shellStateClasses({ touched: state.touched, open: state.open });
+  return [
+    ...contract.rootClasses,
+    ...Object.entries(shell.field).filter(([, isOn]) => isOn).map(([className]) => className),
+  ].join(" ");
+}
 
 export type MdyVuePartProps = Record<string, unknown>;
 

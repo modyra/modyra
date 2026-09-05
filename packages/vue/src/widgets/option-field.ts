@@ -28,7 +28,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-import { partProps } from "./part.js";
+import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
@@ -122,7 +122,7 @@ export const MdyOptionField = defineComponent({
       if (parts.error !== undefined) {
         children.push(drawErrors(parts.error, props.field, props.kind));
       }
-      return h("div", { class: contract.rootClasses.join(" "), ref: root }, children);
+      return h("div", { class: rootClasses(contract, { touched: props.field.touched() }), ref: root }, children);
     };
   },
 });

@@ -35,32 +35,15 @@ const WEEK_START_IGNORED = [{
   detail: "it-IT starts its week on L: expected L M M G V S D, rendered S M T W T F S",
 }];
 
-/** The kinds whose two whole-renderer divergences below cover every one of them. */
-const KINDS_INVALID = Object.keys(MDY_CANONICAL_AT_REST);
-
 const KNOWN_DIVERGENCES = {
   /**
-   * Every kind, one cause: this renderer reflects `invalid` and not `touched`. The canon asks for
-   * both because a field that is invalid *and* untouched is a different thing to look at — it is a
-   * verdict nobody has been shown yet — and a renderer that cannot say the difference cannot style
-   * it either.
-   *
-   * Two kinds carry a second, unrelated one: their control points `aria-describedby` at the
-   * supporting text where the canon names the error list, so a reader hears the hint and not the
-   * reason the field was rejected.
+   * Two kinds, one cause: the control points `aria-describedby` at the supporting text where the
+   * canon names the error list, so a reader hears the hint and not the reason the field was rejected.
    */
-  invalid: Object.fromEntries(KINDS_INVALID.map((kind) => [kind, [
-    ...(kind === "select" ? ["trigger aria-describedby names supportingText, expected errors"] : []),
-    ...(kind === "colors" ? ["hexInput aria-describedby names supportingText, expected errors"] : []),
-    "state is [invalid], expected [invalid, touched]",
-  ]])),
-
-  /**
-   * Every kind, one cause: disabling a field moves focus onto the widget's own root, which this
-   * renderer makes focusable with `tabindex="-1"` to receive it. The canon expects focus to rest
-   * nowhere — a container is not somewhere a person can be.
-   */
-  disabled: Object.fromEntries(KINDS_INVALID.map((kind) => [kind, ["focus rests on root, expected nothing"]])),
+  invalid: {
+    select: ["trigger aria-describedby names supportingText, expected errors"],
+    colors: ["hexInput aria-describedby names supportingText, expected errors"],
+  },
 
   /** A part the contract does not declare for this kind, drawn while the panel is up. */
   open: { timepicker: ["extra part: periodOption"] },
@@ -69,23 +52,31 @@ const KNOWN_DIVERGENCES = {
   filled: { multiselect: ["extra part: chipMove"] },
 
   /**
-   * After Escape: the same missing `touched`, and focus left nowhere instead of back on the control
-   * the person was standing on. The second is the one that is felt — dismissing a panel from the
-   * keyboard and finding focus on the document is how a person loses their place in a form.
-   */
-  /**
    * The calendar's weekday row is written in English and begins on Sunday whatever the locale — so
-   * `en-US` is right by coincidence and every other locale is wrong. The other renderers read the
-   * same environment and answer it, so this is not a missing input: this one never asks.
+   * `en-US` is right by coincidence and every other locale is wrong. A renderer that reads the same
+   * environment answers it, so this is not a missing input: this one never asks.
    */
   "week start": { "it-IT": { datepicker: WEEK_START_IGNORED, daterange: WEEK_START_IGNORED } },
 
-  "after escape": Object.fromEntries(
-    ["select", "multiselect", "datepicker", "daterange", "timepicker", "colors"].map((kind) => [kind, [
+  /**
+   * After Escape, focus is left nowhere instead of back on the control the person was standing on.
+   * It is the one of these that is felt: dismissing a panel from the keyboard and finding focus on
+   * the document is how a person loses their place in a form.
+   *
+   * A select adds a second: dismissing its panel leaves the field unmarked, so a form that shows
+   * verdicts on touched fields stays silent about one the person has been in and left.
+   */
+  "after escape": {
+    select: [
       "state is [], expected [touched]",
       "focus rests on nothing, expected somewhere in the widget",
-    ]]),
-  ),
+    ],
+    ...Object.fromEntries(
+      ["multiselect", "datepicker", "daterange", "timepicker", "colors"].map((kind) => [kind, [
+        "focus rests on nothing, expected somewhere in the widget",
+      ]]),
+    ),
+  },
 };
 
 /**

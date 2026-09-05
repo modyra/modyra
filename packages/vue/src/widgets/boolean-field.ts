@@ -20,7 +20,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import { drawDeclaredUnder, partProps } from "./part.js";
+import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 
@@ -111,7 +111,7 @@ export const MdyBooleanField = defineComponent({
         outer.push(drawErrors(parts.error, props.field, props.kind));
       }
 
-      return h("div", { class: contract.rootClasses.join(" "), ref: root }, outer);
+      return h("div", { class: rootClasses(contract, { touched: props.field.touched() }), ref: root }, outer);
     };
   },
 });

@@ -40,12 +40,21 @@ export function useKeyboardInPlay(field: MdyFieldHandle<unknown>, root: Ref<HTML
     // Only the crossing into disabled: a widget built disabled never held the keyboard, and moving
     // focus onto its neighbour would take a person somewhere they never asked to go.
     if (!crossed) return;
+    // Whether the person was standing here, sampled now — while the control is still enabled and
+    // still holding the keyboard. After the render it is gone, and `afterBlur` exists precisely
+    // because focus resting on nothing is then indistinguishable from a widget nobody had reached.
+    // Told to assume the blur was ours, the door takes a keyboard that was never here: a field
+    // disabled on a page the person had not touched pulled focus into itself.
+    const element = root.value;
+    const heldTheKeyboard = element !== null
+      && element.ownerDocument.activeElement !== null
+      && element.contains(element.ownerDocument.activeElement);
     // After the render that took the control out of play. Read in the same turn, the element is
     // still enabled and still focused, and the door correctly decides nobody is leaving.
     queueMicrotask(() => {
-      const element = root.value;
-      if (element === null) return;
-      keepKeyboardInPlay(element, element.parentElement, { afterBlur: true });
+      const still = root.value;
+      if (still === null) return;
+      keepKeyboardInPlay(still, still.parentElement, { afterBlur: heldTheKeyboard });
     });
   });
   onScopeDispose(() => { watching.destroy(); });

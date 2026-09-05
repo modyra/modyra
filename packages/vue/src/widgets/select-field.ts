@@ -22,7 +22,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-import { partProps } from "./part.js";
+import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -245,7 +245,7 @@ export const MdySelectField = defineComponent({
       // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
       // them had it.
       children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
-      return h("div", { class: CONTRACT.rootClasses.join(" ") }, children);
+      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }) }, children);
     };
 
     return () => {
@@ -326,7 +326,7 @@ export const MdySelectField = defineComponent({
       // projection publishes no shell parts, so the id is the factory's in both shapes.
       children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
 
-      return h("div", { class: CONTRACT.rootClasses.join(" "), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
     };
   },
 });
