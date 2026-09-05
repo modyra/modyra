@@ -20,6 +20,7 @@ import { mountMdyDevtoolsIfWanted } from "@modyra/core/devtools";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 import { legendWhenReady } from "../shared/legend.js";
 import { everyKind } from "../shared/scenarios/every-kind.js";
+import { aDelivery } from "../shared/scenarios/a-delivery.js";
 
 // Simulated availability endpoint. The abort signal cancels the request
 // when a newer keystroke supersedes the run (last-wins), so stale replies
@@ -93,18 +94,34 @@ const DRAWN_BY = {
 };
 
 /** The catalogue scenario, as this page needs it: the fields, and the component for each. */
-const SHOWCASE = everyKind.fields().map((field) => {
-  const drawn = DRAWN_BY[field.kind];
+/**
+ * A shared scenario, as this page draws it.
+ *
+ * The fields, the words and the rules come from `examples/shared/scenarios`, where every demo reads
+ * them; what belongs here is only which component draws each kind, which is the part that is
+ * genuinely this framework's.
+ */
+const drawnFrom = (scenario) => scenario.fields().map((declared) => {
+  const drawn = DRAWN_BY[declared.kind];
   // Refused rather than skipped: a kind the shared declaration carries and this page cannot draw is
   // a hole in the demo, and a page that quietly renders sixteen looks finished.
-  if (!drawn) throw new Error(`[vue demo] no component declared for kind "${field.kind}"`);
+  if (!drawn) throw new Error(`[vue demo] no component declared for kind "${declared.kind}"`);
   const [is, extra] = drawn;
-  return { ...field, is, extra: { ...extra, ...(field.options ? { options: field.options } : {}) } };
+  return { ...declared, is, extra: { ...extra, ...(declared.options ? { options: declared.options } : {}) } };
 });
 
-const showcase = createVueForm(
-  Object.fromEntries(SHOWCASE.map((entry) => [entry.name, field(entry.initial)])),
-);
+const formFor = (entries) => createVueForm(Object.fromEntries(entries.map((entry) => [
+  entry.name,
+  // The rule the scenario declares, applied here: a story that says an address is required means the
+  // form refuses to send without one, not that a page draws an asterisk.
+  field(entry.initial, entry.required === true ? [required()] : []),
+])));
+
+const SHOWCASE = drawnFrom(everyKind);
+const showcase = formFor(SHOWCASE);
+
+const DELIVERY = drawnFrom(aDelivery);
+const delivery = formFor(DELIVERY);
 
 const THEMES = { modern: "modyra-modern.css", default: "modyra.css", material: "modyra-material.css", ios: "modyra-ios.css", ionic: "modyra-ionic.css", base: "modyra-base.css" };
 
@@ -130,6 +147,11 @@ createApp({
       form,
       showcase,
       SHOWCASE,
+      // The story beside the catalogue: its own form, and its title taken from the declaration so
+      // the heading cannot drift from what the scenario says it is.
+      delivery,
+      DELIVERY,
+      deliveryTitle: aDelivery.title,
       canSubmit: computed(() => form.state.canSubmit()),
       canUndo: computed(() => form.canUndo()),
       canRedo: computed(() => form.canRedo()),

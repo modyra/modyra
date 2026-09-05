@@ -17,6 +17,7 @@
  * rolling `aria-invalid` beside a package that ships seventeen components deriving it.
  */
 import { MDY_FIELD_KINDS } from "@modyra/core";
+import { aDelivery } from "./a-delivery.js";
 import { everyKind } from "./every-kind.js";
 
 /**
@@ -31,7 +32,7 @@ export const CATALOGUE_SCENARIOS = Object.freeze([everyKind]);
  * The scenarios with something to accomplish. Each arrives as its own unit; the set is deliberately
  * short, because an example nobody finishes reading teaches nothing.
  */
-export const STORY_SCENARIOS = Object.freeze([]);
+export const STORY_SCENARIOS = Object.freeze([aDelivery]);
 
 export const SCENARIOS = Object.freeze([...CATALOGUE_SCENARIOS, ...STORY_SCENARIOS]);
 
