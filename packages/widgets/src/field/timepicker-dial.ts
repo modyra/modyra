@@ -6,6 +6,7 @@
  * `*-types.ts` in this folder holding two hundred lines of behaviour, and the only place a reader
  * looking for the dial's rules would not think to open.
  */
+import { given } from "../given.js";
 import { to24Hour } from "@modyra/core/datetime";
 import type { MdyTimeFormat, ParsedTime } from "@modyra/core/datetime";
 import { isOnStep, MDY_EVERY_TIME, type MdyTimeSteps } from "../time-granularity.js";
@@ -566,6 +567,7 @@ export function timepickerDialRing(
   field: "hour" | "minute" = "hour",
   previous?: "outer" | "inner",
 ): "outer" | "inner" {
+  given("timepickerDialRing", "{ width, height, left, top }", face, ["width", "height", "left", "top"]);
   if (field !== "hour" || format !== "24h") return "outer";
   if (!(handLength > 0)) return "outer";
   const dx = clientX - (face.left + face.width / 2);

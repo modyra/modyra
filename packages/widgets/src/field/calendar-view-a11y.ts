@@ -6,6 +6,7 @@
  * nothing saying which month was chosen. Since a calendar is already a `grid`, so are the views that
  * replace it — the structure a user meets does not change with the view.
  */
+import { given } from "../given.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { partClasses } from "../part-classes.js";
@@ -109,6 +110,7 @@ export function projectCalendarDayCellA11y(
   },
   options: MdyCalendarViewA11yOptions,
 ): MdyPartContract {
+  given("projectCalendarDayCellA11y", "{ selected, disabled, today, focused, outside }", cell, ["selected", "disabled", "today", "focused", "outside"]);
   return {
     classes: [
       ...partClasses(options.kind, "gridcell" as never, {

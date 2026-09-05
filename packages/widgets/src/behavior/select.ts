@@ -1,4 +1,5 @@
 import type { MdyOptionNavigationTarget } from "./keys.js";
+import { given } from "../given.js";
 import { keyBindingFor, type MdyKeyOrPress } from "../transitions.js";
 /** The select's keyboard policy: one place, so three renderers cannot agree on the easy keys only. */
 export type MdySelectKeyboardAction =
@@ -21,6 +22,7 @@ export function selectKeyboardAction(input: {
   readonly activeKey: string | null;
   readonly createAvailable: boolean;
 }): MdySelectKeyboardAction | null {
+  given("selectKeyboardAction", "{ key, open, searchFocused, activeKey, createAvailable }", input, ["key", "open", "searchFocused", "activeKey", "createAvailable"]);
   const { open, searchFocused, activeKey, createAvailable } = input;
   // A press with the platform's accelerator held is the platform's — `Cmd+Space` switches the input
   // source, `Cmd+ArrowDown` reaches the end of a document — so a gesture that *adds* something does

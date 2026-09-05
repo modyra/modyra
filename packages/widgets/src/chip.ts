@@ -12,6 +12,7 @@
  * from the widget's mode and the option's state, and every renderer applies the answer.
  */
 
+import { given } from "./given.js";
 import type { MdyMultiselectMode } from "@modyra/core";
 
 import { stateClass } from "./state.js";
@@ -172,6 +173,7 @@ export function wayBackSentence(
   templates: { readonly removed: string; readonly moved: string; readonly cleared: string },
   labelOf: (key: string) => string,
 ): string {
+  given("wayBackSentence", "{ act, optionKey, count }", way, ["act", "optionKey", "count"]);
   if (way.act === "clear") return templates.cleared.replace("{count}", String(way.count));
   const label = way.optionKey === null ? "" : labelOf(way.optionKey);
   return (way.act === "move" ? templates.moved : templates.removed).replace("{value}", label);
@@ -197,6 +199,8 @@ export function wayBackActionName(
   templates: { readonly label: string; readonly removed: string; readonly moved: string; readonly cleared: string },
   labelOf: (key: string) => string,
 ): string {
+  // Not guarded, and the declaration says why: this door takes `… | null`, so absence is a state it
+  // is *for* — "there is no way back" is an answer it gives, not a caller's mistake.
   if (way === null) return templates.label;
   return `${templates.label}: ${wayBackSentence(way, templates, labelOf)}`;
 }
@@ -520,6 +524,7 @@ export function hiddenChipCount(strip: HTMLElement): number {
  * if it held one.
  */
 export function chosenKeyOrder(state: { readonly counts: ReadonlyMap<string, number> }): readonly string[] {
+  given("chosenKeyOrder", "{ counts }", state, ["counts"]);
   return [...state.counts.keys()];
 }
 
@@ -610,6 +615,7 @@ export function beginChipReorder(
   chip: HTMLElement,
   options: MdyChipReorderOptions,
 ): void {
+  given("beginChipReorder", "{ button, clientX }", press, ["button", "clientX"]);
   if (press.button !== 0) return;
   const view = chip.ownerDocument;
   if (!view) return;

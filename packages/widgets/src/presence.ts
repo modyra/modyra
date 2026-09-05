@@ -11,6 +11,7 @@
  * `pointerIsOnAValue` are decided by facts the renderer already holds, and a function over them would
  * put a call between a consumer and something in their hand.
  */
+import { given } from "./given.js";
 import { MDY_VALUE_CONTRACTS, type MdyInteractivity } from "@modyra/core";
 import type { MdyWidgetKind } from "./catalog/kinds.js";
 import { blocksValueChange } from "./interactivity.js";
@@ -74,6 +75,7 @@ export function fieldIsRequired(field: {
   readonly required: boolean;
   readonly interactivity: MdyInteractivity;
 }): boolean {
+  given("fieldIsRequired", "{ required, interactivity }", field, ["required", "interactivity"]);
   return field.required && !blocksValueChange(field.interactivity);
 }
 

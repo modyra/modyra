@@ -14,6 +14,7 @@
  * ignoring them, and both come back the moment the field is in play again — the verdict was never
  * wrong, it was being shown to someone who could not act on it.
  */
+import { given } from "../given.js";
 import { MDY_VALUE_CONTRACTS, mdyEmptyValueFor, type MdyFieldError, type MdyFormError, type MdyValueKind } from "@modyra/core";
 import type { MdyFieldConstraints } from "@modyra/core";
 
@@ -22,11 +23,13 @@ export function shownErrors(
   flags: { readonly disabled: boolean },
   errors: ReadonlyArray<MdyFieldError>,
 ): ReadonlyArray<MdyFieldError> {
+  given("shownErrors", "{ disabled }", flags, ["disabled"]);
   return flags.disabled ? [] : errors;
 }
 
 /** Whether the field paints as failing: it is failing **and** the form is asking about it. */
 export function showsAsInvalid(flags: { readonly disabled: boolean; readonly valid: boolean }): boolean {
+  given("showsAsInvalid", "{ disabled, valid }", flags, ["disabled", "valid"]);
   return !flags.valid && !flags.disabled;
 }
 

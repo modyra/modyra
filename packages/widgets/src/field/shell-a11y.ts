@@ -11,6 +11,7 @@
  * either: the shell already applies the kind's own, and restating them would create a second source
  * of truth.
  */
+import { given } from "../given.js";
 import type { MdyFieldConstraints, MdyFieldError } from "@modyra/core";
 import { NO_CONSTRAINTS } from "@modyra/core";
 import { nativeConstraintAttributes } from "../native-constraints.js";
@@ -297,6 +298,7 @@ export function fieldDescribedBy(parts: {
   readonly errorsPresent: boolean;
   readonly descriptionPresent: boolean;
 }): string | null {
+  given("fieldDescribedBy", "{ errorId, descriptionId, errorsPresent, descriptionPresent }", parts, ["errorId", "descriptionId", "errorsPresent", "descriptionPresent"]);
   const named = [
     parts.errorsPresent ? parts.errorId : null,
     parts.descriptionPresent ? parts.descriptionId : null,

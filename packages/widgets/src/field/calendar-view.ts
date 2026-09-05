@@ -9,6 +9,7 @@
  * The mode is state, so it belongs to the controller for the kind rather than to each renderer, for
  * the reason the timepicker already demonstrates: it holds `viewMode` and its renderers ask.
  */
+import { given } from "../given.js";
 import { formatIsoDate, type CalendarDate } from "@modyra/core/datetime";
 
 export const MDY_CALENDAR_VIEW_MODES = Object.freeze(["days", "months", "years"] as const);
@@ -75,6 +76,7 @@ export function moveCalendarFocus(
   },
   target: CalendarDate,
 ): void {
+  given("moveCalendarFocus", "{ focusedDate, viewYear, viewMonth }", view, ["focusedDate", "viewYear", "viewMonth"]);
   view.focusedDate.set(formatIsoDate(target));
   if (target.year !== view.viewYear() || target.month !== view.viewMonth()) {
     view.viewYear.set(target.year);
