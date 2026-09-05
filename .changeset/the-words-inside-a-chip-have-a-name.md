@@ -26,9 +26,14 @@ entries in the whole diff are the two the tool itself calls minor: `new optional
 verdict shipped is the tool's; the disagreement is recorded here because it is a measurement, not a
 preference.
 
-**What this does not yet do.** It does not catch a renderer that draws the words without the class —
-the defect it was written for. Measured: with that defect replanted under a clean build, every check
-still passes, because the part is optional and an optional part that is absent is not owed. Making it
-owed means deciding that a filled multiselect **must** show a chip with words, which the canonical
-filled observation currently leaves optional for the chip itself. That is a decision about what a
-filled widget must show, not a gap in this change, and it is recorded rather than assumed.
+**A filled multiselect owes a chip, and the chip owes its words.** At rest there are no chips, so
+the strip and everything in it is optional. Filled, that chip is the only thing on the page saying
+what the field will submit: a filled multiselect drawing no chip — or a chip whose words carry
+nothing that can be found — submits a value nobody can see, which is the worst shape in the register
+rather than a cosmetic gap. `chipRemove`, `chipMove` and `chipCount` stay optional, because whether a
+value can be taken off, reordered, or held more than once are the field's own affordances and a chip
+without them still says what it holds.
+
+Falsified against the defect that started this: with the words drawn under no class again, under a
+clean build, the canonical filled observation reports `missing part: chipLabel`. Before this change
+that same replant passed everything.

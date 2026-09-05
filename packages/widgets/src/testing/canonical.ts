@@ -817,14 +817,37 @@ export const MDY_CANONICAL_FILLED: Readonly<Partial<Record<MdyWidgetKind, unknow
  * No state is reflected. Putting a value in a field is not the user touching it, and a renderer that
  * marked it touched would show validation for an interaction that never happened.
  */
+/**
+ * Parts that are optional in a resting widget and **owed** once it holds a value.
+ *
+ * A multiselect shows what it holds as chips. At rest there are none, so the strip and everything in
+ * it is optional; filled, a chip and the words naming its value are the only thing on the page that
+ * says what the field will submit. A filled multiselect drawing no chip — or a chip whose words
+ * carry nothing that can be found — submits a value nobody can see, which is the worst shape in the
+ * register rather than a cosmetic gap.
+ *
+ * `chipRemove`, `chipMove` and `chipCount` stay optional on purpose: whether a value can be taken
+ * off, reordered, or held more than once are the field's own affordances, and a chip without them is
+ * still a chip that says what it holds.
+ */
+const OWED_ONCE_FILLED: Readonly<Partial<Record<MdyWidgetKind, readonly string[]>>> = Object.freeze({
+  multiselect: Object.freeze(["chips", "chipRow", "chip", "chipLabel"]),
+});
+
 export const MDY_CANONICAL_FILLED_OBSERVATION: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =
   Object.freeze(Object.fromEntries(
     Object.entries(MDY_CANONICAL_AT_REST).map(([kind, { value: _restingValue, ...rest }]) => [
       kind,
       Object.freeze({
         ...rest,
-        parts: Object.freeze(rest.parts.filter((part) => part !== "placeholder")),
-        optional: Object.freeze([...rest.optional, "placeholder"]),
+        parts: Object.freeze([
+          ...rest.parts.filter((part) => part !== "placeholder"),
+          ...(OWED_ONCE_FILLED[kind as MdyWidgetKind] ?? []),
+        ]),
+        optional: Object.freeze([
+          ...rest.optional.filter((part) => !(OWED_ONCE_FILLED[kind as MdyWidgetKind] ?? []).includes(part)),
+          "placeholder",
+        ]),
         // A kind the table cannot name drops the constraint rather than asserting the wrong thing.
         ...(kind in MDY_CANONICAL_FILLED
           ? { value: MDY_CANONICAL_FILLED[kind as MdyWidgetKind] }
