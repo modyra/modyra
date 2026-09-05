@@ -7,6 +7,7 @@ import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   type MdyDaterangeFieldController,
   type MdyDaterangeFieldIntent,
   type MdyDaterangeFieldState,
+  projectCalendarViewA11y,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
@@ -470,6 +471,26 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     return isSameDay(cell.date, today());
   }
 
+
+  /**
+   * The grid this field's opener points at, which is whichever one is on screen.
+   *
+   * The promise is a grid, and this kind draws three of them in turn: days, months, years. Pinned to
+   * the day grid alone the reference named an element that leaves with the view — the panel is still
+   * open, so `closedId` does not cover it, and `aria-controls` pointed at nothing for as long as
+   * somebody was choosing a month.
+   *
+   * Both ids are derived, neither spelled: the day grid's from the opener's own declaration, the
+   * other two from the projection that draws them. The date picker answers the same question with
+   * the two view ids written out as literals — same answer, one of the two derivations able to
+   * follow the projection if it moves.
+   */
+  private get controlledGridId(): string | undefined {
+    const days = overlayControlledId("daterange", this.fieldId) ?? undefined;
+    if (!this._open || this.view.viewMode === "days") return days;
+    return projectCalendarViewA11y(this.view.viewMode, { kind: "daterange", widgetId: this.fieldId })?.id ?? days;
+  }
+
   private renderMonthPicker(): unknown {
     return renderMonthPicker(this.monthNamesShort(), {
       kind: "daterange",
@@ -716,7 +737,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
               aria-label=${this.messages.daterangeChooseRange}
               aria-haspopup=${this.popupPromise}
               aria-expanded=${this._open ? "true" : "false"}
-              aria-controls=${overlayControlledId("daterange", this.fieldId) ?? nothing}
+              aria-controls=${this.controlledGridId ?? nothing}
               @click=${(e: Event) => (this._open ? this.closePopup(handle) : this.openPopup(handle, e))}
             >
               ${mdyIcon("CALENDAR", "mdy-datepicker__icon")}
