@@ -1,6 +1,6 @@
 # ADR 0209: A literal cannot carry a position
 
-Status: Accepted
+Status: Accepted (amended — see Verification)
 
 ## Context
 
@@ -102,10 +102,27 @@ mechanism nobody has anticipated, and in renderers not yet written.
 - The kit section drives a widget that has never been focused, takes its control out of play, and
   asserts the keyboard did not move into it. It fails for any renderer that gets this wrong,
   whatever the mechanism, and it is the check that survives if the signature is later revisited.
-- The signature itself is checked by the compiler at every call site: a caller that has not sampled
-  has nothing to pass. This is why the removal of `afterBlur` is part of the decision — while the
-  boolean exists, the compiler accepts an assertion in place of an observation and the guarantee
-  reverts to discipline.
+- **Amendment, on implementation.** This section first claimed the compiler closes the misuse at
+  every call site. It does not, and the correction matters more than the claim did.
+
+  The parameter shipped as `heldTheKeyboard?: boolean` — an optional boolean, so
+  `{ heldTheKeyboard: true }` written from a render effect still compiles, exactly as
+  `{ afterBlur: true }` did. What changed is **legibility, not enforcement**: the name now states an
+  observation, so a hardcoded `true` reads as a false statement of fact rather than as a flag being
+  set. That is worth having and it is not a guard.
+
+  Measured when this was written: all five call sites pass a variable and none passes a literal. That
+  is the current state of this repository, not a property of the door — the renderers still to be
+  written meet a signature that accepts the assertion.
+
+  **What actually guards this is the kit section**, and it is mutation-proven rather than argued: with
+  the sampling defect put back into one renderer, the section went red across every kind of that
+  renderer and stayed green on the other three. Red everywhere would have meant the section measures
+  itself.
+
+  The enforcing option remains open and is deliberately not taken here: a required parameter, or a
+  type only a real observation can produce. It is recorded so a reader who needs enforcement knows it
+  was identified and deferred, rather than believing it was achieved.
 - `npm run test:type-surface` classifies the removal; the changeset carries the migration.
 
 **What remains unguarded, stated rather than implied**: that renderers *currently* correct are
