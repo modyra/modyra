@@ -1,5 +1,6 @@
 ---
 "@modyra/widgets": minor
+"@modyra/angular": patch
 ---
 
 The words inside a value chip, and how many are held, are parts the contract names
@@ -18,6 +19,13 @@ and that is right only while both are drawn in the expected order. The walk, bot
 canonical snapshot now narrow by the parent the contract declares, and treat a parent that is nowhere
 on screen as a parent that is not holding the part. Before that, the chip's words took the first
 *option's* label, and the option's own part was then reported missing: one guess, two wrong answers.
+
+**It reaches the Angular surface too.** `MdyMultiselectComponent` publishes its `parts` and
+`widgetContract` with the kind's part names in the type, so two names entering the anatomy widen that
+Record — additively, and no consumer breaks. It is named here because the surface audit reads a built
+package: the baseline was first accepted against an Angular build that predated the declaration, so
+it recorded shapes that no longer existed and the gate went red on the next full build. Rebuild the
+package before accepting a baseline that describes it.
 
 **Classification.** `contract:diff` reports 24 major. Twenty-two of those are one sentence repeated —
 `reading order: position 31 → 33` — because two parts inserted in the middle shift the absolute index
