@@ -137,66 +137,61 @@ opener. Nothing checked that the primary one works.
 
 ### The name a person hears on the door that opens a panel
 
-**Status: open** — measured 2026-09-05 in a real browser, on the four renderers the tier drives, read
-from the **accessibility tree** rather than from the attribute that may have fed it. That distinction
-changed two cells: an opener with no `aria-label` still resolved to a name.
+**Status: open on two cells** — measured 2026-09-05 in a real browser, read from the **accessibility
+tree** rather than from the attribute that may have fed it. First written before the repair unit and
+**rewritten after it, including three rows this table got wrong**; what it got wrong is kept below,
+because it is the reason the table worked at all.
 
 **Felt as**: a person navigating by voice or screen reader reaches the button that opens a calendar
 and hears `"T, button"` — the field's label, repeated, saying nothing about what pressing it does.
 
-**Contract**: **declares for some doors and is silent for others**, and the silence is exactly where
-the renderers disagree.
+| kind · door | part | plain | lit | vue | angular | what the contract says | how to disprove this cell |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| select · 1st | `trigger` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | name from the field label | resolve the name; a prompt inside the control must not appear in it |
+| multiselect · 1st | `trigger` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | as above | as above |
+| multiselect · 2nd | `box` | combobox | combobox | **grid** | combobox | pointer door, no relation (ADR 0177) | read the resolved **role**, not the name |
+| datepicker · 1st | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | name from the field label | as above |
+| datepicker · 2nd | `toggle` | `Toggle calendar` | `Toggle calendar` | `Toggle calendar` | `Toggle calendar` | `datepickerToggleLabel` | swap the locale; the name must follow |
+| daterange · 1st | `toggle` | `Choose date range` | `Choose date range` | **`T`** | `Choose date range` | `daterangeChooseRange` | as above |
+| timepicker · 1st | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | name from the field label | as above |
+| timepicker · 2nd | `toggle` | `Open time picker` | `Open time picker` | `Open time picker` | `Open time picker` | `timepickerOpenLabel` | swap the locale |
+| colors · 1st | `nativePicker` | `Select color` | `Select color` | `Select color` | `Select color` | `selectColorPrefix` | swap the locale |
+| colors · 2nd | `toggle` | *(no node)* | *(no node)* | *(no node)* | *(no node)* | pointer door, **no relation by design** (ADR 0177) | open it **with a pointer** and watch `aria-expanded` on the opener |
 
-Every kind that opens a panel declares its doors — `MDY_POPUP_OPENERS` names an `opener` and
-sometimes an `alsoOpensFrom`. The doors are not the same kind of element, and that turns out to be
-the whole story.
+**Two cells remain open**, both in one renderer: the daterange opener still answers with the bare
+field label, and the multiselect's pointer door resolves as a grid where the other three resolve as a
+combobox.
 
-| kind · door | part | plain | lit | vue | angular | what the contract says today |
-| --- | --- | --- | --- | --- | --- | --- |
-| select · primary | `trigger` | combobox `T` | combobox `T` | combobox **`T Select…`** | combobox `T` | name comes from the field label |
-| multiselect · primary | `trigger` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | as above |
-| multiselect · second | `box` | combobox `T` | combobox `T` | **grid** | combobox `T` | as above |
-| datepicker · primary | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | as above |
-| datepicker · second | `toggle` | button `Toggle calendar` | button `Toggle calendar` | button **`Choose T`** | button `Toggle calendar` | `datepickerToggleLabel` |
-| daterange · primary | `toggle` | button **`Choose date range`** | button **`T`** | button **`T`** | button **`Toggle calendar`** | **nothing** |
-| timepicker · primary | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | name comes from the field label |
-| timepicker · second | `toggle` | button `Open time picker` | button `Open time picker` | button **`Choose T`** | button `Open time picker` | `timepickerOpenLabel` |
-| colors · primary | `nativePicker` | button **`T`** | button **`T`** | button **`Choose T`** | button `Select color` | `selectColorPrefix` |
-| colors · second | `toggle` | *(no accessible node)* | *(no accessible node)* | *(no accessible node)* | *(no accessible node)* | declared a door |
-
-**Every combobox agrees. Every button diverges.** That is not a coincidence and it names the cause: a
+**Every combobox agrees. Every button diverged.** That was the finding, and it named the cause: a
 combobox takes its name from the field label, which every renderer wires the same way because the
-label association does it for them. A button has to be given a name, and there each renderer is on
-its own — with a dictionary entry that sometimes exists and is sometimes read.
+label association does it for them. A button has to be *given* a name, and there each renderer was on
+its own.
 
-Read row by row, the contract column predicts the disagreement exactly:
+#### What this table got wrong, and why it worked anyway
 
-- **A message exists and is read** — `datepickerToggleLabel`, `timepickerOpenLabel` — and three
-  renderers agree. The fourth composes `Choose ` + the field label and never consults the dictionary,
-  so **its opener names cannot be translated at all**: not a missing translation, a door not taken.
-- **A message exists and is ignored** — `selectColorPrefix` — and only one renderer reads it. Two give
-  the bare field label; one composes its own.
-- **No message exists** — daterange — and four renderers produce three answers, one of which calls a
-  *range* opener `Toggle calendar`: the wrong message, borrowed from a sibling.
+Three of its rows were misread, and each was misread in a different way. They are recorded because a
+specification that hides its own corrections teaches nobody how to read the next one.
 
-**The rule the names are measured against** — the name states the action and its subject, comes from
-the dictionary, and does not repeat the field's own label — is published practice, not a local
-preference: an accessible name says what a control does (WCAG 4.1.2), and shipped date pickers name
-the button for its action. `T, button` fails it outright.
+- **`daterange` was written as "no message exists". The message existed** —
+  `daterangeChooseRange`, in all five locales, since the words moved into the widget contract. It was
+  invisible for two unrelated reasons at once: two renderers read it behind `label || message`, so a
+  field *with* a label never reached it, and a third wrote it and then had it **overwritten by a later
+  naming pass**. "No message" was a conclusion drawn from where the reader happened to look.
+- **`colors · 2nd` was written as "the contract declares a door that is not a door anywhere".** It is
+  a **pointer** door, and ADR 0177 — *what the contract declines to say* — states that it carries no
+  ARIA relation on purpose: `aria-expanded` and `aria-controls` belong to the opener, and a second
+  element claiming them would announce two comboboxes for one list. The table measured a pointer door
+  with a keyboard instrument and reported the design as a defect. There **was** a real defect
+  underneath, and it was one cell: one renderer drew the element and attached nothing to it.
+- **The bare-label cells were counted as independent renderer choices.** They were one shell naming
+  pass in two renderers, writing the field's label over a name the opener had already given itself.
+  One change per renderer closed `colors` and `daterange` together.
 
-Two findings sit beside the table rather than in it:
+The lesson is not that the table was unreliable. **Every cell carried the measurement that produced
+it**, so each could be contradicted one at a time by someone with a better instrument — and three
+were. A specification whose cells can be disproved individually survives its own errors; an
+instruction cannot. That is why the last column exists, and why the next such table starts with it.
 
-- **A placeholder in an accessible name.** One renderer's select resolves to `T Select…` — the
-  prompt shown inside the closed control has leaked into the name a screen reader announces. The
-  placeholder is not part of what the control *is*.
-- **A door declared that no one can address.** `colors.alsoOpensFrom` names `toggle`, and in all four
-  renderers that part resolves to no accessible node at all. This one is uniform, so it is not a
-  divergence — it is the contract declaring a door that is not a door anywhere.
-
-**What closes it**: a message for the daterange opener, the two ignored messages read where they are
-declared, and a check that asks each declared door for its resolved name rather than for the
-attribute behind it. The corrections size by **cell, not by renderer** — a per-renderer list gets it
-wrong, because the bare-label failure is plain and lit on colors and lit and vue on daterange.
 
 ### A panel shown before anyone opened it
 
