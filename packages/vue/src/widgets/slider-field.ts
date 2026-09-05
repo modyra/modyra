@@ -89,6 +89,10 @@ export const MdySliderField = defineComponent({
       children.push(h("div", { class: CONTRACT.parts[holder as "track"].classes.join(" ") }, [
         h("input", partProps(parts.input, {
           class: CONTRACT.parts.control.classes.join(" "),
+          // The value the model holds, on the control that shows it. Unbound, the thumb stayed
+          // wherever it was last dragged while the readout beside it moved — one widget saying two
+          // things, which is worse than the empty readout this replaced.
+          value: props.field.value() ?? 0,
           // The name, where nothing on the page captions the control. The projection names a
           // control against a caption that exists; this is the other case, and without it a
           // captionless slider is announced as nothing at all.

@@ -115,6 +115,13 @@ export const MdyTextField = defineComponent({
 
       children.push(h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, [
         h(tag, partProps(parts.input, {
+          // The value the model holds, on the control that shows it.
+          //
+          // Left unbound, the box showed only what a person had typed into it: a value arriving from
+          // anywhere else — a draft restored, a server correction, a cross-field rule — reached the
+          // form and never the screen. That is the whole of what a field handle is for, and this is
+          // the renderer that was not delivering it.
+          value: props.field.value() ?? "",
           // Two the projection does not carry, and both belong on the control a person types into:
           // a hint shown inside the empty box, and the name it has where nothing captions it.
           ...(props.placeholder === "" ? {} : { placeholder: props.placeholder }),
