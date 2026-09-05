@@ -23,6 +23,8 @@ import {
   MDY_CHIP_CLASSES,  MDY_POPUP_OPENERS,
   MDY_I18N_MESSAGES_DEFAULT,
   multiselectAnnouncement,
+  chipMovedAnnouncement,
+  quantityAnnouncement,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
@@ -133,6 +135,9 @@ export const MdyMultiselectField = defineComponent({
      * time anything moved.
      */
     let saidLast: readonly string[] = [...controller.state().selectedKeys].map(String);
+    /** The order the values were in, and how many of each, when the reader was last told. */
+    let orderLast = saidLast.join("\u0000");
+    let countsLast = new Map(controller.state().counts);
     const announcement = ref("");
 
     const watching = reactivity.effect(() => {
@@ -151,9 +156,38 @@ export const MdyMultiselectField = defineComponent({
         removedMany: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedMany,
         removedManyLast: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedManyLast,
       }, (key) => state.value.options.find((option) => String(option.value) === key)?.label ?? key);
+      const labelOf = (key: string): string =>
+        state.value.options.find((option) => String(option.value) === key)?.label ?? key;
+
       if (sentence !== null && sentence !== "") {
         announcement.value = sentence;
         saidLast = chosen;
+        orderLast = chosen.join("\u0000");
+        countsLast = new Map(state.value.counts);
+      } else if (chosen.join("\u0000") !== orderLast) {
+        // The same values in a different order: one of them was moved, and the sentence for that
+        // names which and where it landed. Asked only where the selection did **not** change, so the
+        // two policies never speak over each other about one act.
+        const moved = chosen.find((key, at) => orderLast.split("\u0000")[at] !== key);
+        if (moved !== undefined) {
+          announcement.value = chipMovedAnnouncement(
+            MDY_I18N_MESSAGES_DEFAULT.selectionMoved,
+            labelOf(moved), chosen.indexOf(moved) + 1, chosen.length,
+          );
+        }
+        orderLast = chosen.join("\u0000");
+      } else {
+        // A quantity that settled. Nothing is said for one that reached zero: the value is gone, and
+        // its removal has its own sentence and its own way back.
+        const stepped = chosen.find((key) => (state.value.counts.get(key) ?? 0) !== (countsLast.get(key) ?? 0));
+        const count = stepped === undefined ? 0 : state.value.counts.get(stepped) ?? 0;
+        if (stepped !== undefined && count > 0) {
+          announcement.value = quantityAnnouncement(labelOf(stepped), count, {
+            settled: MDY_I18N_MESSAGES_DEFAULT.quantitySettled,
+            atMinimum: MDY_I18N_MESSAGES_DEFAULT.quantityAtMinimum,
+          });
+        }
+        countsLast = new Map(state.value.counts);
       }
       triggerRef(state);
       triggerRef(view);
