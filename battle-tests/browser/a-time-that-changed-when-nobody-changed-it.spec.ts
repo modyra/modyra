@@ -22,7 +22,23 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
+
+/**
+ * The opener, as the contract names it rather than as one language spells it.
+ *
+ * The obvious selector is the button's `aria-label`, and it is wrong in a way that only shows up
+ * later: that text is the **default** of a localisable message, so a probe keyed on it asks "is this
+ * labelled in English?" and reports the answer as "does this exist?". A renderer that honours the
+ * document's language would fall into the assertion below and be reported as never having drawn the
+ * field at all — a repair delivered as a different defect, with a confident wrong cause.
+ *
+ * Measured: with the label swapped for its Italian spelling, the English selector finds none and this
+ * one finds the same button it found before.
+ */
+const OPENER = ((MDY_WIDGET_CONTRACTS as never as Record<string, { parts: Record<string, { classes?: readonly string[] }> }>)
+  .timepicker.parts.toggle.classes ?? []).map((c) => `.${c}`).join("");
 
 /** What a timepicker holds, in the notation its value contract names. */
 const CANONICAL = "14:30";
@@ -59,7 +75,7 @@ for (const host of HOSTS) {
      * are found on the page rather than under the field.
      */
     const confirmWithoutChanging = async (id: string) => {
-      const opener = page.locator(`[data-form="${id}"] button[aria-label="Open time picker"]`);
+      const opener = page.locator(`[data-form="${id}"] ${OPENER}`);
       // **Never click what may not be there.** Through the parsing door a field whose initial value
       // the contract refuses is dropped entirely, so there is no opener — and a bare `click()` then
       // waits out the whole test budget and reports a timeout, which reads as the page hanging
@@ -97,7 +113,7 @@ for (const host of HOSTS) {
       "the form is holding a time in a notation its own value contract refuses",
     ).not.toBe(DISPLAYED);
     await expect(
-      page.locator('[data-form="displayed"] button[aria-label="Open time picker"]'),
+      page.locator(`[data-form="displayed"] ${OPENER}`),
       "a field whose initial value the contract refuses was still drawn, so the refusal changed " +
         "nothing a person can see",
     ).toHaveCount(0);

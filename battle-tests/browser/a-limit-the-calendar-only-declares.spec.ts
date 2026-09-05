@@ -22,7 +22,22 @@
  */
 
 import { expect, test } from "@playwright/test";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
+
+/**
+ * The opener, as the contract names it rather than as one language spells it.
+ *
+ * The previous selector paired an English `aria-label` with `[aria-haspopup]`. That pairing worked,
+ * but only the second half was doing it: the label is the **default of a localisable message**, so it
+ * finds the button in English and in no other language. The fallback was written for an unrelated
+ * reason and happened to cover it — safe by accident is indistinguishable from unsafe until someone
+ * removes the first path.
+ *
+ * Both date kinds carry the same toggle class, so one derivation answers for both.
+ */
+const OPENER = ((MDY_WIDGET_CONTRACTS as never as Record<string, { parts: Record<string, { classes?: readonly string[] }> }>)
+  .datepicker.parts.toggle.classes ?? []).map((c) => `.${c}`).join("");
 
 /** A month with room on both sides of the limit, so "outside" is reachable without changing month. */
 const MIN = "2026-06-10";
@@ -47,7 +62,7 @@ for (const host of HOSTS) {
           minDate: min,
         }] as never);
     }, { api: host.api, min: MIN });
-    const opener = page.locator('[data-form="lim"] button[aria-label="Toggle calendar"], [data-form="lim"] [aria-haspopup]').first();
+    const opener = page.locator(`[data-form="lim"] ${OPENER}, [data-form="lim"] [aria-haspopup]`).first();
     await expect(opener, "no calendar opener was drawn, so the limit cannot be exercised").toHaveCount(1, { timeout: 5_000 });
     await opener.click();
     // Wait for the days, not for the grid to be "visible". One renderer keeps its calendar in the
@@ -112,7 +127,7 @@ for (const host of HOSTS) {
           name: "d", kind: "datepicker", label: "D", initialValue: "2026-06-05", maxDate: max,
         }] as never);
     }, { api: host.api, max: MAX });
-    const opener = page.locator('[data-form="lim2"] button[aria-label="Toggle calendar"], [data-form="lim2"] [aria-haspopup]').first();
+    const opener = page.locator(`[data-form="lim2"] ${OPENER}, [data-form="lim2"] [aria-haspopup]`).first();
     await expect(opener, "no calendar opener was drawn, so the limit cannot be exercised").toHaveCount(1, { timeout: 5_000 });
     await opener.click();
     await expect(page.locator('[role="gridcell"]').first(), "the calendar opened without drawing any days")
@@ -164,7 +179,7 @@ for (const host of HOSTS) {
       (window as never as Record<string, Record<string, (...args: never[]) => unknown>>)[api]
         .mountFields("lim3", [{ name: "r", kind: "daterange", label: "R", minDate: min }] as never);
     }, { api: host.api, min: MIN });
-    const opener = page.locator('[data-form="lim3"] button[aria-label="Toggle calendar"], [data-form="lim3"] [aria-haspopup]').first();
+    const opener = page.locator(`[data-form="lim3"] ${OPENER}, [data-form="lim3"] [aria-haspopup]`).first();
     if (await opener.count() === 0) {
       test.skip(true, "this renderer draws no opener for a daterange, which is a different finding");
     }
