@@ -731,7 +731,13 @@ export class MdyMultiselectComponent<TValue = string>
       keepFocusedChipInView(strip);
       // Settled against its own mark: it shares the row, so drawing it narrows the strip and the
       // chip that width covered falls outside a box measured before the mark existed.
-      settleHiddenChipCount(strip, (hidden) => this.hiddenChips.set(hidden));
+      settleHiddenChipCount(
+        strip,
+        (hidden) => this.hiddenChips.set(hidden),
+        // A signal write is drawn on the next render, so the mark is not on the row yet: the second
+        // measurement waits for the beat this renderer already owns.
+        (settle) => afterNextRender(settle, { injector: this.injector }),
+      );
     });
   });
 

@@ -1157,11 +1157,16 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     keepFocusedChipInView(strip);
     // Settled against its own mark: it shares the row, so drawing it narrows the strip and the chip
     // that width covered falls outside a box measured before the mark existed.
-    settleHiddenChipCount(strip, (hidden) => {
-      if (hidden === this._hiddenChips) return;
-      this._hiddenChips = hidden;
-      this.requestUpdate();
-    });
+    settleHiddenChipCount(
+      strip,
+      (hidden) => {
+        if (hidden === this._hiddenChips) return;
+        this._hiddenChips = hidden;
+        this.requestUpdate();
+      },
+      // This renderer draws on its own cycle, so the mark is not on the row when `apply` returns.
+      (settle) => { void this.updateComplete.then(settle); },
+    );
   }
 
   /**

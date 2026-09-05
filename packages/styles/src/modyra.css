@@ -2068,7 +2068,11 @@
            The strip yields instead, which costs it nothing it had not already planned for: it
            scrolls sideways by design, and what is past its edge is reachable by wheel and by the
            roving focus. */
-        min-width: max(2.75rem, 44px);
+        /* …and never more than half the row, because a floor that cannot be met is a collapse
+           moved rather than mended: on a 100px field the opener took its 44px and the strip beside
+           it went to zero, which is the same defect with the two ends swapped. Half leaves both
+           halves usable at every width, and the strip scrolls for what does not fit. */
+        min-width: min(max(2.75rem, 44px), 50%);
     }
 
     .mdy-multiselect__trigger {

@@ -455,17 +455,32 @@ export function chipTooltipOffset(chip: HTMLElement, strip: HTMLElement): number
  * the control beside it — the geometry moved, and the off-by-one moved into view with it.
  *
  * Two passes, never more: the second measurement is taken with the mark on the row, and a third
- * could only differ if the number's own width changed the layout again, which is what `stable`
- * refuses to let happen. `apply` draws the mark; it is called once per pass, with the count that
- * pass measured.
+ * could only differ if the number's own width changed the layout again.
+ *
+ * **The second pass waits for the renderer's own beat.** `apply` may not put the mark on the page
+ * itself — a renderer that sets a signal or requests an update returns before the DOM changes, and a
+ * measurement taken straight afterwards reads the row as it was, which is the very mistake this
+ * exists to correct. A caller that renders synchronously passes nothing and gets both passes now;
+ * one that defers passes the beat it already owns — the same shape the command runtime takes, and
+ * for the same reason.
  */
-export function settleHiddenChipCount(strip: HTMLElement, apply: (hidden: number) => void): number {
+export function settleHiddenChipCount(
+  strip: HTMLElement,
+  apply: (hidden: number) => void,
+  afterRender?: (settle: () => void) => void,
+): number {
   const first = hiddenChipCount(strip);
   apply(first);
-  const second = hiddenChipCount(strip);
-  if (second === first) return first;
-  apply(second);
-  return second;
+  const again = (): void => {
+    const second = hiddenChipCount(strip);
+    if (second !== first) apply(second);
+  };
+  if (afterRender === undefined) {
+    again();
+    return hiddenChipCount(strip);
+  }
+  afterRender(again);
+  return first;
 }
 
 export function hiddenChipCount(strip: HTMLElement): number {
