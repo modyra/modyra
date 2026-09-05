@@ -36,7 +36,7 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   box: "presentation",
   chip: "container",
   // What the chip is made of: a name, how many, and the control that takes it off.
-  chipRemove: "button", chipMove: "button",
+  chipRemove: "button", chipMove: "button", chipStep: "button",
   // Taking every choice off, and putting the last destructive act back. Both are pressed, so both
   // are buttons, and both sit at the field's trailing edge: the way back is the remedy for the
   // clear-all, which is what lets a control discard everything without asking first.

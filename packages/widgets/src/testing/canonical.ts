@@ -831,7 +831,12 @@ export const MDY_CANONICAL_FILLED: Readonly<Partial<Record<MdyWidgetKind, unknow
  * still a chip that says what it holds.
  */
 const OWED_ONCE_FILLED: Readonly<Partial<Record<MdyWidgetKind, readonly string[]>>> = Object.freeze({
-  multiselect: Object.freeze(["chips", "chipRow", "chip", "chipLabel"]),
+  // The chip and what it says, and the control that takes the value back off. A filled multiselect
+  // drawing a chip a person cannot remove is a value they can put in and not take out.
+  //
+  // `chipStep` and `chipMove` stay out: the first exists only in counter mode and the second only
+  // where there is more than one value to order, so neither is owed by a filled field as such.
+  multiselect: Object.freeze(["chips", "chipRow", "chip", "chipLabel", "chipRemove"]),
 });
 
 export const MDY_CANONICAL_FILLED_OBSERVATION: Readonly<Partial<Record<MdyWidgetKind, MdyCanonicalExpectation>>> =

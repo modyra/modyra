@@ -25,6 +25,7 @@ import {
   multiselectAnnouncement,
   chipMovedAnnouncement,
   quantityAnnouncement,
+  chipActionName,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
@@ -318,18 +319,54 @@ export const MdyMultiselectField = defineComponent({
           // how the arrows walk them.
           h("div", partProps(parts.chips, { class: classesOf("chips"), role: roleOf("chips") }), [
             h("div", { class: classesOf("chipRow"), role: roleOf("chipRow") },
-              held.map((option) => h("span", { class: classesOf("chip"), role: roleOf("chip") }, [
-                h("button", { type: "button", class: classesOf("chipMove"), "aria-label": `Move ${option.label}` }),
-                // The class the contract declares for it. Drawn bare, the words were a span nothing
-                // could address: the rule that truncates a chip's label on a narrow screen never
-                // matched, so the label sat at its text's width and the chip overflowed the row it
-                // had been capped to — the horizontal axis a page that already scrolls must not gain.
-                h("span", { class: MDY_CHIP_CLASSES.label }, option.label),
-                h("button", {
-                  type: "button", class: classesOf("chipRemove"), "aria-label": `Remove ${option.label}`,
-                  onClick: () => run(controller.dispatch({ type: "toggle", optionKey: String(option.value) })),
-                }),
-              ]))),
+              held.map((option) => {
+                const key = String(option.value);
+                const held_ = state.value.counts.get(key) ?? 1;
+                /** One of the chip's own controls, named for the act and the value it acts on. */
+                const control = (part: "chipMove" | "chipStep" | "chipRemove", verb: string, act: () => void): VNode =>
+                  h("button", {
+                    type: "button", class: classesOf(part),
+                    "aria-label": chipActionName(verb, option.label),
+                    onClick: (event: Event) => { event.stopPropagation(); act(); },
+                  });
+                // **Both directions.** `chipMove` is declared repeated, so a chip carries one handle
+                // per direction; drawn as a single fused "Move" this renderer offered a pointer no
+                // way to say *which way*, and the words for the two directions sat unread in the
+                // message table.
+                const moves = held.length > 1 ? [
+                  control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveEarlierLabel,
+                    () => run(controller.dispatch({ type: "move", target: "previous" }))),
+                ] : [];
+                const later = held.length > 1 ? [
+                  control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveLaterLabel,
+                    () => run(controller.dispatch({ type: "move", target: "next" }))),
+                ] : [];
+                // The quantity a chip holds is stepped on the chip. Two renderers drew these with the
+                // class the contract reserves for a *list entry's* stepper and this one drew none —
+                // an element nothing named, so nothing could ask for it.
+                const steps = props.mode === "multi" ? [
+                  control("chipStep", MDY_I18N_MESSAGES_DEFAULT.chipDecrementLabel,
+                    () => run(controller.dispatch({ type: "decrement", optionKey: key }))),
+                ] : [];
+                const stepsUp = props.mode === "multi" ? [
+                  control("chipStep", MDY_I18N_MESSAGES_DEFAULT.chipIncrementLabel,
+                    () => run(controller.dispatch({ type: "increment", optionKey: key }))),
+                ] : [];
+                return h("span", { class: classesOf("chip"), role: roleOf("chip") }, [
+                  ...moves, ...steps,
+                  // The class the contract declares for it. Drawn bare, the words were a span nothing
+                  // could address: the rule that truncates a chip's label on a narrow screen never
+                  // matched, so the label sat at its text's width and the chip overflowed the row it
+                  // had been capped to — the horizontal axis a page that already scrolls must not gain.
+                  h("span", { class: MDY_CHIP_CLASSES.label }, option.label),
+                  ...(props.mode === "multi"
+                    ? [h("span", { class: classesOf("chipCount") }, held_ > 1 ? String(held_) : "")]
+                    : []),
+                  ...stepsUp, ...later,
+                  control("chipRemove", MDY_I18N_MESSAGES_DEFAULT.chipRemoveLabel,
+                    () => run(controller.dispatch({ type: "toggle", optionKey: key }))),
+                ]);
+              })),
           ]),
           // A button, not a text box: the placeholder lives *inside* it, and an `<input>` cannot
           // hold anything. What a person types goes in the panel's filter, not here.

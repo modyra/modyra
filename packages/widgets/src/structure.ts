@@ -350,6 +350,10 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
   // and one renderer drew them with no class at all until a width moved.
   chipLabel: "valueIsPresent",
   chipCount: "valueIsPresent",
+  // Taking one of something off a chip and putting one back. Drawn on a chip in counter mode by two
+  // renderers with the class the contract reserved for a *list entry's* stepper, and by a third not
+  // at all: an element three renderers disagreed about because nothing named it.
+  chipStep: "valueIsPresent",
   // One entry per chosen file. The list that holds them is built once and is not this.
   fileItem: "valueIsPresent",
   // What a chosen value is shown as, where the control is not a text box.

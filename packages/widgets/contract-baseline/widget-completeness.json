@@ -250,6 +250,7 @@
         "chipRow",
         "chip",
         "chipMove",
+        "chipStep",
         "chipLabel",
         "chipCount",
         "chipRemove",
