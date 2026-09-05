@@ -30,6 +30,21 @@ export const kinds = ["text", "email", "password", "textarea", "number", "checkb
 export const declaresRules = true;
 
 /**
+ * The kit's `config` — a document's declarations that are not rules — is passed through by `mount`,
+ * and this says `false` anyway, because the components do not yet read it.
+ *
+ * Measured by turning it on: seven kinds are asked, and all seven fail. A document that declares the
+ * control's name gets a control announced as nothing (`ariaLabel` is not a prop any of these
+ * components accepts), and a number told `step: 2` carries no step. Declaring `true` here would put
+ * eight findings on a shared gate; declaring it and saying nothing would hide them.
+ *
+ * The repair is not a prop added to each component: the renderer that already reads a document's
+ * name writes the same expression once per kind, which is the shape this repository keeps removing.
+ * It belongs with the kinds, where a door can be asked for instead of copied.
+ */
+export const declaresConfig = false;
+
+/**
  * Which component draws each kind, and what it is told beyond the field.
  *
  * One entry per kind rather than a chain of conditions: a kind added to `kinds` and to no component
@@ -56,7 +71,7 @@ const DRAWN_BY = {
 /** Long enough for React to commit what was just rendered. */
 const settled = () => new Promise((resolve) => setTimeout(resolve, 20));
 
-export const mount = async (kind, { rules, value } = {}) => {
+export const mount = async (kind, { rules, value, config } = {}) => {
   if (!kinds.includes(kind)) {
     throw new Error(`@modyra/react draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
@@ -70,7 +85,7 @@ export const mount = async (kind, { rules, value } = {}) => {
   const root = createRoot(host);
   const [Component, extra] = DRAWN_BY[kind];
   root.render(React.createElement(Component, {
-    field: form.f.value, kind, label: "Given", widgetId: `react-${kind}`, ...extra,
+    field: form.f.value, kind, label: "Given", widgetId: `react-${kind}`, ...extra, ...(config ?? {}),
   }));
   // React commits on its own schedule, and one macrotask is not always enough: read too early and
   // the host is still empty, which the kit reports as a widget that drew nothing.
@@ -90,6 +105,10 @@ export const mount = async (kind, { rules, value } = {}) => {
     // a panel; every other state is still `false`, which keeps a state nobody can reach out of the
     // conformance count rather than reporting it as met.
     drive: (state) => {
+      // Taking a field out of play is the form's answer, not the control's: a renderer that only
+      // set the attribute would report a widget disabled while the engine still accepted a value.
+      if (state === "disabled") { form.setDisabled("value", () => true); return true; }
+      if (state === "readonly") { form.setReadonly("value", () => true); return true; }
       if (state !== "open") return false;
       // The element that opens a panel is the button that says it opens one. More than one element
       // can carry `aria-expanded`, and pressing the one that is not a button does nothing at all —
@@ -115,5 +134,30 @@ export const mount = async (kind, { rules, value } = {}) => {
     value: () => form.f.value.value(),
     /** Put a value in the model — what the engine holds, rather than what a document declares. */
     hold: (value) => { form.f.value.set(value); },
+  };
+};
+
+/**
+ * Two instances that are meant to differ.
+ *
+ * Optional, and the kit says so when it is missing: two mounts of the same fixture share their field
+ * names and so share their ids, which is documented behaviour rather than a defect. A renderer that
+ * can scope its ids says how here, and this one does it with the id a document declares.
+ */
+export const mountScoped = async (kind, scope) => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const form = createForm({ value: field(MDY_CANONICAL_EMPTY[kind], []) });
+  const root = createRoot(host);
+  const [Component, extra] = DRAWN_BY[kind];
+  root.render(React.createElement(Component, {
+    field: form.f.value, kind, label: "Given", widgetId: `react-${kind}-${scope}`, ...extra,
+  }));
+  await settled();
+  return {
+    root: host.firstElementChild ?? host,
+    parts: () => ({}),
+    settle: settled,
+    dispose: () => { root.unmount(); host.remove(); },
   };
 };
