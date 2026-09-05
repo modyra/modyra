@@ -93,7 +93,7 @@ export const MdyDatepickerField = defineComponent({
     // package honoured it nowhere.
     // Shown through the door that also makes it a popover, which is what the foundation reads
     // to lay it out against the viewport — the system `anchorOverlay` measured in.
-    useOverlayOpen(panel, () => state.value.open);
+    useOverlayOpen(panel, () => state.value.open, () => messages.value);
 
     useDismissOnFocusOutside({
       kind: "datepicker",

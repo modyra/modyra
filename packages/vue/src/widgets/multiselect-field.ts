@@ -21,6 +21,7 @@ import {
   keyBindingFor,
 
   MDY_CHIP_CLASSES,  MDY_POPUP_OPENERS,
+  MDY_I18N_MESSAGES_DEFAULT,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
@@ -97,7 +98,11 @@ export const MdyMultiselectField = defineComponent({
     // package honoured it nowhere.
     // Shown through the door that also makes it a popover, which is what the foundation reads
     // to lay it out against the viewport — the system `anchorOverlay` measured in.
-    useOverlayOpen(panel, () => state.value.open);
+    // The default table: this component declares no locale, so there is no document-declared
+    // language to read one from. Every other kind that opens a panel has a `locale` prop and this
+    // one does not — recorded rather than papered over, because a document that switches language
+    // gets English here and nowhere else.
+    useOverlayOpen(panel, () => state.value.open, () => MDY_I18N_MESSAGES_DEFAULT);
 
     useDismissOnFocusOutside({
       kind: "multiselect",

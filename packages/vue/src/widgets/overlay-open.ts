@@ -17,9 +17,22 @@
  * escape.
  */
 import { onMounted, onScopeDispose, watch, type Ref } from "vue";
-import { setOverlayOpen } from "@modyra/widgets";
+import { createMdyAnnouncer, setOverlayOpen, type MdyI18nMessages } from "@modyra/widgets";
 
-export function useOverlayOpen(panel: Ref<HTMLElement | null>, isOpen: () => boolean): void {
+export function useOverlayOpen(
+  panel: Ref<HTMLElement | null>,
+  isOpen: () => boolean,
+  /**
+   * The words for a panel appearing and going away, where the caller has a message table.
+   *
+   * Read at the moment of the change rather than captured: a document may switch language while a
+   * field is on the page, and the words for the next opening are the ones it is speaking then.
+   *
+   * Omitted, nothing is said. This is not the state's only signal — `aria-expanded` on the opener
+   * changes either way — so a caller that has no table is left quieter rather than broken.
+   */
+  words?: () => MdyI18nMessages,
+): void {
   const reflect = (open: boolean): void => {
     const element = panel.value;
     if (element === null) return;
@@ -31,6 +44,12 @@ export function useOverlayOpen(panel: Ref<HTMLElement | null>, isOpen: () => boo
   // needs has been filled — measured: the panel was still a plain element at rest and only became a
   // popover on the first opening.
   onMounted(() => reflect(isOpen()));
-  watch(isOpen, (open) => reflect(open), { flush: "post" });
+  watch(isOpen, (open) => {
+    reflect(open);
+    // Said only when the state *moves*. Announced on mount as well, every field on a page would
+    // report itself closed before anybody had done anything.
+    const messages = words?.();
+    if (messages) createMdyAnnouncer().announce(open ? messages.overlayOpened : messages.overlayClosed);
+  }, { flush: "post" });
   onScopeDispose(() => reflect(false));
 }
