@@ -2227,6 +2227,27 @@
             min-width: 0;
             max-width: 100%;
         }
+
+        /* And inside the chip, the words give way — never the controls.
+           A chip capped at the row's width still overflowed it, because its children would not
+           shrink: the two buttons are fixed, and the label sat at its text's width because a flex
+           item's floor is its content unless it is told otherwise. So the row grew a horizontal axis
+           of a few pixels, which at this width is added to a page that already scrolls vertically.
+           The label truncates instead; the handle that moves a value stays, because it is the
+           pointer path WCAG 2.5.7 asks for and a keyboard alternative does not discharge it. */
+        .mdy-multiselect__chips .mdy-chip__label {
+            min-width: 0;
+            flex-shrink: 1;
+        }
+
+        /* The controls do not. Left free to shrink they took the squeeze first — measured at 10px
+           and then at 0 — and a control with no width is a control nobody can press, which is the
+           defect this whole rule exists to prevent one level up. The words are what a chip can lose;
+           the button that removes a value and the one that moves it are not. */
+        .mdy-multiselect__chips .mdy-chip__remove,
+        .mdy-multiselect__chips .mdy-chip__move {
+            flex: 0 0 auto;
+        }
     }
 
     .mdy-multiselect__arrow {
