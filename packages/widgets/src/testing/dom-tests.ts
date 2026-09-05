@@ -372,12 +372,41 @@ export function inspectWidgetDom(
     const found = searchScope.flatMap((container) => Array.from(container.querySelectorAll(selector)));
     if (found.length === 0) continue;
 
-    // A kind may declare two parts with identical classes — a date range's two controls, a
-    // timepicker's two segment inputs. No selector separates them, so taking every match would
-    // report each part twice and call a correct widget ambiguous. What separates them is already in
-    // the anatomy: their declared position among the parts that share their classes.
+    // A kind may declare two parts with identical classes — a timepicker's two segment inputs. No
+    // selector separates them, so taking every match would report each part twice and call a correct
+    // widget ambiguous. What separates them is already in the anatomy: **where the contract says
+    // each one lives**. The hour box is the segment-input inside the hour segment, and that is true
+    // however the two segments are ordered on screen.
+    //
+    // Resolved by position among the matches instead — which is what this did, while the sentence
+    // above already said otherwise — the answer is right only while both are rendered and in the
+    // order the walk happens to expect. A document that shows minutes first binds each part to the
+    // other's element, and both are then reported as sitting outside the parent they are sitting
+    // inside: two findings, neither of them true, about a widget that is correct.
+    //
+    // Parents are resolved before their children, because the walk follows the declared structure.
     const sharing = partsSharingClassesWith(kind, node.part);
     if (sharing.length > 1) {
+      // Found in the document by the parent's own declared classes, not read back from what the
+      // caller happened to hand in for that part: a caller's map is an override for one part and says
+      // nothing about how many of a repeated container are on screen, and a container list short by
+      // one silently makes its contents short by one too.
+      const parentClasses = node.parent === undefined
+        ? []
+        : ((definition.parts as Readonly<Record<string, MdyPartContract | undefined>>)[node.parent as string]?.classes ?? []);
+      const containers = parentClasses.length === 0
+        ? []
+        : searchScope.flatMap((container) =>
+          Array.from(container.querySelectorAll(parentClasses.map((one) => `.${CSS_ESCAPE(one)}`).join(""))));
+      const inside = containers.length === 0
+        ? []
+        : found.filter((element) => containers.some((container) => container !== element && container.contains(element)));
+      if (inside.length > 0) {
+        resolved.set(node.part, inside);
+        continue;
+      }
+      // Nothing to separate them by: parts that share both their classes and their parent are still
+      // told apart by their declared order, which is all the anatomy offers for that shape.
       const element = found[sharing.indexOf(node.part)];
       if (element) resolved.set(node.part, [element]);
       continue;
