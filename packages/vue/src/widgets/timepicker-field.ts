@@ -116,6 +116,10 @@ export const MdyTimepickerField = defineComponent({
     useAnchoredPanel({ kind: "timepicker", panel, anchor, isOpen: () => state.value.open });
     const watching = reactivity.effect(() => {
       state.value = controller.state();
+      // Reported before the projection is read: the projection answers whether the control announces
+      // itself wrong, and can only count an error the form already holds. See the date picker, where
+      // reading first put a message under a control still saying `aria-invalid="false"`.
+      props.field.reportEntry?.(state.value.entryUnreadable ? messages.value.entryUnreadable : null);
       view.value = controller.view();
       triggerRef(state);
       triggerRef(view);

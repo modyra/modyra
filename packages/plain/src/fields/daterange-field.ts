@@ -17,6 +17,7 @@ import { fieldAccessibleName, applySubmissionNames,
   overlayAnchoringFor,
   projectFieldShellA11y,
   shownErrorsOf,
+  dateEntryText,
   fieldCanBeInvalid,
   visibleErrorsOf,
   type MdyDateRangeValue,
@@ -319,7 +320,7 @@ export function renderDaterangeField(
       // What the field could not read stays where the person left it, so it can be corrected rather
       // than silently emptied.
       if (!typing) {
-        const shown = outstanding ?? formatLocalizedDate(iso, dateLocale.locale);
+        const shown = dateEntryText(outstanding, formatLocalizedDate(iso, dateLocale.locale));
         input.value = shown;
         fieldWrote.set(input, shown);
       }

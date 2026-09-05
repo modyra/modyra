@@ -9,6 +9,7 @@ import { projectCalendarDayCellA11y, capabilityOf, keyMeans,
   calendarViewOnToggle,
   subscribeController,
   presentationClass,
+  dateEntryText,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
@@ -556,8 +557,7 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
           type="text"
           class="${CLASS.control}"
           placeholder=${this.placeholder}
-          .value=${this.view.entryText
-            ?? formatLocalizedDate(handle.value() ?? "", this.resolvedLocale)}
+          .value=${dateEntryText(this.view.entryText, formatLocalizedDate(handle.value() ?? "", this.resolvedLocale))}
           ?disabled=${handle.disabled()}
           ?readonly=${handle.readonly()}
           ${mdyPart(this.controlPart(handle))}

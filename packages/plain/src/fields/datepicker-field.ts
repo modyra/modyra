@@ -24,6 +24,7 @@ import { fieldAccessibleName, keyMeans, applySubmissionNames,
   type MdyI18nMessages,
   keyBindingFor,
   presentationClass,
+  dateEntryText,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -345,7 +346,7 @@ export function renderDatepickerField(
 
     // The input mirrors the committed value, except while the person is typing — and except while it
     // holds an entry the field could not read, which stays where they can correct it.
-    const display = state.entryText ?? formatLocalizedDate(state.selectedDate, dateLocale.locale);
+    const display = dateEntryText(state.entryText, formatLocalizedDate(state.selectedDate, dateLocale.locale));
     if (!typing && control.value !== display) control.value = display;
     reflectOverlayOpen(popup, state.open, messages);
     if (!state.open) releaseOverlayPlacement(popup);

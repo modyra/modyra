@@ -16,10 +16,11 @@ import {
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
   defaultWidgetIdFactory,
+  dateEntryText,
 } from "@modyra/widgets";
 import type { MdyDateRangeValue } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
-import { buildDateLocale } from "@modyra/core/datetime";
+import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
@@ -133,6 +134,13 @@ export const MdyDaterangeField = defineComponent({
     const entry = (end: "start" | "end"): VNode =>
       h("input", partProps(view.value.parts[`${end}Control`], {
         type: "text",
+        // What this end could not read, or failing that the date it holds, formatted for the reader.
+        // Bound to neither, the box was blank for every value the range held — one half of a range
+        // submitted and invisible.
+        value: dateEntryText(
+          state.value.entryText[end],
+          formatLocalizedDate(props.field.value()?.[end] ?? "", dateLocale.locale),
+        ),
         onChange: (event: Event) =>
           run(controller.dispatch({ type: "type", end, text: (event.target as HTMLInputElement).value })),
       }));

@@ -17,9 +17,10 @@ import {
   createDatepickerFieldController,
   defaultWidgetIdFactory,
   keyBindingFor,
+  dateEntryText,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
-import { buildDateLocale } from "@modyra/core/datetime";
+import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
@@ -108,6 +109,16 @@ export const MdyDatepickerField = defineComponent({
     const run = useCommands("datepicker", view, root, undefined, props.field as never);
     const watching = reactivity.effect(() => {
       state.value = controller.state();
+      // Reported **before** the projection is read, not after: the projection answers whether the
+      // control announces itself wrong, and it can only count an error the form already holds. Read
+      // first, the message appeared under a control still saying `aria-invalid="false"` — the words
+      // and the announcement disagreeing about the same field.
+      // Text the field could not read is reported to the form as one of its errors, like any other.
+      // Reported rather than painted: the form is where "out of play, no verdict" lives, so a field
+      // switched off stops announcing itself wrong and stops showing the message, in one place. Left
+      // unreported, a field holding keystrokes it cannot read said nothing at all — no message, and
+      // `aria-invalid` false — while the value it would submit was not the one on screen.
+      props.field.reportEntry?.(state.value.entryUnreadable ? messages.value.entryUnreadable : null);
       view.value = controller.view();
       triggerRef(state);
       triggerRef(view);
@@ -157,7 +168,13 @@ export const MdyDatepickerField = defineComponent({
           // captionless control is announced as nothing at all.
           ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           type: "text",
-          value: state.value.entryText,
+          // The keystrokes the field could not read, or failing that the date it holds, formatted
+          // for the reader. Bound to `entryText` alone the box was blank for every readable value —
+          // a field submitting a date while showing nothing.
+          value: dateEntryText(
+            state.value.entryText,
+            formatLocalizedDate(props.field.value() ?? "", dateLocale.locale),
+          ),
           // Handed over as typed. What a date looks like is the contract's question.
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value })),

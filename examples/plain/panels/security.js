@@ -213,6 +213,7 @@ export const securityPanel = {
     "timeStepsAt",
     "timepickerDialNumbers",
     "timepickerEntry",
+    "dateEntryText",
     "timepickerEntryText",
     "timepickerFieldPartIds",
     "timepickerFieldRootClasses",

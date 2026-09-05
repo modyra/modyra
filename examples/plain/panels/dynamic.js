@@ -280,6 +280,7 @@ export const dynamicPanel = {
     "timeStepsAt",
     "timepickerDialNumbers",
     "timepickerEntry",
+    "dateEntryText",
     "timepickerEntryText",
     "timepickerFieldPartIds",
     "timepickerFieldRootClasses",

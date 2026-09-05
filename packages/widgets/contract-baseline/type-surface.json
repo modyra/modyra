@@ -6471,6 +6471,11 @@
     "(3) maxIso?: string | null",
     "-> returns: MdyDateDraftTransition"
   ],
+  "widgets:dateEntryText": [
+    "(0) outstanding: string | null | undefined",
+    "(1) held: string | null | undefined",
+    "-> returns: string"
+  ],
   "widgets:dateRangeDraftTransition": [
     "(0) state: MdyDateRangeDraftState",
     "(1) intent: MdyDateRangeDraftIntent",
