@@ -10,7 +10,7 @@
  * toggle use. This component names `control` and `value` because it has something to put in them —
  * a projection and a number — and names no container at all.
  */
-import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
@@ -21,6 +21,7 @@ import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.slider;
 
@@ -29,7 +30,13 @@ export const MdySliderField = defineComponent({
   props: {
     field: { type: Object as PropType<MdyFieldHandle<number>>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
     min: { type: Number, default: undefined },
@@ -37,6 +44,10 @@ export const MdySliderField = defineComponent({
     step: { type: Number, default: undefined },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     /**
      * What this control asks for on top of the field's own rules.
      *
@@ -55,7 +66,7 @@ export const MdySliderField = defineComponent({
     });
     const controller: MdyTextFieldController<number> = createTextFieldController<number>({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       inputType: CONTRACT.controlType,
       // The kind is what tells the projection which native constraints this control may carry.
       kind: "slider",

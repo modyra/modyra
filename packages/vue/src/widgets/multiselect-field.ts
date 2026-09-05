@@ -12,7 +12,7 @@
  * for the shape quietly stop applying. That is why this component takes the declared type rather
  * than a string.
  */
-import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
@@ -31,6 +31,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.multiselect;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -43,15 +44,25 @@ export const MdyMultiselectField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<readonly string[]>>, required: true },
     options: { type: Array as PropType<readonly MdySelectOption<string>[]>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     mode: { type: String as PropType<MdyMultiselectMode>, default: "single" },
     searchable: { type: Boolean, default: false },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const reactivity = observerFor(props.field);
     const controller = createMultiselectFieldController<string>({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       options: props.options,
       mode: props.mode,
     }, reactivity);
@@ -112,7 +123,7 @@ export const MdyMultiselectField = defineComponent({
       // Found through the panel element rather than a selector built from its id: an id needs
       // escaping to be a selector, `CSS.escape` is not everywhere, and the panel is already
       // addressable by the id the contract spells.
-      const panel = document.getElementById(defaultWidgetIdFactory.part(props.widgetId, "popup"));
+      const panel = document.getElementById(defaultWidgetIdFactory.part(widgetId.value, "popup"));
       const first = panel?.querySelector(`.${classesOf(part).split(" ")[0]}`);
       if (first instanceof HTMLElement) first.focus();
     });
@@ -199,7 +210,7 @@ export const MdyMultiselectField = defineComponent({
 
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
           class: classesOf("label"),
         }, props.label));
@@ -270,7 +281,7 @@ export const MdyMultiselectField = defineComponent({
       ])]));
 
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
 

@@ -11,7 +11,7 @@
  * the panel closes behind it. A renderer that instead lists key names drifts from the contract the
  * moment the contract gains one, and nothing tells it.
  */
-import { Teleport, defineComponent, h, nextTick, onScopeDispose, ref, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { computed, Teleport, defineComponent, h, nextTick, onScopeDispose, ref, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createSelectFieldController,
@@ -33,6 +33,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.select;
 const classesOf = (part: string): string =>
@@ -61,7 +62,13 @@ export const MdySelectField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
     options: { type: Array as PropType<readonly MdySelectOption<string>[]>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     placeholder: { type: String, default: "Select…" },
     /**
      * Whether this select filters. It decides the shape rather than an option on it: `variantOf`
@@ -73,13 +80,17 @@ export const MdySelectField = defineComponent({
     searchable: { type: Boolean, default: false },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     // The runtime the handle already owns, never a fresh one: two instances of the same factory
     // are two different owners, and the second is refused the first's signals at runtime with
     // nothing rendered to show for it.
     const reactivity = observerFor(props.field);
     const controller = createSelectFieldController<string>({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       options: props.options,
       searchable: props.searchable,
       // The panel's open/closed, the filter text and the reading position live inside the
@@ -227,14 +238,14 @@ export const MdySelectField = defineComponent({
       const children: VNode[] = [];
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
-          for: defaultWidgetIdFactory.part(props.widgetId, "trigger"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
+          for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
           class: classesOf("label"),
         }, props.label));
       }
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("select", partProps(parts.trigger, {
-          name: props.widgetId,
+          name: widgetId.value,
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value })),
         }), [
@@ -251,13 +262,13 @@ export const MdySelectField = defineComponent({
         h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
       ]));
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
       // The same list the combobox shape draws. A kind does not stop owing an explanation because
       // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
       // them had it.
-      children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
+      children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
       return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }) }, children);
     };
 
@@ -276,10 +287,10 @@ export const MdySelectField = defineComponent({
       // at all — worse than an unlabelled one, because the markup looks answered.
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           // The label names the trigger both ways: the relation the projection points at, and the
           // `for` that makes the caption itself a way to reach the control.
-          for: defaultWidgetIdFactory.part(props.widgetId, "trigger"),
+          for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
           class: classesOf("label"),
         }, props.label));
       }
@@ -334,14 +345,14 @@ export const MdySelectField = defineComponent({
       // Named by `aria-describedby` on every render, so it exists on every render: a description a
       // renderer draws only when it has text is a reference to nothing the rest of the time.
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       // The same list the platform-chooser shape draws, and from the same place: this kind's
       // projection publishes no shell parts, so the id is the factory's in both shapes.
-      children.push(drawErrors(errorsPartFor(props.widgetId), props.field, "select"));
+      children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
 
       return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
     };

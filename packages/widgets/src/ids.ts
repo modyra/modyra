@@ -241,6 +241,19 @@ const SCOPE_REGISTRY = Symbol.for("modyra.widgets.formScopes");
 
 interface FormScopeRegistry {
   readonly scopes: WeakMap<object, string>;
+  /**
+   * Which form holds each scope, weakly — the same answer `scopes` gives, read the other way.
+   *
+   * `taken` can only speak about ids that are *on the page*, and a renderer whose widgets all
+   * compute their ids before any of them is mounted asks while the page is still empty: two forms
+   * built from one document both saw nothing and both took the signature. This knows what has been
+   * handed out whatever the render order.
+   *
+   * Weak on purpose, and swept when a form is collected, because the rule it must not break is the
+   * one `scopes` already keeps: only a *live* scope pushes the next one along, so a form that has
+   * gone takes its scope with it and the document that replaces it reads the same as the one before.
+   */
+  readonly holders: Map<string, WeakRef<object>>;
 }
 
 const scopeRegistry = ((): FormScopeRegistry => {
@@ -249,8 +262,8 @@ const scopeRegistry = ((): FormScopeRegistry => {
   // Shared through the global the way core shares its handle registry: two copies of this package on
   // one page would otherwise hold two scopes for one form, and the ids of one form would depend on
   // which copy happened to draw each widget.
-  if (held?.scopes instanceof WeakMap) return held as FormScopeRegistry;
-  const fresh: FormScopeRegistry = { scopes: new WeakMap() };
+  if (held?.scopes instanceof WeakMap && held.holders instanceof Map) return held as FormScopeRegistry;
+  const fresh: FormScopeRegistry = { scopes: new WeakMap(), holders: new Map() };
   host[SCOPE_REGISTRY] = fresh;
   return fresh;
 })();
@@ -304,10 +317,38 @@ export function formScopeOf(form: object | null | undefined, taken?: (scope: str
   if (held !== undefined) return held;
   const signature = signatureOf(pathsOf(form));
   let scope = signature;
+  // Who says a scope is taken: the page, when the caller can see it, and the registry otherwise.
+  //
+  // They answer differently in a case that is real on both sides. A caller that can see the page
+  // knows a form which is alive but *unmounted* holds nothing — so a remount reuses the ids the
+  // unmount gave back, which is the property a hydrated page depends on. A caller that cannot see
+  // the page is asking before anything is rendered — every widget of every form computes its ids
+  // first — and there the page says nothing at all, so two forms built from one document both take
+  // the signature and every id is claimed twice.
+  //
+  // So the caller chooses by what it can observe, rather than this deciding for it: passing `taken`
+  // says "I can see the page, and it is the authority".
+  //
   // Only a *live* scope pushes the next one along, so a form that has gone takes its scope with it
-  // and the document that replaces it reads the same as the one before.
-  for (let ordinal = 2; taken?.(scope) === true; ordinal += 1) scope = `${signature}x${ordinal}`;
+  // and the document that replaces it reads the same as the one before — which is why the holder is
+  // held weakly and a reference that no longer dereferences is not an owner.
+  const holder = (candidate: string): boolean => {
+    const ref = scopeRegistry.holders.get(candidate);
+    if (ref === undefined) return false;
+    const owner = ref.deref();
+    // Collected, or torn down. A form that has been destroyed is gone whether or not the collector
+    // has caught up, and its scope goes back — otherwise a remount, or a client hydrating what a
+    // server rendered, would land one along and take every id on the page with it.
+    if (owner === undefined || (owner as { destroyed?: boolean }).destroyed === true) {
+      scopeRegistry.holders.delete(candidate);
+      return false;
+    }
+    return owner !== form;
+  };
+  const contested = taken ?? holder;
+  for (let ordinal = 2; contested(scope); ordinal += 1) scope = `${signature}x${ordinal}`;
   scopeRegistry.scopes.set(form, scope);
+  scopeRegistry.holders.set(scope, new WeakRef(form));
   return scope;
 }
 

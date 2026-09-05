@@ -12,7 +12,7 @@
  * that discriminates, so the projection is applied to it like any other part. Before it had those,
  * a renderer had to know to draw a hidden input and what to put on it.
  */
-import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createBooleanFieldController,
@@ -23,22 +23,33 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { widgetIdOf } from "./widget-id.js";
 
 export const MdyBooleanField = defineComponent({
   name: "MdyBooleanField",
   props: {
     field: { type: Object as PropType<MdyFieldHandle<boolean>>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
     kind: { type: String as PropType<"checkbox" | "toggle">, default: "checkbox" },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
     const controller: MdyBooleanFieldController = createBooleanFieldController({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       // The variant is the control's declared role, not the kind's name. The controller knows this
       // distinction as `checkbox` or `switch`, and the catalogue already states which each kind is —
       // so mapping `toggle` to `switch` here by hand would be a second spelling of a fact the

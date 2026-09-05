@@ -12,7 +12,7 @@
  * walking out of it the way you walk out of a page leaves the action behind. `Escape` is the way
  * out, and it still is.
  */
-import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   colorPresetsOf,
@@ -34,6 +34,7 @@ import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
 import { useMessages } from "./locale.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.colors;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -45,19 +46,29 @@ export const MdyColorsField = defineComponent({
   props: {
     field: { type: Object as PropType<MdyFieldHandle<string>>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
     presets: { type: Array as PropType<readonly string[]>, default: undefined },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const reactivity = observerFor(props.field);
     // Two doors composed the way the reference renderer composes them: the palette answers with
     // entries, and the controller is given their values.
     const palette = colorPresetsOf(props.presets);
     const controller = createColorsFieldController({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       presets: palette.map((entry) => entry.value),
     }, reactivity);
 
@@ -160,8 +171,8 @@ export const MdyColorsField = defineComponent({
 
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
-          for: defaultWidgetIdFactory.part(props.widgetId, "hexInput"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
+          for: defaultWidgetIdFactory.part(widgetId.value, "hexInput"),
           class: classesOf("label"),
         }, props.label));
       }
@@ -176,7 +187,7 @@ export const MdyColorsField = defineComponent({
           class: classesOf("nativePicker"),
           disabled: props.field.disabled(),
           "aria-expanded": String(state.value.open),
-          "aria-controls": defaultWidgetIdFactory.part(props.widgetId, "popup"),
+          "aria-controls": defaultWidgetIdFactory.part(widgetId.value, "popup"),
           // The act, from the dictionary; see the datepicker's door for why the caption is not it.
           "aria-label": messages.value.selectColorPrefix,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
@@ -205,7 +216,7 @@ export const MdyColorsField = defineComponent({
             run(controller.dispatch({ type: "native", value: (event.target as HTMLInputElement).value })),
         })),
         h("input", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "hexInput"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "hexInput"),
           class: classesOf("hexInput"),
           type: "text",
           value: state.value.text,
@@ -214,8 +225,8 @@ export const MdyColorsField = defineComponent({
           // ids are composed in one place — this control used to name the description alone, so the
           // reason it was rejected sat on the page, correct and announced to nobody.
           "aria-describedby": fieldDescribedBy({
-            errorId: defaultWidgetIdFactory.part(props.widgetId, "errors"),
-            descriptionId: defaultWidgetIdFactory.part(props.widgetId, "description"),
+            errorId: defaultWidgetIdFactory.part(widgetId.value, "errors"),
+            descriptionId: defaultWidgetIdFactory.part(widgetId.value, "description"),
             errorsPresent: visibleErrorsOf(props.field, "colors").length > 0,
             descriptionPresent: true,
           }),
@@ -255,7 +266,7 @@ export const MdyColorsField = defineComponent({
       children.push(h(Teleport, { to: "body" }, [h("div", {
         ref: panel,
         onKeydown,
-        id: defaultWidgetIdFactory.part(props.widgetId, "popup"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "popup"),
         class: classesOf("popup"),
         hidden: !state.value.open,
       }, [
@@ -285,7 +296,7 @@ export const MdyColorsField = defineComponent({
       ])]));
 
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
 

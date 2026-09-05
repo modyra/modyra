@@ -19,7 +19,7 @@
  * one line and survives a third kind of the same shape; naming the two costs the same line and stops
  * being true the moment one arrives.
  */
-import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
@@ -31,6 +31,7 @@ import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { widgetIdOf } from "./widget-id.js";
 
 export const MdyOptionField = defineComponent({
   name: "MdyOptionField",
@@ -38,10 +39,20 @@ export const MdyOptionField = defineComponent({
     field: { type: Object as PropType<MdyFieldHandle<unknown>>, required: true },
     options: { type: Array as PropType<readonly MdySelectOption<unknown>[]>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     kind: { type: String as PropType<MdyOptionFieldVariant>, default: "radio" },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
     /**
      * The key the contract derives, not `String()`.
@@ -54,7 +65,7 @@ export const MdyOptionField = defineComponent({
     const keyFor = (option: MdySelectOption<unknown>): string => defaultOptionKey(option.value);
     const controller = createOptionFieldController<unknown>({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       label: props.label === "" ? null : props.label,
       variant: props.kind,
       options: props.options,
@@ -104,7 +115,7 @@ export const MdyOptionField = defineComponent({
             h("input", partProps({ ...parts[key], classes: [] }, {
               type: "radio",
               class: classesOf("optionControl"),
-              name: props.widgetId,
+              name: widgetId.value,
               value: key,
               // Compared by key, not by value: two structurally equal objects are two choices, and
               // `===` between the held value and a fresh option object marks neither.

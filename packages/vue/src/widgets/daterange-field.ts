@@ -11,7 +11,7 @@
  * contract already answers, and the two would differ at the edges — the day before the start, a
  * range picked backwards — which is exactly where a person notices.
  */
-import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -32,6 +32,7 @@ import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 import { useCommands } from "./commands.js";
 import { useMessages } from "./locale.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.daterange;
 const classesOf = (part: string): string => calendarClassesOf("daterange", part);
@@ -41,18 +42,28 @@ export const MdyDaterangeField = defineComponent({
   props: {
     field: { type: Object as PropType<MdyFieldHandle<MdyDateRangeValue>>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     locale: { type: String, default: "en" },
     separator: { type: String, default: "–" },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     // The runtime the handle already owns. A second instance of the same factory is a different
     // owner and is refused the first's signals, with nothing rendered to show for it.
     const reactivity = observerFor(props.field);
     const dateLocale = buildDateLocale(props.locale);
     const controller = createDaterangeFieldController({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
       // One value, two readers: the grid the controller lays out and the headers drawn over it.
       firstDayOfWeek: dateLocale.firstDayOfWeek,
     }, reactivity);
@@ -107,7 +118,7 @@ export const MdyDaterangeField = defineComponent({
 
     useAnchoredPanel({ kind: "daterange", panel, anchor, isOpen: () => state.value.open });
 
-    followTheReadingPosition(props.widgetId, () => ({
+    followTheReadingPosition(widgetId.value, () => ({
       open: state.value.open,
       focusedDate: state.value.focusedDate,
     }));
@@ -132,7 +143,7 @@ export const MdyDaterangeField = defineComponent({
 
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           // Read from the projection, never spelled here: the part is called `startControl` and its
           // id is `__start`, and a `for` built out of the part name points at nothing.
           for: parts.startControl?.id,
@@ -175,11 +186,11 @@ export const MdyDaterangeField = defineComponent({
         locale: dateLocale,
         onPick: (iso) => run(controller.dispatch({ type: "select-date", iso })),
         onPreview: (iso) => run(controller.dispatch({ type: "preview", iso })),
-        popupId: defaultWidgetIdFactory.part(props.widgetId, "popup"),
+        popupId: defaultWidgetIdFactory.part(widgetId.value, "popup"),
       }));
 
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
 

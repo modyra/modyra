@@ -13,7 +13,7 @@
  * the same selector, and a walk that names the minute lands on the hour while looking like it did
  * nothing at all.
  */
-import { Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import {
   MDY_WIDGET_CONTRACTS,
   createTimepickerFieldController,
@@ -35,6 +35,7 @@ import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
 import { useMessages } from "./locale.js";
+import { widgetIdOf } from "./widget-id.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -51,15 +52,25 @@ export const MdyTimepickerField = defineComponent({
   props: {
     field: { type: Object as PropType<MdyFieldHandle<string | null>>, required: true },
     label: { type: String, default: "" },
-    widgetId: { type: String, required: true },
+    /**
+     * What every part's id is built from. Derived from the field's path when a document says
+     * nothing, so two forms built from one document do not both claim `when__label`.
+     */
+    widgetId: { type: String, required: false, default: undefined },
+    /** Which form on the page this widget belongs to, where a host renders more than one. */
+    idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
   },
   setup(props) {
+    // Every part's id comes from here: what the document named, or the field's own path with the
+    // form's scope in front — two forms built from one document would otherwise both claim
+    // `when__label`, and a reference from the second resolves into the first.
+    const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const reactivity = observerFor(props.field);
     const controller = createTimepickerFieldController({
       handle: props.field,
-      widgetId: props.widgetId,
+      widgetId: widgetId.value,
     }, reactivity);
 
     // Measured and placed against the control that opens it, and drawn outside the field so it
@@ -173,7 +184,7 @@ export const MdyTimepickerField = defineComponent({
 
       if (props.label !== "") {
         children.push(h("label", {
-          id: defaultWidgetIdFactory.part(props.widgetId, "label"),
+          id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
           class: classesOf("label"),
         }, props.label));
@@ -233,7 +244,7 @@ export const MdyTimepickerField = defineComponent({
       children.push(h(Teleport, { to: "body" }, [h("div", partProps(parts.dialog, {
         ref: panel,
         onKeydown,
-        id: defaultWidgetIdFactory.part(props.widgetId, "popup"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "popup"),
         class: classesOf("popup"),
         hidden: !state.value.open,
       }), [
@@ -267,7 +278,7 @@ export const MdyTimepickerField = defineComponent({
       ])]));
 
       children.push(h("p", {
-        id: defaultWidgetIdFactory.part(props.widgetId, "description"),
+        id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
       }));
 
