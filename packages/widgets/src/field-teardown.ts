@@ -65,9 +65,9 @@ export function closeWhenFieldLeaves(
     observer.disconnect();
     teardown.close();
     // The keyboard's place is decided from where the field was, so the scope is the parent it was
-    // removed from. `afterBlur` because the platform has already emptied the position by the time a
-    // removal is reported.
-    if (held) keepKeyboardInPlay(root, parent, { afterBlur: true });
+    // removed from. The observation travels because the platform has already emptied the position by
+    // the time a removal is reported.
+    if (held) keepKeyboardInPlay(root, parent, { heldTheKeyboard: held });
   });
   observer.observe(parent, { childList: true, subtree: true });
   return () => observer.disconnect();

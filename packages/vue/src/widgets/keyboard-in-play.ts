@@ -8,8 +8,9 @@
  *
  * The deciding is `keepKeyboardInPlay`'s, not this file's — the next thing that can take focus, the
  * previous one otherwise, the widget's own root as the last resort. This only says *when*: after the
- * render that took the control out of play, which is `afterBlur`, because by then the platform has
- * already emptied the keyboard's position and there is nothing left on the control to read.
+ * render that took the control out of play, because by then the platform has already emptied the
+ * keyboard's position and there is nothing left on the control to read — so whether this widget held
+ * it is observed first, while there is still something to observe.
  *
  * It was unreachable while these components never re-rendered: a node that is never replaced never
  * takes anyone's place with it. Repairing the render is what made this reachable, which is the
@@ -41,10 +42,10 @@ export function useKeyboardInPlay(field: MdyFieldHandle<unknown>, root: Ref<HTML
     // focus onto its neighbour would take a person somewhere they never asked to go.
     if (!crossed) return;
     // Whether the person was standing here, sampled now — while the control is still enabled and
-    // still holding the keyboard. After the render it is gone, and `afterBlur` exists precisely
-    // because focus resting on nothing is then indistinguishable from a widget nobody had reached.
-    // Told to assume the blur was ours, the door takes a keyboard that was never here: a field
-    // disabled on a page the person had not touched pulled focus into itself.
+    // still holding the keyboard. After the render it is gone, and focus resting on nothing is then
+    // indistinguishable from a widget nobody had reached. Handed that as an assumption, the door
+    // takes a keyboard that was never here: a field disabled on a page the person had not touched
+    // pulled focus into itself.
     const element = root.value;
     const heldTheKeyboard = element !== null
       && element.ownerDocument.activeElement !== null
@@ -54,7 +55,7 @@ export function useKeyboardInPlay(field: MdyFieldHandle<unknown>, root: Ref<HTML
     queueMicrotask(() => {
       const still = root.value;
       if (still === null) return;
-      keepKeyboardInPlay(still, still.parentElement, { afterBlur: heldTheKeyboard });
+      keepKeyboardInPlay(still, still.parentElement, { heldTheKeyboard });
     });
   });
   onScopeDispose(() => { watching.destroy(); });

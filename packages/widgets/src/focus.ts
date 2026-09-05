@@ -108,29 +108,34 @@ export function keepKeyboardInPlay(
   scope?: Element | null,
   options?: {
     /**
-     * Whether the caller is asking *after* the platform has already blurred the control.
+     * Whether this widget held the keyboard, **observed before the control left play**.
      *
-     * A renderer that takes a control out of play itself calls before, with the keyboard still on
-     * it. A renderer that hears about it afterwards — lit binds `?disabled` while rendering — has
-     * only the fact that focus is now nowhere, and says so here. Without the distinction, "nowhere"
-     * matches a field nobody was ever standing in, and putting focus on such a widget's root moves
-     * the keyboard to a control the person never visited.
+     * A caller that takes a control out of play itself need not pass it: the keyboard is still on
+     * the element and this function can see it. A caller that hears about it afterwards cannot —
+     * the platform has already blurred it, focus rests on nothing, and nothing distinguishes that
+     * from a field nobody was ever standing in. Putting focus on such a widget's root moves the
+     * keyboard to a control the person never visited.
+     *
+     * So the fact is supplied rather than asserted. It used to be a boolean meaning "I am asking
+     * after a blur", which is a claim about where the *caller* stands in time — true from inside a
+     * blur handler and false from a render effect, with nothing in the value to tell them apart.
+     * A caller that has not looked has nothing to pass here.
      */
-    readonly afterBlur?: boolean;
+    readonly heldTheKeyboard?: boolean;
   },
 ): void {
   const document_ = leaving.ownerDocument;
   if (document_ === null) return;
-  // On this control, inside it, or nowhere at all. The third is the case being repaired: the
-  // platform has already blurred a disabled element by the time a renderer hears about it, and a
-  // caller that saw the keyboard leave says so by calling then.
+  // On this control, inside it, or nowhere at all. The third is the case that needs the observation
+  // above: the platform has already blurred a disabled element by the time some renderers hear about
+  // it, and only a caller that looked before the change can say the keyboard was ever here.
   const active = document_.activeElement;
   const nowhere = active === null || active === document_.body;
   // Duck-typed rather than `instanceof Element`: this runs in whatever document a host gives it,
   // and a DOM implementation that does not put `Element` on the global object made the check throw
   // — inside an effect, which took the rest of the render down with it.
   const here = active === leaving || (isNode(active) && leaving.contains(active));
-  if (!here && !(nowhere && options?.afterBlur === true)) return;
+  if (!here && !(nowhere && options?.heldTheKeyboard === true)) return;
 
   const root = scope ?? document_.body;
   const order = Array.from(

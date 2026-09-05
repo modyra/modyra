@@ -58,10 +58,20 @@ test("a control nobody was standing in does not pull the keyboard to itself", ()
   assert.equal(p.document.activeElement, p.document.body, "a widget nobody visited took the keyboard");
 });
 
-test("after the platform has already blurred it, nowhere is the case this repairs", () => {
+test("told the widget held the keyboard, nowhere is the case this repairs", () => {
   const p = page();
-  keepKeyboardInPlay(p.leaving, p.root, { afterBlur: true });
+  keepKeyboardInPlay(p.leaving, p.root, { heldTheKeyboard: true });
   assert.equal(p.document.activeElement, p.after);
+});
+
+test("and the observation is what decides it, not the fact of asking late", () => {
+  // The pair matters more than either half. The same call, at the same moment, with the same focus
+  // state, moves the keyboard or leaves it alone according to what the caller observed before the
+  // control left play — which is the whole reason the option stopped being a claim about when the
+  // caller is speaking.
+  const p = page();
+  keepKeyboardInPlay(p.leaving, p.root, { heldTheKeyboard: false });
+  assert.equal(p.document.activeElement, p.document.body, "a widget nobody visited took the keyboard");
 });
 
 /** A handle stub shaped like the part of a field handle the verdict reads. */

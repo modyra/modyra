@@ -375,11 +375,17 @@ export abstract class MdyFieldElement<T> extends LitElement {
     // ADR 0167.
     if (isNode && !focusIsInsideField(this, next as Node)) this.focusLeft();
     if (next !== null) return;
+    // What this handler knows and a later turn cannot: the thing that just lost focus was inside
+    // this element. Sampled here rather than assumed there — after the render the keyboard's old
+    // position is gone, and "focus rests on nothing" reads the same for a widget nobody ever
+    // reached.
+    const heldTheKeyboard = event.target === this
+      || (typeof event.target === "object" && event.target !== null && this.contains(event.target as Node));
     queueMicrotask(() => {
       if (this.field?.disabled() !== true) return;
       const active = this.ownerDocument.activeElement;
       if (active !== null && active !== this.ownerDocument.body) return;
-      keepKeyboardInPlay(this, this.parentElement, { afterBlur: true });
+      keepKeyboardInPlay(this, this.parentElement, { heldTheKeyboard });
     });
   };
 

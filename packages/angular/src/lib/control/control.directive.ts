@@ -550,12 +550,18 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   protected onFocusLost(event: FocusEvent): void {
     if (event.relatedTarget !== null) return;
+    // What this handler knows and a later turn cannot: the thing that just lost focus was inside
+    // this host. Sampled here rather than assumed there — by the time the microtask runs, "focus
+    // rests on nothing" reads the same for a widget nobody ever reached.
+    const target = event.target;
+    const heldTheKeyboard = target !== null && typeof target === "object"
+      && this.hostElement.nativeElement.contains(target as Node);
     queueMicrotask(() => {
       if (!this.fieldState().disabled()) return;
       const host = this.hostElement.nativeElement;
       const active = host.ownerDocument.activeElement;
       if (active !== null && active !== host.ownerDocument.body) return;
-      keepKeyboardInPlay(host, host.parentElement, { afterBlur: true });
+      keepKeyboardInPlay(host, host.parentElement, { heldTheKeyboard });
     });
   }
 

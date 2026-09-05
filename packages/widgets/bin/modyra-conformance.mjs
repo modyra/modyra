@@ -166,6 +166,9 @@ const SECTION_CLAIMS = Object.freeze({
   "A value the options do not contain is shown": ["UI-004"],
   // Destroy leaves no observable reactive or asynchronous work.
   "Lifecycle (nothing survives unmount)": ["LIF-001"],
+  // The other edge of the same claim: not only that a field leaving play keeps the person somewhere,
+  // but that one nobody had reached does not take them.
+  "A widget nobody reached keeps the keyboard out": ["A11Y-005"],
   // No claim names identity: whether two instances can share an id is the subject of a whole family
   // of open findings and the registry has no word for it.
   "Multi-instance isolation": [],
@@ -575,6 +578,62 @@ if (config.declaresRules === true) {
     }
   }
   record("Lifecycle (nothing survives unmount)", findings);
+}
+
+// ── A widget nobody touched keeps the keyboard out of itself ──────────────────────────────
+//
+// Taking a control out of play must not cost the person their place — that is `A11Y-005`, and every
+// renderer calls the door that arranges it. This asks the other edge of the same claim: a field
+// disabled while the person was somewhere else entirely must not pull the keyboard into itself.
+//
+// It is asked here rather than left to each renderer's own suite because the mistake is invisible in
+// the code. The door acts on "focus rests on nothing" only when told the blur was its own, and from
+// inside a blur handler that is a true statement about where the caller stands. Written as a literal
+// from anywhere else it is an assertion the caller cannot support — and the widget takes a keyboard
+// that was never there. What that looks like on a page is the same whatever the mechanism, so this
+// drives the symptom and catches any renderer that gets it wrong, including through a door that does
+// not exist yet.
+{
+  const findings = [];
+  const document = globalThis.document;
+  let exercised = 0;
+  for (const kind of kinds) {
+    const fixture = await mount(kind, { validators: false });
+    await fixture.settle?.();
+    const root = fixture.root;
+    const inside = (element) => element !== null && (element === root || root.contains(element));
+    // The premise. A widget that already holds the keyboard cannot answer this question, and a run
+    // that skipped the check here would report a pass for a case it never put.
+    if (inside(document.activeElement)) {
+      findings.push(`${kind}: the widget already held the keyboard before anything was driven, so nothing was measured`);
+      fixture.dispose();
+      continue;
+    }
+    if (fixture.drive?.("disabled") !== true) {
+      fixture.dispose();
+      continue;
+    }
+    exercised += 1;
+    await fixture.settle?.();
+    if (inside(document.activeElement)) {
+      findings.push(
+        `${kind}: KEYBOARD_TAKEN_BY_A_WIDGET_NOBODY_REACHED — a field taken out of play while the `
+        + `person was elsewhere moved the keyboard into itself`,
+      );
+    }
+    fixture.dispose();
+  }
+  if (exercised === 0) {
+    record(
+      "A widget nobody reached keeps the keyboard out",
+      null,
+      "not run — this adapter's fixture cannot take a field out of play. The day its `drive` answers "
+      + "`disabled`, this section runs and this line is gone: the exemption ends by itself rather "
+      + "than waiting for someone to reread it",
+    );
+  } else {
+    record("A widget nobody reached keeps the keyboard out", findings);
+  }
 }
 
 // ── Multi-instance isolation ──────────────────────────────────────────────────────────────
