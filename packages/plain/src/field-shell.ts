@@ -222,7 +222,11 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
       ?? (control.querySelectorAll(operable).length === 1
         ? control.querySelector<HTMLElement>(operable)!
         : control);
-  if (name) operated.setAttribute("aria-label", name);
+  // The field's name goes on the element that stands for the field — unless that element has
+  // already said what it is. A door into a panel is named for the act it performs, from the
+  // dictionary, and writing the field's label over it produces "T, button": the caption repeated,
+  // saying nothing about what pressing it does, and in English on a translated page.
+  if (name && !operated.hasAttribute("aria-label")) operated.setAttribute("aria-label", name);
   (shell.wrapper.querySelector(`.${MDY_FIELD_SHELL_CLASSES.control}`) ?? shell.wrapper).appendChild(control);
 }
 

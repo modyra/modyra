@@ -31,6 +31,7 @@ import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 import { useCommands } from "./commands.js";
+import { resolveLocale, useMessages } from "./locale.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.datepicker;
 const classesOf = (part: string): string => calendarClassesOf("datepicker", part);
@@ -51,7 +52,8 @@ export const MdyDatepickerField = defineComponent({
     const reactivity = observerFor(props.field);
     // Month and weekday names, and where the week starts, come from Intl: a calendar that ships its
     // own names reads in one language on a page that has chosen another.
-    const dateLocale = buildDateLocale(props.locale);
+    const messages = useMessages(() => props.locale);
+    const dateLocale = buildDateLocale(resolveLocale(props.locale));
     const controller = createDatepickerFieldController({
       handle: props.field,
       widgetId: props.widgetId,
@@ -178,7 +180,10 @@ export const MdyDatepickerField = defineComponent({
           type: "button",
           class: classesOf("toggle"),
           "aria-expanded": String(state.value.open),
-          "aria-label": props.label === "" ? "Choose date" : `Choose ${props.label}`,
+          // The act, from the dictionary, and never the field's caption: a door named "Choose T"
+          // repeats the label a reader has already heard and says nothing about what pressing it
+          // does — and says it in English on a translated page.
+          "aria-label": messages.value.datepickerToggleLabel,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }),
       ]));

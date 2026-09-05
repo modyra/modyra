@@ -31,6 +31,7 @@ import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 import { useCommands } from "./commands.js";
+import { useMessages } from "./locale.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.daterange;
 const classesOf = (part: string): string => calendarClassesOf("daterange", part);
@@ -82,6 +83,8 @@ export const MdyDaterangeField = defineComponent({
       isOpen: () => state.value.open,
       close: () => run(controller.dispatch({ type: "close" })),
     });
+    // The language this widget speaks: the document's choice if it made one, the page's otherwise.
+    const messages = useMessages(() => props.locale);
     const view = shallowRef(controller.view());
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
@@ -150,6 +153,10 @@ export const MdyDaterangeField = defineComponent({
         h("button", partProps(parts.toggle, {
           ref: anchor,
           type: "button",
+          // The act, from the dictionary. Named by the field's caption instead, this door announced
+          // itself as the field — and a range opener borrowing the calendar's message would say
+          // "Toggle calendar" for something that is not one.
+          "aria-label": messages.value.daterangeChooseRange,
           // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
           // staying pressable opens a panel over a field the model has taken out of play.
           disabled: props.field.disabled(),

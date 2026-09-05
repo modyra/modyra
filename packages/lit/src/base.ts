@@ -839,6 +839,11 @@ export abstract class MdyFieldElement<T> extends LitElement {
       label: this.label,
       name: this.field?.path,
     });
+    // Not over a name the element already gave itself. A combobox opener is named by the field —
+    // that is what a person is choosing *for* — but a button opener is named for the act it performs,
+    // from the dictionary, and writing the caption over it produces "T, button": the label repeated,
+    // saying nothing about what pressing it does, and in English on a translated page.
+    if (control.hasAttribute("aria-label") && control.getAttribute("aria-label") !== name) return;
     if (name) control.setAttribute("aria-label", name);
     else control.removeAttribute("aria-label");
   }

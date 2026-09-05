@@ -34,6 +34,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
+import { useMessages } from "./locale.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -86,6 +87,8 @@ export const MdyTimepickerField = defineComponent({
       isOpen: () => state.value.open,
       close: () => run(controller.dispatch({ type: "close" })),
     });
+    // The language this widget speaks: the page's, since this kind takes no locale of its own.
+    const messages = useMessages(() => undefined);
     const view = shallowRef(controller.view());
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
@@ -216,7 +219,8 @@ export const MdyTimepickerField = defineComponent({
           disabled: props.field.disabled(),
           "aria-disabled": String(props.field.disabled()),
           "aria-expanded": String(state.value.open),
-          "aria-label": props.label === "" ? "Choose time" : `Choose ${props.label}`,
+          // The act, from the dictionary; see the datepicker's door for why the caption is not it.
+          "aria-label": messages.value.timepickerOpenLabel,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }),
       ]));

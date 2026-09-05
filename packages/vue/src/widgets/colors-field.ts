@@ -33,6 +33,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { useCommands } from "./commands.js";
+import { useMessages } from "./locale.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.colors;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -85,6 +86,8 @@ export const MdyColorsField = defineComponent({
       isOpen: () => state.value.open,
       close: () => run(controller.dispatch({ type: "close" })),
     });
+    // The language this widget speaks: the page's, since this kind takes no locale of its own.
+    const messages = useMessages(() => undefined);
     const view = shallowRef(controller.view());
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
@@ -174,7 +177,8 @@ export const MdyColorsField = defineComponent({
           disabled: props.field.disabled(),
           "aria-expanded": String(state.value.open),
           "aria-controls": defaultWidgetIdFactory.part(props.widgetId, "popup"),
-          "aria-label": props.label === "" ? "Choose colour" : `Choose ${props.label}`,
+          // The act, from the dictionary; see the datepicker's door for why the caption is not it.
+          "aria-label": messages.value.selectColorPrefix,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }, [h("span", partProps(parts.preview, {
           // The colour it previews, from the projection. Painted here from the field's own value,
@@ -235,7 +239,16 @@ export const MdyColorsField = defineComponent({
         // Declared presentation, so it is a span and not a control: a `<button>` here would be a
         // second thing to press for one act, and the custodian that watches permissive semantics
         // says so — a part whose element is not declared must not be operable.
-        h("span", { class: classesOf("toggle") }),
+        //
+        // A pointer still opens from it, because the catalogue declares it as this kind's second
+        // door (ADR 0177): a door a pointer may use, carrying no relation of its own, because the
+        // element that says whether the panel is showing is the opener beside it. Left inert here,
+        // the swatch a person aims at did nothing while the same press two pixels away opened the
+        // panel.
+        h("span", {
+          class: classesOf("toggle"),
+          onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
+        }),
       ]));
 
       // The panel stays in the document while it is shut, so what names it keeps naming something.

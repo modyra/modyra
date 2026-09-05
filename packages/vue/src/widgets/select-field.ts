@@ -292,8 +292,12 @@ export const MdySelectField = defineComponent({
             run(controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" }));
           },
         }), [
+          // The prompt is shown and not announced. The trigger names itself — the contract points
+          // `aria-labelledby` at the caption and at this button — so text inside it becomes part of
+          // what the control *is*, and a person hears "T Select…" where the control is a T. The
+          // chosen value stays in the name, because that is what the control is holding.
           selected === undefined
-            ? h("span", { class: classesOf("placeholder") }, props.placeholder)
+            ? h("span", { class: classesOf("placeholder"), "aria-hidden": "true" }, props.placeholder)
             : h("span", { class: classesOf("value") }, selected.label),
         ]),
         // Beside the trigger, because that is where the contract puts it: `arrow` declares

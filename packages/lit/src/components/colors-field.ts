@@ -327,6 +327,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               type="button"
               class="${CLASS.nativePicker}"
               ?disabled=${handle.disabled()}
+              aria-label=${this.messages.selectColorPrefix}
               aria-expanded=${this._open ? "true" : "false"}
               aria-haspopup=${this.popupPromise}
               aria-controls=${overlayControlledId("colors", this.fieldId) ?? nothing}

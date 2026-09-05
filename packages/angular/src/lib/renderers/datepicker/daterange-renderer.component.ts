@@ -139,7 +139,7 @@ import { inputText, isoDateText } from "../renderer-projection";
             class="mdy-datepicker__toggle"
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
-            [attr.aria-label]="i18n.datepickerToggleLabel"
+            [attr.aria-label]="i18n.daterangeChooseRange"
             (click)="toggleOverlay($event)"
           >
            <mdy-icon name="CALENDAR" class="mdy-datepicker__icon" />
