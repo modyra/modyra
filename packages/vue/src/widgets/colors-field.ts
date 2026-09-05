@@ -19,7 +19,9 @@ import {
   createColorsFieldController,
   defaultWidgetIdFactory,
   keyBindingFor,
-} from "@modyra/widgets";
+
+  fieldDescribedBy,
+  visibleErrorsOf,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
@@ -203,10 +205,16 @@ export const MdyColorsField = defineComponent({
           class: classesOf("hexInput"),
           type: "text",
           value: state.value.text,
-          // The box a person types into is the one the caption names, so it is also the one that
-          // has to say where its description is: named by a label and described by nothing is a
-          // control whose error text is on the page and announced to nobody.
-          "aria-describedby": defaultWidgetIdFactory.part(props.widgetId, "description"),
+          // Errors first, then the description: a reader hears what is wrong with the field before
+          // the hint about how to fill it, and hears both. Named through the shared door so the two
+          // ids are composed in one place — this control used to name the description alone, so the
+          // reason it was rejected sat on the page, correct and announced to nobody.
+          "aria-describedby": fieldDescribedBy({
+            errorId: defaultWidgetIdFactory.part(props.widgetId, "errors"),
+            descriptionId: defaultWidgetIdFactory.part(props.widgetId, "description"),
+            errorsPresent: visibleErrorsOf(props.field, "colors").length > 0,
+            descriptionPresent: true,
+          }),
           ...(props.ariaLabel !== "" ? { "aria-label": props.ariaLabel }
             : props.label === "" ? { "aria-label": "Hex colour" } : {}),
           // The states this box is in, announced on it and enforced on it. It is a control the

@@ -4186,13 +4186,6 @@
     "(1) extra?: MdyVuePartProps",
     "-> returns: MdyVuePartProps"
   ],
-  "vue:useCommands": [
-    "(0) kind: MdyWidgetKind",
-    "(1) view: Ref<MdyPartsView>",
-    "(2) root: Ref<HTMLElement | null>",
-    "(3) handlers?: MdyWidgetCommandHandlers",
-    "-> returns: (commands: readonly MdyUiCommand[]) => void"
-  ],
   "vue:useMdyField": [
     "(0) handle: MdyFieldHandle<TValue>",
     "(1) options: UseMdyFieldOptions<TValue>",

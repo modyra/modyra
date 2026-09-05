@@ -20,7 +20,8 @@ import {
   keyBindingFor,
   variantOf,
   defaultOptionKey,
-} from "@modyra/widgets";
+
+  visibleErrorsOf,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
@@ -122,6 +123,12 @@ export const MdySelectField = defineComponent({
     // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
     const run = useCommands("select", view, root);
     const watching = reactivity.effect(() => {
+      // Which of the two texts under the field the trigger describes itself by, told to the
+      // controller rather than decided here: the projection publishes the reference, and a renderer
+      // that never says which one leaves the trigger describing the hint while the field is being
+      // refused — the reason is on the page, correct, and announced to nobody.
+      const errorsVisible = visibleErrorsOf(props.field, "select").length > 0;
+      controller.setDescribedBy({ errorsVisible, descriptionVisible: !errorsVisible });
       state.value = controller.state();
       view.value = controller.view();
       triggerRef(state);

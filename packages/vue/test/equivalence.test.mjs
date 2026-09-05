@@ -36,15 +36,6 @@ const WEEK_START_IGNORED = [{
 }];
 
 const KNOWN_DIVERGENCES = {
-  /**
-   * Two kinds, one cause: the control points `aria-describedby` at the supporting text where the
-   * canon names the error list, so a reader hears the hint and not the reason the field was rejected.
-   */
-  invalid: {
-    select: ["trigger aria-describedby names supportingText, expected errors"],
-    colors: ["hexInput aria-describedby names supportingText, expected errors"],
-  },
-
   /** A part the contract does not declare for this kind, drawn while the panel is up. */
   open: { timepicker: ["extra part: periodOption"] },
 
