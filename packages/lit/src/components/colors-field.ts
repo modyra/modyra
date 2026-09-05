@@ -1,5 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import {
+  fieldAccessibleName,
   createColorsFieldController,
   type MdyColorsFieldController, capabilityOf, keyMeans,
   keyBindingFor,
@@ -373,9 +374,12 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 e.stopPropagation();
               }}
             />
-            <!-- The hex box is named by the field's own words and nothing appended: "(hex)" was
-                 English glued to a caption in the document's language, one name in two languages
-                 with the English half in no dictionary, saying nothing the caption did not. -->
+            <!-- The name a document declared, and the caption's words only where it declared none.
+                 Two earlier spellings both ignored the declaration: one glued the English word
+                 "(hex)" to a caption written in the document's language, and the one that replaced
+                 it used the caption alone, which dropped the declared name while looking correct.
+                 The field still had a name either way, which is why neither showed up: the question
+                 that finds this is "named what", not "named". -->
             <input
               id=${this.fieldId}
               type="text"
@@ -383,7 +387,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               spellcheck="false"
               .value=${handle.value() ?? ""}
               placeholder="#000000"
-              aria-label=${this.label}
+              aria-label=${fieldAccessibleName({ ariaLabel: this.declaredName(), label: this.label })}
               ${mdyPart(this.controlPart(handle))}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}

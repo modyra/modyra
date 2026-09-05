@@ -802,8 +802,20 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * label element also holds the required marker, so a name read from its content would carry an
    * asterisk the user's word does not.
    */
+  /**
+   * What a document declared this control is called, wherever the name currently lives.
+   *
+   * Two places, because the capture happens after a render commits: on the first pass the words are
+   * still the host's attribute, and from the second they are held here with the attribute removed. A
+   * template that reads only the held copy sees nothing on the pass that draws the control, and a
+   * template that reads only the attribute sees nothing afterwards — so both are asked, here, once.
+   */
+  protected declaredName(): string | null {
+    return this._pendingName ?? this.getAttribute("aria-label");
+  }
+
   protected applyControlName(): void {
-    const named = this._pendingName ?? this.getAttribute("aria-label");
+    const named = this.declaredName();
     if (named !== null) {
       // Held here rather than on the host: an element that keeps its own name is a second named
       // thing where the user sees one.

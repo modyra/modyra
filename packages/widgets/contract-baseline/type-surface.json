@@ -3016,6 +3016,7 @@
     "protected controlErrors-> returns: readonly string[]",
     "protected controlPart(0) handle: MdyFieldHandle<T>,-> returns: MdyPartContract",
     "protected createRenderRoot-> returns: HTMLElement",
+    "protected declaredName-> returns: string | null",
     "protected describedState-> returns: string",
     "protected descriptionId: string",
     "protected errorsId: string",
