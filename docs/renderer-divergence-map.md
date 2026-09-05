@@ -135,6 +135,69 @@ reached for different reasons.
 `timepicker`, with `alsoOpensFrom: "toggle"` as the second door. The declaration names the primary
 opener. Nothing checked that the primary one works.
 
+### The name a person hears on the door that opens a panel
+
+**Status: open** — measured 2026-09-05 in a real browser, on the four renderers the tier drives, read
+from the **accessibility tree** rather than from the attribute that may have fed it. That distinction
+changed two cells: an opener with no `aria-label` still resolved to a name.
+
+**Felt as**: a person navigating by voice or screen reader reaches the button that opens a calendar
+and hears `"T, button"` — the field's label, repeated, saying nothing about what pressing it does.
+
+**Contract**: **declares for some doors and is silent for others**, and the silence is exactly where
+the renderers disagree.
+
+Every kind that opens a panel declares its doors — `MDY_POPUP_OPENERS` names an `opener` and
+sometimes an `alsoOpensFrom`. The doors are not the same kind of element, and that turns out to be
+the whole story.
+
+| kind · door | part | plain | lit | vue | angular | what the contract says today |
+| --- | --- | --- | --- | --- | --- | --- |
+| select · primary | `trigger` | combobox `T` | combobox `T` | combobox **`T Select…`** | combobox `T` | name comes from the field label |
+| multiselect · primary | `trigger` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | as above |
+| multiselect · second | `box` | combobox `T` | combobox `T` | **grid** | combobox `T` | as above |
+| datepicker · primary | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | as above |
+| datepicker · second | `toggle` | button `Toggle calendar` | button `Toggle calendar` | button **`Choose T`** | button `Toggle calendar` | `datepickerToggleLabel` |
+| daterange · primary | `toggle` | button **`Choose date range`** | button **`T`** | button **`T`** | button **`Toggle calendar`** | **nothing** |
+| timepicker · primary | `control` | combobox `T` | combobox `T` | combobox `T` | combobox `T` | name comes from the field label |
+| timepicker · second | `toggle` | button `Open time picker` | button `Open time picker` | button **`Choose T`** | button `Open time picker` | `timepickerOpenLabel` |
+| colors · primary | `nativePicker` | button **`T`** | button **`T`** | button **`Choose T`** | button `Select color` | `selectColorPrefix` |
+| colors · second | `toggle` | *(no accessible node)* | *(no accessible node)* | *(no accessible node)* | *(no accessible node)* | declared a door |
+
+**Every combobox agrees. Every button diverges.** That is not a coincidence and it names the cause: a
+combobox takes its name from the field label, which every renderer wires the same way because the
+label association does it for them. A button has to be given a name, and there each renderer is on
+its own — with a dictionary entry that sometimes exists and is sometimes read.
+
+Read row by row, the contract column predicts the disagreement exactly:
+
+- **A message exists and is read** — `datepickerToggleLabel`, `timepickerOpenLabel` — and three
+  renderers agree. The fourth composes `Choose ` + the field label and never consults the dictionary,
+  so **its opener names cannot be translated at all**: not a missing translation, a door not taken.
+- **A message exists and is ignored** — `selectColorPrefix` — and only one renderer reads it. Two give
+  the bare field label; one composes its own.
+- **No message exists** — daterange — and four renderers produce three answers, one of which calls a
+  *range* opener `Toggle calendar`: the wrong message, borrowed from a sibling.
+
+**The rule the names are measured against** — the name states the action and its subject, comes from
+the dictionary, and does not repeat the field's own label — is published practice, not a local
+preference: an accessible name says what a control does (WCAG 4.1.2), and shipped date pickers name
+the button for its action. `T, button` fails it outright.
+
+Two findings sit beside the table rather than in it:
+
+- **A placeholder in an accessible name.** One renderer's select resolves to `T Select…` — the
+  prompt shown inside the closed control has leaked into the name a screen reader announces. The
+  placeholder is not part of what the control *is*.
+- **A door declared that no one can address.** `colors.alsoOpensFrom` names `toggle`, and in all four
+  renderers that part resolves to no accessible node at all. This one is uniform, so it is not a
+  divergence — it is the contract declaring a door that is not a door anywhere.
+
+**What closes it**: a message for the daterange opener, the two ignored messages read where they are
+declared, and a check that asks each declared door for its resolved name rather than for the
+attribute behind it. The corrections size by **cell, not by renderer** — a per-renderer list gets it
+wrong, because the bare-label failure is plain and lit on colors and lit and vue on daterange.
+
 ### A panel shown before anyone opened it
 
 **Status: open** — and still **Probable**: it is not established whether the canonical at-rest reading covers panel visibility or whether the fixture never exposed the panel to it. Nothing here has been promoted.
