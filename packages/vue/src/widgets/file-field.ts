@@ -15,6 +15,8 @@ import {
   MDY_WIDGET_CONTRACTS,
   createFileFieldController,
   type MdyFileFieldController,
+  fieldNameAttributes,
+  fieldShellPartIds,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
@@ -84,7 +86,16 @@ export const MdyFileField = defineComponent({
           // The name, where nothing on the page captions the control. The projection names a
           // control against a caption that exists; this is the other case, and without it a
           // captionless control is announced as nothing at all.
-          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
+          // Which attribute carries the name, decided by the contract: a caption and an
+          // `aria-label` on one element is not two names — the computation takes the reference
+          // and stops, so the caption a developer reads is not the one a person hears. The
+          // comment beside the old spread already said "where nothing captions it"; the code
+          // wrote the name whether or not something did (ADR 0175).
+          ...fieldNameAttributes({
+            ariaLabel: props.ariaLabel,
+            label: props.label,
+            labelId: fieldShellPartIds(widgetId.value).labelId,
+          }),
           id: widgetId.value,
           type: CONTRACT.controlType,
           class: CONTRACT.parts.control.classes.join(" "),

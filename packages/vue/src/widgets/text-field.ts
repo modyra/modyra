@@ -27,7 +27,9 @@ import {
   createTextFieldController,
   type MdyTextFieldController,
 
-  numberEntered,} from "@modyra/widgets";
+  numberEntered,  fieldNameAttributes,
+  fieldShellPartIds,
+} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
@@ -153,7 +155,16 @@ export const MdyTextField = defineComponent({
           // Two the projection does not carry, and both belong on the control a person types into:
           // a hint shown inside the empty box, and the name it has where nothing captions it.
           ...(props.placeholder === "" ? {} : { placeholder: props.placeholder }),
-          ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
+          // Which attribute carries the name, decided by the contract: a caption and an
+          // `aria-label` on one element is not two names — the computation takes the reference
+          // and stops, so the caption a developer reads is not the one a person hears. The
+          // comment beside the old spread already said "where nothing captions it"; the code
+          // wrote the name whether or not something did (ADR 0175).
+          ...fieldNameAttributes({
+            ariaLabel: props.ariaLabel,
+            label: props.label,
+            labelId: fieldShellPartIds(widgetId.value).labelId,
+          }),
           onInput: (event: Event) => controller.dispatch({
             type: "input",
             // A numeric field holds a number, so the box's text is converted before it reaches the
