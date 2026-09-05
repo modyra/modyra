@@ -187,7 +187,10 @@ export function projectDaterangeFieldA11y(
       // a role written here as well said something the relation had deliberately left unsaid.
       attributes: {
         ...opener?.attributes,
-        "aria-labelledby": labelId,
+        // No pointer at the field's caption. This is a button, and a button is named for the act it
+        // performs — `aria-labelledby` wins the name computation, so a renderer that gives this door
+        // its action name saw the caption announced instead: "T, button", the label repeated, saying
+        // nothing about what pressing it does. The two inputs beside it are what the caption names.
         "aria-disabled": String(state.disabled),
       },
     },

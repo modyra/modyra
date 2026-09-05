@@ -1,3 +1,4 @@
+import { explainValueMismatch } from "@modyra/core";
 /**
  * The colours a field offers when a document names none.
  *
@@ -31,7 +32,11 @@ export interface MdyColorValueTransition {
 export function colorValueTransition(intent: MdyColorValueIntent): MdyColorValueTransition {
   const raw = intent.value.trim();
   const candidate = raw.startsWith("#") ? raw : `#${raw}`;
-  const valid = /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(candidate);
+  // The form is the engine's, not this file's, and it is asked through the door the engine already
+  // publishes: a value this kind cannot hold has a reason, and no reason means it can. Stated in two
+  // places instead, the two drift the moment one learns a spelling the other refuses — and then a
+  // value is taken through one door and turned away at the other, which is the defect this closes.
+  const valid = explainValueMismatch("colors", candidate) === null;
   return {
     value: valid ? candidate : undefined,
     close: intent.type === "preset" && valid,

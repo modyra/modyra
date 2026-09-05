@@ -189,6 +189,9 @@ function contentMismatch(kind: MdyValueKind, value: unknown): string | null {
       ? null
       : `${kind} holds a time (HH:mm), got ${JSON.stringify(value)}`;
   }
+  if (kind === "colors") {
+    return isHexColor(value) ? null : `${kind} holds a hex colour (#rgb or #rrggbb), got ${JSON.stringify(value)}`;
+  }
   if (kind === "daterange") {
     const range = value as { start?: unknown; end?: unknown };
     for (const end of ["start", "end"] as const) {
@@ -199,6 +202,18 @@ function contentMismatch(kind: MdyValueKind, value: unknown): string | null {
     return null;
   }
   return null;
+}
+
+/**
+ * A colour this field can hold: `#rgb` or `#rrggbb`, in either case.
+ *
+ * Stated here because the field's own control already refuses anything else — typing `banana` leaves
+ * the value as it was — and a rule that lives only on the typed path makes the verdict depend on
+ * which door the value came through. A colour restored from a draft used to be taken whole: the
+ * model held `banana`, the swatch fell back to black, and the form sent what the page never showed.
+ */
+function isHexColor(value: unknown): boolean {
+  return typeof value === "string" && /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(value);
 }
 
 /** ISO `yyyy-MM-dd`, and a real date rather than a well-shaped impossible one. */
