@@ -1,11 +1,11 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-04T23:08:48Z",
-  "openReds": 109,
+  "recordedAt": "2026-09-05T01:25:34Z",
+  "openReds": 106,
   "bySeverity": {
     "S0": 4,
-    "S1": 87,
+    "S1": 84,
     "S2": 18
   },
   "knownRed": [
@@ -24,10 +24,8 @@
     "a-date-that-reads-as-two-dates.spec.ts › a date says which day it is, vue",
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, vue",
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, vue",
-    "a-draft-written-and-never-read.spec.ts › a draft is read back, not only written, vue",
     "a-field-marked-wrong-with-nothing-to-read.spec.ts › a field that says it is wrong says what is wrong, vue",
     "a-field-that-cannot-look-wrong.spec.ts › vue: a field the form refused is one the page can paint",
-    "a-file-picked-and-nothing-said.spec.ts › a file the field will not take is not taken in silence, vue",
     "a-gesture-that-differs-by-renderer.spec.ts › the gesture that opens a field is the same gesture in every renderer",
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, vue",
     "a-grid-with-no-name.spec.ts › vue: a role that must be named has a name",
@@ -40,7 +38,6 @@
     "a-name-a-palette-was-given.spec.ts › a name a palette was given is the name that is heard, vue",
     "a-name-a-palette-was-given.spec.ts › one palette is announced one way, whoever drew it",
     "a-name-that-does-not-contain-what-it-says.spec.ts › every control answers to the words written on it, vue",
-    "a-name-the-platform-computes.spec.ts › a name the platform computes",
     "a-number-nobody-can-hear.spec.ts › a clock says what it is set to, vue",
     "a-number-that-counts-what-it-cannot-see.spec.ts › the mark reports the number of values it is covering for, vue",
     "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, vue",
