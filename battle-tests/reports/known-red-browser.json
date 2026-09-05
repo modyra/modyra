@@ -1,12 +1,12 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-05T03:30:10Z",
-  "openReds": 105,
+  "recordedAt": "2026-09-05T07:08:18Z",
+  "openReds": 100,
   "bySeverity": {
     "S0": 4,
-    "S1": 84,
-    "S2": 17
+    "S1": 80,
+    "S2": 16
   },
   "knownRed": [
     "a-choice-made-before-anyone-looked.spec.ts › pressing the mark that says it opens, opens it, vue",
@@ -16,7 +16,6 @@
     "a-calendar-behind-a-closed-picker.spec.ts › vue: a closed popup is closed for everyone",
     "a-chip-that-does-not-say-where-it-is.spec.ts › every chip says which one it is and how many there are, vue",
     "a-choice-that-takes-three-presses-to-undo.spec.ts › unselecting a choice unselects it, vue",
-    "a-choice-that-writes-another.spec.ts › choosing the second option writes the second option, vue",
     "a-cluster-a-thumb-can-tell-apart.spec.ts › a destroy and a restore are told apart by more than a margin, vue",
     "a-command-only-one-key-reaches.spec.ts › every command in the field answers both keys a button answers, vue",
     "a-control-with-no-mark-on-it.spec.ts › every control inside a chip draws a mark a person can see, vue",
@@ -24,7 +23,6 @@
     "a-date-that-reads-as-two-dates.spec.ts › a date says which day it is, vue",
     "a-description-that-belongs-to-another-form.spec.ts › a reference made in one form lands in that form, vue",
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, vue",
-    "a-field-marked-wrong-with-nothing-to-read.spec.ts › a field that says it is wrong says what is wrong, vue",
     "a-field-that-cannot-look-wrong.spec.ts › vue: a field the form refused is one the page can paint",
     "a-gesture-that-differs-by-renderer.spec.ts › the gesture that opens a field is the same gesture in every renderer",
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, vue",
@@ -64,7 +62,6 @@
     "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough at root 100%, vue",
     "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough at root 200%, vue",
     "a-target-too-small-to-hit.spec.ts › every target is big enough or far enough at root 62.5%, vue",
-    "a-time-that-changed-when-nobody-changed-it.spec.ts › a time nobody changed is the time that was there, vue",
     "a-value-only-a-mouse-can-produce.spec.ts › a keyboard alone puts a value in every kind that opens, vue",
     "a-verdict-that-depends-on-how-it-arrived.spec.ts › a value refused when typed is refused when given, vue",
     "a-way-back-that-covers-all-three.spec.ts › moving a chip can be undone, vue",
@@ -96,7 +93,6 @@
     "two-forms-that-would-share-a-page.spec.ts › two forms on one page keep their own ids, vue",
     "what-a-form-sends-is-what-the-field-holds.spec.ts › a form sends the value each field holds, vue",
     "what-a-reader-is-told-about-a-choice.spec.ts › a reader can tell two controls apart, vue",
-    "where-focus-goes-when-a-popup-closes.spec.ts › escape leaves the keyboard on the field it opened from, vue",
     "a-cancel-two-renderers-answer.spec.ts › pressing Cancel returns the field to what it held, built-in, vue",
     "a-cancel-two-renderers-answer.spec.ts › pressing Cancel returns the field to what it held, moved-in, vue",
     "a-choice-abandoned-that-stays-made.spec.ts › a step of a drag is not a choice, vue",
@@ -110,7 +106,6 @@
     "a-submission-that-fell-over.spec.ts › a submission that fell over leaves a form somebody can use, vue",
     "every-key-a-kind-declares.spec.ts › vue: every key a kind declares does something",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it",
-    "one-press-outside-three-answers.spec.ts › a press outside an open palette does one thing, whoever drew it",
     "the-buttons-at-the-end-of-a-field.spec.ts › a field carries the controls it is declared to have, vue",
     "the-way-down-a-calendar.spec.ts › a calendar goes where the moves say, vue",
     "two-shapes-one-document-asked-for.spec.ts › each renderer draws the shape it drew before, vue"
