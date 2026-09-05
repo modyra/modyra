@@ -37,6 +37,7 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
     // off, a screen reader announces a grid of forty-two cells belonging to nothing.
     "[attr.aria-label]": "gridName()",
     role: "grid",
+    "[attr.id]": "gridId() || null",
   },
   template: `
     <div class="mdy-datepicker__weekdays" role="row">
@@ -90,6 +91,8 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
 })
 export class MdyRangeCalendarGridComponent {
   /** The widget these cells belong to, which is what their ids are built from. */
+  /** The id the opener points at: this element carries the role it promises (ADR 0210). */
+  readonly gridId = input<string>("");
   readonly widgetId = input<string>("");
 
   /** Whether the popup holding this grid is showing. A closed calendar draws no cells. */

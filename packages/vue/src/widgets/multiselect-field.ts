@@ -317,6 +317,11 @@ export const MdyMultiselectField = defineComponent({
         }, [
           // What is held, as a grid: one row of cells, which is how a screen reader counts them and
           // how the arrows walk them.
+          // Only where something is held. `chips` is declared present when a value is — with nothing
+          // chosen there is no strip, not an empty one — and drawn always it put a `role="grid"` on
+          // the page with no rows and no name, which is one of the three roles the contract says must
+          // be named. An empty container announcing itself as a grid is a grid about nothing.
+          ...(held.length === 0 ? [] : [
           h("div", partProps(parts.chips, { class: classesOf("chips"), role: roleOf("chips") }), [
             h("div", { class: classesOf("chipRow"), role: roleOf("chipRow") },
               held.map((option) => {
@@ -372,6 +377,7 @@ export const MdyMultiselectField = defineComponent({
                     () => run(controller.dispatch({ type: "toggle", optionKey: key }))),
                 ]);
               })),
+          ]),
           ]),
           // A button, not a text box: the placeholder lives *inside* it, and an `<input>` cannot
           // hold anything. What a person types goes in the panel's filter, not here.

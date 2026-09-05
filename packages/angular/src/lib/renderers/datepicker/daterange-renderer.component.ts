@@ -148,7 +148,7 @@ import { inputText, isoDateText } from "../renderer-projection";
       </div>
 
       <mdy-overlay-panel
-        [panelId]="popupId()"
+        [panelId]="panelId()"
         [open]="open()"
         [position]="position()"
         [alignment]="alignment()"
@@ -167,6 +167,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         }
 
         <mdy-range-calendar
+          [gridId]="popupId()"
           [showCells]="open()"
         [widgetId]="fieldId"
           #calendar
@@ -261,7 +262,10 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
 
 
   /** The id the opener names, which the projected panel has to carry. */
+  /** What the opener points at: the grid, which carries the role it promises (ADR 0210). */
   protected readonly popupId = computed(() => overlayControlledId("daterange", this.fieldId) ?? "");
+  /** The panel itself, which carries no role and is not what the promise is about. */
+  protected readonly panelId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "popup"));
 
   /** The relation between this widget's opener and the overlay it opens. */
   protected readonly openerPart = computed(

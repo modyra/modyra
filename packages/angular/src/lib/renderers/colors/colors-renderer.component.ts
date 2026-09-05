@@ -142,12 +142,13 @@ import { MdyOverlayPanelComponent } from "../../core/overlay-panel.component";
       >
         <div
           [class]="popupClass"
-          [id]="popupId()"
+          [id]="panelId()"
           [ngClass]="placementClass()"
         >
           <div class="{{ cls.dropdownHeader }}" aria-hidden="true">{{ i18n.colorPresetsHeader }}</div>
           <div
             class="{{ cls.presets }}"
+            [id]="popupId()"
             role="listbox"
             [attr.aria-label]="i18n.colorPresetsHeader"
             (keydown)="onPresetKeydown($event)"
@@ -286,7 +287,16 @@ export class MdyColorsComponent extends MdyOverlayControl<string> {
 
 
   /** The id the opener names, which the projected panel has to carry. */
+  /**
+   * What the opener points at: the presets, which carry the `listbox` it promises (ADR 0210).
+   *
+   * Distinct from the panel's own id, and they were one value until the promise moved off the panel.
+   * Left as one, the panel and the list both answered to it and the reference resolved to whichever
+   * the document found first.
+   */
   protected readonly popupId = computed(() => overlayControlledId("colors", this.fieldId) ?? "");
+  /** The panel itself, which carries no role and is not what the promise is about. */
+  protected readonly panelId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "popup"));
 
   /** The relation between this widget's opener and the overlay it opens. */
   protected readonly openerPart = computed(

@@ -57,6 +57,7 @@ type RangePhase = "pick-start" | "pick-end";
     />
     @if (view() === "days") {
       <mdy-range-calendar-grid
+        [gridId]="gridId()"
         [showCells]="showCells()"
         [widgetId]="widgetId()"
         [year]="viewYear()"
@@ -104,6 +105,8 @@ export class MdyRangeCalendarComponent {
    * public and mountable without a form, and that caller has no controller to ask.
    */
   /** The widget these cells belong to, which is what their ids are built from. */
+  /** Passed through to the grid, which is what the opener points at. */
+  readonly gridId = input<string>("");
   readonly widgetId = input<string>("");
 
   /** Whether the popup holding this calendar is showing; a closed one draws no cells. */
