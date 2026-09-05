@@ -20,7 +20,8 @@ import {
   sliderTrack,
   visibleErrorsOf,
   sliderFillRatio,
-} from "@modyra/widgets";
+
+  numberEntered,} from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
@@ -161,12 +162,8 @@ export function renderTextField(
    * implementations this renderer is asked to run in, and there it answers `NaN` for a box that
    * plainly holds a number — turning every typed digit into an empty field.
    */
-  const numberIn = (element: HTMLInputElement | HTMLTextAreaElement): number | null => {
-    const text = element.value.trim();
-    if (text === "") return null;
-    const parsed = Number(text);
-    return Number.isNaN(parsed) ? null : parsed;
-  };
+  const numberIn = (element: HTMLInputElement | HTMLTextAreaElement): number | null =>
+    numberEntered(element.value);
 
   input.addEventListener("input", () => {
     const raw = input.value;

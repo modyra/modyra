@@ -26,7 +26,8 @@ import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
   type MdyTextFieldController,
-} from "@modyra/widgets";
+
+  numberEntered,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses } from "./part.js";
@@ -45,7 +46,23 @@ const TAG_FOR_ELEMENT: Readonly<Record<string, string>> = Object.freeze({ input:
 export const MdyTextField = defineComponent({
   name: "MdyTextField",
   props: {
-    field: { type: Object as PropType<MdyFieldHandle<string>>, required: true },
+    /**
+     * The field this control is bound to.
+     *
+     * A union of handles, not a handle of unions: one component draws both shapes — the text kinds
+     * hold a string and `number` holds a number, which is what its own value contract says — and a
+     * handle's type argument is invariant, so `MdyFieldHandle<string>` is not a
+     * `MdyFieldHandle<string | number>`. Written the second way, every document already passing a
+     * string handle would have stopped compiling for a change it does not make.
+     *
+     * Declared as `string` alone, the component could not convert what a person typed without
+     * contradicting its own type — so it did not, and the model held `"1"` where every rule about
+     * bounds expected `1`.
+     */
+    field: {
+      type: Object as PropType<MdyFieldHandle<string> | MdyFieldHandle<number | null>>,
+      required: true,
+    },
     label: { type: String, default: "" },
     widgetId: { type: String, required: true },
     /** Which of the kinds that share this anatomy is being drawn. */
@@ -78,7 +95,7 @@ export const MdyTextField = defineComponent({
       max: props.max ?? null,
       step: props.step ?? null,
     });
-    const controller: MdyTextFieldController<string> = createTextFieldController<string>({
+    const controller: MdyTextFieldController<string | number | null> = createTextFieldController<string | number | null>({
       handle: props.field,
       widgetId: props.widgetId,
       inputType: contract.controlType,
@@ -128,7 +145,13 @@ export const MdyTextField = defineComponent({
           ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           onInput: (event: Event) => controller.dispatch({
             type: "input",
-            value: (event.target as HTMLInputElement).value,
+            // A numeric field holds a number, so the box's text is converted before it reaches the
+            // model. Left as it was typed, the model held `"1"` where the contract says `1`, and
+            // every rule about bounds was judging text — which compares by spelling, so `"10"` is
+            // below `"9"`.
+            value: props.kind === "number"
+              ? numberEntered((event.target as HTMLInputElement).value)
+              : (event.target as HTMLInputElement).value,
           }),
         })),
       ]));

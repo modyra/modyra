@@ -240,3 +240,5 @@ export { bindingForIntent, capabilityOf, isWidgetKind, keyMeans } from "./ask.js
 export { fieldIsRequired, inputWasRefused, undoIsOnOffer, valueIsAbsent, valueIsPresent, viewIsActive, workIsInFlight } from "./presence.js";
 
 export { MDY_CLASS_DOORS, answerDoor, type MdyClassDoor } from "./class-doors.js";
+
+export { numberEntered } from "./behavior/number-entry.js";

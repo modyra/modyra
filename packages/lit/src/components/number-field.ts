@@ -3,7 +3,7 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
 import { createTextFieldController, type MdyTextFieldController,
   presentationClass,
-} from "@modyra/widgets";
+ numberEntered,} from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
 /**
@@ -108,7 +108,10 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
       aria-readonly=${handle.readonly() ? "true" : nothing}
       ${mdyPart(this.controlPart(handle))}
       @input=${(e: Event) => {
-        const n = (e.target as HTMLInputElement).valueAsNumber;
+        // Read from the text through the shared door: `valueAsNumber` is unimplemented in some DOM
+        // implementations this renderer runs in, and answers `NaN` for a box that plainly holds a
+        // number — which empties the field on every keystroke.
+        const n = numberEntered((e.target as HTMLInputElement).value);
         const value = Number.isNaN(n) ? null : n;
         if (this.fieldController) {
           this.fieldController.dispatch({ type: "input", value });

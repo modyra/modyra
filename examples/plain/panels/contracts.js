@@ -191,6 +191,9 @@ export const contractsPanel = {
     "messagesForLocale",
     "narrowConstraints",
     "nativeConstraintAttributes",
+    // Driven rather than named: the numeric fields this panel renders read what a person types
+    // through this door, so clearing one of them is what shows it answering nothing rather than zero.
+    "numberEntered",
     "observerFor",
     "projectFieldShellA11y",
     "projectTextFieldA11y",
