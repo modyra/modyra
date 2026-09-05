@@ -31,6 +31,7 @@
 
 import { expect, test } from "@playwright/test";
 
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { HOSTS } from "./bench";
 
 /** Kinds whose contract declares a popup. */
@@ -82,11 +83,18 @@ for (const host of HOSTS) {
       const root = `[data-form="${id}"]`;
       await page.locator(root).waitFor({ timeout: 5_000 });
 
-      const trigger = page.locator(`${root} [aria-haspopup], ${root} .mdy-multiselect__trigger`).first();
-      const opens = await trigger.count() > 0;
-      // A kind whose trigger this file cannot find is reported as unreached rather than passed: the
-      // disposal below would be measuring a popup that never opened.
-      test.skip(!opens, `${host.name} published no opener for ${kind}`);
+      // **The opener the contract names for this kind, not a generic attribute.** `[aria-haspopup]`
+      // was the probe here, and a native `<select>` does not carry it: three renderers were skipped
+      // for "publishing no opener" while every one of them drew the declared opener. A skip reads as
+      // coverage, so a probe that cannot find a thing silently excuses the kind it was meant to test.
+      const declared = (MDY_WIDGET_CONTRACTS[kind as keyof typeof MDY_WIDGET_CONTRACTS]
+        .parts as Record<string, { classes?: readonly string[] } | undefined>)[
+          MDY_POPUP_OPENERS[kind as keyof typeof MDY_POPUP_OPENERS].opener]?.classes ?? [];
+      const trigger = page.locator(`${root} ${declared.map((one) => `.${one}`).join("")}`).first();
+      const opens = declared.length > 0 && await trigger.count() > 0;
+      // A kind the contract gives no addressable opener is reported as unreached rather than passed:
+      // the disposal below would be measuring a popup that never opened.
+      test.skip(!opens, `the contract gives ${kind} no addressable opener, so nothing here was pressed`);
 
       await trigger.click({ timeout: 5_000 });
       await expect
