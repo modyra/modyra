@@ -234,7 +234,10 @@ export const MdyColorsField = defineComponent({
             descriptionPresent: false,
           }),
           ...(props.ariaLabel !== "" ? { "aria-label": props.ariaLabel }
-            : props.label === "" ? { "aria-label": "Hex colour" } : {}),
+            // From the dictionary, which has carried these words in five languages all along and had
+            // no reader: a literal here is English on a translated page, and the one place a name is
+            // owed from nowhere else is exactly a control with no caption.
+            : props.label === "" ? { "aria-label": messages.value.colorHexLabel } : {}),
           // The states this box is in, announced on it and enforced on it. It is a control the
           // contract names, and a control that says it refuses while accepting what a person types
           // is worse than one that says nothing: the value it takes is one the model will not hold.

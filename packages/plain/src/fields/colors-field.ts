@@ -130,7 +130,10 @@ export function renderColorsField(
   // box is the control a `for` can usefully name.
   hexInput.id = `${widgetId}__hex`;
   hexInput.spellcheck = false;
-  hexInput.setAttribute("aria-label", `${f.label ?? "Colour"} — hex value`);
+  // Not named here. The shell names the element that stands for the field, from the field's own
+  // words — and writing it here first meant the shell's line never ran: the name became the caption
+  // with English glued to it, so a page in any other language announced "Colore del marchio — hex
+  // value". One name, two languages, and the English half in no dictionary.
   applyPart(hexInput, definition.parts.hexInput);
 
   // A drawing, not a command: the square beside it opens the same panel, and one act with two

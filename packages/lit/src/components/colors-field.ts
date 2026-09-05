@@ -373,6 +373,9 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
                 e.stopPropagation();
               }}
             />
+            <!-- The hex box is named by the field's own words and nothing appended: "(hex)" was
+                 English glued to a caption in the document's language, one name in two languages
+                 with the English half in no dictionary, saying nothing the caption did not. -->
             <input
               id=${this.fieldId}
               type="text"
@@ -380,7 +383,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               spellcheck="false"
               .value=${handle.value() ?? ""}
               placeholder="#000000"
-              aria-label=${`${this.label} (hex)`}
+              aria-label=${this.label}
               ${mdyPart(this.controlPart(handle))}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}
