@@ -11,6 +11,10 @@ reports/*.json
 # number cannot grow unnoticed. Ignored, a fresh checkout would have nothing to compare against and
 # the check would refuse to run at all.
 !reports/unguarded-actions.json
+# Same reason once more: it records how large the red on main was at each run, in the runner's own
+# units, and a single row answers nothing. The question it exists for — did the debt move — is a
+# comparison, so a checkout that starts empty starts with the question unanswerable.
+!reports/main-visual-debt-log.json
 
 # Packed tarballs and the temporary consumers installed from them.
 hostile-consumers/**/node_modules/

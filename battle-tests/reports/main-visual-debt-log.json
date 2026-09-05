@@ -1,0 +1,39 @@
+{
+  "note": "The size of the red on main, per run, in the runner's own vocabulary: passed, failed, flaky. A row saying `unmeasurable` is a run whose log GitHub no longer serves — not a run with nothing wrong. `failedSteps` says which step produced it, so a run red for another reason is visible rather than folded into this series.",
+  "runs": [
+    {
+      "runId": 33985224814,
+      "head": "e9d4c80f",
+      "at": "2026-09-05T18:49:00Z",
+      "failedSteps": [
+        "UI contract gates",
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 47,
+      "passed": 984,
+      "flaky": 1,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot"
+      ]
+    },
+    {
+      "runId": 33988546826,
+      "head": "bc2c70f2",
+      "at": "2026-09-05T19:55:11Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 47,
+      "passed": 984,
+      "flaky": 1,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot",
+        "expect(received).toContain"
+      ]
+    }
+  ]
+}
