@@ -382,7 +382,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
       aria-describedby=${fieldDescribedBy({
         errorId: this.errorsId, descriptionId: this.descriptionId,
         errorsPresent: this.showErrors(handle) || this.errorsReserved(handle),
-        descriptionPresent: true,
+        descriptionPresent: this.hasDescription(),
       }) ?? nothing}
       @change=${(event: Event) => {
         // Matched by what the element reports rather than by where it sits: the entry for "nothing

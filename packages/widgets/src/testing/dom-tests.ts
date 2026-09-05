@@ -773,8 +773,20 @@ export function inspectWidgetDom(
     // the contract leaves open on purpose. `aria-describedby` points at the error list while there
     // are errors to read and at the supporting text otherwise, and the error list is in the document
     // either way — so "the first one rendered" would demand it name an empty list.
+    // On screen *and* holding something to read.
+    //
+    // A reference asserts that a description exists, and an element drawn empty is not one: naming
+    // it sends a reader somewhere to hear nothing, and makes "I have a description, and it is empty"
+    // indistinguishable from "I have none". So a relation is owed when its target has text, and
+    // silence is the honest answer when it does not — which is the same rule the errors half of this
+    // reference was repaired to follow.
+    //
+    // A container the renderer *reserves* — drawn under every field that can fail a rule, so the
+    // reference never has to change — is empty until it has a message, and is not a target while it
+    // is. The renderer that reserves keeps its reference; this only stops demanding one.
+    const hasText = (element: Element): boolean => (element.textContent ?? "").trim() !== "";
     const candidates = relation.to
-      .map((part) => ({ part, elements: (resolved.get(part) ?? []).filter(isOnScreen) }))
+      .map((part) => ({ part, elements: (resolved.get(part) ?? []).filter((element) => isOnScreen(element) && hasText(element)) }))
       .filter((candidate) => candidate.elements.length > 0);
     if (candidates.length === 0) continue;
     const target = { part: relation.to.join(" or "), elements: candidates.flatMap((c) => c.elements) };

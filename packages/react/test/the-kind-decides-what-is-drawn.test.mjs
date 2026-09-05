@@ -66,10 +66,20 @@ test("the control carries the relations that make it findable", async () => {
   // and still reads as a working field to anyone looking at the page.
   assert.equal(label.getAttribute("for"), control.getAttribute("id"),
     "the caption names something other than the control");
+
+  // And the reference that is *not* owed here. This field has no supporting text and no rule it can
+  // fail, so there is nothing to describe it by: naming an empty element asserts a description that
+  // does not exist and sends a reader somewhere to hear nothing. Silence is the honest answer, and
+  // it is the one that keeps "I have a description, and it is empty" from reading like "I have one".
   const describedBy = control.getAttribute("aria-describedby");
-  assert.ok(describedBy, "the control says nothing about where its description is");
-  assert.ok(host.ownerDocument.getElementById(describedBy),
-    `aria-describedby points at ${describedBy}, which is not on the page`);
+  if (describedBy !== null) {
+    const named = describedBy.split(/\s+/).filter(Boolean)
+      .map((id) => host.ownerDocument.getElementById(id));
+    assert.ok(named.every((element) => element !== null),
+      `aria-describedby points at ${describedBy}, which is not on the page`);
+    assert.ok(named.some((element) => (element.textContent ?? "").trim() !== ""),
+      "the control names a description that holds no text");
+  }
   dispose();
 });
 

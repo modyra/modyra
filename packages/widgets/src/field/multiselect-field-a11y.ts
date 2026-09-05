@@ -162,7 +162,9 @@ export function projectMultiselectFieldA11y<TValue>(
     errorId,
     descriptionId,
     errorsPresent: options.errorsReserved ?? hasErrors,
-    descriptionPresent: options.descriptionVisible ?? true,
+    // A description exists when the renderer says one does; pointing at an empty element asserts one
+    // that does not, and makes "I have one, empty" indistinguishable from "I have none".
+    descriptionPresent: options.descriptionVisible ?? false,
   });
 
   return {

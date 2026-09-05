@@ -685,7 +685,7 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
             aria-describedby=${fieldDescribedBy({
               errorId: this.errorsId, descriptionId: this.descriptionId,
               errorsPresent: !this.inlineErrors && (this.showErrors(handle) || this.errorsReserved(handle)),
-              descriptionPresent: true,
+              descriptionPresent: this.hasDescription(),
             }) ?? nothing}
             aria-invalid=${String(this.showErrors(handle))}
             @blur=${() => this.requestUpdate()}

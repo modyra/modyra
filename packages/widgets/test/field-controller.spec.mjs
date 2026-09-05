@@ -146,12 +146,38 @@ test("view exposes ARIA contract", () => {
 });
 
 test("view updates when value becomes valid", () => {
-  const { controller, handle } = setupText();
+  const { controller } = setupText();
   controller.dispatch({ type: "input", value: "a@b.co" });
   const view = controller.view();
   assert.strictEqual(view.parts.input.attributes["aria-invalid"], "false");
   assert.strictEqual(view.root.classes.includes("mdy-renderer"), true);
-  assert.strictEqual(view.parts.input.attributes["aria-describedby"].includes("email__description"), true);
+});
+
+test("a control with nothing to describe it by says nothing", () => {
+  // No supporting text was declared, so there is no description to name. Naming one anyway asserts
+  // that a description exists and sends a reader to an element holding nothing — and it makes "I
+  // have a description, and it is empty" read the same as "I have none". Silence is the honest
+  // answer, and it is the one the errors half of this reference was already repaired to give.
+  const { controller } = setupText();
+  controller.dispatch({ type: "input", value: "a@b.co" });
+  const named = controller.view().parts.input.attributes["aria-describedby"] ?? "";
+  // The description half only. The error container is *reserved* under a field that can fail a rule,
+  // deliberately — a reference that never changes has no moment at which it points at an element not
+  // yet drawn or already gone — so it is named here whether or not it currently holds a message.
+  assert.strictEqual(named.includes("email__description"), false,
+    `the control named ${JSON.stringify(named)}, and no description was declared`);
+});
+
+test("and names it as soon as the renderer says it drew one", () => {
+  // The other direction, without which the test above passes for a control that can never describe
+  // itself at all.
+  const form = createForm({ email: field("", [required()]) });
+  const controller = createTextFieldController({
+    widgetId: "email", handle: form.f.email, inputType: "email", describes: () => true,
+  });
+  controller.dispatch({ type: "input", value: "a@b.co" });
+  const named = controller.view().parts.input.attributes["aria-describedby"] ?? "";
+  assert.strictEqual(named.includes("email__description"), true, `named ${JSON.stringify(named)}`);
 });
 
 test("out of play, no verdict: a disabled field reports no failure to show", () => {

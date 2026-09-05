@@ -35,8 +35,11 @@ export interface MdyTextFieldA11yOptions {
    * Whether a description element is rendered at all.
    *
    * The reference is only worth making when there is something at the other end: a control naming an
-   * empty description sends a reader somewhere to hear nothing. Defaults to true, for a renderer that
-   * always draws the element.
+   * empty description sends a reader somewhere to hear nothing.
+   *
+   * **Defaults to false**, and did default to true — which is how every renderer that draws the
+   * element unconditionally came to point at it while it was empty, the shape this sentence was
+   * already warning about. A renderer that has a description says so.
    */
   readonly descriptionVisible?: boolean;
   /**
@@ -157,7 +160,7 @@ export function projectTextFieldA11y<TValue>(
             // The container is pointed at while it is on the page, not while it holds a message: a
             // renderer that reserves it keeps one reference that never changes.
             errorsReserved: options.errorsReserved ?? tellingThem,
-            descriptionVisible: options.descriptionVisible ?? true,
+            descriptionVisible: options.descriptionVisible ?? false,
             // Asked of the shell rather than written here: this projection spreads the shell's
             // attributes over its own, so a name written on both sides is decided by the spread
             // rather than by either author.

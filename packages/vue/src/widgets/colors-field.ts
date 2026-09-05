@@ -228,7 +228,10 @@ export const MdyColorsField = defineComponent({
             errorId: defaultWidgetIdFactory.part(widgetId.value, "errors"),
             descriptionId: defaultWidgetIdFactory.part(widgetId.value, "description"),
             errorsPresent: visibleErrorsOf(props.field, "colors").length > 0,
-            descriptionPresent: true,
+            // This renderer takes no supporting text, so there is never one to point at. Said as
+            // `false` rather than left at a default: pointing at the empty element it draws would
+            // assert a description that does not exist and send a reader to a text nobody wrote.
+            descriptionPresent: false,
           }),
           ...(props.ariaLabel !== "" ? { "aria-label": props.ariaLabel }
             : props.label === "" ? { "aria-label": "Hex colour" } : {}),

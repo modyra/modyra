@@ -65,7 +65,17 @@ test("ids are computable and deterministic with no DOM", () => {
     { widgetId: "email" },
   );
   assert.equal(projected.label.attributes.for, "email");
-  assert.equal(projected.input.attributes["aria-describedby"], "email__description");
+  // No description was declared, so none is named: naming one asserts a description that does not
+  // exist. The reference appears when the renderer says it drew one, and it is the same id either
+  // way — which is the property this test is really about, since a server and a client must agree
+  // on it.
+  assert.equal(projected.input.attributes["aria-describedby"], null);
+  const described = projectTextFieldA11y(
+    { disabled: false, readonly: false, required: true, touched: false, open: false },
+    [],
+    { widgetId: "email", descriptionVisible: true },
+  );
+  assert.equal(described.input.attributes["aria-describedby"], "email__description");
 });
 
 test("every kind has a static half, and only overlay kinds have a dynamic one", () => {

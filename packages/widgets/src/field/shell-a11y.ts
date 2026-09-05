@@ -199,7 +199,13 @@ export function projectFieldShellA11y(
     // whenever it holds a message: a renderer that reserves it at rest keeps one stable reference
     // instead of writing one when a message arrives and withdrawing it when the message clears.
     errorsPresent: options.errorsReserved ?? errorsVisible,
-    descriptionPresent: options.descriptionVisible ?? true,
+    // A description exists when the renderer says one does. Defaulted to `true`, a control claimed
+    // `aria-describedby` at rest and pointed it at an element holding nothing — which asserts that a
+    // description exists and sends a reader to a text nobody wrote. It also makes "I have a
+    // description, and it is empty" indistinguishable from "I have none", where silence is the
+    // honest statement of nothing to say. The errors half of this reference was repaired for exactly
+    // that reason; the hint half is the same shape.
+    descriptionPresent: options.descriptionVisible ?? false,
   });
 
   return {

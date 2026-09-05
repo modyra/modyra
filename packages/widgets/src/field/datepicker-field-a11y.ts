@@ -89,7 +89,11 @@ export function projectDatepickerFieldA11y(
     errorId,
     descriptionId,
     errorsPresent: options.errorsReserved ?? hasErrors,
-    descriptionPresent: options.descriptionVisible ?? true,
+    // A description exists when the renderer says one does. Defaulted to `true`, a control claimed
+    // `aria-describedby` at rest and pointed it at an element holding nothing — which asserts that a
+    // description exists and sends a reader to a text nobody wrote, and makes "I have one, empty"
+    // indistinguishable from "I have none". Silence is the honest statement of nothing to say.
+    descriptionPresent: options.descriptionVisible ?? false,
   });
 
   return {

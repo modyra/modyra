@@ -300,7 +300,9 @@ export function renderSelectField(
     // The trigger describes itself by whichever of the two is on screen, and this renderer is what
     // decides that: the error list appears once the field is touched and has something to say.
     const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;
-    controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: !errorsShown });
+    // Not "whenever there are no errors": that claims a description the document may never have
+    // written, and points the reader at an empty box. Whether one exists is what the document said.
+    controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: Boolean(f.supportingText) });
 
     // The shell's own state, which every other kind here reflects and this one did not: the themes
     // key the touched and error treatments off the renderer root and the wrapper.

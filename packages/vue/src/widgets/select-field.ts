@@ -139,7 +139,9 @@ export const MdySelectField = defineComponent({
       // that never says which one leaves the trigger describing the hint while the field is being
       // refused — the reason is on the page, correct, and announced to nobody.
       const errorsVisible = visibleErrorsOf(props.field, "select").length > 0;
-      controller.setDescribedBy({ errorsVisible, descriptionVisible: !errorsVisible });
+      // `false` for the description: this renderer takes no supporting text, so the element under
+      // the field is always empty and a reference to it would assert one that does not exist.
+      controller.setDescribedBy({ errorsVisible, descriptionVisible: false });
       state.value = controller.state();
       view.value = controller.view();
       triggerRef(state);
