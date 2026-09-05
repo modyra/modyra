@@ -188,10 +188,21 @@ The contract already demonstrates the right shape in its own code — `field-tea
 first and only then calls — so the library both states the rule and follows it, while requiring
 neither.
 
-**What would close it**: a signature that cannot be called from the wrong moment — the sampled answer
-as the argument, rather than a boolean asserting that someone sampled it — or a kit section that
-drives a widget nobody has touched and asserts the keyboard stays out of it. The second is the
-cheaper one and it tests the felt symptom rather than the shape.
+**What closes it, decided**: both, and the signature now rather than on a condition.
+
+The **guard** is a kit section that drives a widget nobody has touched and asserts the keyboard stays
+out of it. It tests the *felt symptom* rather than the shape, so it catches whichever renderer gets
+this wrong and however it gets it wrong.
+
+The **repair** is a signature that cannot be called from the wrong moment: the sampled answer *as*
+the argument, rather than a boolean asserting that someone sampled it. `afterBlur` goes with it.
+
+This was first decided the other way — signature only *if* the guard later caught a second renderer —
+and that condition is recorded here because it was wrong in an instructive way. **It could not fire on
+its own.** A behavioural guard sees a keyboard moved wrongly only from a renderer that also gets the
+*position* wrong; Lit and Angular pass the identical literal and behave correctly precisely because
+their position saves them. So "wait for a second case" resolves to "wait for the next defect" — which
+is the prose option under another name, and prose is what let this one through.
 
 ---
 
