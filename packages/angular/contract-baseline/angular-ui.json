@@ -725,6 +725,7 @@
         "mdy-supporting-text"
       ],
       "aria": [
+        "aria-controls",
         "aria-describedby",
         "aria-disabled",
         "aria-hidden",

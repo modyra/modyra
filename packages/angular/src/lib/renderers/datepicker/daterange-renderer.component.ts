@@ -267,10 +267,26 @@ export class MdyDateRangePickerComponent extends MdyOverlayControl<MdyDateRange 
   /** The panel itself, which carries no role and is not what the promise is about. */
   protected readonly panelId = computed(() => defaultWidgetIdFactory.part(this.fieldId, "popup"));
 
-  /** The relation between this widget's opener and the overlay it opens. */
-  protected readonly openerPart = computed(
-    () => projectOverlayOpenerA11y("daterange", { widgetId: this.fieldId, open: this.open() })!,
-  );
+  /**
+   * The relation between this widget's opener and the overlay it opens.
+   *
+   * Retargeted per view, as the date picker's is: the promise is a grid, this kind draws three in
+   * turn, and a reference pinned to the day grid names an element that leaves when the view under it
+   * changes. The panel is still open then, so the id kept alive while it is *shut* does not apply.
+   *
+   * The views are not in this file — they are in the calendar it mounts, whose signal is called
+   * `view` rather than `viewMode`. Read from the controller's own state instead, which is where both
+   * of them get it.
+   */
+  protected readonly openerPart = computed(() => {
+    const projected = projectOverlayOpenerA11y("daterange", { widgetId: this.fieldId, open: this.open() })!;
+    const mode = this.controller()?.state().viewMode ?? "days";
+    if (mode === "days") return projected;
+    return {
+      ...projected,
+      attributes: { ...projected.attributes, "aria-controls": `${this.fieldId}__${mode}` },
+    };
+  });
 
   protected readonly lastFocused = signal<"start" | "end">("start");
 
