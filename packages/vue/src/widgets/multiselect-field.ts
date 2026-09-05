@@ -22,6 +22,7 @@ import {
 
   MDY_CHIP_CLASSES,  MDY_POPUP_OPENERS,
   MDY_I18N_MESSAGES_DEFAULT,
+  multiselectAnnouncement,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
@@ -124,9 +125,36 @@ export const MdyMultiselectField = defineComponent({
     });
 
     useAnchoredPanel({ kind: "multiselect", panel, anchor, isOpen: () => state.value.open });
+    /**
+     * What was said last, so the next sentence can describe a change rather than a state.
+     *
+     * The policy needs both sides: it names what was added and what was taken since the reader was
+     * last told, and a renderer that passed only the present would say the whole selection every
+     * time anything moved.
+     */
+    let saidLast: readonly string[] = [...controller.state().selectedKeys].map(String);
+    const announcement = ref("");
+
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
+      const chosen = [...state.value.selectedKeys].map(String);
+      // A render describing no change leaves the region alone: writing "" over a sentence takes it
+      // back before a reader has reached it, and a second pass over the same state is an ordinary
+      // thing for a renderer to do.
+      const sentence = multiselectAnnouncement(saidLast, chosen, {
+        added: MDY_I18N_MESSAGES_DEFAULT.selectionAdded,
+        removed: MDY_I18N_MESSAGES_DEFAULT.selectionRemoved,
+        empty: MDY_I18N_MESSAGES_DEFAULT.selectionEmpty,
+        removedLast: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedLast,
+        addedMany: MDY_I18N_MESSAGES_DEFAULT.selectionAddedMany,
+        removedMany: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedMany,
+        removedManyLast: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedManyLast,
+      }, (key) => state.value.options.find((option) => String(option.value) === key)?.label ?? key);
+      if (sentence !== null && sentence !== "") {
+        announcement.value = sentence;
+        saidLast = chosen;
+      }
       triggerRef(state);
       triggerRef(view);
     });
@@ -298,7 +326,7 @@ export const MdyMultiselectField = defineComponent({
           }),
           h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
           h("span", partProps(parts.announcement, { class: classesOf("announcement") }),
-            (parts.announcement as { readonly text?: string } | undefined)?.text ?? ""),
+            announcement.value),
         ]),
       ]));
 
