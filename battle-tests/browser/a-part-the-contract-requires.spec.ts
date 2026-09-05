@@ -81,12 +81,14 @@ test("the contract declares the trigger mandatory, in the half of it that says s
   // because the row it lived in no longer exists; and a radio's operable element and its drawn ring
   // became two parts rather than one name covering both; and a value chip's words and its count
   // became parts of their own, so that what a chip *says* is addressable rather than being an
-  // unnamed span nobody could style, probe or hold to account. The three statements below were
+  // unnamed span nobody could style, probe or hold to account; and a chip's stepper became a part,
+  // an element two renderers drew with the class the contract reserved for a list entry's stepper
+  // and a third drew not at all, because nothing named it. The three statements below were
   // re-read against the new anatomy each time and still hold.
   //
   // Every declared part has a structure node and every node a part: the two counts are the same
   // number, which is what makes this one number able to describe the whole anatomy.
-  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(267);
+  expect(nodes.length, "the contract moved; the counts in this spec describe a different surface").toBe(268);
 
   // Optionality is where the contract keeps it: on the structure node, not on the part record. Every
   // node has it, so a part that does not say `optional: true` is one the contract requires.
