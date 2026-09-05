@@ -11,7 +11,7 @@
  * and the element each is drawn as are the contract's answers, read through the projection.
  */
 import { createElement, useId, type ReactElement, type ReactNode } from "react";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, fieldNameAttributes } from "@modyra/widgets";
 import type { MdyFieldHandle } from "@modyra/core";
 import { useMdyTextField } from "./field.js";
 import { partProps, type MdyDeclaredPart } from "./part.js";
@@ -26,6 +26,23 @@ export interface MdyTextFieldProps<TValue extends string | number | null> {
   readonly field: MdyFieldHandle<TValue>;
   readonly kind?: MdyTextLikeKind;
   readonly label?: string;
+  /**
+   * What a document declares this control is called, where a caption does not name it.
+   *
+   * Passed to the contract rather than written onto the element here: the projection decides what
+   * becomes of a declared name, so every renderer answers the same way and the rule has one author.
+   */
+  readonly ariaLabel?: string;
+  /**
+   * The stride this control offers, where its kind has one.
+   *
+   * A declaration and not a rule: it changes what the arrows and the stepper move by, and a value
+   * off the grid is still accepted — so it does not belong in the vocabulary that judges a value.
+   * `min` and `max` are the other half of that sentence and are deliberately not here: they refuse
+   * a value, which makes them rules, and a prop that quietly validated would blur the line the
+   * two channels exist to draw.
+   */
+  readonly step?: number;
   /**
    * Stable identity for this widget's parts.
    *
@@ -47,6 +64,9 @@ export function MdyTextField<TValue extends string | number | null>(
 
   const api = useMdyTextField<TValue>(props.field, {
     widgetId,
+    // Read inside the function rather than captured: a document may narrow a field while it is on
+    // the page, and a value read once is the one it held when the control was built.
+    constraints: () => ({ step: props.step ?? null }),
     // From the catalogue, not from a prop: `controlType` is what the contract says a kind's native
     // input is, and a renderer spelling it here would be a second statement of it — the one that
     // stops moving when the declaration does.
@@ -54,6 +74,16 @@ export function MdyTextField<TValue extends string | number | null>(
   });
 
   const parts = api.view.parts as Readonly<Record<string, Parameters<typeof partProps>[0]>>;
+  // Which attribute carries the control's name, and it is never both — the contract decides, because
+  // `aria-labelledby` and `aria-label` on one element is not two names: the computation takes the
+  // reference and stops, and the `aria-label` beside it is text nobody hears (ADR 0175). Asked here
+  // rather than answered here: three renderers already ask this door, and a fourth answering for
+  // itself is how they come to disagree.
+  const named = fieldNameAttributes({
+    ariaLabel: props.ariaLabel,
+    label: props.label,
+    labelId: String(parts["label"]?.id ?? ""),
+  });
   const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
   const children: ReactNode[] = [];
 
@@ -70,6 +100,7 @@ export function MdyTextField<TValue extends string | number | null>(
     createElement(TAG_FOR_ELEMENT[String(controlNode?.element)] ?? "input", partProps(parts["input"], {
       key: "control",
       className: classesOf("control"),
+      ...named,
       value: (props.field.value() ?? "") as string,
       onChange: (event: { readonly target: { readonly value: string } }) =>
         api.dispatch({ type: "input", value: event.target.value as TValue }),

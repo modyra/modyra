@@ -30,19 +30,13 @@ export const kinds = ["text", "email", "password", "textarea", "number", "checkb
 export const declaresRules = true;
 
 /**
- * The kit's `config` — a document's declarations that are not rules — is passed through by `mount`,
- * and this says `false` anyway, because the components do not yet read it.
+ * This config also passes the kit's `config` — a document's declarations that are not rules.
  *
- * Measured by turning it on: seven kinds are asked, and all seven fail. A document that declares the
- * control's name gets a control announced as nothing (`ariaLabel` is not a prop any of these
- * components accepts), and a number told `step: 2` carries no step. Declaring `true` here would put
- * eight findings on a shared gate; declaring it and saying nothing would hide them.
- *
- * The repair is not a prop added to each component: the renderer that already reads a document's
- * name writes the same expression once per kind, which is the shape this repository keeps removing.
- * It belongs with the kinds, where a door can be asked for instead of copied.
+ * They arrive as props, which is how a document reaches a component here, and after this file's own
+ * defaults, so a declared name replaces the caption it would otherwise draw rather than being drawn
+ * beside it.
  */
-export const declaresConfig = false;
+export const declaresConfig = true;
 
 /**
  * Which component draws each kind, and what it is told beyond the field.

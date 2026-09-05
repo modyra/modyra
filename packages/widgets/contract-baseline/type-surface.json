@@ -3468,6 +3468,7 @@
     "-> returns: ReactElement"
   ],
   "react:MdyBooleanFieldProps": [
+    "ariaLabel?: string",
     "field: MdyFieldHandle<boolean>",
     "kind?: MdyBooleanKind",
     "label?: string",
@@ -3622,9 +3623,11 @@
     "-> returns: ReactElement"
   ],
   "react:MdyTextFieldProps": [
+    "ariaLabel?: string",
     "field: MdyFieldHandle<TValue>",
     "kind?: MdyTextLikeKind",
     "label?: string",
+    "step?: number",
     "widgetId?: string"
   ],
   "react:MdyTextLikeKind": [

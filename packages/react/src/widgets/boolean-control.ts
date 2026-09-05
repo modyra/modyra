@@ -11,7 +11,7 @@
  * told apart from one where the question was never asked.
  */
 import { createElement, useId, type ReactElement, type ReactNode } from "react";
-import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { MDY_WIDGET_CONTRACTS, fieldNameAttributes } from "@modyra/widgets";
 import type { MdyFieldHandle } from "@modyra/core";
 import { useMdyBooleanField } from "./boolean-field.js";
 import { partProps, type MdyDeclaredPart } from "./part.js";
@@ -23,6 +23,13 @@ export interface MdyBooleanFieldProps {
   readonly field: MdyFieldHandle<boolean>;
   readonly kind?: MdyBooleanKind;
   readonly label?: string;
+  /**
+   * What a document declares this control is called, where a caption does not name it.
+   *
+   * Passed to the contract rather than written onto the element here: the projection decides what
+   * becomes of a declared name, so every renderer answers the same way and the rule has one author.
+   */
+  readonly ariaLabel?: string;
   readonly widgetId?: string;
 }
 
@@ -40,6 +47,13 @@ export function MdyBooleanField(props: MdyBooleanFieldProps): ReactElement {
   const variant = contract.parts.control.role === "switch" ? "switch" : "checkbox";
   const api = useMdyBooleanField(props.field, { widgetId, variant });
   const parts = api.view.parts as Readonly<Record<string, Parameters<typeof partProps>[0]>>;
+  // The contract decides which attribute names the control; see the text field for why it is never
+  // both.
+  const named = fieldNameAttributes({
+    ariaLabel: props.ariaLabel,
+    label: props.label,
+    labelId: String(parts["label"]?.id ?? ""),
+  });
   const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
   /**
    * The painted mark, read from the anatomy instead of named here.
@@ -60,6 +74,7 @@ export function MdyBooleanField(props: MdyBooleanFieldProps): ReactElement {
 
   const inside: ReactNode[] = [
     createElement("input", partProps(parts["input"], {
+      ...named,
       key: "control",
       className: classesOf("control"),
       type: "checkbox",
