@@ -13,8 +13,8 @@
  */
 import type { Ref } from "vue";
 import { executeVueCommands } from "./runtime.js";
-import { partClasses } from "@modyra/widgets";
-import type { MdyElementLookup, MdyPartContract, MdyUiCommand, MdyWidgetCommandHandlers, MdyWidgetKind } from "@modyra/widgets";
+import { fieldCommandHandlers, partClasses } from "@modyra/widgets";
+import type { MdyCommandTarget, MdyElementLookup, MdyPartContract, MdyUiCommand, MdyWidgetCommandHandlers, MdyWidgetKind } from "@modyra/widgets";
 
 /** A view's parts, however a kind's projection spells them. */
 export interface MdyPartsView {
@@ -32,8 +32,20 @@ export function useCommands(
   kind: MdyWidgetKind,
   view: Ref<MdyPartsView>,
   root: Ref<HTMLElement | null>,
-  handlers: MdyWidgetCommandHandlers = { setOpen: () => undefined, onTouched: () => undefined, onDirty: () => undefined },
+  /**
+   * What only the component can do. Defaulted to nothing, which was wrong: `mark-touched` is a
+   * command like any other, and a runner that swallowed it left a field the person had opened,
+   * looked at and dismissed reporting itself untouched — so a form showing verdicts on touched
+   * fields stayed silent about one they had been in. `fieldCommandHandlers` is the shared answer,
+   * and a caller passes its own only where a state is genuinely the component's.
+   */
+  handlers?: MdyWidgetCommandHandlers,
+  field?: MdyCommandTarget,
 ): (commands: readonly MdyUiCommand[]) => void {
+  const answering: MdyWidgetCommandHandlers = handlers
+    ?? (field === undefined
+      ? { setOpen: () => undefined, onTouched: () => undefined, onDirty: () => undefined }
+      : fieldCommandHandlers(field));
   const lookup: MdyElementLookup = (part, key) => {
     const parts = view.value.parts;
     // A keyed part — one option among many — is published under its key, which is the contract's
@@ -56,5 +68,5 @@ export function useCommands(
       ?? document.querySelector<HTMLElement>(selector)
       ?? undefined;
   };
-  return (commands) => { executeVueCommands(commands, lookup, handlers); };
+  return (commands) => { executeVueCommands(commands, lookup, answering); };
 }

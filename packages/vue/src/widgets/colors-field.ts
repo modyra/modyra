@@ -103,7 +103,7 @@ export const MdyColorsField = defineComponent({
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
     // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
-    const run = useCommands("colors", view, root);
+    const run = useCommands("colors", view, root, undefined, props.field as never);
     useLightDismiss({
       kind: "colors",
       root,

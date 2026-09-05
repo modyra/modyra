@@ -43,12 +43,6 @@ const KNOWN_DIVERGENCES = {
    */
   "week start": { "it-IT": { datepicker: WEEK_START_IGNORED, daterange: WEEK_START_IGNORED } },
 
-  /**
-   * Dismissing a select's panel leaves the field unmarked, so a form that shows verdicts on touched
-   * fields stays silent about one the person has been in and left. The focus half of this row is
-   * closed: every kind now returns the keyboard to the part the catalogue names as its opener.
-   */
-  "after escape": { select: ["state is [], expected [touched]"] },
 };
 
 /**

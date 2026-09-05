@@ -96,7 +96,7 @@ export const MdyMultiselectField = defineComponent({
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
     // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
-    const run = useCommands("multiselect", view, root);
+    const run = useCommands("multiselect", view, root, undefined, props.field as never);
     useLightDismiss({
       kind: "multiselect",
       root,

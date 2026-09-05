@@ -132,7 +132,7 @@ export const MdySelectField = defineComponent({
     // What the controller answers is half of every interaction, and the half a screenshot does not
     // show: `restore-focus` after a dismissal is what puts the person back on the control they
     // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
-    const run = useCommands("select", view, root);
+    const run = useCommands("select", view, root, undefined, props.field as never);
     const watching = reactivity.effect(() => {
       // Which of the two texts under the field the trigger describes itself by, told to the
       // controller rather than decided here: the projection publishes the reference, and a renderer
