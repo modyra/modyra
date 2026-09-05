@@ -174,9 +174,20 @@ export function canonicalWidgetSnapshot(
     const selector = classes.map((className: string) => `.${escapeClass(className)}`).join("");
     return root.matches?.(selector) ? root : root.querySelector(selector);
   };
-  const isOpen = definition.capabilities.overlay
-    ? openerElement()?.getAttribute("aria-expanded") === "true"
-    : false;
+  /**
+   * What the opener says about its panel, and `null` where it says nothing.
+   *
+   * A kind with an overlay capability can still be drawn in a variant that has none — a select with
+   * no search renders the platform's chooser, whose expanded state belongs to the platform and is
+   * declared nowhere. Read as a boolean, that silence is indistinguishable from a closed panel, and
+   * a widget with no overlay at all answers the canonical question as though it had a closed one.
+   */
+  const declaredOpen = (): boolean | null => {
+    if (!definition.capabilities.overlay) return null;
+    const said = openerElement()?.getAttribute("aria-expanded") ?? null;
+    return said === null ? null : said === "true";
+  };
+  const isOpen = declaredOpen() === true;
 
   // A closed overlay is not observed, however its renderer chose to hide it.
   const scopes: readonly Element[] = isOpen ? [root, ...ownPortal()] : [root];
@@ -299,11 +310,8 @@ export function canonicalWidgetSnapshot(
   const active = document_?.activeElement ?? null;
   const focusOwner = active && active !== document_?.body ? partOf(active) : null;
 
-  const overlay: MdyCanonicalOverlay = !definition.capabilities.overlay
-    ? "absent"
-    : isOpen
-      ? "open"
-      : "closed";
+  const said = declaredOpen();
+  const overlay: MdyCanonicalOverlay = said === null ? "absent" : said ? "open" : "closed";
 
   return {
     kind,
