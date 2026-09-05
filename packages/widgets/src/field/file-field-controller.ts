@@ -68,6 +68,18 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const current = state();
+
+    /**
+     * The names of what the field is holding — where what it holds is a list of files at all.
+     *
+     * The model is documented to *hold* a value of the wrong shape and report it invalid rather than
+     * refuse it, so this is whatever a document handed over. Assuming the declared shape here turned
+     * that verdict into a thrown error, and the field a person was supposed to be told about
+     * vanished from the page.
+     */
+    const named = Array.isArray(current.files)
+      ? current.files.map((file) => (file as { name?: unknown }).name).filter((name): name is string => typeof name === "string")
+      : [];
     const shell = projectFieldShellA11y(current, handle.errors(), {
       widgetId,
       kind: "file",
@@ -99,9 +111,11 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
           classes: [...definition.parts.content.classes],
           attributes: {},
           content: {
-            text: current.files.length > 0
-              ? current.files.map((file) => file.name).join(", ")
-              : MDY_I18N_MESSAGES_DEFAULT.fileSelect,
+            // Read defensively, because the value here is whatever the model holds — and the model
+            // is documented to *hold* a value of the wrong shape and report it invalid rather than
+            // refuse it. A projection that assumes the declared shape turns that verdict into a
+            // thrown error, and the field a person was supposed to be told about disappears.
+            text: named.length > 0 ? named.join(", ") : MDY_I18N_MESSAGES_DEFAULT.fileSelect,
           },
         },
         clear: {

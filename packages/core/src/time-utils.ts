@@ -42,9 +42,17 @@ export function to24Hour(t: ParsedTime): number {
   return (t.hour % 12) + (t.period === 'PM' ? 12 : 0);
 }
 
-/** Parse a 24-hour `"HH:mm"` string (00-23). Returns `null` on invalid input. */
+/**
+ * Parse a 24-hour `"HH:mm"` string (00-23). Returns `null` on invalid input.
+ *
+ * Anything that is not a string is invalid input, and answering it is the same `null`. The engine
+ * holds a value of the wrong shape and reports the field invalid rather than refusing it, so a
+ * parser reached from a projection is handed whatever a document put in the model; throwing there
+ * takes out the control that was supposed to show the verdict. `parseTime` has always answered this
+ * way, and two parsers of the same value disagreeing about it is the defect.
+ */
 export function parse24Time(value: string | null | undefined): ParsedTime | null {
-  if (!value) return null;
+  if (!value || typeof value !== "string") return null;
   const m = TIME24_RE.exec(value.trim());
   if (!m) return null;
   const hour24 = Number(m[1]);

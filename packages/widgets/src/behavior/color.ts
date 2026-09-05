@@ -46,11 +46,17 @@ export function colorValueTransition(intent: MdyColorValueIntent): MdyColorValue
  * published and decides whether the swatch redraws, whether the field is dirty and whether a draft
  * is written — so a caller holding a colour nobody has chosen yet asks the question on both sides.
  * Two absences are the same colour; one absence is not the colour on the other side.
+ *
+ * A value of another shape is answered rather than refused. The engine holds what a document put in
+ * the model and reports the field invalid; this function decides whether the swatch redraws, so
+ * throwing here takes out the control that was going to show that verdict. Spelling only means
+ * something between two strings, and anything else is compared as it stands.
  */
 export function colorValueEquals(left: string | null | undefined, right: string | null | undefined): boolean {
   if (left === null || left === undefined || right === null || right === undefined) {
     return (left ?? null) === (right ?? null);
   }
+  if (typeof left !== "string" || typeof right !== "string") return left === right;
   return left.toLowerCase() === right.toLowerCase();
 }
 

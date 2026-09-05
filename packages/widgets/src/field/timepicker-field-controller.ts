@@ -78,7 +78,10 @@ function currentTimeAsParsed(): ParsedTime {
 function shownTime(value: string | null, format: MdyTimeFormat): string {
   if (value === null || value === "") return "";
   const parsed = parseAnyTime(value, "24h") ?? parseAnyTime(value, format);
-  return parsed ? formatTimeAs(parsed, format) : value;
+  // What the control shows is text, including when it is not a time: the value a person typed is
+  // shown back as they typed it. Held to text here rather than at the reader, because a model
+  // holding a value of another shape is a verdict the control has to stay on the page to show.
+  return parsed ? formatTimeAs(parsed, format) : String(value);
 }
 
 function draftFor(value: string | null, format: MdyTimeFormat): ParsedTime {
