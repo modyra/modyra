@@ -329,18 +329,23 @@ export const MdyMultiselectField = defineComponent({
                     "aria-label": chipActionName(verb, option.label),
                     onClick: (event: Event) => { event.stopPropagation(); act(); },
                   });
-                // **Both directions.** `chipMove` is declared repeated, so a chip carries one handle
-                // per direction; drawn as a single fused "Move" this renderer offered a pointer no
-                // way to say *which way*, and the words for the two directions sat unread in the
-                // message table.
-                const moves = held.length > 1 ? [
-                  control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveEarlierLabel,
-                    () => run(controller.dispatch({ type: "move", target: "previous" }))),
-                ] : [];
-                const later = held.length > 1 ? [
-                  control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveLaterLabel,
-                    () => run(controller.dispatch({ type: "move", target: "next" }))),
-                ] : [];
+                // **No handle to move a chip with, and that is deliberate.**
+                //
+                // `chipMove` is gated on the field offering `reorderable`, which this renderer has no
+                // way to be told: the property exists on a field descriptor and this component takes
+                // no such prop. Drawing the handles anyway put two buttons on every chip that could
+                // not act — measured: pressing one, with the chip focused first, leaves the order
+                // exactly as it was.
+                //
+                // The reason they cannot act is worth the sentence: `move` is resolved against the
+                // *active* chip, which only the keyboard's roving focus sets — `focus` as an intent
+                // returns nothing — so a pointer has no path to reordering at all. The renderers that
+                // draw handles drive them by dragging, which this one does not implement.
+                //
+                // A control that says it does something and does nothing is the caret defect again,
+                // one layer in. Until this offers reordering it draws no affordance for it.
+                const moves: VNode[] = [];
+                const later: VNode[] = [];
                 // The quantity a chip holds is stepped on the chip. Two renderers drew these with the
                 // class the contract reserves for a *list entry's* stepper and this one drew none —
                 // an element nothing named, so nothing could ask for it.

@@ -82,6 +82,32 @@ test("stepping a quantity says the value and where it stands", async () => {
   fixture.dispose?.();
 });
 
+test("a quantity that reaches its floor says so", async () => {
+  // The boundary is its own half of the sentence: the register's diagnostic quotes it directly —
+  // *the quantity is at its floor and the control says "" — nothing marks the boundary*. Stepping
+  // down to one and hearing only the count back would leave a person at a limit nobody named.
+  const fixture = await withOneHeld({ variant: "multi" });
+  const steppers = [...fixture.root.querySelectorAll(
+    partClasses("multiselect", "chipStep").map((one) => `.${one}`).join(""),
+  )];
+  assert.ok(steppers.length >= 2, "a chip with no steppers has no quantity to take to a floor");
+
+  steppers[steppers.length - 1].dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  await fixture.settle?.();
+  const above = said(fixture.root);
+
+  steppers[0].dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+  await fixture.settle?.();
+  const atFloor = said(fixture.root);
+
+  // Both halves, because a sentence that always said "minimum" would pass an assertion on the floor
+  // alone while telling a person at three that they are at the limit.
+  assert.notEqual(above, atFloor, "the floor is announced the same way as any other quantity");
+  assert.ok(atFloor.length > above.length, `nothing marks the boundary: ${JSON.stringify(atFloor)}`);
+  fixture.dispose?.();
+});
+
+
 /**
  * The sentence for a chip that moved is **wired and not asserted here**, and that is said rather
  * than left to be discovered.
