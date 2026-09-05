@@ -14,7 +14,6 @@ import { defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type P
 import {
   MDY_WIDGET_CONTRACTS,
   createFileFieldController,
-  MDY_I18N_MESSAGES_DEFAULT,
   type MdyFileFieldController,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
@@ -95,17 +94,8 @@ export const MdyFileField = defineComponent({
           new Set(["control"]),
           "file",
           props.field.disabled?.() === true,
-          (part) => {
-            if (part === "clear") return "\u00d7";
-            if (part !== "content") return undefined;
-            const held = props.field.value();
-            const names = Array.isArray(held) ? held.map((file) => (file as File).name) : [];
-            // The words the contract ships, not a string chosen here: a renderer that wrote its own
-            // prompt would be a fourth translation of a sentence the package already localises.
-            return names.length > 0
-              ? names.join(", ")
-              : MDY_I18N_MESSAGES_DEFAULT.fileSelect;
-          },
+          undefined,
+          parts,
         ) as VNode[]),
       ]));
 

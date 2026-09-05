@@ -170,10 +170,12 @@ export const MdyColorsField = defineComponent({
           "aria-label": props.label === "" ? "Choose colour" : `Choose ${props.label}`,
           onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
         }, [h("span", partProps(parts.preview, {
-          // The colour it previews. Drawn without it the swatch was transparent: the person had the
-          // hex text and a grey square, on the one control whose whole job is to show a colour.
-          // The fallback is the same one the reference renderer paints when the field holds nothing.
-          style: { backgroundColor: state.value.value || "#4361ee" },
+          // The colour it previews, from the projection. Painted here from the field's own value,
+          // this renderer was a fourth opinion about it — and the empty state was a literal chosen
+          // in this file rather than the one the contract ships.
+          ...(parts.preview?.content?.color === undefined
+            ? {}
+            : { style: { backgroundColor: parts.preview.content.color } }),
         }))]),
         // The native input the platform draws its own picker for, kept for the people who want it.
         // Its projection carries the relations and no classes, so the part's own class is added

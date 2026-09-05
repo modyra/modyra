@@ -14,6 +14,7 @@
 import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
 import { clearFileSelection, fileSelectionTransition, type MdyFileCandidate } from "../behavior.js";
 import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
+import { MDY_I18N_MESSAGES_DEFAULT } from "../i18n.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { blocksValueChange } from "../interactivity.js";
@@ -90,6 +91,23 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
             ...(current.dragover ? ["mdy-file__dropzone--dragover"] : []),
           ],
           attributes: { "aria-disabled": String(current.disabled) },
+        },
+        // What the prompt says, and the mark on the button that empties the field. Both are things a
+        // person reads, and every renderer wrote its own words for them — one wrote none, and drew
+        // an empty box where the prompt goes.
+        content: {
+          classes: [...definition.parts.content.classes],
+          attributes: {},
+          content: {
+            text: current.files.length > 0
+              ? current.files.map((file) => file.name).join(", ")
+              : MDY_I18N_MESSAGES_DEFAULT.fileSelect,
+          },
+        },
+        clear: {
+          classes: [...definition.parts.clear.classes],
+          attributes: { "aria-label": MDY_I18N_MESSAGES_DEFAULT.fileClearSelection },
+          content: { text: "\u00d7" },
         },
         fileList: {
           classes: [...definition.parts.fileList.classes],

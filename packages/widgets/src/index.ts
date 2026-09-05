@@ -9,6 +9,7 @@ export type {
   MdyWidgetController,
   MdyWidgetViewContract,
   MdyTypedWidgetViewContract,
+  MdyPartContent,
 } from "./contract.js";
 
 export {

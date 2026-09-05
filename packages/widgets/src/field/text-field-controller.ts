@@ -109,6 +109,9 @@ export function createTextFieldController<TValue>(
         input: a11y.input,
         description: a11y.description,
         error: a11y.error,
+        // The readout, on the kind that declares one. Offered rather than always present: the parts
+        // a projection publishes are the parts the kind has, and a text field has no readout.
+        ...(a11y.value === undefined ? {} : { value: a11y.value }),
       },
     };
   });

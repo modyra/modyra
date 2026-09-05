@@ -33,6 +33,14 @@ export interface MdyColorsFieldController
   setReadonly(readonly: boolean): void;
 }
 
+/**
+ * The colour a swatch shows where the field holds nothing.
+ *
+ * Stated once, because it is a value a person sees: renderers picking their own would be two empty
+ * states for one contract, and the difference would surface only to somebody comparing screenshots.
+ */
+const FALLBACK_SWATCH = "#4361ee";
+
 export function createColorsFieldController(
   options: MdyColorsFieldControllerOptions,
   reactivity?: MdyReactivity,
@@ -105,6 +113,10 @@ export function createColorsFieldController(
           // Decoration, and said so: the colour is already announced by the control's own value, and
           // a swatch that repeats it is a second thing for a screen reader to read out.
           attributes: { "aria-hidden": "true" },
+          // What it shows. This part exists to display a colour and every renderer decided for
+          // itself which one — one of them decided nothing, and drew a transparent square on the
+          // single control whose whole job is to show a colour.
+          content: { color: text() || FALLBACK_SWATCH },
         },
         presets: {
           classes: [...definition.parts.presets.classes],

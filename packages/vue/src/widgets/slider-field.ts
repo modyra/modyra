@@ -111,7 +111,8 @@ export const MdySliderField = defineComponent({
           new Set(["control"]),
           "slider",
           props.field.disabled?.() === true,
-          (part) => (part === "value" ? String(props.field.value() ?? "") : undefined),
+          undefined,
+          parts,
         ) as VNode[]),
       ]));
 

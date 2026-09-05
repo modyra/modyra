@@ -5462,9 +5462,14 @@
     "\"synchronous\"",
     "\"task\""
   ],
+  "widgets:MdyPartContent": [
+    "color?: string",
+    "text?: string"
+  ],
   "widgets:MdyPartContract": [
     "attributes: Readonly<Record<string, string | number | boolean | null | undefined>>",
     "classes: readonly string[]",
+    "content?: MdyPartContent",
     "id?: string",
     "role?: string",
     "states?: readonly MdyStateName[]",
@@ -7013,7 +7018,7 @@
     "(0) state: MdyFieldState<TValue>",
     "(1) errors: ReadonlyArray<MdyFieldError>",
     "(2) options: MdyTextFieldA11yOptions",
-    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly input: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; }"
+    "-> returns: { readonly root: MdyPartContract; readonly label: MdyPartContract; readonly input: MdyPartContract; readonly description: MdyPartContract; readonly error: MdyPartContract; /** The readout, on the kind that declares one. Absent on the kinds that do not. */ readonly value?: MdyPartContract; }"
   ],
   "widgets:projectTimepickerFieldA11y": [
     "(0) state: MdyTimepickerFieldState",

@@ -2,6 +2,7 @@
  * Accessibility projection for primitive field widgets.
  */
 import type { MdyValueKind, MdyFieldError } from "@modyra/core";
+import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { defaultWidgetIdFactory as idFactory, assertUsableWidgetId } from "../ids.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES } from "../structure.js";
@@ -96,6 +97,8 @@ export function projectTextFieldA11y<TValue>(
   readonly input: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
+  /** The readout, on the kind that declares one. Absent on the kinds that do not. */
+  readonly value?: MdyPartContract;
 } {
   const { inputId, labelId, descriptionId, errorId } = textFieldPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
@@ -188,5 +191,17 @@ export function projectTextFieldA11y<TValue>(
         "aria-live": "polite",
       },
     },
+    // The readout beside a slider, where the kind declares one. A number a person can see is the
+    // whole reason that part exists, and every renderer that drew it decided for itself what it
+    // said — one of them said nothing, because the part reached it as a shape with no content.
+    ...(kind === "slider"
+      ? {
+        value: {
+          classes: [...(MDY_WIDGET_CONTRACTS.slider.parts as Readonly<Record<string, { classes: readonly string[] } | undefined>>)["value"]?.classes ?? []],
+          attributes: {},
+          content: { text: String(state.value ?? "") },
+        },
+      }
+      : {}),
   };
 }

@@ -85,18 +85,28 @@ export function drawDeclaredUnder(
    */
   kind?: string,
   disabled = false,
-  /** What a part shows, asked of the component that holds the value. */
+  /** What a part shows, asked of the component — for anything the projection does not carry. */
   content?: (part: string) => unknown,
+  /** The projected parts, which carry what a part shows where the contract states it. */
+  view?: Readonly<Record<string, { readonly content?: { readonly text?: string; readonly color?: string } } | undefined>>,
 ): unknown[] {
   return contract.structure.nodes
     .filter((node) => node.parent === parent && node.optional !== true && !except.has(node.part))
     .map((node) => {
-      const shown = content?.(node.part);
-      const below = drawDeclaredUnder(contract, node.part, render, except, kind, disabled, content);
+      // What the projection says the part shows, before what the component says. The contract is
+      // where this answer belongs: a renderer that decides it is a fourth opinion about a value the
+      // widget already holds, and the four opinions were four different screens.
+      const projected = view?.[node.part]?.content;
+      const shown = projected?.text
+        ?? (projected?.color === undefined ? content?.(node.part) : undefined);
+      const below = drawDeclaredUnder(contract, node.part, render, except, kind, disabled, content, view);
       return render(
         TAG_FOR_ELEMENT[String(node.element)] ?? "span",
         {
           class: contract.parts[node.part]?.classes.join(" "),
+          // A colour is painted, not written. Where the projection says a part shows one, that is
+          // the whole of what it shows — DESIGN.md decides that it lands on the background.
+          ...(projected?.color === undefined ? {} : { style: { backgroundColor: projected.color } }),
           ...(kind !== undefined && MDY_ARIA_DISABLED_PARTS.includes(`${kind}.${node.part}`)
             ? { "aria-disabled": String(disabled) }
             : {}),
