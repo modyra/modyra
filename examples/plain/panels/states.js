@@ -188,6 +188,9 @@ export const statesPanel = {
     "group",
     "groupSubmitName",
     "hiddenChipCount",
+    // The same count, settled against the mark that reports it: the mark shares the row, so drawing
+    // it narrows the strip. This panel's chip strips are what drive it.
+    "settleHiddenChipCount",
     "holdsUneditedValue",
     "idSafeKey",
     "inlineDirectionOf",

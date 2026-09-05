@@ -1155,6 +1155,14 @@
             --mdy-md-tone-container-highest-hover: 28;
             --mdy-md-tone-on-surface: 90;
             --mdy-md-tone-on-surface-variant: 80;
+            /* The error role rises with the rest of the text roles, and for the same reason: a tone
+               chosen to read on a light surface is a mid red, and a mid red on a tone-6 surface
+               measured 1.29:1 — the required marker and every error message with it, below AA on the
+               dark scheme while the light one passed. M3's dark error tone is 80, the same ramp the
+               roles above take, so this is the system's own answer rather than a colour picked to
+               clear a threshold. */
+            --mdy-md-tone-error: 80;
+            --mdy-md-tone-on-error: 20;
 
             --mdy-surface: color-mix(in srgb, var(--mdy-primary), black 40%);
             --mdy-surface-container-lowest: color-mix(in srgb, var(--mdy-primary), black 55%);

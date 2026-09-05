@@ -1,7 +1,7 @@
 import {
   defaultWidgetIdFactory,
   partSelector,
-  beginChipReorder, chosenKeyOrder, elementByDataKey, focusPartOnOpen, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, hiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
+  beginChipReorder, chosenKeyOrder, elementByDataKey, focusPartOnOpen, wayBackActionName, matchesKeyGesture, MDY_WIDGET_KEYBOARD, chipTooltipOffset, settleHiddenChipCount, keepFocusedChipInView, chipFocusAfterRemoval, scrollChipStripByWheel, isTypeaheadCharacter, chipMovedAnnouncement, stateClass, keyBindingFor, multiselectAnnouncement, optionsWithUnrecognizedValues, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { NgTemplateOutlet } from "@angular/common";
 import {
@@ -729,7 +729,9 @@ export class MdyMultiselectComponent<TValue = string>
       // is outside again by about that width. Whatever the strip ends up as wide as, the focused
       // chip is inside it.
       keepFocusedChipInView(strip);
-      this.hiddenChips.set(hiddenChipCount(strip));
+      // Settled against its own mark: it shares the row, so drawing it narrows the strip and the
+      // chip that width covered falls outside a box measured before the mark existed.
+      settleHiddenChipCount(strip, (hidden) => this.hiddenChips.set(hidden));
     });
   });
 

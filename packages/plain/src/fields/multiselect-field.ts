@@ -33,7 +33,7 @@ import {
   scrollChipStripByWheel,
   chipTooltipOffset,
   chosenKeyOrder,
-  hiddenChipCount,
+  settleHiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
   matchesKeyGesture,
@@ -199,12 +199,16 @@ export function renderMultiselectField(
 
   /** Measured after every render, because how many fit depends on the labels and the width given. */
   function syncOverflow(): void {
-    const hidden = hiddenChipCount(chipStrip);
-    overflow.hidden = hidden === 0;
-    if (hidden > 0) {
-      setText(overflow, messages.chipsHiddenShort.replace("{count}", String(hidden)));
-      overflow.setAttribute("aria-label", messages.chipsHidden.replace("{count}", String(hidden)));
-    }
+    // Settled against its own mark: the mark shares the row, so showing it narrows the strip and the
+    // chip that width covered falls outside a box measured before the mark existed. Counted once,
+    // the row said "29 more" while thirty were cut.
+    settleHiddenChipCount(chipStrip, (hidden) => {
+      overflow.hidden = hidden === 0;
+      if (hidden > 0) {
+        setText(overflow, messages.chipsHiddenShort.replace("{count}", String(hidden)));
+        overflow.setAttribute("aria-label", messages.chipsHidden.replace("{count}", String(hidden)));
+      }
+    });
     // The affordance takes its width out of the strip, so a chip the browser scrolled to on focus is
     // outside again by about that width. Whatever the strip ends up as wide as, the focused chip is
     // inside it.

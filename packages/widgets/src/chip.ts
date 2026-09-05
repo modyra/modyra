@@ -442,6 +442,32 @@ export function chipTooltipOffset(chip: HTMLElement, strip: HTMLElement): number
  * always one is not an imprecise measurement, it is a constant wearing a measurement's clothes, and
  * it reads as correct exactly once.
  */
+/**
+ * The count, and the mark that reports it, settled against each other.
+ *
+ * The mark sits in the same row as the strip, so showing it takes width *out of* the strip — and the
+ * chip that width covered is then outside a box that was measured before the mark existed. The row
+ * reads "29 more" while thirty are cut, which is worse than saying nothing: the mark is the only
+ * account a person has of what they cannot see, and one that is short by one is a wrong account
+ * delivered confidently.
+ *
+ * It stayed hidden while the strip had room to spare and appeared the moment a floor was put under
+ * the control beside it — the geometry moved, and the off-by-one moved into view with it.
+ *
+ * Two passes, never more: the second measurement is taken with the mark on the row, and a third
+ * could only differ if the number's own width changed the layout again, which is what `stable`
+ * refuses to let happen. `apply` draws the mark; it is called once per pass, with the count that
+ * pass measured.
+ */
+export function settleHiddenChipCount(strip: HTMLElement, apply: (hidden: number) => void): number {
+  const first = hiddenChipCount(strip);
+  apply(first);
+  const second = hiddenChipCount(strip);
+  if (second === first) return first;
+  apply(second);
+  return second;
+}
+
 export function hiddenChipCount(strip: HTMLElement): number {
   if (strip.scrollWidth <= strip.clientWidth) return 0;
   const box = strip.getBoundingClientRect();

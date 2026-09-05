@@ -15,7 +15,7 @@ import {
   chipTooltipOffset,
   chosenKeyOrder,
   elementByDataKey,
-  hiddenChipCount,
+  settleHiddenChipCount,
   keepFocusedChipInView,
   wayBackActionName,
   fieldDescribedBy,
@@ -1155,10 +1155,13 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
     // outside again by about that width. Whatever the strip ends up as wide as, the focused chip is
     // inside it.
     keepFocusedChipInView(strip);
-    const hidden = hiddenChipCount(strip);
-    if (hidden === this._hiddenChips) return;
-    this._hiddenChips = hidden;
-    this.requestUpdate();
+    // Settled against its own mark: it shares the row, so drawing it narrows the strip and the chip
+    // that width covered falls outside a box measured before the mark existed.
+    settleHiddenChipCount(strip, (hidden) => {
+      if (hidden === this._hiddenChips) return;
+      this._hiddenChips = hidden;
+      this.requestUpdate();
+    });
   }
 
   /**
