@@ -28,7 +28,9 @@ export function widgetIdOf(inputs: MdyWidgetIdInputs): string {
   // What the document said, whole: a host that names its widgets has already solved this, and a
   // derived scope written over it would rename ids the host wrote down elsewhere.
   if (inputs.widgetId !== undefined && inputs.widgetId !== "") return inputs.widgetId;
-  const path = (inputs.field as { path?: string }).path;
+  // Read defensively: a document that hands a widget no field at all is a defect, and a widget that
+  // throws while computing its own id takes the control off the page instead of showing it (ADR 0208).
+  const path = (inputs.field as { path?: string } | null | undefined)?.path;
   // Nothing to derive from is not a failure: a field with no path is one nobody can reference by
   // name either, and an invented counter would render different ids on every mount.
   if (path === undefined || path === "") return "mdy";
