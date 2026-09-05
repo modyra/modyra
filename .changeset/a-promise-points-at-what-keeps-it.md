@@ -31,3 +31,11 @@ nobody has — the part silently stops being owed, and nothing says so. The four
 quantity are gated on the same word: with one of something and no quantity those keys mean nothing,
 and a gesture offered where there is nothing to do is a promise the widget cannot keep. That is what
 makes them `major` — a binding that was unconditional now asks the field for something.
+
+`step` stays one word for two ideas — passing a range, which a number does always, and changing a
+chip's quantity, which the field must allow. They are the same act under two permissions, and the
+kind already carries the difference, so a second intent would buy a distinction that is not missing.
+The condition that would overturn this is a kind holding **both** kinds of step, and it does not need
+remembering: `bindingsWithNoPrecondition` reports exactly that shape — two bindings of one intent in
+one kind, one gated and one not — so the day the premise stops holding, the guard goes red and says
+so.
