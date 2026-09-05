@@ -276,7 +276,12 @@ export function renderMultiselectField(
         const button = el("button", parts.optionStep.classes.join(" ")) as HTMLButtonElement;
         button.type = "button";
         setIcon(button, icon);
-        button.setAttribute("aria-label", `${describe} ${option.label}`);
+        // Composed by the contract, from the message table. Written here as English literals the
+        // words were untranslatable on a page in any other language — and they were the wrong words
+        // besides: the table says "One fewer"/"One more", which name the act, where "Decrease" names
+        // a direction. The number field ten files away already reads its stepper names from the same
+        // table, so this was one package answering the same question two ways.
+        button.setAttribute("aria-label", chipActionName(describe, option.label));
         button.addEventListener("click", (event) => {
           event.stopPropagation();
           dispatch({ type: intent, optionKey: key });
@@ -284,7 +289,10 @@ export function renderMultiselectField(
         return button;
       };
       const count = el("span", parts.optionCount.classes.join(" ")) as HTMLSpanElement;
-      chip.append(step("MINUS", "decrement", "Decrease"), label, count, step("PLUS", "increment", "Increase"));
+      chip.append(
+        step("MINUS", "decrement", messages.chipDecrementLabel), label, count,
+        step("PLUS", "increment", messages.chipIncrementLabel),
+      );
       return { chip, count };
     }
 

@@ -215,9 +215,22 @@ export function insertControl(shell: FieldShell, control: HTMLElement): void {
   // are the catalogue's own — a fixed vocabulary with nothing in it a selector has to be protected
   // from.
   const named = controlClass ? control.querySelector<HTMLElement>(`.${controlClass}`) : null;
+  // **The one control that holds the value**, before the fallbacks below. A stepper is a button and
+  // an action, with a name of its own saying what pressing it does; the box beside it is the field.
+  // Where a container offers exactly one operable that is not a button, that is the field's control,
+  // whatever else sits around it.
+  //
+  // Without this a number — an input with a stepper either side — matched no earlier branch and
+  // reached the last one, which names the **container**: a `<span>` with no role, not focusable,
+  // never announced. The document declared a name, a `<span>` nothing could reach carried the words,
+  // and the box a person lands on had none. It survived because no check in any tier asked a number
+  // for its declared name; the one that asks mounts a text field.
+  const valueBearing = control.querySelectorAll("input:not([type=button]), select, textarea");
+  const holdsTheValue = valueBearing.length === 1 ? valueBearing[0] as HTMLElement : null;
   const operated = control.matches(`${operable}, [role]`)
     ? control
     : named
+      ?? holdsTheValue
       ?? control.querySelector<HTMLElement>("[role]")
       ?? (control.querySelectorAll(operable).length === 1
         ? control.querySelector<HTMLElement>(operable)!
