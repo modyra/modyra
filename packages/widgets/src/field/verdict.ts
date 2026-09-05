@@ -210,6 +210,13 @@ export function formErrorsOf(errors: ReadonlyArray<MdyFormError>): ReadonlyArray
  * elements a `<label for>` cannot point at, so the caption reaches them only by being referenced.
  * Those ask `fieldNameAttributes`, which chooses the attribute and refuses to write both.
  *
+ * **The line is "is this control the whole widget", not "is this element labellable".** A date
+ * picker's text box is an `<input>` a caption can point at, and it is still named through the other
+ * door — because the box is one part of a widget that also has a calendar, and the name belongs to
+ * the pair. Measured: a picker's control announces the caption by reference, exactly as a radiogroup
+ * does, in more than one renderer. Reading the rule off the element alone puts those two kinds on
+ * the wrong side of it.
+ *
  * Four renderers follow this and none of them said so, which is exactly how it came to be
  * "repaired": a boundary nobody writes down reads as drift to the next person who sees one group of
  * kinds behaving unlike another. Six of one adapter's components used this door and two used the
