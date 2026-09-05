@@ -20,7 +20,8 @@ import {
   focusPartOnOpen,
   keyBindingFor,
 
-  MDY_CHIP_CLASSES,} from "@modyra/widgets";
+  MDY_CHIP_CLASSES,  MDY_POPUP_OPENERS,
+} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
@@ -37,6 +38,18 @@ import { widgetIdOf } from "./widget-id.js";
 const CONTRACT = MDY_WIDGET_CONTRACTS.multiselect;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
 const classesOf = (part: string): string => declared[part]?.classes.join(" ") ?? "";
+/**
+ * The part a pointer may press to open the panel, over and above the opener that carries the ARIA.
+ *
+ * Asked of the catalogue rather than named here: a kind that stops declaring a second door stops
+ * getting a handler for it, and one that starts declaring it gets one without this file changing.
+ *
+ * The second door carries no relation of its own (ADR 0177) — `aria-expanded` and `aria-controls`
+ * belong to the one opener, because two elements claiming them announce two comboboxes for one list.
+ * That is the right decision and it has a consequence: **nothing shaped like a keyboard check or an
+ * attribute check can see this door**, and the only question that reaches it is a pointer press.
+ */
+const POINTER_DOOR = MDY_POPUP_OPENERS.multiselect?.alsoOpensFrom;
 const roleOf = (part: string): string | undefined => declared[part]?.role ?? undefined;
 
 export const MdyMultiselectField = defineComponent({
@@ -221,7 +234,19 @@ export const MdyMultiselectField = defineComponent({
       // and a value missing from the declared options would otherwise be held with no chip at all.
       const held = state.value.options.filter((option) => state.value.selectedKeys.has(String(option.value)));
       children.push(h("div", { class: classesOf("inputWrapper") }, [
-        h("div", { class: classesOf("box") }, [
+        h("div", {
+          class: classesOf("box"),
+          // Only when the press lands on the box itself. A chip inside it takes or moves that value,
+          // and a press that did both would open the panel every time somebody removed something.
+          ...(POINTER_DOOR === "box"
+            ? {
+              onClick: (event: Event) => {
+                if (event.target !== event.currentTarget) return;
+                run(controller.dispatch({ type: "toggleOpen" }));
+              },
+            }
+            : {}),
+        }, [
           // What is held, as a grid: one row of cells, which is how a screen reader counts them and
           // how the arrows walk them.
           h("div", partProps(parts.chips, { class: classesOf("chips"), role: roleOf("chips") }), [
