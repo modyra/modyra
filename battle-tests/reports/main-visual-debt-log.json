@@ -34,6 +34,24 @@
         "expect(page).toHaveScreenshot",
         "expect(received).toContain"
       ]
+    },
+    {
+      "runId": 33993091178,
+      "head": "468b101d",
+      "at": "2026-09-05T21:27:11Z",
+      "failedSteps": [
+        "Angular tests",
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 47,
+      "passed": 984,
+      "flaky": 1,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot",
+        "expect(received).toContain"
+      ]
     }
   ]
 }

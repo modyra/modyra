@@ -19,9 +19,13 @@
  * that looks like a measurement is the failure this file exists to prevent. Two runs hours apart
  * already returned nothing at all here.
  *
- * What it does not judge: whether the failing step is the visual one. It records the step's name so
- * a reader can see that for themselves, because a run red for another reason belongs in a different
- * series and silently folding it in would be the same error one level down.
+ * **Every count is scoped to the browser step's own lines.** A run can be red in more than one place,
+ * and two runners on one page do not speak the same language: jest reports suites where playwright
+ * reports cases, so reading the first `N failed` in the whole log turned 47 cases into 1 suite with
+ * nothing to show the subject had changed. `failedSteps` still records every red step, so a run that
+ * belongs to another series is visible rather than folded into this one.
+ *
+ * What it does not judge: whether the other red steps matter. It names them and stops there.
  *
  * Usage:
  *   node scripts/record-main-visual-count.mjs             # the latest failed CI run on main
@@ -34,6 +38,9 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const LOG = join(ROOT, "battle-tests/reports/main-visual-debt-log.json");
+
+/** The step whose summary this series is about. Named once: every count below is scoped to it. */
+const BROWSER_STEP = "Browser smoke test";
 
 const gh = (...args) => execFileSync("gh", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 
@@ -87,17 +94,28 @@ const row = {
 if (log.trim() === "") {
   row.measurable = false;
 } else {
+  // **Only the lines the browser step printed.** A run with more than one red step carries more than
+  // one runner's summary, and they do not mean the same thing: jest reports `1 failed, 70 passed` of
+  // *suites* on the same page where playwright reports cases. Matching the first `N failed` in the
+  // whole log took whichever printed first and labelled it as cases — a 47 became a 1 with no sign
+  // that the subject had changed underneath. The step name is the only thing separating them.
+  const stepLines = log.split("\n").filter((line) => line.includes(BROWSER_STEP));
+  const scoped = stepLines.join("\n");
   const count = (word) => {
-    const found = log.match(new RegExp(`(\\d+) ${word}`));
+    const found = scoped.match(new RegExp(`(\\d+) ${word}`));
     return found === null ? null : Number(found[1]);
   };
-  row.measurable = true;
+  row.measurable = stepLines.length > 0;
+  if (!row.measurable) {
+    // The run is red, but not here. Recorded as such rather than measured from another step's words.
+    row.note = `no lines from "${BROWSER_STEP}" in this log; the red belongs to another step`;
+  }
   row.failed = count("failed");
   row.passed = count("passed");
   row.flaky = count("flaky") ?? 0;
   // Which error classes produced them, as a set of names rather than a count: a name tells a reader
   // whether a run belongs to this series at all, and cannot be mistaken for a size.
-  row.errorKinds = [...new Set((log.match(/Error: expect\((?:locator|page|received)\)\.[a-zA-Z]+/g) ?? [])
+  row.errorKinds = [...new Set((scoped.match(/Error: expect\((?:locator|page|received)\)\.[a-zA-Z]+/g) ?? [])
     .map((one) => one.replace("Error: ", "")))].sort();
 }
 
