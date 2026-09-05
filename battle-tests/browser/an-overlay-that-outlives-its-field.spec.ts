@@ -91,10 +91,24 @@ for (const host of HOSTS) {
         .parts as Record<string, { classes?: readonly string[] } | undefined>)[
           MDY_POPUP_OPENERS[kind as keyof typeof MDY_POPUP_OPENERS].opener]?.classes ?? [];
       const trigger = page.locator(`${root} ${declared.map((one) => `.${one}`).join("")}`).first();
-      const opens = declared.length > 0 && await trigger.count() > 0;
-      // A kind the contract gives no addressable opener is reported as unreached rather than passed:
-      // the disposal below would be measuring a popup that never opened.
-      test.skip(!opens, `the contract gives ${kind} no addressable opener, so nothing here was pressed`);
+      const drawn = declared.length > 0 && await trigger.count() > 0;
+      // **What this file can measure is a panel the page owns.** A renderer that draws a native
+      // `<select>` opens the browser's own dropdown: there is no element to outlive the field,
+      // because there was never an element. The question is not failed there, it cannot be put.
+      //
+      // The condition used to be `[aria-haspopup]`, which native selects also lack — so the right
+      // renderers were skipped for the wrong reason, and the reason was a claim about them
+      // ("published no opener") that measurement contradicts: every renderer draws the opener the
+      // contract declares. Asking the element what it is says the true thing instead.
+      //
+      // It ends by itself: the day a renderer draws this kind with a panel of its own, the tag is no
+      // longer `select` and the case runs.
+      const nativeDropdown = drawn
+        && await trigger.evaluate((element) => element.tagName.toLowerCase() === "select");
+      test.skip(!drawn, `the contract gives ${kind} no addressable opener, so nothing here was pressed`);
+      test.skip(nativeDropdown, `${host.name} draws ${kind} as a native select, so its list is the `
+        + "browser's own and never an element on this page — there is nothing here that could outlive "
+        + "the field");
 
       await trigger.click({ timeout: 5_000 });
       await expect
