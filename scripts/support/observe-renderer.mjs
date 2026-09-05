@@ -25,6 +25,12 @@ const RENDERERS = {
     fixture: "../../packages/lit/test/support/state-fixture.mjs",
     entry: "../../packages/lit/dist/index.js",
   },
+  vue: {
+    package: "@modyra/vue",
+    domEnv: "../../packages/vue/test/support/dom-env.mjs",
+    fixture: "../../packages/vue/test/support/state-fixture.mjs",
+    entry: "../../packages/vue/dist/index.js",
+  },
 };
 
 const name = process.argv[2];

@@ -28,6 +28,7 @@ const check = process.argv.includes("--check");
 const OBSERVED = [
   { name: "plain", package: "@modyra/plain", manifest: "packages/plain/conformance-manifest.json" },
   { name: "lit", package: "@modyra/lit", manifest: "packages/lit/conformance-manifest.json" },
+  { name: "vue", package: "@modyra/vue", manifest: "packages/vue/conformance-manifest.json" },
 ];
 
 /** What each field means, kept beside the data so a reader of the JSON is not guessing. */
@@ -113,11 +114,6 @@ const notObserved = {
     reason: "draws, but has no `test/support/state-fixture.mjs` — the fixture this harness mounts a renderer through, and the same one its own conformance suite uses",
     stillTrue: () => !existsSync(resolve(root, "packages/react/test/support/state-fixture.mjs")),
     fails: "@modyra/react now has a state fixture — add it to OBSERVED in observe-renderer.mjs",
-  },
-  "@modyra/vue": {
-    reason: "draws, but has no `test/support/state-fixture.mjs` — the fixture this harness mounts a renderer through, and the same one its own conformance suite uses",
-    stillTrue: () => !existsSync(resolve(root, "packages/vue/test/support/state-fixture.mjs")),
-    fails: "@modyra/vue now has a state fixture — add it to OBSERVED in observe-renderer.mjs",
   },
   "@modyra/solid": {
     reason: "headless: renders no markup, so there are no kinds to report",
