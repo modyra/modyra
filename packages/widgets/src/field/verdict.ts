@@ -199,6 +199,21 @@ export function formErrorsOf(errors: ReadonlyArray<MdyFormError>): ReadonlyArray
  *
  * Order: what a host wrote for the control, then the visible label, then the field's name. A host
  * that says nothing and a document that says nothing still leave one thing to say.
+ *
+ * **This door, or `fieldNameAttributes`, depending on the control — and the line between them is the
+ * platform's, not a preference.** A control a `<label for>` can name natively — a text box, a
+ * number, a checkbox, a `<select>` — is already named by its caption without anything being written
+ * on it, so what a document *declares* is the extra thing to say, and it goes on as `aria-label`.
+ * That is this door: what to call it, in one string.
+ *
+ * A **composite** has no such association: a radiogroup, a segmented control, a calendar grid are
+ * elements a `<label for>` cannot point at, so the caption reaches them only by being referenced.
+ * Those ask `fieldNameAttributes`, which chooses the attribute and refuses to write both.
+ *
+ * Four renderers follow this and none of them said so, which is exactly how it came to be
+ * "repaired": a boundary nobody writes down reads as drift to the next person who sees one group of
+ * kinds behaving unlike another. Six of one adapter's components used this door and two used the
+ * other, and the split was the line above, not a divergence.
  */
 export function fieldAccessibleName(sources: {
   readonly ariaLabel?: string | null;
@@ -225,6 +240,12 @@ export function fieldAccessibleName(sources: {
  *
  * Returned as the attributes to apply rather than as a choice to act on, so a renderer cannot write
  * the pair by accident. ADR 0175.
+ *
+ * **For the controls a `<label for>` cannot reach**: a radiogroup, a segmented control, a calendar
+ * grid. A control the platform can associate with its caption is named by `fieldAccessibleName`
+ * instead — see the boundary written there. Asking this door for a text box would replace the words
+ * a person reads with a reference, which is the same name told a longer way, and would drop the name
+ * a document declared for it.
  */
 export function fieldNameAttributes(sources: {
   readonly ariaLabel?: string | null;
