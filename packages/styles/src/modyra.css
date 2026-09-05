@@ -2058,7 +2058,17 @@
 
     .mdy-renderer .mdy-multiselect > .mdy-multiselect__trigger {
         flex: 1 1 auto;
-        min-width: 0;
+        /* A floor, because this is the control a person presses to open the list.
+           `min-width: 0` let it absorb every pixel the chip strip refused to give up: with three
+           chips in the row the opener measured **zero** — present in the tree, `display: flex`,
+           `visibility: visible`, `opacity: 1`, one client rect — and invisible to a person, who then
+           has nothing to press. Every flag a check reads says "shown"; only the box says otherwise.
+           The 44px target the design system puts over a small control cannot rescue one with no
+           width, so the width itself is what has to hold.
+           The strip yields instead, which costs it nothing it had not already planned for: it
+           scrolls sideways by design, and what is past its edge is reachable by wheel and by the
+           roving focus. */
+        min-width: max(2.75rem, 44px);
     }
 
     .mdy-multiselect__trigger {

@@ -54,6 +54,14 @@ button, the steppers, and the caret marking a select as openable. A user reads t
 | `--mdy-affordance-target` | 2.75rem | the pointer target, as a centred overlay |
 | `--mdy-affordance-inset` | 0.25rem | the gap a container leaves at its trailing edge |
 
+**A control that shares its row keeps a floor.** A target drawn over a small control cannot rescue
+one with no width, and a flex row hands all its shrinking to whichever child allows it: the
+multiselect's opener had `min-width: 0`, so a row holding three chips squeezed it to **zero** — in the
+tree, `display: flex`, `visibility: visible`, `opacity: 1`, one client rect, and nothing on screen to
+press. Every flag a check reads says shown; only the box says otherwise. So a control a person
+presses declares its own minimum, and the decoration beside it yields — the chip strip already
+scrolls sideways, and what is past its edge is reachable by wheel and by the roving focus.
+
 **The target is not the box.** Sized to WCAG 2.5.5's 44px, the box grew three fields to 46px while
 the rest stayed 38. The target is an overlay — centred, out of flow, affecting nothing.
 
