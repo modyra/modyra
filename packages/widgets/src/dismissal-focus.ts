@@ -23,6 +23,7 @@
  * of them at the moment this is bound, and a list resolved once would hold the nulls it saw then.
  */
 import { capabilityOf } from "./ask.js";
+import type { MdyOverlayRoot } from "./overlay-branch.js";
 import type { MdyWidgetKind } from "./catalog.js";
 
 /** What a pointer policy answers when it is the one that should decide. */
@@ -47,7 +48,13 @@ const isElement = (part: unknown): part is Element =>
 
 export function bindDismissOnFocusOutside(
   kind: MdyWidgetKind,
-  branch: () => ReadonlyArray<Element | null | undefined>,
+  /**
+   * Anything a renderer calls a root, filtered structurally below. Typed as `Element` it excluded
+   * the very callers this exists for: a branch is described by `MdyOverlayBranch`, whose roots are
+   * a structural shape rather than the DOM's class, and a renderer holding one had to cast to reach
+   * a door that was going to check the shape anyway.
+   */
+  branch: () => ReadonlyArray<MdyOverlayRoot | null | undefined>,
   isOpen: () => boolean,
   close: () => void,
   options: MdyFocusDismissalOptions = {},

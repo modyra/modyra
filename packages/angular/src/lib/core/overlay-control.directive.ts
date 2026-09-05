@@ -26,7 +26,7 @@ import {
   type MdyWidgetPart,
   trackAnchoredOverlay,
   bindLightDismiss,
-  MDY_WIDGET_CONTRACTS,
+  bindDismissOnFocusOutside,
 } from "@modyra/widgets";
 import { MdyBaseControl } from "../control/control.directive";
 
@@ -583,6 +583,7 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
   }
 
   private unbindDismissal: (() => void) | null = null;
+  private unbindFocusDismissal: (() => void) | null = null;
 
   private setupGlobalListeners(): void {
     if (typeof window === "undefined") return;
@@ -591,45 +592,20 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     // `click` alone, which the policy documents as the tail of a gesture rather than the gesture.
     this.unbindDismissal = bindLightDismiss(this.outsideDismissal);
     document.addEventListener("keydown", this.handleDocumentKeydown);
-    // The other half of how a kind says it is dismissed, and the half no renderer here honoured.
-    // The comment on `interactionFromInside` has always described a subclass's blur handler
-    // consulting it; there was no such handler in any of the six, so a panel stayed open behind a
-    // field the person had tabbed away from — covering the next question and answering to a
-    // keyboard that had gone elsewhere.
-    //
-    // Bound on the document rather than on the wrapper: an overlay is portalled out of the widget,
-    // so a listener on the wrapper never sees focus arriving in the panel, and a `focusout` from
-    // inside the panel never reaches it at all.
-    if (MDY_WIDGET_CONTRACTS[this.widgetKind].capabilities.dismissOnFocusOutside === true) {
-      document.addEventListener("focusin", this.handleFocusMovedAway);
-    }
+    // The other half of how a kind says it is dismissed, and the contract owns the whole of it:
+    // which kinds close this way, which event reports where focus landed, how a portalled panel is
+    // recognised as this widget's, and that a pointer gesture in flight outranks the focus path.
+    // Each of those written here is a rule the next renderer has to be told about.
+    this.unbindFocusDismissal = bindDismissOnFocusOutside(
+      this.widgetKind,
+      () => { const branch = this.overlayBranch(); return [branch.root, ...(branch.also ?? [])]; },
+      () => this.open(),
+      () => this.closeOverlay(false),
+      // The pointer's veto is not a silence: a drag begun inside leaves the panel open, and the
+      // person has been in this field either way, so the visit is recorded.
+      { pointer: this.outsideDismissal, markVisited: () => this.markAsTouched() },
+    );
   }
-
-  /**
-   * Closes when focus has settled outside the widget's own branch.
-   *
-   * `focusin` on the document rather than `focusout` on an element: it reports where focus *landed*,
-   * which is the question being asked, and it is one listener for a widget whose parts are in two
-   * places. A `focusout` fires as focus leaves each of them, including on the way *into* the panel.
-   *
-   * A pointer outranks it. A drag begun inside the branch takes focus out on the way past, and
-   * closing there would reinstate through the focus path exactly the dismissal the pointer policy
-   * refuses.
-   */
-  private readonly handleFocusMovedAway = (event: FocusEvent): void => {
-    if (!this.open()) return;
-    if (this.interactionFromInside()) return;
-    const landed = event.target as Node | null;
-    if (landed === null) return;
-    const branch = this.overlayBranch();
-    const roots = [branch.root, ...(branch.also ?? [])].filter((root): root is Element => root instanceof Element);
-    if (roots.some((root) => root.contains(landed))) return;
-    // The portalled panel is part of the widget wherever the document put it, and the contract is
-    // what says which panel is this widget's: it is the one the opener names.
-    const controlled = this.wrapperRef()?.nativeElement?.querySelector("[aria-controls]")?.getAttribute("aria-controls");
-    if (controlled && document.getElementById(controlled)?.contains(landed)) return;
-    this.closeOverlay(false);
-  };
 
   /** Removes all document/window listeners registered while open. */
   private teardownGlobalListeners(): void {
@@ -638,7 +614,8 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
     this.unbindDismissal?.();
     this.unbindDismissal = null;
     document.removeEventListener("keydown", this.handleDocumentKeydown);
-    document.removeEventListener("focusin", this.handleFocusMovedAway);
+    this.unbindFocusDismissal?.();
+    this.unbindFocusDismissal = null;
     this.stopTracking?.();
     this.stopTracking = null;
     if (this.remeasureFrameId !== null) {
