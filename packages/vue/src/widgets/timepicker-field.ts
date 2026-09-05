@@ -22,7 +22,8 @@ import {
   timepickerPartSelector,
   timepickerTabOrder,
   keyBindingFor,
-} from "@modyra/widgets";
+
+  timepickerPlaceholder,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
@@ -169,7 +170,11 @@ export const MdyTimepickerField = defineComponent({
     const segment = (part: "hour" | "minute"): VNode =>
       h("span", { class: classesOf(part) }, [
         h("input", partProps(view.value.parts[`${part}Control`], {
-          type: "text",
+          // A number, in a control that takes numbers. Drawn as text with no value, both boxes were
+          // empty while the draft behind them held an hour and a minute — so opening the picker
+          // showed nothing to adjust — and a text box offers no numeric keypad on a phone.
+          type: "number",
+          value: String(part === "hour" ? state.value.draft.hour : state.value.draft.minute).padStart(2, "0"),
           onChange: (event: Event) => {
             const typed = Number.parseInt((event.target as HTMLInputElement).value, 10);
             if (Number.isNaN(typed)) return;
@@ -197,6 +202,10 @@ export const MdyTimepickerField = defineComponent({
           // captionless control is announced as nothing at all.
           ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
           type: "text",
+          // The shape the field expects, from the door that states it — `hh:mm AM/PM` or `HH:mm`
+          // according to the format. Without it the box says nothing about what to type, and a
+          // person guesses at a format the field will refuse.
+          placeholder: timepickerPlaceholder(state.value.format),
           value: state.value.entryText,
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "set-time", time: (event.target as HTMLInputElement).value })),
@@ -264,7 +273,10 @@ export const MdyTimepickerField = defineComponent({
             ]),
           ]),
           h("div", { class: classesOf("actions"), role: roleOf("actions") }, [
-            h("button", { type: "button", class: classesOf("modeToggle") }, "Clock"),
+            // No mode toggle. This renderer draws no clock face, so a button offering to switch to
+            // one is a control that does nothing — and a person who presses it learns the widget is
+            // broken rather than that the face is missing. The face itself is the gap, recorded as
+            // such rather than hidden behind a button that answers nothing.
             h("button", {
               type: "button", class: classesOf("action"),
               onClick: () => run(controller.dispatch({ type: "cancel" })),
