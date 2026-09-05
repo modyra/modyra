@@ -25,7 +25,7 @@ import { MdyCalendarCellComponent } from "./calendar-cell.component";
   imports: [MdyCalendarCellComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: "mdy-datepicker__grid",
+    class: "mdy-datepicker__grid mdy-datepicker__grid--single",
     "[attr.id]": "gridId() || null",
     // The rows below say `role="row"`, which ARIA requires to sit inside a grid, table or rowgroup.
     // Nothing said so, so every row in every calendar was an orphan — axe reports it as a critical

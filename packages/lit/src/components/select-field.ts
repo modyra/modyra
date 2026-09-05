@@ -409,7 +409,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             value=""
             disabled
             ?selected=${empty}
-          >${this.placeholder || " "}</option>`
+          >${this.placeholder || this.messages.selectPlaceholder}</option>`
         : nothing}
       ${options.map((option) => html`<option
         .value=${defaultOptionKey(option.value)}

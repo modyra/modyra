@@ -249,7 +249,7 @@ import { MdyDropdownBase } from "../dropdown-base";
               <option class="{{ cls.placeholder }}" value="" disabled
                       [selected]="value() === null || value() === undefined"
                       [attr.selected]="value() === null || value() === undefined ? '' : null">
-                {{ placeholder() || ' ' }}
+                {{ placeholder() || i18n.selectPlaceholder }}
               </option>
             }
             <!-- An option a document closed is one nobody can choose. Drawn without the attribute, a

@@ -27,7 +27,7 @@ import { MDY_DATE_LOCALE } from "../../core/date-locale";
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: "mdy-datepicker__grid",
+    class: "mdy-datepicker__grid mdy-datepicker__grid--range",
     // The rows below say `role="row"`, which ARIA requires to sit inside a grid, table or rowgroup.
     // Nothing said so, so every row in every calendar was an orphan — axe reports it as a critical
     // required-parent violation. It went unseen because the a11y suite never opened a popup: axe

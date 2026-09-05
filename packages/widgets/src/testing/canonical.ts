@@ -556,7 +556,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
       // The options live in the popup now, so at rest they are absent by construction — the same
       // reason every other overlay kind lists its popup's contents as optional.
       parts: Object.freeze(["root", "label", "inputWrapper", "box", "trigger", "arrow", "announcement"]),
-      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBackAction", "chipTooltip", "chips", "chipRow"]),
+      optional: Object.freeze(["options", "option", "optionCheck", "optionLabel", "optionWrapper", "supportingText", "requiredMarker", "chip", "chipRemove", "chipMove", "placeholder", "optionStep", "optionCount", "popup", "search", "loading", "empty", "inlineError", "errors", "errorItem", "clearAll", "overflowCount", "wayBackAction", "chipTooltip", "chips", "chipRow"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "trigger" },
         { from: "trigger", attribute: "aria-controls", to: null },
@@ -580,7 +580,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     timepicker: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialog", "container", "content", "header", "hour", "hourControl", "minute", "minuteControl", "period", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialog", "container", "content", "header", "hour", "hourControl", "minute", "minuteControl", "period", "periodOption", "clock", "dialFace", "dialHand", "dialNumber", "modeToggle", "actions", "action", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "control" },
         { from: "control", attribute: "aria-controls", to: null },

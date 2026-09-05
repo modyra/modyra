@@ -82,14 +82,16 @@ function dateRange({ id = `d${(fixtureSeq += 1)}` } = {}) {
   const startControl = el("input", "mdy-datepicker__input mdy-daterange__input mdy-daterange__input--start", { id: `${id}-start` });
   const separator = el("span", "mdy-daterange__sep");
   const endControl = el("input", "mdy-datepicker__input mdy-daterange__input mdy-daterange__input--end", { id: `${id}-end` });
-  const toggle = el("button", "mdy-datepicker__toggle", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
+  // Both classes, because this is the *range* picker: the second one is what tells a page-level query
+  // this door from the single-date picker's, which shares the first.
+  const toggle = el("button", "mdy-datepicker__toggle mdy-datepicker__toggle--range", { "aria-controls": `${id}-popup`, "aria-expanded": "true" });
   wrapper.append(startControl, separator, endControl, toggle);
   const popup = el("div", "mdy-datepicker__popup mdy-popup mdy-popup--surface mdy-datepicker__popup--range", { id: `${id}-popup`, role: "dialog" });
   // The calendar is what the opener promises and what a person enters, works in and leaves, so the
   // role the catalogue declares for it is `dialog`. `group` said "these things belong together",
   // which is true of the grid inside it and not of the panel.
   const calendar = el("div", "mdy-datepicker__calendar", { role: "dialog" });
-  const grid = el("div", "mdy-datepicker__grid", { role: "grid", "aria-label": "Choose a date" });
+  const grid = el("div", "mdy-datepicker__grid mdy-datepicker__grid--range", { role: "grid", "aria-label": "Choose a date" });
   const row = el("div", "mdy-datepicker__row", { role: "row" });
   const gridcell = el("div", "mdy-datepicker__cell", { role: "gridcell" });
   row.append(gridcell);

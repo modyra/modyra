@@ -36,12 +36,6 @@ const WEEK_START_IGNORED = [{
 }];
 
 const KNOWN_DIVERGENCES = {
-  /** A part the contract does not declare for this kind, drawn while the panel is up. */
-  open: { timepicker: ["extra part: periodOption"] },
-
-  /** Likewise, on a multiselect holding a value. */
-  filled: { multiselect: ["extra part: chipMove"] },
-
   /**
    * The calendar's weekday row is written in English and begins on Sunday whatever the locale — so
    * `en-US` is right by coincidence and every other locale is wrong. A renderer that reads the same

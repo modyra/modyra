@@ -136,7 +136,7 @@ import { inputText, isoDateText } from "../renderer-projection";
         <div class="mdy-input-suffix">
           <button
             type="button"
-            class="mdy-datepicker__toggle"
+            class="mdy-datepicker__toggle mdy-datepicker__toggle--range"
             [mdyPart]="openerPart()"
             [disabled]="isDisabled()"
             [attr.aria-label]="i18n.daterangeChooseRange"

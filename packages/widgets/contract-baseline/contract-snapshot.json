@@ -2814,7 +2814,8 @@
           "repeated": false,
           "role": "combobox",
           "classes": [
-            "mdy-datepicker__input"
+            "mdy-datepicker__input",
+            "mdy-datepicker__input--single"
           ],
           "states": []
         },
@@ -2827,7 +2828,8 @@
           "repeated": false,
           "role": null,
           "classes": [
-            "mdy-datepicker__toggle"
+            "mdy-datepicker__toggle",
+            "mdy-datepicker__toggle--single"
           ],
           "states": []
         },
@@ -2885,7 +2887,8 @@
           "repeated": false,
           "role": "grid",
           "classes": [
-            "mdy-datepicker__grid"
+            "mdy-datepicker__grid",
+            "mdy-datepicker__grid--single"
           ],
           "states": []
         },
@@ -3235,7 +3238,8 @@
           "repeated": false,
           "role": null,
           "classes": [
-            "mdy-datepicker__toggle"
+            "mdy-datepicker__toggle",
+            "mdy-datepicker__toggle--range"
           ],
           "states": []
         },
@@ -3294,7 +3298,8 @@
           "repeated": false,
           "role": "grid",
           "classes": [
-            "mdy-datepicker__grid"
+            "mdy-datepicker__grid",
+            "mdy-datepicker__grid--range"
           ],
           "states": []
         },
