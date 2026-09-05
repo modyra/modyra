@@ -22,8 +22,8 @@ const { field } = await import("../../core/dist/index.js");
 
 const settle = async () => { await nextTick(); await new Promise((resolve) => setTimeout(resolve, 20)); };
 
-/** Values no document should produce, one per shape a component might assume it has. */
-const WRONG = ["a name", 7, {}, [], true];
+/** Values no document should produce: wrong at the top level, and lists whose entries are wrong. */
+const WRONG = ["a name", 7, {}, [], true, [null], [7], ["a name"]];
 
 /** Every field component the package offers, by the name it offers it under. */
 const FIELDS = Object.entries(m).filter(([name, value]) => /^Mdy\w+Field$/.test(name) && value !== undefined);

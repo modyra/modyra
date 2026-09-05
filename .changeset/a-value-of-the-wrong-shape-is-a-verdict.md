@@ -1,6 +1,7 @@
 ---
 "@modyra/core": patch
 "@modyra/widgets": patch
+"@modyra/angular": patch
 ---
 
 A value of the wrong shape leaves the control on the page
@@ -15,5 +16,10 @@ handed it on as its display text unconverted, and `colorValueEquals` lower-cased
 a shape it did not expect: `null`, an empty list, the value as text, a comparison as the values stand.
 `parse24Time` answers a non-string with `null`, as its sibling `parseTime` always has; neither
 function narrows what it accepted before.
+
+The file field's state now answers a list *of files* rather than the value as it stands, so a renderer
+walking it can read a name off every entry. Angular read the model a second time in four places — the
+date text, the datepicker's display, the multiselect chip strip and the file strip — and each of those
+now reads what the contract answers, or holds the value to the shape it needs.
 
 The decision and its cost are ADR 0208.

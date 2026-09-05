@@ -15,8 +15,8 @@ import { test } from "node:test";
 import { createForm, field } from "../../core/dist/index.js";
 import * as widgets from "../dist/index.js";
 
-/** Values no document should produce, one per shape a projection might assume it has. */
-const WRONG = ["a name", 7, {}, [], null, true];
+/** Values no document should produce: wrong at the top level, and lists whose entries are wrong. */
+const WRONG = ["a name", 7, {}, [], null, true, [null], [7], ["a name"]];
 
 /** Every field controller the package offers, by the name it offers it under. */
 const CONTROLLERS = Object.entries(widgets)

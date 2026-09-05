@@ -34,8 +34,15 @@ export const inputNumber = (event: Event): number | null => {
 export const inputChecked = (event: Event): boolean =>
   (event.target as HTMLInputElement).checked;
 
+/**
+ * The date part of an ISO value, and the empty string for anything that is not one.
+ *
+ * The model holds what a document put in it and reports the field invalid rather than refusing the
+ * write, so this is handed values of any shape. Reading one as text throws during change detection,
+ * which takes out the control that was going to show the verdict.
+ */
 export const isoDateText = (value: string | null | undefined): string =>
-  value ? value.substring(0, 10) : "";
+  typeof value === "string" ? value.substring(0, 10) : "";
 
 export function moveCalendarMonth(
   year: number,

@@ -806,7 +806,13 @@ export class MdyMultiselectComponent<TValue = string>
    */
   protected readonly chosen = computed(() => {
     const tally = new Map<string, { key: string; value: TValue; label: string; count: number }>();
-    for (const value of (this.value() ?? []) as readonly TValue[]) {
+    // Walked as a list of chosen values, which is what a multiselect holds — and read defensively,
+    // because the model keeps whatever a document put in it and reports the field invalid rather
+    // than refusing the write. A value that is not a list is the one thing chosen, as the contract's
+    // own reading of it says; walking it as a list instead throws, and the strip that was going to
+    // show the verdict never gets drawn.
+    const held = this.value();
+    for (const value of (Array.isArray(held) ? held : held === null || held === undefined ? [] : [held]) as readonly TValue[]) {
       const key = this.optionKey(value);
       const seen = tally.get(key);
       if (seen) seen.count += 1;

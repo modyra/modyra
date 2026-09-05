@@ -26,6 +26,19 @@ import type {
 } from "./file-field-types.js";
 import { engageValue, errorsVisible, holdsUneditedValue, showsAsInvalid } from "./verdict.js";
 
+/**
+ * The files in a value of any shape.
+ *
+ * Not a coercion: a value that is not a list holds no files, and an entry with no name is not one
+ * either. What it protects is the reader — every renderer walks this list and reads a name off each
+ * entry, so an entry that cannot answer takes the control off the page, and the field stops being
+ * able to report the very value that is wrong with it.
+ */
+function filesIn<TFile extends MdyFileCandidate>(value: unknown): readonly TFile[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is TFile => typeof (entry as { name?: unknown } | null)?.name === "string");
+}
+
 export interface MdyFileFieldController<TFile extends MdyFileCandidate>
   extends MdyWidgetController<MdyFileFieldState<TFile>, MdyFileFieldIntent<TFile>> {
   setValue(files: readonly TFile[]): void;
@@ -50,7 +63,11 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
   const dragover = reactivity.signal(false);
 
   const state: MdySignal<MdyFileFieldState<TFile>> = reactivity.computed(() => ({
-    files: handle.value() ?? [],
+    // A list of files, always. The model holds whatever a document put in it and reports the field
+    // invalid rather than refusing the write, so this reads a value of any shape; every renderer
+    // walks what it finds here and reads a name off each entry, and one handed something else throws
+    // while drawing the control that was going to show the verdict.
+    files: filesIn<TFile>(handle.value()),
     rejected: rejected(),
     dragover: dragover(),
     // Out of play, no verdict. See verdict.ts.
@@ -69,17 +86,8 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const current = state();
 
-    /**
-     * The names of what the field is holding — where what it holds is a list of files at all.
-     *
-     * The model is documented to *hold* a value of the wrong shape and report it invalid rather than
-     * refuse it, so this is whatever a document handed over. Assuming the declared shape here turned
-     * that verdict into a thrown error, and the field a person was supposed to be told about
-     * vanished from the page.
-     */
-    const named = Array.isArray(current.files)
-      ? current.files.map((file) => (file as { name?: unknown }).name).filter((name): name is string => typeof name === "string")
-      : [];
+    /** The names of what the field is holding, which the state above has vouched are files. */
+    const named = current.files.map((file) => file.name);
     const shell = projectFieldShellA11y(current, handle.errors(), {
       widgetId,
       kind: "file",

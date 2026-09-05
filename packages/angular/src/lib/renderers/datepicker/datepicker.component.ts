@@ -316,7 +316,9 @@ export class MdyDatePickerComponent extends MdyOverlayControl<string | null> {
     const entry = this.controller()?.state().entryText ?? null;
     if (entry !== null) return entry;
     const v = this.value();
-    if (!v) return "";
+    // Text, or nothing to show. A value of another shape is one the model holds and reports invalid,
+    // and the control has to stay drawn to report it.
+    if (typeof v !== "string" || v === "") return "";
     const iso = v.substring(0, 10);
     if (this.displayFormat() === "iso") return iso;
     return formatLocalizedDate(iso, this.locale.locale);

@@ -1,6 +1,6 @@
 # ADR 0208: A value of the wrong shape is a verdict, not a crash
 
-Status: Accepted
+Status: Accepted (amended: entries, and the adapters' own readers)
 
 ## Context
 
@@ -29,6 +29,17 @@ exist, which makes staying on the page a property of the projection rather than 
 fed it.
 
 This holds at the contract, not at each renderer. A guard added in an adapter repairs one of eight.
+
+**Amendment — the entries, not only the list.** A list whose entries are not what the kind expects is
+the same defect one level down, and it is the shape a document most easily produces: the file field's
+state answers a list *of files*, and an entry that cannot give a name is not one. State that vouches
+for its entries is what lets every renderer walk it and read a name off each.
+
+**Amendment — an adapter that reads the value a second time.** A renderer that goes back to the model
+instead of asking the controller has its own copy of the reading, and inherits nothing. Four such
+readers existed in Angular alone. Where a renderer needs what the model holds, it reads the
+controller's state; where no state answers it, the guard belongs in the renderer and the missing
+answer is a finding against the contract.
 
 ## Consequences
 
@@ -67,10 +78,19 @@ crossing, and this repair began as a component that typechecked cleanly and thre
   the contract is measured without anyone remembering to add it.
 - `packages/vue/test/a-control-given-a-value-of-the-wrong-shape.test.mjs` — the same question asked
   of the mounted components, which is where "the control left the page" is visible.
+- `packages/plain/test/a-control-given-a-value-of-the-wrong-shape.test.mjs` and the same file under
+  `packages/lit/test/` ask it of every declared kind, through each package's own kind-to-element door;
+  `packages/react/test/` asks it of the components React has so far.
+- `packages/angular/src/lib/renderers/a-control-given-a-value-of-the-wrong-shape.spec.ts` — every
+  control component on one page, which is how a renderer that reads the model itself is caught.
 - `battle-tests/browser/a-control-that-stops-at-a-value-it-was-given.spec.ts` asks it of every host.
 
+Preact, Svelte and Solid ship no field components, so there is nothing there to ask.
+
 Each repair was mutated back one at a time and the bench went red for it; the one guard no mutation
-could redden was removed rather than kept as decoration.
+could redden was removed rather than kept as decoration. The Lit and React benches saw no red from
+the contract's own defect — Lit does not draw the file prompt yet and React has no file component —
+so each was proved separately by planting the species in its own text control, where both went red.
 
 ## Security and privacy
 

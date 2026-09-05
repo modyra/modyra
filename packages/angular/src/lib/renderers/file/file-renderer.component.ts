@@ -188,8 +188,15 @@ export class MdyFileComponent extends MdyBaseControl<readonly File[] | null> {
     }),
   );
 
-  /** What the field holds, and what its last pick turned away — a list either way. */
-  protected readonly chosen = computed<readonly File[]>(() => this.value() ?? []);
+  /**
+   * What the field holds, and what its last pick turned away — a list either way.
+   *
+   * Read from the controller rather than from the value a second time. The contract's state answers
+   * a list of files whatever the model was handed, which matters because the model keeps what a
+   * document put in it and reports the field invalid rather than refusing the write: read raw, a
+   * value of another shape throws while the strip is drawn and takes the control off the page.
+   */
+  protected readonly chosen = computed<readonly File[]>(() => this.files()?.state().files ?? []);
   protected readonly rejectedNames = signal<readonly string[]>([]);
 
   protected readonly i18n = inject(MDY_I18N_MESSAGES);
