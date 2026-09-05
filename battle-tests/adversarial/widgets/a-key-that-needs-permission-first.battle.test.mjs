@@ -26,23 +26,17 @@ import { MDY_WIDGET_KEYBOARD } from "@modyra/widgets";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectEqual } from "../../harness/assertions.mjs";
+import { bindingsOwedAPrecondition, bindingsWithNoPrecondition } from "../../models/keyboard-preconditions.mjs";
 
 /**
- * Which intents are opt-in is **read from the table**, not listed here.
+ * Which bindings are opt-in is **read from the table**, not listed here: a list here is a copy of
+ * something the table owns, and it goes stale the moment an intent is renamed — silently, because a
+ * battle that finds nothing passes unless it also checks its own premise, which is why the premise
+ * is asserted below.
  *
- * It was listed here — `["reorder", "move-selected"]` — and when the reordering intent was renamed
- * to `grab` this battle stopped finding anything and failed its own premise check rather than
- * passing empty. That is the check working, and it is also a copy of something the table owns, which
- * is the shape this campaign has now found five times.
- *
- * An intent is opt-in if **any** binding declaring it names a capability. The rule then becomes the
- * one worth having: if one binding of an intent is gated and another is not, the table is telling a
- * reader two different things about the same capability.
+ * The rule itself is `battle-tests/models/keyboard-preconditions.mjs`, where it can be exercised on
+ * tables built to make it fail.
  */
-const optInIntents = (declared) => new Set(
-  declared.filter((binding) => binding.requires !== undefined && binding.requires !== null)
-    .map((binding) => binding.intent),
-);
 
 battle(
   {
@@ -55,8 +49,7 @@ battle(
       .filter(([, list]) => Array.isArray(list))
       .flatMap(([kind, list]) => list.map((binding) => ({ kind, ...binding })));
 
-    const intents = optInIntents(declared);
-    const optIn = declared.filter((binding) => intents.has(binding.intent));
+    const optIn = bindingsOwedAPrecondition(declared);
 
     ctx.log.note("bindings whose intent needs a capability the field opts into", {
       found: optIn.map((binding) =>
@@ -77,9 +70,7 @@ battle(
     // reader is asking — *will an ordinary control honour this key* — and the table was given
     // `requires` precisely because `when` could not express a field-level flag. A battle that insisted
     // on `when` would have refused the better answer.
-    const unconditional = optIn.filter((binding) =>
-      (binding.when === undefined || binding.when === null)
-      && (binding.requires === undefined || binding.requires === null));
+    const unconditional = bindingsWithNoPrecondition(declared);
     expectEqual(unconditional.map((binding) => `${binding.kind} ${binding.key}`), [], {
       claimIds: ["A11Y-001"],
       what: "the table declares a key for a capability the field must opt into, with no precondition — so a consumer reading it cannot tell that key from one an ordinary control answers",
