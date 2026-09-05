@@ -1,12 +1,12 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-05T01:25:34Z",
-  "openReds": 106,
+  "recordedAt": "2026-09-05T03:30:10Z",
+  "openReds": 105,
   "bySeverity": {
     "S0": 4,
     "S1": 84,
-    "S2": 18
+    "S2": 17
   },
   "knownRed": [
     "a-choice-made-before-anyone-looked.spec.ts › pressing the mark that says it opens, opens it, vue",
@@ -107,7 +107,6 @@
     "a-popup-with-nowhere-below-to-go.spec.ts › a popup with nowhere below to go opens above, vue",
     "a-state-class-that-never-arrives.spec.ts › vue: a refused field wears the state class its kind declares",
     "a-state-class-that-never-arrives.spec.ts › vue: a refused field's label says so",
-    "a-state-class-that-never-arrives.spec.ts › vue: an open field says it is open",
     "a-submission-that-fell-over.spec.ts › a submission that fell over leaves a form somebody can use, vue",
     "every-key-a-kind-declares.spec.ts › vue: every key a kind declares does something",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it",
