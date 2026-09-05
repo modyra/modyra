@@ -19,6 +19,7 @@ import {
   focusPartOnOpen,
   keyBindingFor,
   variantOf,
+  defaultOptionKey,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
@@ -30,6 +31,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.select;
 const classesOf = (part: string): string =>
@@ -96,7 +98,7 @@ export const MdySelectField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close", restoreFocus: false }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close", restoreFocus: false })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -112,9 +114,13 @@ export const MdySelectField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close", restoreFocus: false }),
+      close: () => run(controller.dispatch({ type: "close", restoreFocus: false })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("select", view, root);
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -141,7 +147,7 @@ export const MdySelectField = defineComponent({
       kind: "select",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close", restoreFocus: false }),
+      close: () => run(controller.dispatch({ type: "close", restoreFocus: false })),
     });
 
     useAnchoredPanel({ kind: "select", panel, anchor, isOpen: () => state.value.open });
@@ -163,7 +169,7 @@ export const MdySelectField = defineComponent({
       const wasOpen = state.value.open;
       switch (binding.intent) {
         case "open":
-          controller.dispatch({ type: "open", source: "keyboard" });
+          run(controller.dispatch({ type: "open", source: "keyboard" }));
           event.preventDefault();
           return;
         case "cancel":
@@ -174,12 +180,12 @@ export const MdySelectField = defineComponent({
           // Escape leaves the person on the control they opened, and says so; Tab is on its way
           // somewhere and pulling focus back would strand it on the field just left. The shared
           // policy states the difference, and the panel closes after focus is settled either way.
-          controller.dispatch({ type: "close", restoreFocus: event.key !== "Tab" });
+          run(controller.dispatch({ type: "close", restoreFocus: event.key !== "Tab" }));
           if (event.key !== "Tab") event.preventDefault();
           return;
         case "move":
           if (!wasOpen) return;
-          controller.dispatch({ type: "move", target: (binding.by ?? 1) > 0 ? "next" : "previous" });
+          run(controller.dispatch({ type: "move", target: (binding.by ?? 1) > 0 ? "next" : "previous" }));
           event.preventDefault();
           return;
         case "commit": {
@@ -187,7 +193,7 @@ export const MdySelectField = defineComponent({
           // controller names that key itself, so no second copy of "which option is active".
           const active = state.value.activeKey;
           if (!wasOpen || active === null) return;
-          controller.dispatch({ type: "select", optionKey: active });
+          run(controller.dispatch({ type: "select", optionKey: active }));
           event.preventDefault();
           return;
         }
@@ -223,7 +229,7 @@ export const MdySelectField = defineComponent({
         h("select", partProps(parts.trigger, {
           name: props.widgetId,
           onChange: (event: Event) =>
-            controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value }),
+            run(controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value })),
         }), [
           h("option", { class: classesOf("placeholder"), value: "", disabled: true,
             selected: state.value.selectedKey === null }, props.placeholder),
@@ -276,7 +282,7 @@ export const MdySelectField = defineComponent({
           ref: anchor,
           type: "button",
           onClick: () => {
-            controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" });
+            run(controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" }));
           },
         }), [
           selected === undefined
@@ -302,14 +308,14 @@ export const MdySelectField = defineComponent({
           h("input", partProps(parts.search, {
             value: state.value.query,
             onInput: (event: Event) =>
-              controller.dispatch({ type: "search", query: (event.target as HTMLInputElement).value }),
+              run(controller.dispatch({ type: "search", query: (event.target as HTMLInputElement).value })),
           })),
           h("ul", partProps(parts.options),
             // The controller's list, not the prop: it is the one that has already reconciled a held
             // value the options do not contain, and drawing the prop instead hides it from the
             // person holding it.
-            state.value.options.map((option) => h("li", partProps(parts[String(option.value)], {
-                onClick: () => controller.dispatch({ type: "select", optionKey: String(option.value) }),
+            state.value.options.map((option) => h("li", partProps(parts[defaultOptionKey(option.value)], {
+                onClick: () => run(controller.dispatch({ type: "select", optionKey: defaultOptionKey(option.value) })),
             }), option.label))),
         ])]));
       }

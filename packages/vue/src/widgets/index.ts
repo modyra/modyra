@@ -1,4 +1,5 @@
 export { executeVueCommands } from "./runtime.js";
+export { useCommands } from "./commands.js";
 export type {
   MdyElementLookup,
   MdyVueCommandHandlers,

@@ -30,6 +30,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.daterange;
 const classesOf = (part: string): string => calendarClassesOf("daterange", part);
@@ -63,7 +64,7 @@ export const MdyDaterangeField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -79,9 +80,13 @@ export const MdyDaterangeField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("daterange", view, root);
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -94,7 +99,7 @@ export const MdyDaterangeField = defineComponent({
       kind: "daterange",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
 
     useAnchoredPanel({ kind: "daterange", panel, anchor, isOpen: () => state.value.open });
@@ -107,7 +112,7 @@ export const MdyDaterangeField = defineComponent({
     const onKeydown = forwardCalendarKeys(
       "daterange",
       () => state.value.open,
-      (press) => controller.dispatch(press),
+      (press) => run(controller.dispatch(press)),
     );
 
     /** One end of the range. Both are the same box with a different name for which end it fills. */
@@ -115,7 +120,7 @@ export const MdyDaterangeField = defineComponent({
       h("input", partProps(view.value.parts[`${end}Control`], {
         type: "text",
         onChange: (event: Event) =>
-          controller.dispatch({ type: "type", end, text: (event.target as HTMLInputElement).value }),
+          run(controller.dispatch({ type: "type", end, text: (event.target as HTMLInputElement).value })),
       }));
 
     return () => {
@@ -149,7 +154,7 @@ export const MdyDaterangeField = defineComponent({
           // staying pressable opens a panel over a field the model has taken out of play.
           disabled: props.field.disabled(),
           "aria-disabled": String(props.field.disabled()),
-          onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
+          onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         })),
       ]));
 
@@ -161,8 +166,8 @@ export const MdyDaterangeField = defineComponent({
         cells: state.value.cells,
         parts,
         locale: dateLocale,
-        onPick: (iso) => controller.dispatch({ type: "select-date", iso }),
-        onPreview: (iso) => controller.dispatch({ type: "preview", iso }),
+        onPick: (iso) => run(controller.dispatch({ type: "select-date", iso })),
+        onPreview: (iso) => run(controller.dispatch({ type: "preview", iso })),
         popupId: defaultWidgetIdFactory.part(props.widgetId, "popup"),
       }));
 

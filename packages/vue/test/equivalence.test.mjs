@@ -59,24 +59,11 @@ const KNOWN_DIVERGENCES = {
   "week start": { "it-IT": { datepicker: WEEK_START_IGNORED, daterange: WEEK_START_IGNORED } },
 
   /**
-   * After Escape, focus is left nowhere instead of back on the control the person was standing on.
-   * It is the one of these that is felt: dismissing a panel from the keyboard and finding focus on
-   * the document is how a person loses their place in a form.
-   *
-   * A select adds a second: dismissing its panel leaves the field unmarked, so a form that shows
-   * verdicts on touched fields stays silent about one the person has been in and left.
+   * Dismissing a select's panel leaves the field unmarked, so a form that shows verdicts on touched
+   * fields stays silent about one the person has been in and left. The focus half of this row is
+   * closed: every kind now returns the keyboard to the part the catalogue names as its opener.
    */
-  "after escape": {
-    select: [
-      "state is [], expected [touched]",
-      "focus rests on nothing, expected somewhere in the widget",
-    ],
-    ...Object.fromEntries(
-      ["multiselect", "datepicker", "daterange", "timepicker", "colors"].map((kind) => [kind, [
-        "focus rests on nothing, expected somewhere in the widget",
-      ]]),
-    ),
-  },
+  "after escape": { select: ["state is [], expected [touched]"] },
 };
 
 /**

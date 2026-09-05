@@ -30,6 +30,7 @@ import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
 import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.datepicker;
 const classesOf = (part: string): string => calendarClassesOf("datepicker", part);
@@ -69,7 +70,7 @@ export const MdyDatepickerField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -85,9 +86,13 @@ export const MdyDatepickerField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("datepicker", view, root);
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
@@ -100,7 +105,7 @@ export const MdyDatepickerField = defineComponent({
       kind: "datepicker",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
 
     useAnchoredPanel({ kind: "datepicker", panel, anchor, isOpen: () => state.value.open });
@@ -113,7 +118,7 @@ export const MdyDatepickerField = defineComponent({
     const onKeydown = forwardCalendarKeys(
       "datepicker",
       () => state.value.open,
-      (press) => controller.dispatch(press),
+      (press) => run(controller.dispatch(press)),
     );
 
     return () => {
@@ -142,11 +147,11 @@ export const MdyDatepickerField = defineComponent({
           value: state.value.entryText,
           // Handed over as typed. What a date looks like is the contract's question.
           onChange: (event: Event) =>
-            controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value }),
+            run(controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value })),
           // The door the contract names first. `MDY_POPUP_OPENERS` declares the *control* as this
           // kind's opener and the toggle beside it as a second way in; drawn without a handler, the
           // declared one was dead and a person pressing the field got nothing.
-          onClick: () => { if (!state.value.open) controller.dispatch({ type: "open" }); },
+          onClick: () => { if (!state.value.open) run(controller.dispatch({ type: "open" })); },
           // And by key, because a control that only opens under a pointer is one a keyboard cannot
           // reach the calendar through at all. Which key is the contract's answer, not a list here.
           onKeydown: (event: KeyboardEvent) => {
@@ -161,7 +166,7 @@ export const MdyDatepickerField = defineComponent({
             // would arrive there in the same turn — opening and then being read as a move inside the
             // panel it just opened, which left the widget shut again.
             event.stopPropagation();
-            controller.dispatch({ type: "open" });
+            run(controller.dispatch({ type: "open" }));
           },
         })),
         h("button", {
@@ -174,7 +179,7 @@ export const MdyDatepickerField = defineComponent({
           class: classesOf("toggle"),
           "aria-expanded": String(state.value.open),
           "aria-label": props.label === "" ? "Choose date" : `Choose ${props.label}`,
-          onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
+          onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }),
       ]));
 
@@ -186,7 +191,7 @@ export const MdyDatepickerField = defineComponent({
         cells,
         parts,
         locale: dateLocale,
-        onPick: (iso) => controller.dispatch({ type: "select-date", iso }),
+        onPick: (iso) => run(controller.dispatch({ type: "select-date", iso })),
       }));
 
       children.push(h("p", {

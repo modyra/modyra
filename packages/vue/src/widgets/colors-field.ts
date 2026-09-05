@@ -30,6 +30,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.colors;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -64,7 +65,7 @@ export const MdyColorsField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -80,14 +81,18 @@ export const MdyColorsField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("colors", view, root);
     useLightDismiss({
       kind: "colors",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
 
     useAnchoredPanel({ kind: "colors", panel, anchor, isOpen: () => state.value.open });
@@ -139,7 +144,7 @@ export const MdyColorsField = defineComponent({
         return;
       }
       if (binding?.intent === "cancel") {
-        controller.dispatch({ type: "close", restoreFocus: true });
+        run(controller.dispatch({ type: "close", restoreFocus: true }));
         event.preventDefault();
       }
     };
@@ -168,7 +173,7 @@ export const MdyColorsField = defineComponent({
           "aria-expanded": String(state.value.open),
           "aria-controls": defaultWidgetIdFactory.part(props.widgetId, "popup"),
           "aria-label": props.label === "" ? "Choose colour" : `Choose ${props.label}`,
-          onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
+          onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }, [h("span", partProps(parts.preview, {
           // The colour it previews, from the projection. Painted here from the field's own value,
           // this renderer was a fourth opinion about it — and the empty state was a literal chosen
@@ -191,7 +196,7 @@ export const MdyColorsField = defineComponent({
           class: classesOf("control"),
           value: state.value.value,
           onInput: (event: Event) =>
-            controller.dispatch({ type: "native", value: (event.target as HTMLInputElement).value }),
+            run(controller.dispatch({ type: "native", value: (event.target as HTMLInputElement).value })),
         })),
         h("input", {
           id: defaultWidgetIdFactory.part(props.widgetId, "hexInput"),
@@ -217,7 +222,7 @@ export const MdyColorsField = defineComponent({
           disabled: props.field.disabled(),
           readonly: props.field.readonly(),
           onChange: (event: Event) =>
-            controller.dispatch({ type: "text", value: (event.target as HTMLInputElement).value }),
+            run(controller.dispatch({ type: "text", value: (event.target as HTMLInputElement).value })),
         }),
         // Declared presentation, so it is a span and not a control: a `<button>` here would be a
         // second thing to press for one act, and the custodian that watches permissive semantics
@@ -243,14 +248,14 @@ export const MdyColorsField = defineComponent({
             // One stop for the whole grid: the arrows move within it, so exactly one swatch is
             // reachable by Tab and the rest are reached by the keys that mean "next colour".
             tabindex: preset.selected || (index === 0 && !state.value.presets.some((other) => other.selected)) ? 0 : -1,
-            onClick: () => controller.dispatch({ type: "preset", value: preset.value }),
+            onClick: () => run(controller.dispatch({ type: "preset", value: preset.value })),
             style: { background: preset.value },
           }))),
         // The action the panel holds, and the reason Tab stays inside it.
         h("button", {
           type: "button",
           class: classesOf("customEntry"),
-          onClick: () => controller.dispatch({ type: "close", restoreFocus: true }),
+          onClick: () => run(controller.dispatch({ type: "close", restoreFocus: true })),
         }, [
           // The tint the custom entry shows, and the only place this part belongs.
           h("span", { class: classesOf("customTint") }),

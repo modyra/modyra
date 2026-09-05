@@ -33,6 +33,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.timepicker;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -67,7 +68,7 @@ export const MdyTimepickerField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -83,14 +84,18 @@ export const MdyTimepickerField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("timepicker", view, root);
     useLightDismiss({
       kind: "timepicker",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
 
     useAnchoredPanel({ kind: "timepicker", panel, anchor, isOpen: () => state.value.open });
@@ -130,7 +135,7 @@ export const MdyTimepickerField = defineComponent({
     const onKeydown = (event: KeyboardEvent): void => {
       if (!state.value.open) return;
       if (event.key === "Escape") {
-        controller.dispatch({ type: "cancel" });
+        run(controller.dispatch({ type: "cancel" }));
         event.preventDefault();
         return;
       }
@@ -154,7 +159,7 @@ export const MdyTimepickerField = defineComponent({
           onChange: (event: Event) => {
             const typed = Number.parseInt((event.target as HTMLInputElement).value, 10);
             if (Number.isNaN(typed)) return;
-            controller.dispatch(part === "hour" ? { type: "set-hour", hour: typed } : { type: "set-minute", minute: typed });
+            run(controller.dispatch(part === "hour" ? { type: "set-hour", hour: typed } : { type: "set-minute", minute: typed }));
           },
         })),
       ]);
@@ -180,11 +185,11 @@ export const MdyTimepickerField = defineComponent({
           type: "text",
           value: state.value.entryText,
           onChange: (event: Event) =>
-            controller.dispatch({ type: "set-time", time: (event.target as HTMLInputElement).value }),
+            run(controller.dispatch({ type: "set-time", time: (event.target as HTMLInputElement).value })),
           // The door the contract names first. `MDY_POPUP_OPENERS` declares the *control* as this
           // kind's opener and the toggle beside it as a second way in; drawn without a handler, the
           // declared one was dead and a person pressing the field got nothing.
-          onClick: () => { if (!state.value.open) controller.dispatch({ type: "open" }); },
+          onClick: () => { if (!state.value.open) run(controller.dispatch({ type: "open" })); },
           // And by key, because a control that only opens under a pointer is one a keyboard cannot
           // reach the dial through at all. Which key is the contract's answer, not a list here.
           onKeydown: (event: KeyboardEvent) => {
@@ -199,7 +204,7 @@ export const MdyTimepickerField = defineComponent({
             // would arrive there in the same turn — opening and then being read as a move inside the
             // panel it just opened, which left the widget shut again.
             event.stopPropagation();
-            controller.dispatch({ type: "open" });
+            run(controller.dispatch({ type: "open" }));
           },
         })),
         h("button", {
@@ -212,7 +217,7 @@ export const MdyTimepickerField = defineComponent({
           "aria-disabled": String(props.field.disabled()),
           "aria-expanded": String(state.value.open),
           "aria-label": props.label === "" ? "Choose time" : `Choose ${props.label}`,
-          onClick: () => controller.dispatch(state.value.open ? { type: "close" } : { type: "open" }),
+          onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
         }),
       ]));
 
@@ -238,7 +243,7 @@ export const MdyTimepickerField = defineComponent({
               ...(state.value.format === "12h" ? [h("span", { class: classesOf("period") }, [
                 h("button", {
                   type: "button", class: classesOf("periodOption"),
-                  onClick: () => controller.dispatch({ type: "set-period", period: state.value.display.includes("PM") ? "AM" : "PM" }),
+                  onClick: () => run(controller.dispatch({ type: "set-period", period: state.value.display.includes("PM") ? "AM" : "PM" })),
                 }, state.value.display.includes("PM") ? "PM" : "AM"),
               ])] : []),
             ]),
@@ -247,11 +252,11 @@ export const MdyTimepickerField = defineComponent({
             h("button", { type: "button", class: classesOf("modeToggle") }, "Clock"),
             h("button", {
               type: "button", class: classesOf("action"),
-              onClick: () => controller.dispatch({ type: "cancel" }),
+              onClick: () => run(controller.dispatch({ type: "cancel" })),
             }, "Cancel"),
             h("button", {
               type: "button", class: `${classesOf("action")} ${modifierOf("action", "confirm")}`,
-              onClick: () => controller.dispatch({ type: "confirm" }),
+              onClick: () => run(controller.dispatch({ type: "confirm" })),
             }, "OK"),
           ]),
         ]),

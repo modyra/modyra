@@ -30,6 +30,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
+import { useCommands } from "./commands.js";
 
 const CONTRACT = MDY_WIDGET_CONTRACTS.multiselect;
 const declared = CONTRACT.parts as Readonly<Record<string, MdyDeclaredPart | undefined>>;
@@ -62,7 +63,7 @@ export const MdyMultiselectField = defineComponent({
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
-    useCloseWhenFieldLeaves(root, () => controller.dispatch({ type: "close" }));
+    useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
 
@@ -78,14 +79,18 @@ export const MdyMultiselectField = defineComponent({
       root,
       panel,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close" }),
+      close: () => run(controller.dispatch({ type: "close" })),
     });
     const view = shallowRef(controller.view());
+    // What the controller answers is half of every interaction, and the half a screenshot does not
+    // show: `restore-focus` after a dismissal is what puts the person back on the control they
+    // opened. Dropped, the keyboard is left on nothing and the next Tab starts at the top of the page.
+    const run = useCommands("multiselect", view, root);
     useLightDismiss({
       kind: "multiselect",
       root,
       isOpen: () => state.value.open,
-      close: () => controller.dispatch({ type: "close", restoreFocus: false }),
+      close: () => run(controller.dispatch({ type: "close", restoreFocus: false })),
     });
 
     useAnchoredPanel({ kind: "multiselect", panel, anchor, isOpen: () => state.value.open });
@@ -122,28 +127,28 @@ export const MdyMultiselectField = defineComponent({
       if (!binding) return;
       switch (binding.intent) {
         case "open":
-          controller.dispatch({ type: "open" });
+          run(controller.dispatch({ type: "open" }));
           break;
         case "cancel":
           // This panel holds nothing worth staying for, so Tab closes it and is left to the
           // browser; Escape closes it and is consumed.
-          controller.dispatch({ type: "close", restoreFocus: event.key !== "Tab" });
+          run(controller.dispatch({ type: "close", restoreFocus: event.key !== "Tab" }));
           if (event.key === "Tab") return;
           break;
         case "move":
-          controller.dispatch({ type: "move", target: (binding.by ?? 1) > 0 ? "next" : "previous" });
+          run(controller.dispatch({ type: "move", target: (binding.by ?? 1) > 0 ? "next" : "previous" }));
           break;
         case "toggle":
-          controller.dispatch({ type: "select" });
+          run(controller.dispatch({ type: "select" }));
           break;
         case "step": {
           // The per-row quantity, and the reason this key exists: the steppers sit on a row, so a
           // tab stop cannot name which row it reaches — only a key pressed on the active one can.
           const active = state.value.activeKey;
           if (active === null) return;
-          controller.dispatch((binding.by ?? 1) > 0
+          run(controller.dispatch((binding.by ?? 1) > 0
             ? { type: "increment", optionKey: active }
-            : { type: "decrement", optionKey: active });
+            : { type: "decrement", optionKey: active }));
           break;
         }
         default:
@@ -162,7 +167,7 @@ export const MdyMultiselectField = defineComponent({
         // is not a thing a browser will render.
         h(props.mode === "single" ? "button" : "div", partProps(view.value.parts[key], {
           ...(props.mode === "single" ? { type: "button" } : {}),
-          onClick: () => controller.dispatch({ type: "toggle", optionKey: key }),
+          onClick: () => run(controller.dispatch({ type: "toggle", optionKey: key })),
         }), [
           ...(props.mode === "single"
             ? [h("span", { class: classesOf("optionCheck"), "aria-hidden": "true" })]
@@ -171,14 +176,14 @@ export const MdyMultiselectField = defineComponent({
                 type: "button", class: classesOf("optionStep"), "aria-label": `One fewer ${option.label}`,
                 onClick: (event: Event) => {
                   event.stopPropagation();
-                  controller.dispatch({ type: "decrement", optionKey: key });
+                  run(controller.dispatch({ type: "decrement", optionKey: key }));
                 },
               }, "−"),
               h("button", {
                 type: "button", class: classesOf("optionStep"), "aria-label": `One more ${option.label}`,
                 onClick: (event: Event) => {
                   event.stopPropagation();
-                  controller.dispatch({ type: "increment", optionKey: key });
+                  run(controller.dispatch({ type: "increment", optionKey: key }));
                 },
               }, "+"),
             ]),
@@ -214,7 +219,7 @@ export const MdyMultiselectField = defineComponent({
                 h("span", option.label),
                 h("button", {
                   type: "button", class: classesOf("chipRemove"), "aria-label": `Remove ${option.label}`,
-                  onClick: () => controller.dispatch({ type: "toggle", optionKey: String(option.value) }),
+                  onClick: () => run(controller.dispatch({ type: "toggle", optionKey: String(option.value) })),
                 }),
               ]))),
           ]),
@@ -223,7 +228,7 @@ export const MdyMultiselectField = defineComponent({
           h("button", partProps(parts.trigger, {
             ref: anchor,
             type: "button",
-            onClick: () => controller.dispatch({ type: "toggleOpen" }),
+            onClick: () => run(controller.dispatch({ type: "toggleOpen" })),
           }), [
             h("span", partProps(parts.placeholder, { class: classesOf("placeholder") }), "Choose…"),
           ]),
@@ -238,12 +243,12 @@ export const MdyMultiselectField = defineComponent({
             // undo. A control that comes and goes moves the one beside it under the hands of
             // somebody aiming at it.
             "aria-disabled": String(state.value.wayBack === null),
-            onClick: () => controller.dispatch({ type: "undo" }),
+            onClick: () => run(controller.dispatch({ type: "undo" })),
           }, "Undo"),
           h("button", {
             type: "button", class: classesOf("clearAll"), "aria-label": "Clear all",
             "aria-disabled": String(state.value.selectedKeys.size === 0),
-            onClick: () => controller.dispatch({ type: "clear" }),
+            onClick: () => run(controller.dispatch({ type: "clear" })),
           }),
           h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
           h("span", partProps(parts.announcement, { class: classesOf("announcement") }),
@@ -257,7 +262,7 @@ export const MdyMultiselectField = defineComponent({
             type: "text",
             value: state.value.query,
             onInput: (event: Event) =>
-              controller.dispatch({ type: "search", query: (event.target as HTMLInputElement).value }),
+              run(controller.dispatch({ type: "search", query: (event.target as HTMLInputElement).value })),
           }))]
           : []),
         h("div", partProps(parts.group, { class: classesOf("options"), role: roleOf("options") }),

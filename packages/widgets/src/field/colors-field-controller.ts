@@ -14,7 +14,7 @@ import { observerFor, type MdyReactivity, type MdySignal } from "@modyra/core";
 import { staysOpen } from "../transitions.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
 import { colorValueEquals, colorValueTransition } from "../behavior.js";
-import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
+import { MDY_WIDGET_CONTRACTS, MDY_POPUP_OPENERS } from "../catalog.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
 import { blocksValueChange } from "../interactivity.js";
@@ -32,6 +32,17 @@ export interface MdyColorsFieldController
   setValue(value: string): void;
   setReadonly(readonly: boolean): void;
 }
+
+
+/**
+ * The part the keyboard goes back to when the panel closes: the one the catalogue names as this
+ * kind's opener.
+ *
+ * Spelled out here, it was `toggle` — a presentational span, which cannot take focus at all — so the
+ * panel closed and the person was left standing in a panel that was no longer there. A part name
+ * written by hand is a second answer to a question the catalogue already answers.
+ */
+const OPENER = MDY_POPUP_OPENERS.colors?.opener ?? "nativePicker";
 
 /**
  * The colour a swatch shows where the field holds nothing.
@@ -146,7 +157,7 @@ export function createColorsFieldController(
     if (touched) commands.push({ type: "mark-touched" });
     if (close && open()) {
       open.set(false);
-      commands.push({ type: "close-overlay" }, { type: "restore-focus", target: { part: "toggle" } });
+      commands.push({ type: "close-overlay" }, { type: "restore-focus", target: { part: OPENER } });
     }
     return commands;
   }
@@ -171,7 +182,7 @@ export function createColorsFieldController(
         // because nothing about the value changed. ADR 0167.
         handle.markAsTouched();
         return intent.restoreFocus
-          ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "toggle" } }]
+          ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: OPENER } }]
           : [{ type: "close-overlay" }];
       case "native":
       case "text":

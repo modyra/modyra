@@ -1,6 +1,6 @@
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { vanillaReactivity } from "@modyra/core";
-import { MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
+import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
 import type { MdyUiCommand } from "./commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "./contract.js";
 
@@ -41,8 +41,13 @@ export function createCatalogWidgetController(
   ): readonly MdyUiCommand[] => {
     if (!value.open) return [];
     current.set({ ...value, open: false });
+    // The part named by the catalogue, not the word "trigger". A kind opens from the part its own
+    // entry declares — a range from its toggle, a colour from its picker — and a command aimed at a
+    // part the kind does not have resolves to nothing: the panel closes and the keyboard is left on
+    // the document, which is the shape of a person losing their place in a form.
+    const opener = MDY_POPUP_OPENERS[kind]?.opener ?? "trigger";
     return restoreFocus
-      ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: "trigger" } }]
+      ? [{ type: "close-overlay" }, { type: "restore-focus", target: { part: opener } }]
       : [{ type: "close-overlay" }];
   };
 
