@@ -54,6 +54,18 @@ button, the steppers, and the caret marking a select as openable. A user reads t
 | `--mdy-affordance-target` | 2.75rem | the pointer target, as a centred overlay |
 | `--mdy-affordance-inset` | 0.25rem | the gap a container leaves at its trailing edge |
 
+**No horizontal axis at 320px.** Nothing inside a field may require sideways dragging on a page that
+already scrolls vertically — WCAG 1.4.10, and the cost falls on the person, not the layout. A strip
+that grows *downward* is fine at that width; one that reaches past the field's own edge is not, even
+by five pixels, because the second axis is what costs the reader rather than the distance.
+
+**A floor is a promise against collapse, not against the viewport.** The row floor exists because an
+opener measured zero and could not be pressed; that is its whole reason. So the rule is
+`min(floor, available)`, and what *available* means depends on the part: a control laid out in the
+form is bounded by its container, because a control does not break the layout that holds it; a
+floating panel is bounded by the viewport less its margins, because a panel may overflow the slot its
+anchor sits in — that is what panels do — and may never overflow the viewport.
+
 **A control that shares its row keeps a floor.** A target drawn over a small control cannot rescue
 one with no width, and a flex row hands all its shrinking to whichever child allows it: the
 multiselect's opener had `min-width: 0`, so a row holding three chips squeezed it to **zero** — in the

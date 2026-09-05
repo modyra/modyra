@@ -382,7 +382,13 @@ export abstract class MdyOverlayControl<TValue> extends MdyBaseControl<TValue> {
       // lets the contract serialise it instead of each host inventing the centring for itself.
       coords: {
         top: px(prop.top), bottom: px(prop.bottom), left: px(prop.left), right: px(prop.right),
-        width: rect.width, maxWidth: px(prop.maxWidth),
+        // The width the policy decided, not the anchor's own. A kind may declare a floor — a
+        // multiselect's panel says 160px — and the policy answers `max(anchor, floor)`; reading the
+        // rect back instead threw that away, so beside a 100px field the panel was 100px and the
+        // floor it declares did nothing. The floor is only visible on a narrow field, which is why
+        // it went unnoticed: on a wide one, honouring it and never reading it look identical.
+        width: px(prop.width) ?? anchoring.decision.width,
+        maxWidth: px(prop.maxWidth),
         maxHeight, placement: anchoring.decision.placement,
       },
       maxHeight,
