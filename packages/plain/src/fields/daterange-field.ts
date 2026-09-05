@@ -26,6 +26,7 @@ import { fieldAccessibleName, applySubmissionNames,
   keyBindingFor,
   MDY_PART_NAMES,
   presentationClass,
+  overlayControlledId,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -133,7 +134,7 @@ export function renderDaterangeField(
   // The toggle said it had a dialog and whether it was open, and never said which one. Naming it
   // is what ties opener to popup for assistive technology — the relation select has always had.
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
-  toggle.setAttribute("aria-controls", popup.id);
+  toggle.setAttribute("aria-controls", overlayControlledId("daterange", widgetId) ?? popup.id);
   const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
   const prevButton = el("button", CLASS.navButton) as HTMLButtonElement;
   prevButton.type = "button";
@@ -146,6 +147,9 @@ export function renderDaterangeField(
   setIcon(nextButton, "CHEVRON_RIGHT");
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("daterange");
+  // The element the promise names: the opener says it opens a grid, and the panel that holds this
+  // one carries no role of its own (ADR 0210).
+  grid.id = overlayControlledId("daterange", widgetId) ?? grid.id;
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
   // What the opener promises, carried by the thing it opens. The other two renderers wrote the role

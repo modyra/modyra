@@ -610,6 +610,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         ${this.view.viewMode === "days"
           ? html`<div
               class="${CLASS.grid}"
+              id=${overlayControlledId("daterange", this.fieldId) ?? nothing}
               role="grid"
               aria-label="${monthLabel} ${this.view.viewYear}"
             >
@@ -728,10 +729,13 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
           // only popups drawn straight into the panel, with a container of their own.
           html`<div
             class="${this.popupClass(this.overlay.state.position)} mdy-overlay"
-            id=${overlayControlledId("daterange", this.fieldId) ?? nothing}
+            id=${defaultWidgetIdFactory.part(this.fieldId, "popup")}
           >${this.renderPopup(handle)}</div>`,
           this._open,
           {
+            // The id the opener points at, kept present while the panel is closed: the reference now
+            // names a region *inside* the panel, so without this it dangles for as long as the panel
+            // is shut — which is most of the time.
             closedId: overlayControlledId("daterange", this.fieldId) ?? undefined,
             position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,

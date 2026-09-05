@@ -7,6 +7,7 @@ import {
   MDY_COLOR_PRESETS, colorPresetsOf, openPlatformChooser, overlayControlledId, rowRovingIndex,
   partClasses,
   presentationClass,
+  defaultWidgetIdFactory,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldHandle } from "@modyra/core";
@@ -233,7 +234,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
     return html`
       <div
         class="${this.popupClass(position)} mdy-overlay"
-        id=${overlayControlledId("colors", this.fieldId) ?? nothing}
+        id=${defaultWidgetIdFactory.part(this.fieldId, "popup")}
         @keydown=${(e: KeyboardEvent) => {
           if (keyMeans(this.widgetKind, e, "cancel", true)) {
             e.preventDefault();
@@ -246,7 +247,12 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
         }}
       >
         <div class="${CLASS.dropdownHeader}">${this.messages.colorPresetsHeader}</div>
-        <div class="${CLASS.presets}" role="listbox" aria-label=${this.messages.colorPresetsHeader}>
+        <div
+          class="${CLASS.presets}"
+          id=${overlayControlledId("colors", this.fieldId) ?? nothing}
+          role="listbox"
+          aria-label=${this.messages.colorPresetsHeader}
+        >
           ${colorPresetsOf(this.presets).map(
             ({ value: preset, label }) => html`<button
               type="button"
@@ -420,7 +426,10 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
           </div>
         </div>
         ${renderOverlayPanel(this.renderDropdown(handle), this._open, {
-          closedId: overlayControlledId("colors", this.fieldId) ?? undefined,
+          // The id the opener points at, kept present while the panel is closed: the reference now
+            // names a region *inside* the panel, so without this it dangles for as long as the panel
+            // is shut — which is most of the time.
+            closedId: overlayControlledId("colors", this.fieldId) ?? undefined,
           position: this.overlay.state.position,
           alignment: this.overlay.state.alignment,
           modal: this.overlay.state.position === "overlay",

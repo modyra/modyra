@@ -21,7 +21,8 @@ import {
   keyBindingFor,
 
   fieldDescribedBy,
-  visibleErrorsOf,} from "@modyra/widgets";
+  visibleErrorsOf,  overlayControlledId,
+} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
@@ -187,7 +188,7 @@ export const MdyColorsField = defineComponent({
           class: classesOf("nativePicker"),
           disabled: props.field.disabled(),
           "aria-expanded": String(state.value.open),
-          "aria-controls": defaultWidgetIdFactory.part(widgetId.value, "popup"),
+          "aria-controls": overlayControlledId("colors", widgetId.value) ?? undefined,
           // The act, from the dictionary; see the datepicker's door for why the caption is not it.
           "aria-label": messages.value.selectColorPrefix,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
@@ -276,7 +277,7 @@ export const MdyColorsField = defineComponent({
         class: classesOf("popup"),
         hidden: !state.value.open,
       }, [
-        h("div", partProps(parts.presets, { class: classesOf("presets") }),
+        h("div", partProps(parts.presets, { class: classesOf("presets"), id: overlayControlledId("colors", widgetId.value) }),
           state.value.presets.map((preset, index) => h("button", {
             type: "button",
             class: classesOf("swatch"),

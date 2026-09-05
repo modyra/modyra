@@ -13,6 +13,7 @@
  */
 import { MDY_VALUE_CONTRACTS } from "@modyra/core";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
+import { MDY_FIELD_CAPABILITIES } from "./structure.js";
 
 /** What the user did. */
 export type MdyTransitionTrigger =
@@ -488,10 +489,10 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   // holding a `chips` part: a set of filters has an order nobody chose and nothing to reorder.
   if ("chips" in MDY_WIDGET_CONTRACTS[kind].parts) {
     // Picking up and putting down are one key, because they are one state seen from its two ends.
-    bindings.push({ key: "Enter", when: "closed", intent: "grab", on: "chip", requires: "reorderable" });
+    bindings.push({ key: "Enter", when: "closed", intent: "grab", on: "chip", requires: MDY_FIELD_CAPABILITIES.reorderable });
     // Putting it back. Only while something is held: the popup is closed by then — a grab cannot
     // begin while it is open — so this cannot be the same press that dismisses an overlay.
-    bindings.push({ key: "Escape", when: "closed", intent: "cancel", on: "chip", requires: "reorderable", modifier: "any" });
+    bindings.push({ key: "Escape", when: "closed", intent: "cancel", on: "chip", requires: MDY_FIELD_CAPABILITIES.reorderable, modifier: "any" });
     // The arrows are declared once, below, as what moves the reading position. Held, they carry the
     // chip instead — the same movement with the grab's subject rather than the cursor's. Declaring
     // them twice and telling the two apart by the grab would put a state the table cannot see into
@@ -516,8 +517,11 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     //
     // They collide with nothing. The strip's own arrows are left and right; the `open` bindings that
     // once claimed every part now name the control they open from.
-    bindings.push({ key: "ArrowUp", when: "closed", intent: "step", on: "chip" });
-    bindings.push({ key: "ArrowDown", when: "closed", intent: "step", on: "chip" });
+    // Gated on the field counting: with a value held once and no quantity, these keys mean nothing,
+    // and a gesture offered where there is nothing to do is a promise the widget cannot keep. The
+    // steppers themselves are gated on the same word, so the key and the button appear together.
+    bindings.push({ key: "ArrowUp", when: "closed", intent: "step", on: "chip", requires: MDY_FIELD_CAPABILITIES.countable });
+    bindings.push({ key: "ArrowDown", when: "closed", intent: "step", on: "chip", requires: MDY_FIELD_CAPABILITIES.countable });
     // and `Delete` is what the platform's own lists answer to.
     // The same quantity, on the option in the open list, which had no key at all.
     //
@@ -536,8 +540,8 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // the control on the row the walk is standing on. `+` and `−` were the alternative and are not
     // available: they are printable, and the type-ahead binding above would eat them before this one
     // was asked.
-    bindings.push({ key: "ArrowRight", when: "open", intent: "step", on: "option", by: 1 });
-    bindings.push({ key: "ArrowLeft", when: "open", intent: "step", on: "option", by: -1 });
+    bindings.push({ key: "ArrowRight", when: "open", intent: "step", on: "option", by: 1, requires: MDY_FIELD_CAPABILITIES.countable });
+    bindings.push({ key: "ArrowLeft", when: "open", intent: "step", on: "option", by: -1, requires: MDY_FIELD_CAPABILITIES.countable });
     bindings.push({ key: "Backspace", when: "closed", intent: "remove", on: "chip" });
     bindings.push({ key: "Delete", when: "closed", intent: "remove", on: "chip" });
     // The way back, from the keyboard, using the gesture every application on the platform already

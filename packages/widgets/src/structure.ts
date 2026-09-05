@@ -325,8 +325,27 @@ export const MDY_ARIA_DISABLED_PARTS: readonly string[] = Object.freeze([
  * and a capability word invented for it would be a second vocabulary for an idea the catalogue
  * already has. It is owed a decision and a batch of its own.
  */
+/**
+ * The capabilities a field may offer, named once.
+ *
+ * A part gated on one of these, a key binding gated on the same one, and the renderer that answers
+ * whether the field offers it must all say the same word. Written as a literal on each side they
+ * agree until one of them is typed differently, and nothing catches it: `offers` takes any string, so
+ * a misspelling is not a failure but a capability nobody has — the part silently stops being owed.
+ */
+export const MDY_FIELD_CAPABILITIES = Object.freeze({
+  /** The values can be put in a different order. */
+  reorderable: "reorderable",
+  /** A value can be held more than once, and the field says how many — the catalogue's counter mode. */
+  countable: "countable",
+} as const);
+
 export const MDY_PART_REQUIRES: Readonly<Record<string, string>> = Object.freeze({
-  "multiselect.chipMove": "reorderable",
+  "multiselect.chipMove": MDY_FIELD_CAPABILITIES.reorderable,
+  // The steppers exist where a value can be held more than once. Declared without this the part was
+  // owed of every filled multiselect, and three renderers that correctly draw none in toggle mode
+  // were reported as missing it.
+  "multiselect.chipStep": MDY_FIELD_CAPABILITIES.countable,
 });
 
 export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Object.freeze({

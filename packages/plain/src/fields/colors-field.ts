@@ -23,6 +23,7 @@ import {
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   presentationClass,
+  overlayControlledId,
 } from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
@@ -159,11 +160,15 @@ export function renderColorsField(
   // Same relation the select has always declared: the toggle says it opens a listbox and whether
   // it is showing, so it has to say which one.
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
-  picker.setAttribute("aria-controls", popup.id);
+  picker.setAttribute("aria-controls", overlayControlledId("colors", widgetId) ?? popup.id);
   applyPart(popup, definition.parts.popup);
   const presetList = el("div") as HTMLDivElement;
   applyPart(presetList, definition.parts.presets);
   presetList.setAttribute("role", "listbox");
+  // The element the promise names. `aria-haspopup` says this opens a listbox, and the reference has
+  // to reach the element carrying that role — the panel around it holds a hex box and a native
+  // picker besides, and is not one (ADR 0210).
+  presetList.id = overlayControlledId("colors", widgetId) ?? presetList.id;
   // A listbox with no name is announced as an unlabelled container, and the user has to guess what
   // they have landed in.
   presetList.setAttribute("aria-label", messages.colorPresetsHeader);

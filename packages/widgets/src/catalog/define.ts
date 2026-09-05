@@ -413,7 +413,10 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // button here would ask for the relation in a place the pattern does not put it.
   datepicker: Object.freeze({ opener: "control", controls: "grid", role: "combobox", typeable: true, promises: "grid", alsoOpensFrom: "toggle" }),
   // Daterange wires its own toggle rather than following the combobox pattern its sibling does.
-  daterange: Object.freeze({ opener: "toggle", controls: "popup", promises: "grid" }),
+  // Points past the panel at the calendar inside it, as the date picker does: the promise names a
+  // role, and the reference has to reach the element that carries it. Aimed at the popup, an opener
+  // saying "this opens a grid" sent a reader to an element with no role at all.
+  daterange: Object.freeze({ opener: "toggle", controls: "grid", promises: "grid" }),
   timepicker: Object.freeze({ opener: "control", controls: "popup", role: "combobox", typeable: true, promises: "dialog", alsoOpensFrom: "toggle" }),
   // The filled square is the opener. It is the most recognisable shape on the field — every platform
   // ships one and everybody has pressed one — and what it does is therefore the field's answer to
@@ -421,7 +424,9 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
   // for one act: two names, two keyboard stops, two things to describe. The caret keeps taking a
   // press, because the area is inside the field and a dead patch in a live control reads as a fault,
   // but it is a drawing rather than a control of its own.
-  colors: Object.freeze({ opener: "nativePicker", controls: "popup", promises: "listbox", alsoOpensFrom: "toggle" }),
+  // The presets are the listbox this promises; the panel around them holds a hex box and a native
+  // picker besides, and carries no role of its own.
+  colors: Object.freeze({ opener: "nativePicker", controls: "presets", promises: "listbox", alsoOpensFrom: "toggle" }),
 });
 
 /** Anchoring per kind; widgets with no overlay have none. */
