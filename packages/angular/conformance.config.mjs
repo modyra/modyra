@@ -253,6 +253,8 @@ async function mountKind(kind, { variant, idPrefix, validators = true, rules, va
     root: root ?? host,
     parts: () => partsOf(root, kind),
     value: () => field()?.value(),
+    /** Put a value in the model — what the engine holds, rather than what a document declares. */
+    hold: (value) => { field()?.value.set(value); },
     settle,
     dispose: () => {
       app.destroy();

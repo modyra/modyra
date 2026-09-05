@@ -22,7 +22,20 @@ const { overlayOnlyParts } = await import("../widgets/dist/index.js");
 
 export const name = "@modyra/lit";
 export const kinds = fixture.KINDS;
-export const mount = fixture.mount;
+export const mount = async (kind, asked) => {
+  const mounted = await fixture.mount(kind, asked);
+  return {
+    ...mounted,
+    /**
+     * Put a value in the model, whatever a document's declaration would have done with it.
+     *
+     * Not the same door as an initial value: a declaration of the wrong shape is refused with a
+     * warning, correctly. What the engine *holds* is what a form writes into it, and a value of the
+     * wrong shape held there is a verdict the control has to stay on the page to show.
+     */
+    hold: (value) => { mounted.handle.set(value); },
+  };
+};
 
 /** Nothing inside the popup exists until the popup does. */
 export const absentParts = Object.fromEntries(

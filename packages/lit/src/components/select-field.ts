@@ -222,8 +222,16 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     this._open = this.selectAdapter.state.open;
   }
 
+  /**
+   * The key an option is published under — asked of the contract rather than spelled here.
+   *
+   * `String(value)` answers `"[object Object]"` for every object, while the projection keys such an
+   * option structurally, so the two disagreed the moment a value was not a scalar: the lookup missed,
+   * `parts[key]` was `undefined`, and reading its id threw while the list was being drawn. The value
+   * that reaches this is whatever a document put in the model, so "not a scalar" is not exotic.
+   */
   private optionKey(value: unknown): string {
-    return String(value);
+    return defaultOptionKey(value);
   }
 
   protected override isSelected(handle: MdyFieldHandle<unknown | null>, value: unknown): boolean {

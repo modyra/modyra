@@ -50,6 +50,8 @@ export const mount = async (...given) => {
     dispose: () => mounted.dispose(),
     ...(mounted.control ? { control: () => mounted.control() } : {}),
     ...(mounted.value ? { value: () => mounted.value() } : {}),
+    /** Put a value in the model — what the engine holds, rather than what a document declares. */
+    ...(mounted.handle ? { hold: (value) => { mounted.handle().set(value); } } : {}),
     ...(mounted.press ? { press: (key) => mounted.press(key) } : {}),
   };
 };

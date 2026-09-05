@@ -25,6 +25,12 @@
  *   { validators: false }   draw it with no rules at all, whatever your fixture's default is
  *   { rules }               draw it with exactly these rules, so their reaching the control can be
  *                           checked — declare `declaresRules` to say you pass them on
+ *   { value }               draw it holding exactly this value, including one of a shape the kind
+ *                           does not expect — the engine holds what a document wrote and reports the
+ *                           field invalid, so a renderer has to survive it. A config that drops this
+ *                           is *named as not run* rather than passed: the section reads the value back
+ *                           before judging anything, because a fixture that quietly drew its default
+ *                           would be graded on a widget nobody asked for.
  *
  * A mount that ignores `asked` is conforming for every section that does not use it. What it may
  * not do is accept the argument and drop it: the sections that pass one report against what they
@@ -169,6 +175,10 @@ const SECTION_CLAIMS = Object.freeze({
   // The other edge of the same claim: not only that a field leaving play keeps the person somewhere,
   // but that one nobody had reached does not take them.
   "A widget nobody reached keeps the keyboard out": ["A11Y-005"],
+  // A widget answers for any value the model may hold, including one already judged invalid. The
+  // claim's title reads as though it meant well-formed values; its evidence rows say otherwise, and
+  // they were written before ADR 0208 said the same thing in its own words.
+  "A value of the wrong shape leaves the control standing": ["UI-008"],
   // No claim names identity: whether two instances can share an id is the subject of a whole family
   // of open findings and the registry has no word for it.
   "Multi-instance isolation": [],
@@ -634,6 +644,102 @@ if (config.declaresRules === true) {
   } else {
     record("A widget nobody reached keeps the keyboard out", findings);
   }
+}
+
+// ── A value of the wrong shape leaves the control standing ────────────────────────────────
+//
+// The engine holds what a document put in the model and reports the field invalid rather than
+// refusing the write (ADR 0208). The control is what shows that verdict, so it has to be drawn — and
+// a renderer that reads the value as its kind's declared shape throws while drawing, taking the one
+// thing that could explain the problem off the page.
+//
+// The value is *held*, not declared. A declaration of the wrong shape is refused at the door with a
+// warning, which is correct and is a different path: asked that way, the widget draws its kind's
+// empty value and this section would grade a widget nobody asked about.
+//
+// Asked of every kind and of five shapes, because the shape a reader is most likely to be tried with
+// is the one that forgives it: a string walks through a text path and answers, while a number does
+// not walk at all. Measured on two planted defects, four shapes in five fell and the string passed
+// both times — a section trying only the obvious shape for the kind's own domain would have been
+// green on both.
+if (typeof config.mount === "function") {
+  const findings = [];
+  /** Values no document should produce: wrong at the top level, and a list whose entries are wrong. */
+  const WRONG = ["a name", 7, {}, true, [null]];
+  let exercised = 0;
+  let cannotHold = false;
+  for (const kind of kinds) {
+    for (const wrong of WRONG) {
+      let fixture;
+      try {
+        fixture = await mount(kind, { validators: false });
+      } catch (error) {
+        findings.push(`${kind}: mounting threw — ${String(error?.message ?? error).split("\n")[0]}`);
+        continue;
+      }
+      if (typeof fixture.hold !== "function") {
+        cannotHold = true;
+        fixture.dispose?.();
+        break;
+      }
+      // What the renderer *reported* while drawing, not only what it left in the DOM.
+      //
+      // A framework catches an exception thrown inside its own update, logs it, and keeps the last
+      // good render on the page — so the control is still there and the value is still held, and a
+      // check that only looked at the tree would call that a pass. Measured: a planted defect in the
+      // shared projection threw on every renderer and left every DOM intact.
+      const complaints = [];
+      const said = console.error;
+      console.error = (...args) => { complaints.push(args.map((one) => String(one?.message ?? one)).join(" ")); };
+      try {
+        fixture.hold(wrong);
+        await fixture.settle?.();
+        // The premise, per shape: a fixture whose write did not land would be judged on the value it
+        // already had, and every line below would pass for a widget nobody asked about.
+        const held = fixture.value?.();
+        if (JSON.stringify(held) !== JSON.stringify(wrong)) {
+          findings.push(
+            `${kind}: the model did not keep ${JSON.stringify(wrong)} — it holds ${JSON.stringify(held)}, `
+            + "so nothing below was measured for this shape",
+          );
+          continue;
+        }
+        exercised += 1;
+        const root = fixture.root;
+        const control = root?.querySelector?.("input, select, textarea, button") ?? null;
+        if (control === null) {
+          findings.push(
+            `${kind}: NO_CONTROL_FOR_A_VALUE_THE_MODEL_HOLDS — holding ${JSON.stringify(wrong)} it drew `
+            + "no control, so there is nothing left to show the verdict on",
+          );
+        }
+      } catch (error) {
+        findings.push(`${kind}: drawing ${JSON.stringify(wrong)} threw — ${String(error?.message ?? error).split("\n")[0]}`);
+      } finally {
+        console.error = said;
+        fixture.dispose?.();
+      }
+      for (const complaint of complaints) {
+        findings.push(
+          `${kind}: DREW_WITH_A_COMPLAINT — holding ${JSON.stringify(wrong)} the renderer reported `
+          + `"${complaint.split("\n")[0].slice(0, 140)}"`,
+        );
+      }
+    }
+    if (cannotHold) break;
+  }
+  if (cannotHold || exercised === 0) {
+    record(
+      "A value of the wrong shape leaves the control standing",
+      null,
+      "not run — this config's fixture offers no `hold(value)`, so a value of the wrong shape cannot "
+      + "be put where the engine keeps it. Add it and this section runs; the exemption ends by itself.",
+    );
+  } else {
+    record("A value of the wrong shape leaves the control standing", findings);
+  }
+} else {
+  record("A value of the wrong shape leaves the control standing", null, "not run — the config exports no `mount`");
 }
 
 // ── Multi-instance isolation ──────────────────────────────────────────────────────────────

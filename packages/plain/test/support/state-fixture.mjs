@@ -173,6 +173,13 @@ export function mount(kind, { validators = true, variant, rules, value, config }
     parts: () => partsOf(root, kind),
     control: () => controlOf(root),
     value: () => handle.value(),
+    /**
+     * The handle itself, for a suite that has to write to the model directly.
+     *
+     * A value declared on the document is refused when its shape is wrong — correctly, and with a
+     * warning. What the engine *holds* is what a form writes into it, and that is a different door.
+     */
+    handle: () => handle,
     // Plain's effects land on a task rather than synchronously.
     settle: settleFor(PAINT_BEAT),
     dispose: () => { mounted.dispose(); host.remove(); },

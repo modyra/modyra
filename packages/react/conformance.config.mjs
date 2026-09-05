@@ -113,5 +113,7 @@ export const mount = async (kind, { rules, value } = {}) => {
     // The field's value, not the control's text: what a kind holds when it holds nothing is the
     // kind's own answer, and reading the DOM string reports `""` for both a number and a text field.
     value: () => form.f.value.value(),
+    /** Put a value in the model — what the engine holds, rather than what a document declares. */
+    hold: (value) => { form.f.value.set(value); },
   };
 };

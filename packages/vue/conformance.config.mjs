@@ -177,6 +177,15 @@ export const mount = async (kind, { rules, value, variant, config } = {}) => {
      * telling the truth for a text field and, for a daterange, putting a string where an object
      * belongs — a row green about a state the widget was never in.
      */
+    /**
+     * Put a value in the model, whatever a document's declaration would have done with it.
+     *
+     * Not the same door as `{ value }`: that one declares an initial value, and a declaration of the
+     * wrong shape is refused with a warning — correctly. What the engine *holds* is what a form
+     * writes into it, and a value of the wrong shape held there is a verdict the control has to stay
+     * on the page to show.
+     */
+    hold: (value) => { form.f.value.set(value); },
     drive: (state) => {
       switch (state) {
         case "pristine": return true;
