@@ -14,6 +14,7 @@ import {
   stateClass,
   projectFieldShellA11y,
   shownErrorsOf,
+  fieldAccessibleName,
   fieldCanBeInvalid,
   visibleErrorsOf,
   type MdyFileCandidate,
@@ -73,6 +74,16 @@ export function renderFileField(
   // button forwards to it, but it is still the control the label is about.
   control.id = widgetId;
   applyPart(control, definition.parts.control);
+  // The name a document declared, applied here because this kind never reaches the shell's naming
+  // step: it takes the wrapper out and puts the drop zone in itself, and the step that names the
+  // control lives in the insert it skips. The declared name was handed to the shell and then landed
+  // on nothing — the caption still named the input natively, so the field had *a* name and the
+  // document's own was silently dropped. Three other renderers deliver it, so this was neither a
+  // limit of the kind nor a position.
+  // Only where a document declared one. With just a caption the input is already named natively, and
+  // writing the same words again would be a second name saying the first one over.
+  const declaredName = fieldAccessibleName({ ariaLabel: f.ariaLabel });
+  if (declaredName !== "") control.setAttribute("aria-label", declaredName);
   control.multiple = Boolean(f.multiple);
   if (f.accept) control.accept = f.accept;
   const content = el("div") as HTMLDivElement;

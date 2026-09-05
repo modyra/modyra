@@ -23,9 +23,25 @@ installDomGlobals();
 
 const { mountMdyForm } = await import("../dist/index.js");
 const { readAccessibleName } = await import("@modyra/widgets/testing");
+const { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KINDS } = await import("@modyra/widgets");
 
 /** Every kind whose control the platform can associate with a caption, so `for` points at it. */
-const NATIVELY_LABELLED = ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "select"];
+/**
+ * Derived from the anatomy rather than listed: a kind whose `control` node is an `input` or a
+ * `textarea` is one a caption can point at. Written by hand this list had `select`, which has no
+ * `control` node at all, and was missing four kinds — the same defect the bench exists to catch, in
+ * the bench.
+ *
+ * The two pickers are left out on purpose and are not an oversight: their box is one part of a
+ * widget that also has a calendar, so the name belongs to the pair and arrives by reference. That is
+ * uniform for the date picker across renderers and **not** uniform for the time picker, which is an
+ * open divergence rather than something for this bench to freeze.
+ */
+const NATIVELY_LABELLED = MDY_WIDGET_KINDS.filter((kind) => {
+  const node = MDY_WIDGET_CONTRACTS[kind].structure.nodes.find((one) => one.part === "control");
+  return (node?.element === "input" || node?.element === "textarea")
+    && !["datepicker", "timepicker"].includes(kind);
+});
 
 const DECLARED = "spoken name";
 
@@ -34,7 +50,7 @@ const nameOfControl = (kind) => {
   document.body.append(host);
   mountMdyForm(host, [{
     name: "f", kind, label: "L", ariaLabel: DECLARED,
-    ...(kind === "select" ? { options: [{ value: "a", label: "A" }] } : {}),
+    ...(kind === "colors" ? { presets: ["#000000"] } : {}),
   }], { submitLabel: null });
   const caption = host.querySelector("label");
   const target = caption?.getAttribute("for");
