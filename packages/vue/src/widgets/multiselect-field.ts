@@ -19,7 +19,8 @@ import {
   defaultWidgetIdFactory,
   focusPartOnOpen,
   keyBindingFor,
-} from "@modyra/widgets";
+
+  MDY_CHIP_CLASSES,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
@@ -227,7 +228,11 @@ export const MdyMultiselectField = defineComponent({
             h("div", { class: classesOf("chipRow"), role: roleOf("chipRow") },
               held.map((option) => h("span", { class: classesOf("chip"), role: roleOf("chip") }, [
                 h("button", { type: "button", class: classesOf("chipMove"), "aria-label": `Move ${option.label}` }),
-                h("span", option.label),
+                // The class the contract declares for it. Drawn bare, the words were a span nothing
+                // could address: the rule that truncates a chip's label on a narrow screen never
+                // matched, so the label sat at its text's width and the chip overflowed the row it
+                // had been capped to — the horizontal axis a page that already scrolls must not gain.
+                h("span", { class: MDY_CHIP_CLASSES.label }, option.label),
                 h("button", {
                   type: "button", class: classesOf("chipRemove"), "aria-label": `Remove ${option.label}`,
                   onClick: () => run(controller.dispatch({ type: "toggle", optionKey: String(option.value) })),
