@@ -18,6 +18,7 @@ import {
   createDaterangeFieldController,
   defaultWidgetIdFactory,
   dateEntryText,
+  fieldAccessibleName,
 } from "@modyra/widgets";
 import type { MdyDateRangeValue } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
@@ -195,6 +196,9 @@ export const MdyDaterangeField = defineComponent({
       ]));
 
       children.push(drawCalendar({
+        // Named after the field it belongs to, through the same door every renderer asks: a dialog
+        // is announced by what it is when nothing says what it holds.
+        name: fieldAccessibleName({ label: props.label }) ?? undefined,
         kind: "daterange",
         panel,
         onKeydown,

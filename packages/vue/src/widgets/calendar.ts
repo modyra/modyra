@@ -95,6 +95,15 @@ export const drawCalendar = (options: {
   readonly onPreview?: (iso: string | null) => void;
   /** The id whatever opens this panel points `aria-controls` at, where it names the panel itself. */
   readonly popupId?: string;
+  /**
+   * What the calendar is called, for the reader who lands in it.
+   *
+   * A `dialog` is one of the roles that must be named: unnamed it is announced as "dialog" and
+   * nothing else, which is the first thing somebody using a screen reader meets when the panel
+   * opens. The other three renderers name it after the field it belongs to and this one named it
+   * nothing at all.
+   */
+  readonly name?: string;
   /** Where the drawn panel lands, so it can be measured and placed against its control. */
   readonly panel?: Ref<HTMLElement | null>;
   /**
@@ -137,7 +146,11 @@ export const drawCalendar = (options: {
     ...(options.onKeydown === undefined ? {} : { onKeydown: options.onKeydown }),
     ...(options.popupId === undefined ? {} : { id: options.popupId }),
   }, [
-    h("div", { class: cls("calendar"), role: role("calendar") }, [
+    h("div", {
+      class: cls("calendar"),
+      role: role("calendar"),
+      ...(options.name === undefined || options.name === "" ? {} : { "aria-label": options.name }),
+    }, [
       h("div", partProps(parts.grid, { class: cls("grid") }), [
         h("div", { class: cls("weekdays"), role: role("weekdays") },
           weekdayLabels(options.locale).map((name) =>

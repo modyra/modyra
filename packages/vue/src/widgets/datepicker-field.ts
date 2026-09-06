@@ -19,6 +19,7 @@ import {
   defaultWidgetIdFactory,
   keyBindingFor,
   dateEntryText,
+  fieldAccessibleName,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
@@ -227,6 +228,9 @@ export const MdyDatepickerField = defineComponent({
       ]));
 
       children.push(drawCalendar({
+        // Named after the field it belongs to, through the same door every renderer asks: a dialog
+        // is announced by what it is when nothing says what it holds.
+        name: fieldAccessibleName({ label: props.label, ariaLabel: props.ariaLabel }) ?? undefined,
         kind: "datepicker",
         panel,
         onKeydown,
