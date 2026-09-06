@@ -179,6 +179,10 @@ const SECTION_CLAIMS = Object.freeze({
   // claim's title reads as though it meant well-formed values; its evidence rows say otherwise, and
   // they were written before ADR 0208 said the same thing in its own words.
   "A value of the wrong shape leaves the control standing": ["UI-008"],
+  // The face half is a declared capability reaching what it describes. The other half this section
+  // checks — that the number a control shows is the number it announces — has no name in the
+  // registry yet, and one claim listed honestly beats two where the second would be invented.
+  "Every face a kind declares is read": ["UI-010"],
   // No claim names identity: whether two instances can share an id is the subject of a whole family
   // of open findings and the registry has no word for it.
   "Multi-instance isolation": [],
@@ -521,6 +525,101 @@ if (config.declaresConfig === true) {
     null,
     "not run — the config does not export `declaresConfig`, so it may not pass a document's "
     + "non-rule declarations to its fixture",
+  );
+}
+
+// ── Every face a kind declares is read ────────────────────────────────────────────────────
+//
+// A face is a configuration axis that changes what a widget's parts *say* while leaving the anatomy
+// alone: the same boxes, different numbers in them. The contract names them per kind, and the value
+// that tells them apart, because most values cannot — a walk holding an hour both clocks agree on
+// has mounted the same widget twice and reported two passes.
+//
+// What is asked of each face is coherence between the two things a control states about one number:
+// what it shows, and what it announces. A reader and a looker are told the same value, or one of
+// them is being told about a widget that is not on the page.
+const FACED = kinds.filter((kind) => MDY_WIDGET_CONTRACTS[kind]?.capabilities?.faces !== undefined);
+if (FACED.length === 0) {
+  record(
+    "Every face a kind declares is read",
+    null,
+    "not run — no kind this config draws declares a face",
+  );
+} else if (config.declaresConfig !== true) {
+  record(
+    "Every face a kind declares is read",
+    null,
+    "not run — the config does not export `declaresConfig`, so a face cannot be asked for; the "
+    + `${FACED.join(", ")} face(s) are drawn in whichever one this renderer defaults to`,
+  );
+} else {
+  const findings = [];
+  let mounted = 0;
+  for (const kind of FACED) {
+    for (const [axis, face] of Object.entries(MDY_WIDGET_CONTRACTS[kind].capabilities.faces)) {
+      /** What each face announced, per part, for the one value declared to tell them apart. */
+      const heard = new Map();
+      for (const value of face.values) {
+        const fixture = await mount(kind, { config: { [axis]: value }, value: face.toldApartBy });
+        await fixture.settle?.();
+        // A face's numbers can live behind an opener — a clock's boxes are in its panel — and a
+        // walk that never opened would report a face it did not read.
+        fixture.drive?.("open");
+        await fixture.settle?.();
+        mounted += 1;
+        for (const [part, found] of Object.entries(fixture.parts() ?? {})) {
+          for (const element of Array.isArray(found) ? found : [found]) {
+            if (typeof element?.getAttribute !== "function") continue;
+            const announced = element.getAttribute("aria-valuenow");
+            if (announced === null) continue;
+            const shown = typeof element.value === "string" && element.value !== ""
+              ? element.value
+              : (element.textContent ?? "").trim();
+            if (shown !== "" && Number.isFinite(Number(shown)) && Number(shown) !== Number(announced)) {
+              findings.push(
+                `${kind}[${axis}=${value}].${part}: shows ${JSON.stringify(shown)} and announces ` +
+                `${JSON.stringify(announced)} — a reader and a looker are told different numbers`,
+              );
+            }
+            // The range is the other half of the same statement: a value outside the bounds the
+            // control declares names something the control says it cannot hold.
+            const low = element.getAttribute("aria-valuemin");
+            const high = element.getAttribute("aria-valuemax");
+            if (low !== null && high !== null
+              && (Number(announced) < Number(low) || Number(announced) > Number(high))) {
+              findings.push(
+                `${kind}[${axis}=${value}].${part}: announces ${JSON.stringify(announced)} outside `
+                + `its own declared ${low}..${high}`,
+              );
+            }
+            if (!heard.has(part)) heard.set(part, new Map());
+            heard.get(part).set(value, announced);
+          }
+        }
+        fixture.dispose();
+      }
+      // The axis is declared to be observable at this value, so the faces have to differ somewhere.
+      // A renderer told to wear one and drawing another passes every check made inside a single
+      // mount — both halves of it agree, and both are the wrong face. Only the comparison between
+      // faces can see it, which is what the separating value was declared for.
+      // Asked of the widget, not of each part: an axis is not obliged to move every number it
+      // touches — five past the hour is five past on either clock — so a part that reads alike is
+      // no finding. A widget whose every part reads alike is a different statement: nothing about
+      // it changed when it was told to wear the other face.
+      const read = [...heard.values()].filter((byFace) => byFace.size === face.values.length);
+      if (read.length > 0 && read.every((byFace) => new Set(byFace.values()).size === 1)) {
+        findings.push(
+          `${kind}: no part reads differently across ${axis} holding `
+          + `${JSON.stringify(face.toldApartBy)}, which the faces are declared to tell apart `
+          + `— this renderer draws one face whichever is asked for`,
+        );
+      }
+    }
+  }
+  record(
+    "Every face a kind declares is read",
+    findings,
+    `${mounted} mount(s) over ${FACED.length} kind(s)`,
   );
 }
 

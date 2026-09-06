@@ -29,6 +29,10 @@ state it answers about, which is why `wayBackActionName` still takes null.
 where the call used to hand over the whole field object. Code that was already passing the declared
 shape is unaffected; code that was not was receiving `undefined` and reading it as an answer.
 
-Classified major because a call that returned `undefined` may now throw. Nothing in this workspace
-did — five renderers and the full suites are unchanged — but a consumer relying on the quiet answer
-would break at the call site instead of three layers away, which is the trade this makes deliberately.
+Classified major because a call that returned `undefined` may now throw. The five renderers and the
+full suites are unchanged — and the workspace's own demo was not: a lab panel passed
+`fieldIsRequired` the required *flag* alone, so it had never once been told whether the field was in
+play. It printed "not owed" for every kind and looked correct, because `undefined` is falsy. The
+first caller this found was a demo rather than a renderer, which is the more useful warning to hand
+on: a consumer relying on the quiet answer breaks at the call site instead of three layers away, and
+the answer it was relying on may never have been right.

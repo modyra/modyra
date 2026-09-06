@@ -4039,6 +4039,15 @@
           "matchAnchorWidth": false,
           "minSpace": 240,
           "alignment": "right"
+        },
+        "faces": {
+          "format": {
+            "values": [
+              "12h",
+              "24h"
+            ],
+            "toldApartBy": "14:05"
+          }
         }
       },
       "variants": {},

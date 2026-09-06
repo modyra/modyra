@@ -441,6 +441,15 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
  * overlay kinds hold a list, and the other four hold a fixed layout.
  */
 const SCROLLING_OVERLAYS: readonly MdyWidgetKind[] = Object.freeze(["select", "multiselect"]);
+/**
+ * The faces each kind can wear — a configuration axis that changes what its parts say, never which
+ * parts exist. Named here rather than in whatever walks them: a kind that gains a face is read on
+ * both from the moment this says so, and nothing else has to be told.
+ */
+const FACES: Readonly<Partial<Record<MdyWidgetKind, Readonly<Record<string, { readonly values: readonly string[]; readonly toldApartBy: string }>>>>> = Object.freeze({
+  // Any hour past noon: before it the two clocks agree, and a face they agree on shows nothing.
+  timepicker: Object.freeze({ format: Object.freeze({ values: Object.freeze(["12h", "24h"]), toldApartBy: "14:05" }) }),
+});
 
 
 const VALUE_SLOTS: Readonly<Record<MdyWidgetKind, MdyValueSlot>> = Object.freeze({
@@ -562,7 +571,7 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
   return Object.freeze({ kind, rootClasses: Object.freeze([...rootClasses]),
     ...(shape.controlType === undefined ? {} : { controlType: shape.controlType }),
     ...(shape.concealed === undefined ? {} : { concealed: shape.concealed }),
-    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze({ ...(shape.presentation ?? {}) }), variants, valueSlot: VALUE_SLOTS[kind], capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}) }) });
+    parts: Object.freeze(partMap), structure: Object.freeze({ kind, nodes: Object.freeze(nodes) }), presentationClasses: Object.freeze({ ...(shape.presentation ?? {}) }), variants, valueSlot: VALUE_SLOTS[kind], capabilities: Object.freeze({ overlay, dismissOnOutsidePointer: overlay ? "light-dismiss" as const : false, dismissOnFocusOutside: overlay, overlayScrolls: SCROLLING_OVERLAYS.includes(kind), ...(overlay && ANCHORING[kind] ? { anchoring: Object.freeze(ANCHORING[kind]) } : {}), ...(FACES[kind] ? { faces: FACES[kind] } : {}) }) });
 }
 /**
  * The semantic every part answers to, declared rather than defaulted.

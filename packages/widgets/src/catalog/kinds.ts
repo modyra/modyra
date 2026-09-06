@@ -218,6 +218,33 @@ export interface MdyWidgetDefinition<TPart extends string = string> {
        */
       readonly alignment?: "left" | "right";
     };
+    /**
+     * Configuration axes whose alternatives change what this widget's parts *say*, and the values
+     * each axis offers.
+     *
+     * A variant changes the anatomy — which parts exist — and is declared separately. A face leaves
+     * the anatomy alone and changes the reading: a clock drawn as twelve hours and one drawn as
+     * twenty-four hold the same instant, draw the same boxes, and put different numbers in them.
+     *
+     * Declared because a suite that mounts one face reports full coverage having read half the
+     * widget, and the half it skipped is the half the axis exists for. Where two faces agree on a
+     * number by coincidence — noon and midday, a minute in either clock — a check that mounts only
+     * the agreeing one cannot fail, and a renderer that never converts is indistinguishable from one
+     * that always does.
+     */
+    readonly faces?: Readonly<Record<string, {
+      /** The alternatives this axis offers. */
+      readonly values: readonly string[];
+      /**
+       * A held value the alternatives do not read alike.
+       *
+       * Most values cannot tell two faces apart — ten in the morning is `10` on either clock, and a
+       * walk that mounts both faces holding one of those has mounted the same widget twice. The
+       * separating value is the one that makes the axis observable, so it is declared with the axis
+       * rather than chosen by whoever happens to be looking.
+       */
+      readonly toldApartBy: string;
+    }>>;
   };
 }
 

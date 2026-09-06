@@ -26,6 +26,7 @@ import {
   timepickerPlaceholder,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
+import type { MdyTimeFormat } from "@modyra/core/datetime";
 import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
@@ -62,6 +63,14 @@ export const MdyTimepickerField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * Which clock this field draws and reads. Absent leaves the controller's own default.
+     *
+     * The document carries it because the format is the field's property and not the host's taste:
+     * a form that means half past two in the afternoon means it in every renderer. A renderer that
+     * cannot be told leaves a document-driven form with one clock available.
+     */
+    format: { type: String as PropType<MdyTimeFormat>, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -72,6 +81,7 @@ export const MdyTimepickerField = defineComponent({
     const controller = createTimepickerFieldController({
       handle: props.field,
       widgetId: widgetId.value,
+      ...(props.format === undefined ? {} : { format: props.format }),
     }, reactivity);
 
     // Measured and placed against the control that opens it, and drawn outside the field so it
@@ -178,7 +188,10 @@ export const MdyTimepickerField = defineComponent({
           // empty while the draft behind them held an hour and a minute — so opening the picker
           // showed nothing to adjust — and a text box offers no numeric keypad on a phone.
           type: "number",
-          value: String(part === "hour" ? state.value.draft.hour : state.value.draft.minute).padStart(2, "0"),
+          // The number drawn is the number announced. The draft is held canonically as 1-12 with a
+          // period whatever clock the field wears, so a box that converted it a second time could
+          // show one hour while a reader was told another.
+          value: String(view.value.parts[`${part}Control`]?.attributes?.["aria-valuenow"] ?? "").padStart(2, "0"),
           onChange: (event: Event) => {
             const typed = Number.parseInt((event.target as HTMLInputElement).value, 10);
             if (Number.isNaN(typed)) return;
