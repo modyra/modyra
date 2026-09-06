@@ -1,6 +1,6 @@
 ---
 "@modyra/widgets": minor
-"@modyra/vue": major
+"@modyra/vue": minor
 ---
 
 A kind declares the faces it can wear, and both are read
@@ -28,8 +28,13 @@ got a twelve-hour one in this renderer and no other. Its hour box also drew the 
 is held canonically as 1–12 with a period whatever face the field wears; it now draws the number the
 contract announces, so what is shown and what is read out cannot drift apart.
 
-**On the classification.** Adding an optional prop whose default is `undefined` is additive, and no
-existing call breaks. The type-surface audit reports `major` because the component's whole inferred
-props type is re-printed and it compares by name — the case it documents as reported "for caution
-rather than from evidence". Taken as `major` because a false major costs a migration note and a false
-minor costs a consumer their build; the disagreement is recorded here rather than settled quietly.
+**On the classification.** The type-surface audit reports this `major`; it is released as `minor`,
+and both belong in the record.
+
+Adding an optional prop whose default is `undefined` is additive: no existing call breaks, and there
+is no migration to perform. The audit reports `major` because the component's whole inferred props
+type is re-printed and it compares by name — the case it documents as reported "for caution rather
+than from evidence". That is the right answer for a tool with no type checker behind it, but it is a
+statement of what the tool cannot see rather than a finding about this change. Where the audit
+declares itself outside its perimeter and the change carries its own evidence, the classification is
+decided by a reader; where the verdict has a defensible core, the verdict wins.
