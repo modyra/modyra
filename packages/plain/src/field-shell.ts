@@ -121,7 +121,10 @@ export function buildFieldShell(
   // Empty until a field declares words for it. Hidden while it is, because a slot with nothing in it
   // is height a person cannot read, and `aria-describedby` naming an empty element sends a screen
   // reader somewhere and gives it nothing to say.
-  if (supportingText) setText(description, supportingText);
+  // The words are the projection's answer and are written by `applyPart` when the part is applied,
+  // so they are not written here as well: two writers put the sentence in twice. What the shell
+  // still decides is whether the slot takes up room, because a paragraph with nothing in it is
+  // height a person cannot read.
   description.hidden = !supportingText;
   const errorList = el("ul", MDY_FIELD_SHELL_CLASSES.errors) as HTMLUListElement;
 

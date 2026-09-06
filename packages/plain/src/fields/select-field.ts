@@ -84,6 +84,10 @@ export function renderSelectField(
 
   const parts = MDY_WIDGET_CONTRACTS.select.parts;
   const shell = buildFieldShell(f.label, "select", {}, f.ariaLabel, f.name, f.supportingText);
+  // Written here because this kind projects its shell itself and its projection carries no
+  // description part to apply: the shell no longer writes the words, so the one place that has them
+  // has to put them in. The reference to this element is the projection's, from the same words.
+  setText(shell.description, f.supportingText ?? "");
   // The trigger displays the committed value; filtering happens in the field at the top of the
   // popup, which is the canonical select anatomy — typing over the display would hide it.
   const trigger = el("button") as HTMLButtonElement;
@@ -405,6 +409,10 @@ function renderNativeSelectField(
 
   const parts = MDY_WIDGET_CONTRACTS.select.parts;
   const shell = buildFieldShell(f.label, "select", {}, f.ariaLabel, f.name, f.supportingText);
+  // Written here because this kind projects its shell itself and its projection carries no
+  // description part to apply: the shell no longer writes the words, so the one place that has them
+  // has to put them in. The reference to this element is the projection's, from the same words.
+  setText(shell.description, f.supportingText ?? "");
   const wrapper = el("div", "mdy-select");
   const chooser = el("select") as HTMLSelectElement;
   // The name a native submit reads. This shape is a real form control, so the browser sends it
