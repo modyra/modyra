@@ -29,6 +29,14 @@ const CLASS = {
   hexInput: partClasses("colors", "hexInput").join(" "),
   nativePicker: partClasses("colors", "nativePicker").join(" "),
   presets: partClasses("colors", "presets").join(" "),
+  /**
+   * The swatch that shows what the field holds.
+   *
+   * Its colour comes from the contract. Written here it was a copied literal behind a `??`, which
+   * does not fire on the empty string a cleared field holds: the declaration came out as
+   * `background-color:` with nothing after it, on the single control whose whole job is to show a
+   * colour.
+   */
   preview: partClasses("colors", "preview").join(" "),
   swatch: partClasses("colors", "swatch").join(" "),
   toggle: partClasses("colors", "toggle").join(" "),
@@ -350,7 +358,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
             >
               <div
                 class="${CLASS.preview}"
-                style="background-color:${handle.value() ?? "#4361ee"}"
+                style="background-color:${this.colorsController(handle).view().parts.preview.content?.color ?? "transparent"}"
               ></div>
             </button>
             <!-- Beside the button, not inside it: a control nested in a control is invalid HTML and

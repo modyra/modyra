@@ -367,7 +367,11 @@ export function renderColorsField(
     const panelUp = isOpen();
     if (document.activeElement !== hexInput) hexInput.value = value;
     if (value) control.value = value;
-    preview.style.setProperty("background-color", value || "transparent");
+    // The colour the contract says this swatch shows, not one decided here. Left to each renderer,
+    // the empty state became three answers to one question — a transparent square, an empty
+    // declaration, and the colour the contract names — on the single control whose whole job is to
+    // show a colour. Where it is painted stays this renderer's; what it shows does not.
+    preview.style.setProperty("background-color", colors.view().parts.preview.content?.color ?? "transparent");
     // A closed palette offers nothing. The popup stays — built once, alive as long as the field —
     // and its swatches are buttons: a Tab key walks through them and a screen reader counts them as
     // options in a listbox nobody opened. They go back in when it opens.
