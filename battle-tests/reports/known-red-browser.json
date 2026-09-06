@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-06T04:38:13Z",
-  "openReds": 70,
+  "recordedAt": "2026-09-06T05:52:03Z",
+  "openReds": 69,
   "bySeverity": {
-    "S1": 54,
+    "S1": 53,
     "S2": 16
   },
   "knownRed": [
@@ -17,7 +17,6 @@
     "a-dialog-nothing-can-point-at.spec.ts › the opener points at the dialog it opens, vue",
     "a-field-that-cannot-look-wrong.spec.ts › vue: a field the form refused is one the page can paint",
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, vue",
-    "a-grid-with-no-name.spec.ts › vue: a role that must be named has a name",
     "a-hand-that-says-which-ring.spec.ts › the hand is shorter on the inner ring, vue",
     "a-limit-the-calendar-only-declares.spec.ts › a day after the limit cannot be chosen, vue",
     "a-limit-the-calendar-only-declares.spec.ts › a day before the limit cannot be chosen, vue",
