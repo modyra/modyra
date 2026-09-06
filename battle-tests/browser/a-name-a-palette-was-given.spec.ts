@@ -29,7 +29,7 @@
 
 import { expect, test } from "@playwright/test";
 
-import { HOSTS } from "./bench";
+import { HOSTS, announcedName } from "./bench";
 
 type Api = Record<string, Record<string, (...args: never[]) => unknown>>;
 
@@ -70,11 +70,11 @@ for (const host of HOSTS) {
       const count = await options.count();
       const out: string[] = [];
       for (let index = 0; index < count; index += 1) {
-        // The computed name, which is what a person is told. What the markup says is a different
-        // question and not the one anybody experiences.
-        out.push(((await options.nth(index).getAttribute("aria-label"))
-          ?? (await options.nth(index).textContent())
-          ?? "").trim());
+        // The computed name, which is what a person is told — asked of the platform rather than
+        // rebuilt from `aria-label ?? textContent`. That pair names the two commonest routes and
+        // misses the rest, and it puts the literal ahead of a reference that would beat it, so a
+        // swatch named through `aria-labelledby` was reported by the attribute nobody hears.
+        out.push((await announcedName(options.nth(index)) ?? "").trim());
       }
 
       await page.evaluate(({ api, mountId }) => { (window as never as Api)[api].dispose?.(mountId as never); },
@@ -148,8 +148,7 @@ test("one palette is announced one way, whoever drew it", async ({ page }) => {
     // each renderer decides on its own is how a colour nobody named is announced.
     const names: string[] = [];
     for (let index = 0; index < count; index += 1) {
-      names.push((((await options.nth(index).getAttribute("aria-label"))
-        ?? (await options.nth(index).textContent()) ?? "").trim()));
+      names.push((await announcedName(options.nth(index)) ?? "").trim());
     }
     const forBare = names.find((one) => one.toLowerCase().includes(BARE.toLowerCase().slice(1)));
     expect(forBare, `${host.name} announced no option carrying ${BARE}: ${JSON.stringify(names)}`).toBeDefined();
