@@ -11,14 +11,15 @@ import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 
 export interface MdyTextFieldControllerOptions<TValue> {
   /**
-   * Whether the renderer draws a description for this field, asked on every projection.
+   * The words under this control, asked on every projection, or `null` where there are none.
    *
    * A control that names an empty description sends a reader somewhere to hear nothing — it costs
-   * them the move and teaches them not to follow the next reference. Only the renderer knows: the
-   * text may be a host's supporting line, a slot, or a sentence the kind adds for itself. Absent,
-   * the control describes itself the way it always did.
+   * them the move and teaches them not to follow the next reference. The words are given rather
+   * than a yes: asked only whether a description existed, four renderers gave four answers, and the
+   * element they pointed at was filled by whichever of them remembered to. The projection now
+   * carries the words and emits the reference only when it has them, so the two cannot disagree.
    */
-  readonly describes?: () => boolean;
+  readonly supportingText?: () => string | true | null;
 
   /** Stable identity for the widget instance. */
   readonly widgetId: string;

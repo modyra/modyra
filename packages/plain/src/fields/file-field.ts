@@ -121,6 +121,7 @@ export function renderFileField(
    * still arrives by being dropped, by a script, or through an assistive technology.
    */
   const controller = createFileFieldController<File>({
+    supportingText: () => f.supportingText ?? null,
     widgetId,
     handle: handle as unknown as MdyFieldHandle<readonly File[]>,
     ...(f.accept === undefined ? {} : { accept: f.accept }),
@@ -165,6 +166,7 @@ export function renderFileField(
       { disabled: handle.disabled(), required: handle.required() },
       shownErrorsOf(handle),
       {
+        supportingText: f.supportingText ?? null,
         widgetId: widgetId,
         controlId: control.id,
         // What is *shown*, not what is wrong. Without it the projection falls back to "there is an

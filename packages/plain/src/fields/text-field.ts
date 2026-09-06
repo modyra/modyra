@@ -67,7 +67,7 @@ export function renderTextField(
     {
       widgetId: widgetId,
       handle,
-      describes: () => describedText() !== "",
+      supportingText: () => describedText() || null,
       inputType: isTextarea ? undefined : nativeInputType(f.kind),
       kind: f.kind,
       constraints: () => narrowing ?? {},

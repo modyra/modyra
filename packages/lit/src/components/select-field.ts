@@ -469,7 +469,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
     // this element drew it. An error does not take the place of the instruction that prevents it.
     this.selectAdapter.setDescribedBy({
       errorsVisible: !this.inlineErrors && (blockErrors || this.errorsReserved(handle)),
-      descriptionVisible: this.hasDescription(),
+      supportingText: this.supportingWords(),
     });
     // The same rule for the other reference the trigger carries: this element builds its listbox on
     // open, so while closed there is nothing for `aria-controls` to name.

@@ -80,7 +80,7 @@ export function renderMultiselectField(
   const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
   const searchable = (f as { readonly searchable?: boolean }).searchable === true;
   const reorderable = (f as { readonly reorderable?: boolean }).reorderable === true;
-  const controller = createMultiselectFieldController({ widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
+  const controller = createMultiselectFieldController({ supportingText: () => f.supportingText ?? null, widgetId: widgetId, handle, options, keyFor, mode }, reactivity);
 
   const parts = MDY_WIDGET_CONTRACTS.multiselect.parts;
   const shell = buildFieldShell(f.label, "multiselect", {}, f.ariaLabel, f.name, f.supportingText);

@@ -173,7 +173,8 @@ test("and names it as soon as the renderer says it drew one", () => {
   // itself at all.
   const form = createForm({ email: field("", [required()]) });
   const controller = createTextFieldController({
-    widgetId: "email", handle: form.f.email, inputType: "email", describes: () => true,
+    widgetId: "email", handle: form.f.email, inputType: "email",
+    supportingText: () => "The words under the control",
   });
   controller.dispatch({ type: "input", value: "a@b.co" });
   const named = controller.view().parts.input.attributes["aria-describedby"] ?? "";

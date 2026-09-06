@@ -77,6 +77,14 @@ export const MdyTextField = defineComponent({
     kind: { type: String as PropType<"text" | "email" | "password" | "textarea" | "number">, default: "text" },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     placeholder: { type: String, default: "" },
     min: { type: Number, default: undefined },
     max: { type: Number, default: undefined },
@@ -108,6 +116,7 @@ export const MdyTextField = defineComponent({
       step: props.step ?? null,
     });
     const controller: MdyTextFieldController<string | number | null> = createTextFieldController<string | number | null>({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       inputType: contract.controlType,
@@ -168,7 +177,7 @@ export const MdyTextField = defineComponent({
         })),
       ]));
 
-      if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
+      if (parts.description !== undefined) children.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       if (parts.error !== undefined) {

@@ -302,7 +302,7 @@ export function renderSelectField(
     const errorsShown = handle.touched() && shownErrorsOf(handle).length > 0;
     // Not "whenever there are no errors": that claims a description the document may never have
     // written, and points the reader at an empty box. Whether one exists is what the document said.
-    controller.setDescribedBy({ errorsVisible: errorsShown, descriptionVisible: Boolean(f.supportingText) });
+    controller.setDescribedBy({ errorsVisible: errorsShown, supportingText: f.supportingText ?? null });
 
     // The shell's own state, which every other kind here reflects and this one did not: the themes
     // key the touched and error treatments off the renderer root and the wrapper.
@@ -512,7 +512,7 @@ function renderNativeSelectField(
     const view = controller.view();
     controller.setDescribedBy({
       errorsVisible: shownErrorsOf(handle).length > 0,
-      descriptionVisible: Boolean(f.supportingText),
+      supportingText: f.supportingText ?? null,
     });
     applyPart(chooser, view.parts.trigger);
     syncOptions(state.options, state.optionKeys);

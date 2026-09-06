@@ -52,4 +52,13 @@ export function applyPart(node: HTMLElement, part: MdyPartContract): void {
       node.setAttribute(key, String(value));
     }
   }
+  // What the part shows, where the contract says what it shows.
+  //
+  // Written here rather than by each renderer at each part: the words under a control were declared
+  // by the projection and filled in by whoever remembered to, which is how a control came to name an
+  // element nobody had written anything into. Only when the contract states content — a part whose
+  // text is the renderer's own is left alone.
+  if (part.content?.text !== undefined && node.textContent !== part.content.text) {
+    node.textContent = part.content.text;
+  }
 }

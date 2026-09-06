@@ -89,6 +89,7 @@ export function createFileFieldController<TFile extends MdyFileCandidate>(
     /** The names of what the field is holding, which the state above has vouched are files. */
     const named = current.files.map((file) => file.name);
     const shell = projectFieldShellA11y(current, handle.errors(), {
+      supportingText: options.supportingText?.() ?? null,
       widgetId,
       kind: "file",
       // What is shown, not what is wrong: `aria-invalid` and the error list answer one question, and

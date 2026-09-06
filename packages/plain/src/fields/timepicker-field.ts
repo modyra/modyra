@@ -85,6 +85,7 @@ export function renderTimepickerField(
   // reading a typed numeral differently.
   const parseSegment: ((text: string) => number | null) | undefined = undefined;
   const controller = createTimepickerFieldController({
+    supportingText: () => f.supportingText ?? null,
     widgetId: widgetId,
     handle,
     format,

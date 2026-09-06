@@ -32,16 +32,23 @@ export interface MdyTextFieldA11yOptions {
    */
   readonly constraints?: MdyFieldConstraints;
   /**
-   * Whether a description element is rendered at all.
+   * The words the document put under this control, or `null` where it wrote none.
    *
-   * The reference is only worth making when there is something at the other end: a control naming an
-   * empty description sends a reader somewhere to hear nothing.
+   * The words and the reference that names them come from here together, which is what stops a
+   * control describing itself by an empty room: the projection emits `aria-describedby` only when
+   * it has something to put in the element it points at.
    *
-   * **Defaults to false**, and did default to true — which is how every renderer that draws the
-   * element unconditionally came to point at it while it was empty, the shape this sentence was
-   * already warning about. A renderer that has a description says so.
+   * Before this, every renderer decided for itself whether a description existed — one asked its
+   * host, one asked a slot, one asked the field, one answered `false` — and four renderers wrote
+   * four answers to one question. The part carries the words as `content.text`, so a renderer draws
+   * what it is given rather than what it can find.
+   *
+   * `true` is the third answer, for a renderer whose description is a template or a slot it cannot
+   * read: there are words, and the projection cannot carry them. It emits the reference and leaves
+   * the content to the renderer that has it. `null` and `""` are the same answer — no words, so no
+   * reference — and a string is words the projection carries itself.
    */
-  readonly descriptionVisible?: boolean;
+  readonly supportingText?: string | true | null;
   /**
    * Whether the error container is on the page, whether or not it holds a message.
    *
@@ -160,7 +167,7 @@ export function projectTextFieldA11y<TValue>(
             // The container is pointed at while it is on the page, not while it holds a message: a
             // renderer that reserves it keeps one reference that never changes.
             errorsReserved: options.errorsReserved ?? tellingThem,
-            descriptionVisible: options.descriptionVisible ?? false,
+            supportingText: options.supportingText ?? null,
             // Asked of the shell rather than written here: this projection spreads the shell's
             // attributes over its own, so a name written on both sides is decided by the spread
             // rather than by either author.
@@ -182,6 +189,8 @@ export function projectTextFieldA11y<TValue>(
       id: descriptionId,
       classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
+      ...(typeof options.supportingText === "string" && options.supportingText !== ""
+        ? { content: { text: options.supportingText } } : {}),
     },
     error: {
       id: errorId,

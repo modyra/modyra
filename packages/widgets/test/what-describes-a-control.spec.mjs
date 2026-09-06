@@ -21,7 +21,7 @@ const describedBy = (flags, errors, extra) =>
 
 test("an error does not take the place of the help", () => {
   const both = describedBy({ disabled: false, required: true }, ERRORS,
-    { errorsVisible: true, descriptionVisible: true });
+    { errorsVisible: true, supportingText: "The words under the control" });
   assert.equal(both, "f1__errors f1__description",
     "the error replaced the help. The instruction that would have prevented the failure stops being "
     + "read at the moment it is most useful");
@@ -30,7 +30,7 @@ test("an error does not take the place of the help", () => {
 test("the error is named first", () => {
   // Somebody who moves on after the first sentence has heard the one that mattered.
   const named = describedBy({ disabled: false, required: true }, ERRORS,
-    { errorsVisible: true, descriptionVisible: true }).split(" ");
+    { errorsVisible: true, supportingText: "The words under the control" }).split(" ");
   assert.deepEqual(named, ["f1__errors", "f1__description"], "the help is announced before the error");
 });
 
@@ -40,7 +40,7 @@ test("a reserved container is named even while it holds nothing", () => {
   // that never changes cheaper than one that is corrected: it has no moment at which it can point at
   // an element not yet drawn, or one already gone.
   const atRest = describedBy({ disabled: false, required: true }, [],
-    { errorsReserved: true, descriptionVisible: false });
+    { errorsReserved: true, supportingText: null });
   assert.equal(atRest, "f1__errors",
     "a renderer that keeps the container on the page at rest was left with no reference to it, so "
     + "the reference has to be written when the message arrives and withdrawn when it clears");
@@ -48,16 +48,16 @@ test("a reserved container is named even while it holds nothing", () => {
 
 test("a renderer that reserves nothing is unaffected", () => {
   // `errorsReserved` defaults to `errorsVisible`, so not passing it keeps the old shape exactly.
-  assert.equal(describedBy({ disabled: false, required: true }, [], { descriptionVisible: true }),
+  assert.equal(describedBy({ disabled: false, required: true }, [], { supportingText: "The words under the control" }),
     "f1__description");
   assert.equal(describedBy({ disabled: false, required: true }, ERRORS,
-    { errorsVisible: true, descriptionVisible: false }), "f1__errors");
+    { errorsVisible: true, supportingText: null }), "f1__errors");
 });
 
 test("a control with nothing to describe it names nothing", () => {
   // A description is not a channel that must always carry something. A control whose name and state
   // say everything does not need one, and adding one for symmetry is noise.
-  assert.equal(describedBy({ disabled: false, required: false }, [], { descriptionVisible: false }), null,
+  assert.equal(describedBy({ disabled: false, required: false }, [], { supportingText: null }), null,
     "an empty reference list was written as an attribute rather than left off");
 });
 

@@ -40,6 +40,14 @@ export const MdyFileField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -47,6 +55,7 @@ export const MdyFileField = defineComponent({
     // `when__label`, and a reference from the second resolves into the first.
     const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const controller: MdyFileFieldController<File> = createFileFieldController<File>({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
     });
@@ -111,7 +120,7 @@ export const MdyFileField = defineComponent({
         ) as VNode[]),
       ]));
 
-      if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
+      if (parts.description !== undefined) children.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       if (parts.error !== undefined) {

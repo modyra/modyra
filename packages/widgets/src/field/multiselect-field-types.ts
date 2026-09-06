@@ -11,6 +11,15 @@ import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import type { MdyOpenModality } from "../overlay.js";
 
 export interface MdyMultiselectFieldControllerOptions<TValue> {
+  /**
+   * The words under this control, asked on every projection, or `null` where there are none.
+   *
+   * The projection names the description in `aria-describedby` only when it has been given
+   * something to put there, so a control cannot send a reader to an empty element. `true` says
+   * there are words this cannot carry — a template or a slot the renderer draws itself.
+   */
+  readonly supportingText?: () => string | true | null;
+
   /** Stable identity for the widget instance. */
   readonly widgetId: string;
   /** Form engine handle that owns value/validation lifecycle. */

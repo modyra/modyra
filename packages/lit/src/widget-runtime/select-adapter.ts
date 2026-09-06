@@ -88,7 +88,7 @@ export class MdyLitSelectAdapter<TValue = unknown> {
     this.controller.setPopupRendered(rendered);
   }
 
-  setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void {
+  setDescribedBy(next: { errorsVisible?: boolean; supportingText?: string | null }): void {
     this.controller.setDescribedBy(next);
   }
 

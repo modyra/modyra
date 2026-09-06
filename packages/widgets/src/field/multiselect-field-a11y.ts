@@ -21,13 +21,23 @@ import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 
 export interface MdyMultiselectFieldA11yOptions {
   /**
-   * Whether the supporting text is on the page.
+   * The words the document put under this control, or `null` where it wrote none.
    *
-   * Named unconditionally, the description points at an element a renderer may not have drawn — the
-   * reference resolves to nothing and the control is described by an id rather than by words.
-   * Defaults to true, which is what every caller relied on before it could say otherwise.
+   * The words and the reference that names them come from here together, which is what stops a
+   * control describing itself by an empty room: the projection emits `aria-describedby` only when
+   * it has something to put in the element it points at.
+   *
+   * Before this, every renderer decided for itself whether a description existed — one asked its
+   * host, one asked a slot, one asked the field, one answered `false` — and four renderers wrote
+   * four answers to one question. The part carries the words as `content.text`, so a renderer draws
+   * what it is given rather than what it can find.
+   *
+   * `true` is the third answer, for a renderer whose description is a template or a slot it cannot
+   * read: there are words, and the projection cannot carry them. It emits the reference and leaves
+   * the content to the renderer that has it. `null` and `""` are the same answer — no words, so no
+   * reference — and a string is words the projection carries itself.
    */
-  readonly descriptionVisible?: boolean;
+  readonly supportingText?: string | true | null;
   /**
    * Whether the error container is on the page, whether or not it holds a message.
    *
@@ -164,7 +174,7 @@ export function projectMultiselectFieldA11y<TValue>(
     errorsPresent: options.errorsReserved ?? hasErrors,
     // A description exists when the renderer says one does; pointing at an empty element asserts one
     // that does not, and makes "I have one, empty" indistinguishable from "I have none".
-    descriptionPresent: options.descriptionVisible ?? false,
+    descriptionPresent: options.supportingText === true || (options.supportingText ?? "") !== "",
   });
 
   return {
@@ -330,6 +340,8 @@ export function projectMultiselectFieldA11y<TValue>(
       id: descriptionId,
       classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
+      ...(typeof options.supportingText === "string" && options.supportingText !== ""
+        ? { content: { text: options.supportingText } } : {}),
     },
     announcement: {
       classes: [...MDY_WIDGET_CONTRACTS.multiselect.parts.announcement.classes],

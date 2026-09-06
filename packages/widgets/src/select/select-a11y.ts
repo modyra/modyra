@@ -41,7 +41,19 @@ export interface MdySelectA11yOptions {
    * cannot see the DOM.
    */
   readonly errorsVisible?: boolean;
-  readonly descriptionVisible?: boolean;
+  /**
+   * The words under this control, or `null` where the document wrote none.
+   *
+   * Named in `aria-describedby` only when there are words: a reference defaulted on pointed every
+   * select at an element that was usually empty, which costs a reader the move and teaches them not
+   * to follow the next one.
+   *
+   * `true` is the third answer, for a renderer whose description is a template or a slot it cannot
+   * read: there are words, and the projection cannot carry them. It emits the reference and leaves
+   * the content to the renderer that has it. `null` and `""` are the same answer — no words, so no
+   * reference — and a string is words the projection carries itself.
+   */
+  readonly supportingText?: string | true | null;
   /**
    * Whether the listbox is in the document.
    *
@@ -79,7 +91,7 @@ export function projectSelectA11y(
   const { descriptionId, errorId } = fieldShellPartIds(widgetId);
   const describedBy = options.errorsVisible
     ? errorId
-    : (options.descriptionVisible ?? true) ? descriptionId : null;
+    : options.supportingText === true || (options.supportingText ?? "") !== "" ? descriptionId : null;
 
   const native = options.variant === "native";
   const trigger: MdyPartContract = {

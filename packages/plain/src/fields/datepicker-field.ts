@@ -71,6 +71,7 @@ export function renderDatepickerField(
   // Read before the controller is built, because the controller reads a typed entry through it.
   const dateLocale = buildDateLocale(options.locale ?? (typeof navigator === "undefined" ? "en-US" : navigator.language), options.firstDayOfWeek);
   const controller = createDatepickerFieldController({
+    supportingText: () => f.supportingText ?? null,
     widgetId: widgetId,
     handle,
     ...options,

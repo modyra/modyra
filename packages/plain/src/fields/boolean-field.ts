@@ -20,7 +20,7 @@ export function renderBooleanField(
 ): () => void {
   reactivity = observerFor(handle, reactivity);
   const isToggle = f.kind === "toggle";
-  const controller = createBooleanFieldController({ widgetId: widgetId, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
+  const controller = createBooleanFieldController({ supportingText: () => f.supportingText ?? null, widgetId: widgetId, handle, variant: isToggle ? "switch" : "checkbox" }, reactivity);
   const definition = f.kind === "toggle" ? MDY_WIDGET_CONTRACTS.toggle : MDY_WIDGET_CONTRACTS.checkbox;
 
   const root = el("div") as HTMLDivElement;

@@ -47,7 +47,7 @@ export interface MdySelectController<TValue>
   /** Update the loading state. */
   setLoading(loading: boolean): void;
   /** Which of the field's descriptions are on screen, so the trigger names one that exists. */
-  setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void;
+  setDescribedBy(next: { errorsVisible?: boolean; supportingText?: string | true | null }): void;
   /** Whether the listbox is mounted, so the trigger controls something that exists. */
   setPopupRendered(rendered: boolean): void;
 }
@@ -170,7 +170,7 @@ export function createSelectController<TValue>(
   // What the trigger may describe itself by. The renderer owns the answer because it owns whether
   // the elements are on screen; the default is the resting field — a description and no errors.
   const errorsVisible = reactivity.signal(false);
-  const descriptionVisible = reactivity.signal(true);
+  const supportingText = reactivity.signal<string | true | null>(options.supportingText ?? null);
   // Eager by default: the popup is in the document whether or not it is open, which is what every
   // renderer did before a lazily-mounted one existed.
   const popupRendered = reactivity.signal(true);
@@ -209,7 +209,7 @@ export function createSelectController<TValue>(
       idFactory,
       visibleKeys: visibleKeys(q),
       errorsVisible: errorsVisible(),
-      descriptionVisible: descriptionVisible(),
+      supportingText: supportingText(),
       popupRendered: popupRendered(),
       // Only where the caller said. Read from a `searchable` nobody set, `variantOf` answers
       // "native" — which is the contract's answer for a select that does not filter, and the wrong
@@ -422,9 +422,9 @@ export function createSelectController<TValue>(
     invalid.set(nextInvalid);
   }
 
-  function setDescribedBy(next: { errorsVisible?: boolean; descriptionVisible?: boolean }): void {
+  function setDescribedBy(next: { errorsVisible?: boolean; supportingText?: string | true | null }): void {
     if (next.errorsVisible !== undefined) errorsVisible.set(next.errorsVisible);
-    if (next.descriptionVisible !== undefined) descriptionVisible.set(next.descriptionVisible);
+    if (next.supportingText !== undefined) supportingText.set(next.supportingText);
   }
 
   function setPopupRendered(rendered: boolean): void {

@@ -73,6 +73,7 @@ export function renderDaterangeField(
 
   const controller = createDaterangeFieldController(
     {
+      supportingText: () => f.supportingText ?? null,
       widgetId,
       handle: handle as MdyFieldHandle<MdyDateRangeValue>,
       minDate: bounds.minIso,
@@ -296,6 +297,7 @@ export function renderDaterangeField(
       { disabled: handle.disabled(), required: handle.required() },
       shownErrorsOf(handle),
       {
+        supportingText: f.supportingText ?? null,
         widgetId: widgetId,
         controlId: startInput.id,
         // What is *shown*, not what is wrong. Without it the projection falls back to "there is an

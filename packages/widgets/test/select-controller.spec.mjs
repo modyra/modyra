@@ -258,11 +258,25 @@ test("both shapes say what the field itself is", () => {
   for (const searchable of [true, false]) {
     const controller = createSelectController({
       widgetId: "city", options, searchable, required: true, invalid: true,
+      supportingText: "The words under the control",
     });
     const trigger = controller.view().parts.trigger;
     assert.strictEqual(trigger.attributes["aria-invalid"], "true", `${searchable} lost the verdict`);
     assert.strictEqual(trigger.attributes["aria-required"], "true", `${searchable} lost the rule`);
     assert.ok(trigger.attributes["aria-describedby"], `${searchable} describes itself by nothing`);
+  }
+});
+
+test("a select with nothing written under it points at nothing", () => {
+  // The other half, and the reason the reference is no longer defaulted on: pointed at whether or
+  // not anything had been written there, every select sent a reader to an empty element — which
+  // costs them the move and teaches them not to follow the next reference.
+  for (const searchable of [true, false]) {
+    const controller = createSelectController({
+      widgetId: "city", options, searchable, required: true,
+    });
+    assert.strictEqual(controller.view().parts.trigger.attributes["aria-describedby"], null,
+      `${searchable} named a description nobody wrote anything into`);
   }
 });
 

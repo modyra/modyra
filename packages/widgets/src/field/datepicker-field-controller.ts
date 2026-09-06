@@ -165,6 +165,7 @@ export function createDatepickerFieldController(
       // Asked defensively: a handle is not obliged to offer either, and a controller that reads
       // both unguarded stops working for one that offers neither — which is a crash where the honest
       // answer is "this field declares no rule I can see".
+      supportingText: options.supportingText?.() ?? null,
       errorsReserved: fieldCanBeInvalid({
         required: handle.required?.() ?? false,
         constraints: handle.constraints?.() ?? null,

@@ -45,6 +45,14 @@ export const MdyOptionField = defineComponent({
      * nothing, so two forms built from one document do not both claim `when__label`.
      */
     widgetId: { type: String, required: false, default: undefined },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     kind: { type: String as PropType<MdyOptionFieldVariant>, default: "radio" },
@@ -65,6 +73,7 @@ export const MdyOptionField = defineComponent({
      */
     const keyFor = (option: MdySelectOption<unknown>): string => defaultOptionKey(option.value);
     const controller = createOptionFieldController<unknown>({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       label: props.label === "" ? null : props.label,
@@ -128,7 +137,7 @@ export const MdyOptionField = defineComponent({
           ]);
         })));
 
-      if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
+      if (parts.description !== undefined) children.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       if (parts.error !== undefined) {

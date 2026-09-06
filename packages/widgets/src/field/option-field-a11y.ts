@@ -23,7 +23,24 @@ export interface MdyOptionFieldA11yOptions {
    */
   readonly errorsReserved?: boolean;
   /** Whether the supporting text is on the page. Named unconditionally it would point at nothing. */
-  readonly descriptionVisible?: boolean;
+  /**
+   * The words the document put under this control, or `null` where it wrote none.
+   *
+   * The words and the reference that names them come from here together, which is what stops a
+   * control describing itself by an empty room: the projection emits `aria-describedby` only when
+   * it has something to put in the element it points at.
+   *
+   * Before this, every renderer decided for itself whether a description existed — one asked its
+   * host, one asked a slot, one asked the field, one answered `false` — and four renderers wrote
+   * four answers to one question. The part carries the words as `content.text`, so a renderer draws
+   * what it is given rather than what it can find.
+   *
+   * `true` is the third answer, for a renderer whose description is a template or a slot it cannot
+   * read: there are words, and the projection cannot carry them. It emits the reference and leaves
+   * the content to the renderer that has it. `null` and `""` are the same answer — no words, so no
+   * reference — and a string is words the projection carries itself.
+   */
+  readonly supportingText?: string | true | null;
   readonly widgetId: string;
   readonly variant: MdyOptionFieldVariant;
   /** How many options the group renders. The segmented theme sizes its tick gutter from it. */
@@ -118,7 +135,7 @@ export function projectOptionFieldA11y<TValue>(
     // description, and it is empty" indistinguishable from "I have none", where silence is the
     // honest statement of nothing to say. The errors half of this reference was repaired for exactly
     // that reason; the hint half is the same shape.
-    descriptionPresent: options.descriptionVisible ?? false,
+    descriptionPresent: options.supportingText === true || (options.supportingText ?? "") !== "",
   });
 
   return {
@@ -171,6 +188,8 @@ export function projectOptionFieldA11y<TValue>(
       id: descriptionId,
       classes: [MDY_FIELD_SHELL_CLASSES.supportingText],
       attributes: {},
+      ...(typeof options.supportingText === "string" && options.supportingText !== ""
+        ? { content: { text: options.supportingText } } : {}),
     },
     error: {
       id: errorId,

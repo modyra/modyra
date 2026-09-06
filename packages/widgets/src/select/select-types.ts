@@ -19,6 +19,14 @@ export interface MdySelectControllerOptions<TValue> {
   readonly readonly?: boolean;
   /** Whether the widget is invalid. */
   readonly invalid?: boolean;
+  /**
+   * The words under this control, or `null` where the document wrote none.
+   *
+   * Named in `aria-describedby` only when there are words: a reference defaulted on pointed every
+   * select at an element that was usually empty. `true` says there are words the projection cannot
+   * carry — a template or a slot the renderer draws itself.
+   */
+  readonly supportingText?: string | true | null;
   /** Whether the form is asking for an answer here. A combobox carries no rule of its own. */
   readonly required?: boolean;
   /** Whether options are loading. */

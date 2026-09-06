@@ -73,7 +73,7 @@ test("ids are computable and deterministic with no DOM", () => {
   const described = projectTextFieldA11y(
     { disabled: false, readonly: false, required: true, touched: false, open: false },
     [],
-    { widgetId: "email", descriptionVisible: true },
+    { widgetId: "email", supportingText: "The words under the control" },
   );
   assert.equal(described.input.attributes["aria-describedby"], "email__description");
 });

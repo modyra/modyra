@@ -53,6 +53,14 @@ export const MdyDatepickerField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     locale: { type: String, default: "en" },
   },
   setup(props) {
@@ -68,6 +76,7 @@ export const MdyDatepickerField = defineComponent({
     const messages = useMessages(() => props.locale);
     const dateLocale = buildDateLocale(resolveLocale(props.locale));
     const controller = createDatepickerFieldController({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       // One value, two readers: the grid the controller lays out and the headers drawn over it. Left
@@ -231,7 +240,7 @@ export const MdyDatepickerField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
 
       // The list the description points at, and what is in it. Absent, `aria-describedby`
       // named an id no element had: a promise of an explanation, kept by nothing.

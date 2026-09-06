@@ -37,7 +37,7 @@ export function renderOptionField(
    */
   const keyFor = (option: MdySelectOption<unknown>) => defaultOptionKey(option.value);
   const controller = createOptionFieldController(
-    { widgetId: widgetId, handle, options, variant, keyFor, label: f.label ?? null, ariaLabel: f.ariaLabel ?? null, fieldName: f.name },
+    { widgetId: widgetId, handle, options, variant, keyFor, label: f.label ?? null, ariaLabel: f.ariaLabel ?? null, fieldName: f.name, supportingText: () => f.supportingText ?? null },
     reactivity,
   );
 

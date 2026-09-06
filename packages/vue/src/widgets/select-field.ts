@@ -69,6 +69,14 @@ export const MdySelectField = defineComponent({
      * nothing, so two forms built from one document do not both claim `when__label`.
      */
     widgetId: { type: String, required: false, default: undefined },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     placeholder: { type: String, default: "Select…" },
@@ -147,7 +155,7 @@ export const MdySelectField = defineComponent({
       const errorsVisible = visibleErrorsOf(props.field, "select").length > 0;
       // `false` for the description: this renderer takes no supporting text, so the element under
       // the field is always empty and a reference to it would assert one that does not exist.
-      controller.setDescribedBy({ errorsVisible, descriptionVisible: false });
+      controller.setDescribedBy({ errorsVisible, supportingText: props.supportingText ?? null });
       state.value = controller.state();
       view.value = controller.view();
       triggerRef(state);
@@ -272,7 +280,7 @@ export const MdySelectField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
       // The same list the combobox shape draws. A kind does not stop owing an explanation because
       // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
       // them had it.
@@ -355,7 +363,7 @@ export const MdySelectField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       // The same list the platform-chooser shape draws, and from the same place: this kind's

@@ -65,6 +65,14 @@ export const MdyTimepickerField = defineComponent({
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
     /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
+    /**
      * Which clock this field draws and reads. Absent leaves the controller's own default.
      *
      * The document carries it because the format is the field's property and not the host's taste:
@@ -80,6 +88,7 @@ export const MdyTimepickerField = defineComponent({
     const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const reactivity = observerFor(props.field);
     const controller = createTimepickerFieldController({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       ...(props.format === undefined ? {} : { format: props.format }),
@@ -310,7 +319,7 @@ export const MdyTimepickerField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
 
       // The list the description points at, and what is in it. Absent, `aria-describedby`
       // named an id no element had: a promise of an explanation, kept by nothing.

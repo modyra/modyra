@@ -8,6 +8,15 @@ import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 export type MdyOptionFieldVariant = "radio" | "segmented";
 
 export interface MdyOptionFieldControllerOptions<TValue> {
+  /**
+   * The words under this control, asked on every projection, or `null` where there are none.
+   *
+   * The projection names the description in `aria-describedby` only when it has been given
+   * something to put there, so a control cannot send a reader to an empty element. `true` says
+   * there are words this cannot carry — a template or a slot the renderer draws itself.
+   */
+  readonly supportingText?: () => string | true | null;
+
   /** What a person reads beside the control, where a document declared one. */
   readonly label?: string | null;
   /** What a host wrote for the control itself, which outranks the label. */

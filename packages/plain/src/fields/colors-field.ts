@@ -73,6 +73,7 @@ export function renderColorsField(
    * every keystroke would take a half-typed value away from the person typing it.
    */
   const colors = createColorsFieldController({
+    supportingText: () => f.supportingText ?? null,
     widgetId,
     handle: handle as unknown as MdyFieldHandle<string>,
     presets,
@@ -407,6 +408,7 @@ export function renderColorsField(
       { disabled: handle.disabled(), required: handle.required() },
       handle.errors(),
       {
+        supportingText: f.supportingText ?? null,
         widgetId: widgetId,
         controlId: hexInput.id,
         // What is shown, not what is wrong. This renderer projects the shell itself rather than

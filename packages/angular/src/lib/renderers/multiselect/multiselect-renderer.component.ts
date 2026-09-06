@@ -443,7 +443,8 @@ export class MdyMultiselectComponent<TValue = string>
 
   private readonly controller = this.adoptFieldController(
     (handle, widgetId) => createMultiselectFieldController<TValue>(
-      { widgetId, handle: handle as never, options: this.filteredOptions(), mode: this.mode() }),
+      { widgetId, handle: handle as never, options: this.filteredOptions(), mode: this.mode(),
+        supportingText: () => this.supportingText() ?? null }),
     (c) => {
       c.setOptions(this.filteredOptions());
       c.dispatch({ type: "search", query: this.searchQuery() });

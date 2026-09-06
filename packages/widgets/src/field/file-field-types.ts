@@ -14,6 +14,15 @@ import type { MdyFileCandidate } from "../behavior.js";
 export type { MdyFileCandidate };
 
 export interface MdyFileFieldControllerOptions<TFile extends MdyFileCandidate> {
+  /**
+   * The words under this control, asked on every projection, or `null` where there are none.
+   *
+   * The projection names the description in `aria-describedby` only when it has been given
+   * something to put there. `true` says there are words this cannot carry — a template or a slot
+   * the renderer draws itself.
+   */
+  readonly supportingText?: () => string | true | null;
+
   readonly widgetId: string;
   readonly handle: MdyFieldHandle<readonly TFile[]>;
   /** The `accept` vocabulary: extensions, MIME types, or a `type/*` family. */

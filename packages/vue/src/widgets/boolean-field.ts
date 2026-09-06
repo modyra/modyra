@@ -40,6 +40,14 @@ export const MdyBooleanField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     kind: { type: String as PropType<"checkbox" | "toggle">, default: "checkbox" },
   },
   setup(props) {
@@ -49,6 +57,7 @@ export const MdyBooleanField = defineComponent({
     const widgetId = computed(() => widgetIdOf({ widgetId: props.widgetId, idScope: props.idScope, field: props.field }));
     const contract = MDY_WIDGET_CONTRACTS[props.kind];
     const controller: MdyBooleanFieldController = createBooleanFieldController({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       // The variant is the control's declared role, not the kind's name. The controller knows this
@@ -116,7 +125,7 @@ export const MdyBooleanField = defineComponent({
       const outer: VNode[] = [
         h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, children),
       ];
-      if (parts.description !== undefined) outer.push(h("p", partProps(parts.description)));
+      if (parts.description !== undefined) outer.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       if (parts.error !== undefined) {

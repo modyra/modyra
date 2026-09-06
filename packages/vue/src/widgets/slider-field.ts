@@ -40,6 +40,14 @@ export const MdySliderField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     min: { type: Number, default: undefined },
     max: { type: Number, default: undefined },
     step: { type: Number, default: undefined },
@@ -66,6 +74,7 @@ export const MdySliderField = defineComponent({
       step: props.step ?? null,
     });
     const controller: MdyTextFieldController<number> = createTextFieldController<number>({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       inputType: CONTRACT.controlType,
@@ -132,7 +141,7 @@ export const MdySliderField = defineComponent({
         ) as VNode[]),
       ]));
 
-      if (parts.description !== undefined) children.push(h("p", partProps(parts.description)));
+      if (parts.description !== undefined) children.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
       // points at that explains nothing.
       if (parts.error !== undefined) {

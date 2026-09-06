@@ -786,7 +786,7 @@ export abstract class MdyFieldElement<T> extends LitElement {
         // that never changes, instead of one written when a message arrives and withdrawn when it goes.
         errorsReserved: this.showErrors(handle) || this.errorsReserved(handle),
         // Only where there is something at the other end of the reference.
-        descriptionVisible: this.hasDescription(),
+        supportingText: this.supportingWords(),
         // The key a native submit reads this control's value under: the field's path, not the
         // scoped id this element uses for its DOM references.
         submitName: handle.path,
@@ -944,8 +944,22 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * the text after the element was built.
    */
   protected hasDescription(): boolean {
-    return Boolean(this.supportingText) || this.describedState() !== ""
-      || this.querySelector('[slot="supporting-text"]') !== null;
+    return this.supportingWords() !== null;
+  }
+
+  /**
+   * The words under the control, as one string, or `null` when there are none.
+   *
+   * Handed to the projection rather than a yes/no: the reference and what it points at are decided
+   * from the same answer, so the control cannot name an element nobody wrote anything into. A
+   * slotted description is read for its text like the rest — this element draws it either way, and
+   * what the projection needs is to know whether there is anything to point at.
+   */
+  protected supportingWords(): string | null {
+    const slotted = this.querySelector('[slot="supporting-text"]')?.textContent ?? "";
+    const words = [this.supportingText ?? "", this.describedState(), slotted]
+      .filter((part) => part !== "").join(" ").trim();
+    return words === "" ? null : words;
   }
 
   protected renderSupportingText(): unknown {

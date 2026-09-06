@@ -57,6 +57,14 @@ export const MdyColorsField = defineComponent({
     idScope: { type: String, required: false, default: undefined },
     /** The name a control has when nothing on the page captions it. */
     ariaLabel: { type: String, default: "" },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     presets: { type: Array as PropType<readonly string[]>, default: undefined },
   },
   setup(props) {
@@ -69,6 +77,7 @@ export const MdyColorsField = defineComponent({
     // entries, and the controller is given their values.
     const palette = colorPresetsOf(props.presets);
     const controller = createColorsFieldController({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       presets: palette.map((entry) => entry.value),
@@ -306,7 +315,7 @@ export const MdyColorsField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
 
       // The list the description points at, and what is in it. Absent, `aria-describedby`
       // named an id no element had: a promise of an explanation, kept by nothing.

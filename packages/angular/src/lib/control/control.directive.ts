@@ -346,8 +346,22 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
 
   /** Whether anything at all wants the description slot — either route. */
   protected readonly hasSupportingText = computed(
-    () => !!this.projectedSupportingText() || !!this.supportingText(),
+    () => this.supportingWords() !== null,
   );
+
+  /**
+   * The words under the control, from either route, or `null` when there are none.
+   *
+   * Given to the projection rather than a yes/no, so the reference and what it points at are
+   * decided from one answer: a control cannot name an element that nobody wrote anything into.
+   */
+  protected readonly supportingWords = computed<string | true | null>(() => {
+    const written = this.supportingText() ?? "";
+    if (written !== "") return written;
+    // A projected description is a template: there are words and this cannot read them, which is
+    // the one case the projection is told "yes" without being given anything to carry.
+    return this.projectedSupportingText() ? true : null;
+  });
 
   /**
    * Inert state served while `name`/`[field]` are still unresolved. Input
@@ -763,7 +777,7 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
         // words: with inline errors there is no list to point at and the field is still refused.
         invalid: this.paintsAsInvalid(),
         // Supporting text is only emitted when a host projects some.
-        descriptionVisible: this.hasSupportingText(),
+        supportingText: this.supportingWords(),
         // The key a native submit reads this control's value under: the field's path, not the
         // scoped id this control uses for its DOM references.
         submitName: this.effectiveName(),

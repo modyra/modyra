@@ -127,7 +127,7 @@ export class MdyAngularSelectAdapter<TValue = string> {
   }
 
   /** Which of the two texts under the field the trigger describes itself by. */
-  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly descriptionVisible?: boolean }): void {
+  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly supportingText?: string | null }): void {
     this.controller.setDescribedBy(shown);
   }
 

@@ -105,6 +105,7 @@ export function createColorsFieldController(
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
     const current = state();
     const shell = projectFieldShellA11y(current, handle.errors(), {
+      supportingText: options.supportingText?.() ?? null,
       widgetId,
       kind: "colors",
       // What is shown, not what is wrong: `aria-invalid` and the error list answer one question, and

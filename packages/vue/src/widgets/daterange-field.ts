@@ -49,6 +49,14 @@ export const MdyDaterangeField = defineComponent({
      * nothing, so two forms built from one document do not both claim `when__label`.
      */
     widgetId: { type: String, required: false, default: undefined },
+    /**
+     * The words under the control — a format, a limit, why the field is there.
+     *
+     * Handed to the projection, which names the element holding them in `aria-describedby` only
+     * when there are words: a reference to an empty element costs a reader the move and teaches
+     * them not to follow the next one.
+     */
+    supportingText: { type: String, required: false, default: undefined },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     locale: { type: String, default: "en" },
@@ -64,6 +72,7 @@ export const MdyDaterangeField = defineComponent({
     const reactivity = observerFor(props.field);
     const dateLocale = buildDateLocale(props.locale);
     const controller = createDaterangeFieldController({
+      supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
       // One value, two readers: the grid the controller lays out and the headers drawn over it.
@@ -201,7 +210,7 @@ export const MdyDaterangeField = defineComponent({
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
         class: classesOf("supportingText"),
-      }));
+      }, props.supportingText ?? ""));
 
       // The list the description points at, and what is in it. Absent, `aria-describedby`
       // named an id no element had: a promise of an explanation, kept by nothing.

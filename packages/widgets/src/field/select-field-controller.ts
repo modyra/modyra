@@ -23,6 +23,7 @@ import type { MdySelectIntent, MdySelectState } from "../select/select-types.js"
 import { engageValue, visibleErrorsOf } from "./verdict.js";
 
 export interface MdySelectFieldControllerOptions<TValue> {
+
   readonly widgetId: string;
   readonly handle: MdyFieldHandle<TValue | null>;
   readonly options: readonly MdySelectOption<TValue>[];
@@ -37,7 +38,7 @@ export interface MdySelectFieldControllerOptions<TValue> {
 export interface MdySelectFieldController<TValue>
   extends MdyWidgetController<MdySelectState<TValue>, MdySelectIntent> {
   /** Which of the two texts under the field the trigger describes itself by. */
-  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly descriptionVisible?: boolean }): void;
+  setDescribedBy(shown: { readonly errorsVisible?: boolean; readonly supportingText?: string | true | null }): void;
   /** Whether the panel is up. */
   setOpen(open: boolean): void;
   /** Whether the panel's contents are in the document — a renderer may build them only on open. */

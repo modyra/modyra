@@ -92,7 +92,7 @@ export function createTextFieldController<TValue>(
       // A caller that says nothing has none. It defaulted the other way, so a renderer that draws
       // the element unconditionally — and several do — named it while it was empty, which is the
       // thing the sentence above was already against.
-      descriptionVisible: options.describes?.() ?? false,
+      supportingText: options.supportingText?.() ?? null,
       // The error container is reserved under any field that can fail a rule — a fact about the
       // field, so every renderer answers it from the same predicate rather than each deciding.
       errorsReserved: fieldCanBeInvalid({
