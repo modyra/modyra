@@ -22,8 +22,14 @@
  * build times; the rest are uncovered, and a green here means "the tracked tree held still", never
  * "nothing the check read changed".
  *
+ * A part may carry arguments — `"battle:browser -- a-grid"` — because the guard has to be at least
+ * as convenient as going around it. It was written for the four-part shot and then skipped, by its
+ * own author three hours later, for a single-spec check that "did not need it": a run that cannot
+ * say what tree it ran on does not deserve to be quoted, and its length has nothing to do with it.
+ *
  * Usage:
  *   node scripts/still-tree-shot.mjs battle:ci battle:browser:ci test:angular test:contracts
+ *   node scripts/still-tree-shot.mjs "battle:browser -- a-grid-with-no-name"
  */
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -58,7 +64,7 @@ const rows = [];
 for (const part of parts) {
   const before = fingerprint();
   const started = Date.now();
-  const run = spawnSync("npm", ["run", part], { cwd: ROOT, stdio: "inherit" });
+  const run = spawnSync("npm", ["run", ...part.split(/\s+/).filter(Boolean)], { cwd: ROOT, stdio: "inherit" });
   const after = fingerprint();
   rows.push({
     part,
