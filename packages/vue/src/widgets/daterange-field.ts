@@ -12,6 +12,7 @@
  * range picked backwards — which is exactly where a person notices.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -156,7 +157,7 @@ export const MdyDaterangeField = defineComponent({
           // id is `__start`, and a `for` built out of the part name points at nothing.
           for: parts.startControl?.id,
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [

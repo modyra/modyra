@@ -22,6 +22,7 @@
  * joins the shape rather than simply accepting it.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
@@ -138,7 +139,7 @@ export const MdyTextField = defineComponent({
       // Drawn only when the field was given words to show, which is what the contract's `optional`
       // says about it — not omitted to save an element.
       if (props.label !== "") {
-        children.push(h("label", partProps(parts.label), props.label));
+        children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, [

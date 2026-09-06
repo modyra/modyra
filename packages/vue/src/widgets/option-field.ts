@@ -20,6 +20,7 @@
  * being true the moment one arrives.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createOptionFieldController,
@@ -101,7 +102,7 @@ export const MdyOptionField = defineComponent({
     return () => {
       const parts = view.value.parts;
       const children: VNode[] = [];
-      if (props.label !== "") children.push(h("label", partProps(parts.label), props.label));
+      if (props.label !== "") children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
 
       children.push(h("div", partProps(parts.group),
         props.options.map((option) => {

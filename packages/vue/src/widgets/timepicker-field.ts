@@ -14,6 +14,7 @@
  * nothing at all.
  */
 import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createTimepickerFieldController,
@@ -209,7 +210,7 @@ export const MdyTimepickerField = defineComponent({
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [

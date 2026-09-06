@@ -12,6 +12,7 @@
  * disagree about what someone typed.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createDatepickerFieldController,
@@ -155,7 +156,7 @@ export const MdyDatepickerField = defineComponent({
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [

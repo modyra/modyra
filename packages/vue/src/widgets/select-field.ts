@@ -12,6 +12,7 @@
  * moment the contract gains one, and nothing tells it.
  */
 import { computed, Teleport, defineComponent, h, nextTick, onScopeDispose, ref, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createSelectFieldController,
@@ -248,7 +249,7 @@ export const MdySelectField = defineComponent({
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("select", partProps(parts.trigger, {
@@ -299,7 +300,7 @@ export const MdySelectField = defineComponent({
           // `for` that makes the caption itself a way to reach the control.
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [

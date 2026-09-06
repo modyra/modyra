@@ -13,6 +13,7 @@
  * a renderer had to know to draw a hidden input and what to put on it.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { requiredMark } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createBooleanFieldController,
@@ -109,7 +110,7 @@ export const MdyBooleanField = defineComponent({
         // rather than inventing either. The text field's projection carries the `for` itself, this
         // kind's does not, and a renderer cannot tell which without looking — so it is set from the
         // control's own id, which is right in both cases.
-        h("label", partProps(parts.label, { for: parts.input?.id }), [...drawUnder("label"), props.label]),
+        h("label", partProps(parts.label, { for: parts.input?.id }), [...drawUnder("label"), props.label, requiredMark(props.field)]),
       ];
 
       const outer: VNode[] = [

@@ -11,6 +11,7 @@
  * a projection and a number — and names no container at all.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createTextFieldController,
@@ -95,7 +96,7 @@ export const MdySliderField = defineComponent({
     return () => {
       const parts = view.value.parts;
       const children: VNode[] = [];
-      if (props.label !== "") children.push(h("label", partProps(parts.label), props.label));
+      if (props.label !== "") children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
 
       children.push(h("div", { class: CONTRACT.parts[holder as "track"].classes.join(" ") }, [
         h("input", partProps(parts.input, {

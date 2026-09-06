@@ -11,6 +11,7 @@
  * the other components use, at whatever depth the contract declares.
  */
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createFileFieldController,
@@ -76,7 +77,7 @@ export const MdyFileField = defineComponent({
       // kit checks. The projection gives this kind's control no id of its own, so the label is given
       // the one the widget is identified by — the same id the control carries.
       if (props.label !== "") {
-        children.push(h("label", partProps(parts.label, { for: widgetId.value }), props.label));
+        children.push(h("label", partProps(parts.label, { for: widgetId.value }), labelContent(props.label, props.field)));
       }
 
       children.push(h("div", partProps(parts.dropzone, { class: CONTRACT.parts.dropzone.classes.join(" ") }), [

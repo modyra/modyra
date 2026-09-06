@@ -13,6 +13,7 @@
  * out, and it still is.
  */
 import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   colorPresetsOf,
@@ -175,7 +176,7 @@ export const MdyColorsField = defineComponent({
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "hexInput"),
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       children.push(h("div", { class: classesOf("inputWrapper") }, [

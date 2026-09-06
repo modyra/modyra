@@ -86,7 +86,7 @@ export const declaresConfig = true;
 // the suite never mounts — a defect in it stays green, which was measured rather than assumed.
 export const variants = { select: ["native", "custom"], multiselect: ["single", "multi"] };
 
-export const mount = async (kind, { rules, value, variant, config } = {}) => {
+export const mount = async (kind, { rules, value, variant, config, validators = true } = {}) => {
   if (!kinds.includes(kind)) {
     throw new Error(`@modyra/vue draws ${kinds.join(", ")} so far, and ${kind} is not among them.`);
   }
@@ -109,7 +109,12 @@ export const mount = async (kind, { rules, value, variant, config } = {}) => {
     value: field(
       value === undefined ? MDY_CANONICAL_EMPTY[kind] : value,
       [],
-      { rules: rules ?? (kind === "slider" ? { required: true, min: 1 } : { required: true }) },
+      // `validators: false` is how the kit asks for a field genuinely at rest. Named here rather
+      // than dropped: an argument this signature does not mention is discarded in silence, and a
+      // renderer that was never put in the state reads exactly like one that ignores it.
+      { rules: rules ?? (validators === false
+        ? {}
+        : kind === "slider" ? { required: true, min: 1 } : { required: true }) },
     ),
   });
   const app = createApp({

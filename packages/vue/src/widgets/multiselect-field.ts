@@ -13,6 +13,7 @@
  * than a string.
  */
 import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
   createMultiselectFieldController,
@@ -295,7 +296,7 @@ export const MdyMultiselectField = defineComponent({
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
           class: classesOf("label"),
-        }, props.label));
+        }, labelContent(props.label, props.field)));
       }
 
       // The controller's list, for the same reason: a chip is how a held value is seen and removed,
