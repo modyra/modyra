@@ -185,7 +185,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     if (handle && !this.controller) {
       this.controller = createDaterangeFieldController({
         widgetId: this.fieldId,
-        supportingText: () => this.supportingWords(),
+        supportingText: this.declared(() => this.supportingWords()),
         handle: handle as never,
         minDate: this.earliest ?? null,
         maxDate: this.latest ?? null,

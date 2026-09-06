@@ -27,7 +27,7 @@ export class MdyTextareaFieldElement extends MdyFieldElement<string | null> {
     this.fieldController = createTextFieldController({
       widgetId: this.fieldId,
       handle,
-      supportingText: () => this.supportingWords(),
+      supportingText: this.declared(() => this.supportingWords()),
     });
   }
 

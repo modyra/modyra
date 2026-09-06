@@ -33,7 +33,13 @@ export interface MdyTimepickerFieldControllerOptions {
   /** Form engine handle; value is a formatted time string or null. */
   readonly handle: MdyFieldHandle<string | null>;
   /** Display and value format. Defaults to "12h". */
-  readonly format?: MdyTimeFormat;
+  /**
+   * Which clock this field draws and reads.
+   *
+   * A function where the host can change it after the mount: read once and kept, the widget answers
+   * the clock it was built with however many times the document says otherwise.
+   */
+  readonly format?: MdyTimeFormat | (() => MdyTimeFormat);
   /**
    * Which times this field offers. Absent means every one.
    *

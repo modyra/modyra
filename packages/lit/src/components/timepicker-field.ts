@@ -262,7 +262,7 @@ export class MdyTimepickerFieldElement extends MdyFieldElement<string | null> {
       this.fieldController = createTimepickerFieldController({
         widgetId: this.fieldId,
         handle,
-        format: this.format,
+        format: this.declared(() => this.format),
         ...(this.granularity !== undefined && { granularity: this.granularity }),
         viewMode: this.viewMode,
         // Where the controller's own decisions land — the handover moves the face and the caret

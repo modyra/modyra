@@ -151,7 +151,7 @@ export function partsOf(root, kind) {
  * empty is already failing, and a renderer free to show that immediately (the contract permits it)
  * would make "at rest" and "invalid" the same observation.
  */
-export async function mount(kind, { validators: withValidators = true, variant, rules, value, idScope,
+export async function mount(kind, { validators: withValidators = true, variant, rules, value, idScope, config,
   /**
    * The caption, or `null` for a document that writes none — which is legal, and the only state in
    * which a renderer's fallback name is the thing being read. Defaulted to what every existing
@@ -198,6 +198,11 @@ export async function mount(kind, { validators: withValidators = true, variant, 
     // the default above is undone.
     if (variant && kind === "multiselect") el.mode = variant;
     if (variant && kind === "select") el.searchable = variant === "custom";
+    // A document's declarations that are not rules, set as properties because that is how this
+    // renderer is told them. Named in the signature rather than dropped: an argument a mount does
+    // not mention is discarded in silence, and a renderer never put in the state reads exactly like
+    // one that ignores it.
+    for (const [name, declared] of Object.entries(config ?? {})) el[name] = declared;
   });
 
   return {

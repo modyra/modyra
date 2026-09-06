@@ -102,7 +102,6 @@ export function createTimepickerFieldController(
   const {
     widgetId,
     handle,
-    format = "12h" as MdyTimeFormat,
     granularity,
     readonly: initialReadonly = false,
     viewMode: initialViewMode = MDY_TIMEPICKER_INITIAL_VIEW,
@@ -116,6 +115,16 @@ export function createTimepickerFieldController(
     emit = () => {},
   } = options;
 
+  /**
+   * Which clock the field wears, read on every use rather than captured once.
+   *
+   * A host that holds this as its own reactive property changes it after the mount, and a value
+   * captured at construction answers the old clock for the life of the widget — invisibly, because
+   * nothing on the page says which one it thinks it is.
+   */
+  const format = (): MdyTimeFormat =>
+    (typeof options.format === "function" ? options.format() : options.format) ?? "12h";
+
   const readonly = reactivity.signal(initialReadonly);
   const open = reactivity.signal(false);
   // A field taken out of play does not keep an overlay open over it: the popup looked live, said
@@ -123,7 +132,7 @@ export function createTimepickerFieldController(
   const stopWatchingPlay = closeOverlayWhenOutOfPlay(reactivity, () => handle.interactivity(), open);
   const focusedField = reactivity.signal<"hour" | "minute">("hour");
   const viewMode = reactivity.signal<MdyTimepickerViewMode>(initialViewMode);
-  const draft = reactivity.signal<ParsedTime>(draftFor(handle.value(), format));
+  const draft = reactivity.signal<ParsedTime>(draftFor(handle.value(), format()));
   // What the person typed while it is not a time. Held here for the same reason the datepicker holds
   // it: neither renderer held it, so an entry the control could not read was rewritten away by the
   // next sync and nobody had decided that it should be.
@@ -141,7 +150,7 @@ export function createTimepickerFieldController(
 
   const state: MdySignal<MdyTimepickerFieldState> = reactivity.computed(() => ({
     value: handle.value(),
-    format,
+    format: format(),
     draft: draft(),
     open: staysOpen(open(), handle.disabled()),
     focusedField: focusedField(),
@@ -160,7 +169,7 @@ export function createTimepickerFieldController(
     pending: handle.pending(),
     entryText: entryText(),
     entryUnreadable: entryText() !== null,
-    display: entryText() ?? shownTime(handle.value(), format),
+    display: entryText() ?? shownTime(handle.value(), format()),
   }));
 
   const view: MdySignal<MdyWidgetViewContract> = reactivity.computed(() => {
@@ -213,7 +222,7 @@ export function createTimepickerFieldController(
    */
   function hourFromFormat(hour: number): Pick<ParsedTime, "hour" | "period"> | null {
     if (!Number.isInteger(hour)) return null;
-    if (format === "12h") {
+    if (format() === "12h") {
       return hour >= 1 && hour <= 12 ? { hour, period: draft().period } : null;
     }
     if (hour < 0 || hour > 23) return null;
@@ -265,7 +274,7 @@ export function createTimepickerFieldController(
   }
 
   function openPicker(): readonly MdyUiCommand[] {
-    draft.set(draftFor(handle.value(), format));
+    draft.set(draftFor(handle.value(), format()));
     focusedField.set("hour");
     // Every opening starts on the hours, in the view the host configured: where the last session
     // left the popup is not where the next one should resume.
@@ -350,14 +359,14 @@ export function createTimepickerFieldController(
       case "cancel":
         return closePicker(true);
       case "set-hour": {
-        // The hour arrives in the picker's own format. A 24-hour picker draws `00` and 13–23 on its
+        // The hour arrives in the picker's own format(). A 24-hour picker draws `00` and 13–23 on its
         // face, and the working copy is canonically 12-hour, so those twelve numbers had no word in
         // this vocabulary: `set-hour` refused every one of them and refused them *silently*, which
         // is why a 24-hour picker could not be moved off whichever half of the day it opened on.
         //
         // The half of the day now travels with the hour instead of only with `set-period`, which a
         // 24-hour picker correctly has no control for.
-        const entry = acceptTimeField("hour", format, intent.hour, stepsNow());
+        const entry = acceptTimeField("hour", format(), intent.hour, stepsNow());
         if (entry.type === "rejected" && entry.reason === "off-step") {
           return refuse(`${intent.hour} is not an hour this clock offers.`);
         }
@@ -367,7 +376,7 @@ export function createTimepickerFieldController(
         return [];
       }
       case "set-minute": {
-        const accepted = acceptTimeField("minute", format, intent.minute, stepsNow());
+        const accepted = acceptTimeField("minute", format(), intent.minute, stepsNow());
         if (accepted.type === "rejected") {
           return refuse(accepted.reason === "off-step"
             ? `${intent.minute} is not a minute this clock offers.`
@@ -381,10 +390,10 @@ export function createTimepickerFieldController(
         return [];
       }
       case "set-time": {
-        // Read in the picker's format first, and in the other only as a fallback: a 24-hour picker
+        // Read in the picker's format() first, and in the other only as a fallback: a 24-hour picker
         // is handed `"15:30"` and a 12-hour one `"03:30 PM"`, and the same string must not mean two
         // times depending on which reader happens to accept it first.
-        const read = parseAnyTime(intent.time, format) ?? parseAnyTime(intent.time, format === "12h" ? "24h" : "12h");
+        const read = parseAnyTime(intent.time, format()) ?? parseAnyTime(intent.time, format() === "12h" ? "24h" : "12h");
         if (!read) return refuse(`${intent.time} is not a time this clock reads.`);
         draft.set({ ...draft(), hour: read.hour, minute: read.minute, period: read.period });
         return [];
@@ -395,14 +404,14 @@ export function createTimepickerFieldController(
         if (intent.phase === "move") gestureMoved = true;
         else if (intent.phase !== "end") gestureMoved = false;
         const current = draft();
-        const ring = format === "24h" ? intent.ring ?? "outer" : "outer";
+        const ring = format() === "24h" ? intent.ring ?? "outer" : "outer";
         // The number the face drew, not arithmetic on the angle. Two roundings of one rule is how a
         // hand comes to stop between the numbers beside it, with each half correct on its own terms.
         // The number in hand goes back in, so a tremor at the boundary between two of them does not
         // keep swapping the value: at a hand of 100 one degree is 1.75px of arc, and the hour was
         // changing several times while the hand was, to its owner, still.
-        const held = timepickerSelectedDialValue(intent.field, current, format);
-        const landed = timepickerDialPick(intent.angle, intent.field, format, ring, stepsNow(current), held);
+        const held = timepickerSelectedDialValue(intent.field, current, format());
+        const landed = timepickerDialPick(intent.angle, intent.field, format(), ring, stepsNow(current), held);
         if (landed === null) return refuse("this clock offers no value to land on.");
         if (intent.field !== "hour") {
           draft.set({ ...current, minute: landed.value });
@@ -428,7 +437,7 @@ export function createTimepickerFieldController(
         // The reading is the contract's and the numerals are the host's. A text that names a value
         // the field offers moves the draft — and the hand with it — and one that does not leaves
         // both alone while the box goes on showing what was typed.
-        const read = timepickerEntry(intent.field, format, intent.text, stepsNow(), options.parseSegment);
+        const read = timepickerEntry(intent.field, format(), intent.text, stepsNow(), options.parseSegment);
         if (!read || read.value === null) return [];
         const chosen = intent.field === "hour" ? hourFromFormat(read.value) : null;
         if (intent.field === "hour") {
@@ -458,7 +467,7 @@ export function createTimepickerFieldController(
   function setValue(value: string | null): void {
     entryText.set(null);
     handle.set(value);
-    draft.set(draftFor(value, format));
+    draft.set(draftFor(value, format()));
   }
 
   function setReadonly(nextReadonly: boolean): void {

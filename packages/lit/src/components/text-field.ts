@@ -75,7 +75,7 @@ export class MdyTextFieldElement extends MdyFieldElement<string | null> {
       inputType: this.inputType,
       kind: this.widgetKind,
       autocomplete: this.autocomplete,
-      supportingText: () => this.supportingWords(),
+      supportingText: this.declared(() => this.supportingWords()),
     });
   }
 

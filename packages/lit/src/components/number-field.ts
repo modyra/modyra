@@ -46,7 +46,7 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
       inputType: "number",
       kind: "number",
       // Read on every projection, so a `min` set after the element connected is honoured.
-      constraints: () => ({ min: this.min ?? null, max: this.max ?? null, step: this.step ?? null }),
+      constraints: this.declared(() => ({ min: this.min ?? null, max: this.max ?? null, step: this.step ?? null })),
     });
   }
 

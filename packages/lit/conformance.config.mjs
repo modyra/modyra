@@ -73,6 +73,20 @@ export const mountScoped = (kind, scope) => mount(kind, { idScope: scope });
  * would be an accusation the kit cannot support.
  */
 export const declaresRules = true;
+/**
+ * This config passes the kit's `config` — a document's declarations that are not rules — to its
+ * fixture, which sets them as properties.
+ *
+ * Undeclared, the kit skipped that whole section for this renderer and reported it "not
+ * established": three separate measurements this night read its silence as a renderer that ignores
+ * a declaration, when it was a config that had never been handed one.
+ */
+// NOT declared yet, deliberately, and this is the whole reason: turning it on made the kit ask this
+// renderer the section it had been skipping, and the first answer was a real defect — a datepicker
+// announces the field's path where the document declared a name, because this element's `ariaLabel`
+// property collides with the one `HTMLElement` reflects. The flag lands with that repair, not before
+// it, so the gate stays a gate rather than a red nobody can act on.
+// export const declaresConfig = true;
 
 // Both shapes, because this renderer draws both: a select that filters is the combobox and one that
 // does not is the platform's chooser, which has no trigger and no popup and is the better control

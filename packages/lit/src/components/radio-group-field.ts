@@ -29,7 +29,7 @@ export class MdyRadioGroupFieldElement extends MdyOptionsFieldElement<unknown | 
     if (!handle || this.fieldController) return;
     this.fieldController = createOptionFieldController({
       widgetId: this.fieldId,
-      supportingText: () => this.supportingWords(),
+      supportingText: this.declared(() => this.supportingWords()),
       handle,
       options: this.options as ReadonlyArray<MdySelectOption<unknown>>,
       variant: "radio",

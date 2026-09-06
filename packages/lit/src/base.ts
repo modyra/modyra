@@ -1,5 +1,5 @@
 import {
-  handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind } from "@modyra/core";
+  handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind, observerFor} from "@modyra/core";
 import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages,
   shellStateClasses,
 } from "@modyra/widgets";
@@ -320,8 +320,53 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * The host carries `aria-label` as an attribute — that is what an author writes — and it would
    * name the *element* rather than the control inside it, which is not what a screen reader reads.
    */
+  /**
+   * The runtime that owns this field's handle, and a counter inside it that says "a declaration
+   * moved".
+   *
+   * A controller's projection is a memoized computed owned by that runtime. A declaration this
+   * element holds as a Lit reactive property is invisible to it, so writing one invalidated nothing
+   * and the projection kept answering with whatever it had when it last ran. Two components wiring
+   * the same option the same way looked identical and one of them worked — its settle happened to
+   * touch a signal for an unrelated reason, so the computed re-ran by coincidence. That is a
+   * derivation agreed in time rather than in data, and only a sequence could tell them apart.
+   *
+   * The counter lives in the handle's own runtime rather than a second one: a second reactivity is
+   * a second owner, which is the defect from the other side.
+   */
+  #declarations: { readonly epoch: () => number; readonly moved: () => void } | undefined;
+
+  #declarationEpoch(): number {
+    const handle = this.field;
+    if (handle === undefined) return 0;
+    if (this.#declarations === undefined) {
+      const runtime = observerFor(handle);
+      const signal = runtime.signal(0);
+      this.#declarations = { epoch: () => signal(), moved: () => signal.set(signal() + 1) };
+    }
+    return this.#declarations.epoch();
+  }
+
+  /**
+   * Wrap a declaration a controller reads on every projection, so the projection depends on it.
+   *
+   * Every option this element passes a controller as a closure goes through here. One that does not
+   * is read once and then frozen at whatever it was, which is invisible until somebody changes it
+   * after the mount — and nothing on the page says so.
+   */
+  protected declared<TRead>(read: () => TRead): () => TRead {
+    return () => {
+      this.#declarationEpoch();
+      return read();
+    };
+  }
+
   protected override updated(changed: Map<string, unknown>): void {
     super.updated(changed);
+    // Any declaration that moved has to reach a projection that cannot see Lit's properties. The
+    // counter is bumped rather than each option compared: over-invalidating costs one recompute,
+    // and missing one costs a page that disagrees with what it was told.
+    if (changed.size > 0) this.#declarations?.moved();
     this.applyControlName();
     this.nameRadioGroup();
     this.nameSubmissionParts();

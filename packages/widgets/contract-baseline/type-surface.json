@@ -3022,6 +3022,7 @@
     "protected controlErrors-> returns: readonly string[]",
     "protected controlPart(0) handle: MdyFieldHandle<T>,-> returns: MdyPartContract",
     "protected createRenderRoot-> returns: HTMLElement",
+    "protected declared(0) read: () => TRead,-> returns: () => TRead",
     "protected declaredName-> returns: string | null",
     "protected describedState-> returns: string",
     "protected descriptionId: string",
@@ -5872,7 +5873,7 @@
   ],
   "widgets:MdyTimepickerFieldControllerOptions": [
     "emit?: (commands: readonly MdyUiCommand[]) => void",
-    "format?: MdyTimeFormat",
+    "format?: MdyTimeFormat | (() => MdyTimeFormat)",
     "granularity?: MdyTimeGranularity",
     "handle: MdyFieldHandle<string | null>",
     "parseEntry?: (text: string) => string | null",
