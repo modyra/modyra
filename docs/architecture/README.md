@@ -226,6 +226,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0209: A literal cannot carry a position](0209-a-literal-cannot-carry-a-position.md) — a door that depends on an observation made before it is called takes the observation, not a boolean asserting someone made it; correct prose, followed internally and required of nobody, is what let this through
 - [ADR 0210: A promise points at what keeps it](0210-a-promise-points-at-what-keeps-it.md) — `aria-haspopup` claims a role and `aria-controls` says which element has it: the reference names the sub-region carrying it, not the panel around it
 - [ADR 0211: An argument of the wrong shape is a defect](0211-an-argument-of-the-wrong-shape-is-a-defect.md) — a value is a verdict and an argument is a code defect: two audiences, two policies, and a wrong shape that never passes in silence
+- [ADR 0212: What a calendar is called](0212-what-a-calendar-is-called.md) — the grid is named by the month it shows, through the visible heading rather than a second copy of it; the panel is named by the field, and no element carries two naming channels
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
