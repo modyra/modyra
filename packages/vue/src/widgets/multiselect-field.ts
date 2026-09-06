@@ -27,6 +27,7 @@ import {
   chipMovedAnnouncement,
   quantityAnnouncement,
   chipActionName,
+  chosenKeyOrder,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
@@ -77,6 +78,14 @@ export const MdyMultiselectField = defineComponent({
      * them not to follow the next one.
      */
     supportingText: { type: String, required: false, default: undefined },
+    /**
+     * Whether this field offers reordering, which is what a move handle is owed to.
+     *
+     * The contract gates `chipMove` on the capability, and this component had no way to be told it:
+     * the handles were drawn once against a rule this renderer could not read, and two buttons that
+     * could not act is worse than none.
+     */
+    reorderable: { type: Boolean, required: false, default: false },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     mode: { type: String as PropType<MdyMultiselectMode>, default: "single" },
@@ -310,7 +319,14 @@ export const MdyMultiselectField = defineComponent({
 
       // The controller's list, for the same reason: a chip is how a held value is seen and removed,
       // and a value missing from the declared options would otherwise be held with no chip at all.
-      const held = state.value.options.filter((option) => state.value.selectedKeys.has(String(option.value)));
+      // In the order the value holds them, not the order the option list happens to be in. Drawn
+      // from the options, a chip moved to another place changed the value and left the strip looking
+      // exactly as before: the act had no visible effect, which is the same as not having happened
+      // for everyone who cannot read the model.
+      const chosen = chosenKeyOrder(state.value);
+      const held = chosen
+        .map((key) => state.value.options.find((option) => String(option.value) === key))
+        .filter((option): option is NonNullable<typeof option> => option !== undefined);
       children.push(h("div", { class: classesOf("inputWrapper") }, [
         h("div", {
           class: classesOf("box"),
@@ -344,23 +360,26 @@ export const MdyMultiselectField = defineComponent({
                     "aria-label": chipActionName(verb, option.label),
                     onClick: (event: Event) => { event.stopPropagation(); act(); },
                   });
-                // **No handle to move a chip with, and that is deliberate.**
+                // A single press moves the chip one place, which is the path WCAG 2.5.7 asks for
+                // independently of the keyboard: somebody who cannot hold and drag has no other way
+                // to reorder, and the drag the other renderers implement does not discharge it.
                 //
-                // `chipMove` is gated on the field offering `reorderable`, which this renderer has no
-                // way to be told: the property exists on a field descriptor and this component takes
-                // no such prop. Drawing the handles anyway put two buttons on every chip that could
-                // not act — measured: pressing one, with the chip focused first, leaves the order
-                // exactly as it was.
-                //
-                // The reason they cannot act is worth the sentence: `move` is resolved against the
-                // *active* chip, which only the keyboard's roving focus sets — `focus` as an intent
-                // returns nothing — so a pointer has no path to reordering at all. The renderers that
-                // draw handles drive them by dragging, which this one does not implement.
-                //
-                // A control that says it does something and does nothing is the caret defect again,
-                // one layer in. Until this offers reordering it draws no affordance for it.
-                const moves: VNode[] = [];
-                const later: VNode[] = [];
+                // Drawn only where the field says it offers reordering — a handle owed to nothing is
+                // a control that says it does something and does nothing.
+                const moveBy = (by: -1 | 1): void => {
+                  const order = chosenKeyOrder(state.value);
+                  const at = order.indexOf(key);
+                  if (at < 0) return;
+                  const to = Math.max(0, Math.min(order.length - 1, at + by));
+                  if (to === at) return;
+                  run(controller.dispatch({ type: "move-selected", optionKey: key, to }));
+                };
+                const moves: VNode[] = props.reorderable
+                  ? [control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveEarlierLabel, () => moveBy(-1))]
+                  : [];
+                const later: VNode[] = props.reorderable
+                  ? [control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveLaterLabel, () => moveBy(1))]
+                  : [];
                 // The quantity a chip holds is stepped on the chip. Two renderers drew these with the
                 // class the contract reserves for a *list entry's* stepper and this one drew none —
                 // an element nothing named, so nothing could ask for it.
