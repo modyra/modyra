@@ -9,7 +9,7 @@ import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind, type MdyWi
 import { MDY_LABELABLE_TAGS, MDY_WIDGET_RELATIONS, partsRequiringName } from "../relations.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_STATE_MODIFIERS } from "../state.js";
-import { MDY_ARIA_DISABLED_PARTS } from "../structure.js";
+import { MDY_ARIA_DISABLED_PARTS, partIsOwed, type MdyPartPresence, type MdyWidgetStructureNode} from "../structure.js";
 import { MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, MDY_SHARED_UI_CLASSES } from "../structure.js";
 import { overlayOnlyParts } from "../widget-states.js";
 import { inspectWidgetStructure } from "./structure-tests.js";
@@ -87,6 +87,22 @@ export interface MdyDomContractOptions {
    * does not get to decide what the contract requires of it.
    */
   readonly absentParts?: readonly string[];
+  /**
+   * Whether the widget is in the state a presence condition names, and whether the field was given
+   * a capability a part is gated on.
+   *
+   * Without them a conditional part is read as "optional, so nothing is owed" and a renderer can
+   * omit one for the life of the feature and stay conformant: the vocabulary the contract publishes
+   * — `fieldIsRequired`, `documentDeclaresIt`, `kindOffersIt` and the rest — had no reader at all,
+   * which is how a renderer came to draw the required mark on none of seventeen kinds without a
+   * single check going red.
+   *
+   * Given, the walk asks {@link partIsOwed}, which is the same door the contract answers with. Left
+   * out, it decides as it always did, so a caller that cannot derive the facts is not made to lie
+   * about them.
+   */
+  readonly holds?: (condition: MdyPartPresence) => boolean;
+  readonly offers?: (capability: string) => boolean;
   /**
    * How many elements each part must have in this state, for parts the contract lets repeat.
    * The contract knows a part repeats; only the caller knows the state has three options and not
@@ -323,6 +339,27 @@ export function inspectWidgetDom(
   // name is a caller error worth failing on rather than a silent fall back to the shared anatomy —
   // a typo'd variant would otherwise report a widget as conformant against half a contract.
   const variant = options.variant === undefined ? undefined : definition.variants[options.variant];
+
+  /**
+   * Whether this rendering owes the part.
+   *
+   * Three answers in one place so the two sites cannot drift: the contract requires it of every
+   * rendering, the configured variant requires it, or the widget is in the state the part's own
+   * condition names. The third is asked of `partIsOwed` — the door the contract answers with — and
+   * only when the caller supplied facts; a walk told nothing about the state decides as it always
+   * did rather than inventing an answer.
+   */
+  const owedHere = (node: MdyWidgetStructureNode): boolean => {
+    if (!node.optional) return true;
+    if (variant?.required.includes(node.part) === true) return true;
+    if (options.holds === undefined && options.offers === undefined) return false;
+    return partIsOwed(node, {
+      holds: options.holds ?? (() => false),
+      // A capability nobody asked about is one the field was not given: a part gated on an offer
+      // is owed only where the offer was made.
+      offers: options.offers ?? (() => false),
+    });
+  };
   if (options.variant !== undefined && !variant) {
     issues.push({
       code: "PART_MISSING",
@@ -467,8 +504,9 @@ export function inspectWidgetDom(
       // at rest would make every closed picker non-conforming; never demanding it means a part the
       // contract calls mandatory is one nothing checks.
       const onlyWhileOpen = overlayOnlyParts(kind).includes(node.part);
-      // Required by the kind, or by the variant it was configured as.
-      const required = !node.optional || (variant?.required.includes(node.part) ?? false);
+      // Required by the kind, by the variant it was configured as, or by the state the widget is
+      // actually in — the last only where the caller could tell us what that state is.
+      const required = owedHere(node);
       // A mandatory part whose only declared home is gone was not omitted — it had nowhere to be.
       // `checkbox.indicator` is mandatory and lives under `label`, which a document without a
       // caption may legitimately not have; demanding the child there asks a renderer for an element
@@ -549,7 +587,7 @@ export function inspectWidgetDom(
     // defect this rule exists for is the other direction, a parent with nothing to operate it.
     const parentNode = definition.structure.nodes.find((other) => other.part === node.parent);
     const parentsDrawn = node.parent === undefined ? [] : resolved.get(node.parent) ?? [];
-    const requiredHere = !node.optional || (variant?.required.includes(node.part) ?? false);
+    const requiredHere = owedHere(node);
     if (
       node.repeated === true && parentNode?.repeated === true && requiredHere
       && parentsDrawn.length > 0 && elements.length < parentsDrawn.length

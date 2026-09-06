@@ -4941,6 +4941,8 @@
     "absentParts?: readonly string[]",
     "adapterPrefix?: string",
     "counts?: Readonly<Record<string, number>>",
+    "holds?: (condition: MdyPartPresence) => boolean",
+    "offers?: (capability: string) => boolean",
     "open?: boolean",
     "parts?: MdyDomPartMap",
     "strictClasses?: boolean",

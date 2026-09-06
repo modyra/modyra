@@ -182,6 +182,9 @@ const SECTION_CLAIMS = Object.freeze({
   // The face half is a declared capability reaching what it describes. The other half this section
   // checks — that the number a control shows is the number it announces — has no name in the
   // registry yet, and one claim listed honestly beats two where the second would be invented.
+  // A declared part reaching the page is UI-009's subject; the condition deciding whether it is owed
+  // has no name of its own in the registry yet.
+  "A part its condition owes is drawn": ["UI-009"],
   "Every face a kind declares is read": ["UI-010"],
   // No claim names identity: whether two instances can share an id is the subject of a whole family
   // of open findings and the registry has no word for it.
@@ -525,6 +528,111 @@ if (config.declaresConfig === true) {
     null,
     "not run — the config does not export `declaresConfig`, so it may not pass a document's "
     + "non-rule declarations to its fixture",
+  );
+}
+
+// ── A part its condition owes is drawn ────────────────────────────────────────────────────
+//
+// The contract gates optional parts on a named condition — `fieldIsRequired`, `documentDeclaresIt`,
+// `kindOffersIt` and the rest — and `partIsOwed` answers whether one is owed. Nothing read it. The
+// structure walk decides from `optional` and `variant` alone, so a part gated on a condition is a
+// part nothing asks for: a renderer omitted the required mark on all seventeen kinds and stayed
+// conformant for the life of the feature.
+//
+// Each condition is put into the state that makes it hold, and into the state that makes it false,
+// because only the pair can fail: a renderer that always draws the part and one that draws it
+// correctly are the same answer when the condition holds.
+if (config.declaresConfig !== true) {
+  record(
+    "A part its condition owes is drawn",
+    null,
+    "not run — the config does not export `declaresConfig`, so the states these conditions name "
+    + "cannot be asked for",
+  );
+} else {
+  const findings = [];
+  let asked = 0;
+
+  /**
+   * One condition, the mount that makes it hold, and the mount that makes it false.
+   *
+   * The part is named from the contract rather than listed: whichever nodes carry the condition are
+   * the nodes this asks about, so a kind that gains one is covered the day it does.
+   */
+  const CONDITIONS = [
+    {
+      condition: "fieldIsRequired",
+      holds: () => ({}),
+      fails: () => ({ validators: false }),
+      /**
+       * Whether the field really is in that state, read from the widget rather than assumed of the
+       * mount.
+       *
+       * A first version demanded the part because it had *asked* for the state, and reported five
+       * kinds of a renderer whose fixture declares no rule at all — an accusation the renderer had
+       * not earned, and the same mistake as asking one flag for a per-part condition. The widget's
+       * own `aria-required` is the claim being checked against: a field that tells a reader it must
+       * be filled and shows nobody a mark is the incoherence; one that claims nothing is a mount
+       * this condition cannot speak about.
+       */
+      established: (fixture) =>
+        fixture.root?.querySelector?.('[aria-required="true"]') !== null
+        && fixture.root?.querySelector?.('[aria-required="true"]') !== undefined,
+    },
+    // `documentDeclaresIt` is deliberately not here, and the reason is a finding of its own: it is a
+    // fact **per part** — the document declared *this* part's content — and the contract publishes no
+    // mapping from a part to the declaration that fills it. Asked as one flag for the widget it
+    // reports a prefix missing because a supporting line was declared, which is an accusation the
+    // renderer has not earned. It joins this list the day the mapping exists.
+  ];
+
+  /** Mounts this condition could not speak about, so a silent skip is never read as a pass. */
+  const unestablished = [];
+  for (const { condition, holds, fails, established } of CONDITIONS) {
+    for (const kind of kinds) {
+      const owed = MDY_WIDGET_CONTRACTS[kind]?.structure?.nodes
+        ?.filter((node) => node.presentWhen === condition && node.optional === true) ?? [];
+      if (owed.length === 0) continue;
+      for (const [state, asking] of [["holding", holds()], ["not holding", fails()]]) {
+        const fixture = await mount(kind, asking);
+        await fixture.settle?.();
+        asked += 1;
+        // The state was asked for; whether the widget is in it is a different question, and only the
+        // second licenses a finding.
+        if (state === "holding" && established !== undefined && !established(fixture)) {
+          unestablished.push(`${kind}:${condition}`);
+          fixture.dispose();
+          continue;
+        }
+        const drawn = fixture.parts();
+        for (const node of owed) {
+          const found = drawn[node.part];
+          const present = Array.isArray(found) ? found.length > 0 : found !== undefined && found !== null;
+          if (state === "holding" && !present) {
+            findings.push(
+              `${kind}.${node.part}: the contract owes this part when ${condition}, the field is in `
+              + "that state, and no element carries it",
+            );
+          }
+          if (state === "not holding" && present) {
+            findings.push(
+              `${kind}.${node.part}: drawn while ${condition} is false — a part owed to a condition `
+              + "is a claim about the field, and drawn unconditionally it says the condition always holds",
+            );
+          }
+        }
+        fixture.dispose();
+      }
+    }
+  }
+
+  record(
+    "A part its condition owes is drawn",
+    findings,
+    `${asked} mount(s) over ${CONDITIONS.length} condition(s)`
+    + (unestablished.length === 0 ? "" :
+      `; ${unestablished.length} mount(s) could not be put in the state and were not judged: `
+      + `${[...new Set(unestablished)].join(", ")}`),
   );
 }
 
