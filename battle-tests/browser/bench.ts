@@ -431,3 +431,36 @@ export const arrowsMoveANativeSelect = async (page: Page): Promise<boolean> => {
   }, id);
   return moved;
 };
+
+/**
+ * The name the platform computes for a control, as a screen reader would hear it.
+ *
+ * **Not the attribute that was written.** `aria-label` loses to `aria-labelledby`, a self-referential
+ * `labelledby` pulls in subtree text, `aria-hidden` removes a contributor without changing what the
+ * markup says, and a role that forbids naming drops the attribute silently. A probe that reads
+ * `getAttribute("aria-label")` answers about the document; this answers about the announcement, and
+ * the two disagree exactly where the interesting defects live.
+ *
+ * Read from `ariaSnapshot`, which is the browser's own accessibility tree rather than a rule
+ * reimplemented here. A name approximated in test code is one more implementation of the naming
+ * algorithm, and this repository has learned what happens to a second copy of something the platform
+ * owns: a bench that approximates answered "every control is named" for every control, which is not
+ * a measurement but a shape of agreement.
+ *
+ * Lives here, once, deliberately. A resolved name read per spec is the next family of probes that
+ * drift apart, and the same reading is what the exit criterion's experience pass needs — one door
+ * pays for both.
+ *
+ * @returns the announced name, or `null` when the element carries none. **Never `""`**: an element
+ * with an empty name and an element with no name are different facts, and a caller comparing against
+ * a string cannot tell them apart if both arrive as one.
+ */
+export async function announcedName(target: import("@playwright/test").Locator): Promise<string | null> {
+  if (await target.count() === 0) return null;
+  const snapshot = (await target.ariaSnapshot()).trim();
+  if (snapshot === "") return null;
+  // `- role "name":` — the name is the first quoted run on the first line. A node with no name has
+  // no quoted run at all, which is the case that must not collapse into an empty string.
+  const quoted = snapshot.split("\n")[0].match(/"((?:[^"\\]|\\.)*)"/);
+  return quoted === null ? null : quoted[1].replace(/\\(.)/g, "$1");
+}
