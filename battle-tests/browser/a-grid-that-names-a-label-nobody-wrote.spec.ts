@@ -26,7 +26,7 @@ import { expect, test } from "@playwright/test";
 // doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
 // next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
 // open now.
-import { HOSTS } from "./bench";
+import { HOSTS, announcedName } from "./bench";
 
 for (const host of HOSTS) {
   test(`every grid a calendar shows is named, ${host.name}`, async ({ page }) => {
@@ -50,20 +50,31 @@ for (const host of HOSTS) {
       if (open) break;
     }
 
-    /** Every grid on screen, and whether a reader would be told what it is a grid of. */
-    const grids = () => page.evaluate(() =>
-      Array.from(document.querySelectorAll('[role="grid"]'))
-        .filter((each) => each.getClientRects().length > 0)
-        .map((each) => {
-          const named = each.getAttribute("aria-labelledby");
-          const label = each.getAttribute("aria-label");
-          const target = named === null ? null : document.getElementById(named);
-          return {
-            id: each.id || "(no id)",
-            names: named,
-            named: (label ?? "").trim() !== "" || (target?.textContent ?? "").trim() !== "",
-          };
-        }));
+    /**
+     * Every grid on screen, and the name a reader is actually told.
+     *
+     * The name is asked of the platform rather than rebuilt from the attributes. The rule this file
+     * used to carry — a non-empty `aria-label`, or an `aria-labelledby` whose target has text —
+     * missed two things at once. It resolved the whole attribute as a single id, so a reference
+     * naming two elements found none; and it counted a reference whose target carries text without
+     * asking what that text contributes, which is how a grid pointed at an embedded control reads
+     * as named while announcing nothing.
+     *
+     * `:visible` rather than a rectangle count, and it matters here: a calendar keeps the views it
+     * is not showing in the document, and a grid outside the accessibility tree has no announced
+     * name to read — the reader refuses it rather than calling it unnamed.
+     */
+    const grids = async () => {
+      const nodes = page.locator('[role="grid"]:visible');
+      const out: Array<{ id: string; name: string | null; named: boolean }> = [];
+      for (let at = 0, total = await nodes.count(); at < total; at += 1) {
+        const one = nodes.nth(at);
+        const id = await one.evaluate((each) => each.id || "(no id)");
+        const name = await announcedName(one);
+        out.push({ id, name, named: name !== null && name.trim() !== "" });
+      }
+      return out;
+    };
 
     const inDays = await grids();
     expect(inDays.length, "no grid was on screen after opening the calendar").toBeGreaterThan(0);
@@ -72,7 +83,20 @@ for (const host of HOSTS) {
     expect(unnamedInDays, "the days grid is announced as a grid of nothing").toEqual([]);
 
     // The other views, which the projection names explicitly.
-    await page.locator("button").filter({ hasText: /\w+\s+\d{4}/ }).first().click();
+    //
+    // **Reached with a stated timeout, and named when it is not there.** A renderer without this
+    // control used to hold the whole spec until the suite's own limit expired — three minutes, then
+    // a stack trace about a locator, for a subject the file never reached. The second half of this
+    // check has therefore never run against such a renderer, and nothing said so: the row read as
+    // "the grid is unnamed" when the truth is that the view was never left.
+    const switcher = page.locator("button").filter({ hasText: /\w+\s+\d{4}/ }).first();
+    await expect(
+      switcher,
+      "no control on this calendar shows a month and a year, so the view cannot be changed and "
+        + "everything below is about a view this renderer never left — the grids of the other views "
+        + "are unmeasured here rather than unnamed",
+    ).toBeVisible({ timeout: 5_000 });
+    await switcher.click();
     await page.waitForTimeout(360);
 
     const inYears = await grids();
