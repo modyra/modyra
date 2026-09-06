@@ -82,7 +82,9 @@ export { createFileFieldController } from "./file-field-controller.js";
 export {
   multiselectFieldPartIds,
   multiselectFieldRootClasses,
+  multiselectChipPart,
   projectMultiselectFieldA11y,
+  type MdyMultiselectChipAppearance,
 } from "./multiselect-field-a11y.js";
 
 export type {

@@ -9,6 +9,7 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
+import { multiselectChipPart } from "@modyra/widgets";
 import {
   MDY_WIDGET_CONTRACTS,
   fieldAccessibleName,
@@ -240,6 +241,7 @@ export const statesPanel = {
     "projectCalendarViewA11y",
     "projectDatepickerFieldA11y",
     "projectFieldShellA11y",
+    "multiselectChipPart",
     "projectMultiselectFieldA11y",
     "projectOptionFieldA11y",
     "projectOverlayOpenerA11y",
@@ -372,6 +374,20 @@ export const statesPanel = {
         }) && node.optional === true).map((node) => node.part)])
         .filter(([, parts]) => parts.length > 0)
         .map(([kind, parts]) => `${kind}: ${parts.join(", ")}`),
+      // Which of how many, asked of the contract for each chip a multiselect is holding. A
+      // `gridcell` cannot carry `aria-posinset`, so the position is a column index — the reason is
+      // ADR 0148, and this shows the answer rather than restating it.
+      chipColumns: (() => {
+        const held = form.f.all.multiselect.value() ?? [];
+        return held.map((value, index) => {
+          const label = String(value);
+          const part = multiselectChipPart("states-multiselect", label, {
+            label, count: 1, position: index + 1, size: held.length,
+            active: index === 0, named: false,
+          });
+          return `${label}: column ${part.attributes["aria-colindex"]} of ${held.length}`;
+        });
+      })(),
       focusIsInside: KINDS
         .map(([kind]) => kind)
         .filter((kind) => {

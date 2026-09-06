@@ -101,6 +101,67 @@ export function multiselectFieldRootClasses<TValue>(state: MdyMultiselectFieldSt
  * the user sees and operates, `popup` is the panel it controls, and `group` is the chip group
  * inside it. Laying the group out inline instead would reflow the page on every open.
  */
+/** What a chip looks like in the strip, as the renderer knows it. */
+export interface MdyMultiselectChipAppearance {
+  readonly label: string;
+  readonly count: number;
+  readonly position: number;
+  readonly size: number;
+  readonly active: boolean;
+  readonly named: boolean;
+}
+
+/**
+ * One chip in the strip, as the contract declares it.
+ *
+ * A door rather than a closure inside the projection: the per-chip answer was published on the
+ * projection and never handed to a renderer — `parts` carries part contracts, not functions — so
+ * four renderers each worked out a chip's column index for themselves. Three agreed by arithmetic
+ * that happens to coincide today and the fourth wrote nothing at all.
+ *
+ * Why the position is a column index and not `aria-posinset` is ADR 0148; the reason lives there.
+ */
+export function multiselectChipPart(
+  widgetId: string,
+  key: string,
+  appearance: MdyMultiselectChipAppearance,
+): MdyPartContract {
+  // What the catalogue says a chip in the strip is. Read once here rather than at each renderer,
+  // which is how one of them came to carry a role the other two did not.
+  const chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role;
+  return {
+      classes: [
+        ...multiselectChipClasses({ role: "value" }),
+        // Where the keyboard is standing in the strip, which a class is what makes visible.
+        ...(appearance.active ? [stateClass(MDY_CHIP_CLASSES.block, "active")] : []),
+      ],
+      ...(chipRole === undefined ? {} : { role: chipRole }),
+      attributes: {
+        // The roving position: one chip is the strip's tab stop and the arrows move it, so the rest
+        // are reachable without being separate stops on the way through the form.
+        tabindex: appearance.active ? 0 : -1,
+        "data-key": key,
+        // The words, and how many of this one when the mode counts. A chip whose label is the whole
+        // name it has is announced twice by a reader that also reads its text; the name is given
+        // here because the strip may show a shortened label and must still say the whole one.
+        "aria-label": appearance.count > 1 ? `${appearance.label}, ${appearance.count}` : appearance.label,
+        // Which of how many, in the grid's vocabulary. A `gridcell` does not carry `aria-posinset`
+        // and `aria-setsize` — they were written and the accessibility layer discarded them, so the
+        // position ADR 0137 pays the scrolling strip with never arrived. A grid says the same thing
+        // with a column index against the count on the grid, and a reader announces it in its own
+        // slot after the name: "Roma, column 3 of 12". ADR 0148.
+        //
+        // **One cell per chip, never one per button.** `aria-colindex` counts cells, so a chip whose
+        // five buttons were cells each would land a person on "column 14 of 72" — arithmetically
+        // right and humanly useless. The buttons are inside the cell and reached with the grid's
+        // interaction mode.
+        "aria-colindex": appearance.position,
+        // The tooltip exists only while one chip is naming itself, and names that chip alone.
+        "aria-describedby": appearance.named ? `${widgetId}__chiptip` : null,
+      },
+    };
+}
+
 export function projectMultiselectFieldA11y<TValue>(
   state: MdyMultiselectFieldState<TValue>,
   errors: ReadonlyArray<MdyFieldError>,
@@ -162,9 +223,6 @@ export function projectMultiselectFieldA11y<TValue>(
   const tellingThem = errorsVisible({ disabled: state.disabled, touched: state.touched, holdsUnedited: holdsUneditedValue(state, "multiselect") }, errors);
 
   const opener = projectOverlayOpenerA11y("multiselect", { widgetId: options.widgetId, open: state.open });
-  // What the catalogue says a chip in the strip is. Read once here rather than at each renderer,
-  // which is how one of them came to carry a role the other two did not.
-  const chipRole = MDY_WIDGET_CONTRACTS.multiselect.parts.chip.role;
   // Both, error first — an error does not take the place of the instruction that would have
   // prevented it. The container is pointed at while it is on the page, which is not the same as
   // while it holds a message: a renderer that reserves it keeps one reference that never changes.
@@ -235,37 +293,7 @@ export function projectMultiselectFieldA11y<TValue>(
       // Shown only while nothing is selected — the chips speak for themselves once there are any.
       attributes: { hidden: state.selectedKeys.size > 0 },
     },
-    chip: (key, appearance) => ({
-      classes: [
-        ...multiselectChipClasses({ role: "value" }),
-        // Where the keyboard is standing in the strip, which a class is what makes visible.
-        ...(appearance.active ? [stateClass(MDY_CHIP_CLASSES.block, "active")] : []),
-      ],
-      ...(chipRole === undefined ? {} : { role: chipRole }),
-      attributes: {
-        // The roving position: one chip is the strip's tab stop and the arrows move it, so the rest
-        // are reachable without being separate stops on the way through the form.
-        tabindex: appearance.active ? 0 : -1,
-        "data-key": key,
-        // The words, and how many of this one when the mode counts. A chip whose label is the whole
-        // name it has is announced twice by a reader that also reads its text; the name is given
-        // here because the strip may show a shortened label and must still say the whole one.
-        "aria-label": appearance.count > 1 ? `${appearance.label}, ${appearance.count}` : appearance.label,
-        // Which of how many, in the grid's vocabulary. A `gridcell` does not carry `aria-posinset`
-        // and `aria-setsize` — they were written and the accessibility layer discarded them, so the
-        // position ADR 0137 pays the scrolling strip with never arrived. A grid says the same thing
-        // with a column index against the count on the grid, and a reader announces it in its own
-        // slot after the name: "Roma, column 3 of 12". ADR 0148.
-        //
-        // **One cell per chip, never one per button.** `aria-colindex` counts cells, so a chip whose
-        // five buttons were cells each would land a person on "column 14 of 72" — arithmetically
-        // right and humanly useless. The buttons are inside the cell and reached with the grid's
-        // interaction mode.
-        "aria-colindex": appearance.position,
-        // The tooltip exists only while one chip is naming itself, and names that chip alone.
-        "aria-describedby": appearance.named ? `${options.widgetId}__chiptip` : null,
-      },
-    }),
+    chip: (key, appearance) => multiselectChipPart(options.widgetId, key, appearance),
     chips: {
       classes: ["mdy-multiselect__chips"],
       attributes: {

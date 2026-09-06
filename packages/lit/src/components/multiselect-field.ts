@@ -22,6 +22,7 @@ import {
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
+import { multiselectChipPart } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
@@ -67,6 +68,20 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
    * moves a pixel. `pointercancel` puts it back untouched — the browser taking the gesture is not a
    * decision the person made.
    */
+  /**
+   * One chip's declared answer — the name a reader hears and the column the cell sits in.
+   *
+   * Asked of the contract rather than spelled in the template: the same two rules were written in
+   * four renderers, three agreeing by an arithmetic that happens to coincide and one writing
+   * neither. Why the position is a column index and not `aria-posinset` is ADR 0148.
+   */
+  private chipDeclared(value: unknown, label: string, count: number, index: number): MdyPartContract {
+    return multiselectChipPart(this.fieldId, defaultOptionKey(value), {
+      label, count, position: index + 1, size: (this.field?.value() as readonly unknown[] | undefined)?.length ?? 0,
+      active: index === 0, named: false,
+    });
+  }
+
   private startChipDrag(event: PointerEvent, optionKey: string): void {
     if (!this.reorderable) return;
     const chip = event.currentTarget as HTMLElement;
@@ -1064,10 +1079,10 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
       aria-describedby=${this._namedChip === defaultOptionKey(value) ? `${this.fieldId}__chiptip` : nothing}
       @pointerdown=${(e: PointerEvent) => this.startChipDrag(e, defaultOptionKey(value))}
       @keydown=${(e: KeyboardEvent) => this.onChipKeydown(e, handle, defaultOptionKey(value))}
-      aria-label=${count > 1 ? `${label}, ${count}` : label}
+      aria-label=${String(this.chipDeclared(value, label, count, index).attributes["aria-label"])}
       title=${label}
       data-key=${defaultOptionKey(value)}
-      aria-colindex=${index + 1}
+      aria-colindex=${String(this.chipDeclared(value, label, count, index).attributes["aria-colindex"])}
     >
       ${this.reorderable
         ? html`<button

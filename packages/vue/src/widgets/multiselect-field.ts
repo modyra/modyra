@@ -334,7 +334,7 @@ export const MdyMultiselectField = defineComponent({
           ...(held.length === 0 ? [] : [
           h("div", partProps(parts.chips, { class: classesOf("chips"), role: roleOf("chips") }), [
             h("div", { class: classesOf("chipRow"), role: roleOf("chipRow") },
-              held.map((option) => {
+              held.map((option, index) => {
                 const key = String(option.value);
                 const held_ = state.value.counts.get(key) ?? 1;
                 /** One of the chip's own controls, named for the act and the value it acts on. */
@@ -372,7 +372,20 @@ export const MdyMultiselectField = defineComponent({
                   control("chipStep", MDY_I18N_MESSAGES_DEFAULT.chipIncrementLabel,
                     () => run(controller.dispatch({ type: "increment", optionKey: key }))),
                 ] : [];
-                return h("span", { class: classesOf("chip"), role: roleOf("chip") }, [
+                // Asked of the contract, not assembled here: the name a reader hears, the column
+                // the cell sits in and the strip's tab stop are one answer about one chip. Drawn
+                // from the catalogue alone this was a cell with a role and nothing else — a reader
+                // was told "cell" with no way to know which of how many, or what was in it.
+                return h("span", partProps(controller.chipFor(key, {
+                  label: option.label,
+                  count: held_,
+                  position: index + 1,
+                  size: held.length,
+                  // The strip's roving stop. The keys that walk it are owed separately; the first
+                  // chip carrying it is what makes the strip reachable rather than skipped.
+                  active: index === 0,
+                  named: false,
+                })), [
                   ...moves, ...steps,
                   // The class the contract declares for it. Drawn bare, the words were a span nothing
                   // could address: the rule that truncates a chip's label on a narrow screen never

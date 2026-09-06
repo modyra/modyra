@@ -28,6 +28,7 @@ import {
   multiselectValueTransition,
   shouldCloseMultiselectOverlay,
   createMultiselectFieldController,
+  multiselectChipPart,
   MDY_CHIP_CLASSES,
   type MdyPartContract,
 } from "@modyra/widgets";
@@ -134,9 +135,9 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
               (blur)="hideChipName()"
               (pointerdown)="startChipDrag($event, held.key)"
               (keydown)="onChipKeydown($event, held.key)"
-              [attr.aria-label]="held.count > 1 ? held.label + ', ' + held.count : held.label"
+              [attr.aria-label]="chipDeclared(held, i).attributes['aria-label']"
               [title]="held.label"
-              [attr.aria-colindex]="i + 1"
+              [attr.aria-colindex]="chipDeclared(held, i).attributes['aria-colindex']"
             >
               @if (reorderable()) {
                 <button
@@ -440,6 +441,20 @@ export class MdyMultiselectComponent<TValue = string>
 
   readonly filterFn = input<((value: TValue) => boolean) | undefined>(undefined);
 
+
+  /**
+   * One chip's declared answer — the name a reader hears and the column the cell sits in.
+   *
+   * Asked of the contract rather than spelled in the template: the same two rules were written in
+   * four renderers, three agreeing by an arithmetic that happens to coincide and one writing
+   * neither. Why the position is a column index rather than a list position is ADR 0148.
+   */
+  protected chipDeclared(held: { key: string; label: string; count: number }, index: number): MdyPartContract {
+    return multiselectChipPart(this.fieldId, held.key, {
+      label: held.label, count: held.count, position: index + 1,
+      size: this.chosen().length, active: index === 0, named: false,
+    });
+  }
 
   private readonly controller = this.adoptFieldController(
     (handle, widgetId) => createMultiselectFieldController<TValue>(

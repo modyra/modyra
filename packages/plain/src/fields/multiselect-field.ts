@@ -651,7 +651,14 @@ export function renderMultiselectField(
       counter.hidden = count <= 1;
       // One name for the whole chip: a label and a count in two spans are read as one run of text,
       // so "A 3" arrives with nothing saying which half is which.
-      chip.setAttribute("aria-label", count > 1 ? `${label}, ${count}` : label);
+      // The name and the position come from the contract's own answer about this chip rather than
+      // being worked out here. Four renderers computed them separately: three agreed by arithmetic
+      // that happens to coincide, and the fourth wrote neither.
+      const declared = controller.chipFor(key, {
+        label, count, position: wanted.length, size: tally.size,
+        active: chip.getAttribute("tabindex") === "0", named: false,
+      });
+      chip.setAttribute("aria-label", String(declared.attributes["aria-label"]));
       // The button that takes this one off says which one it takes: a strip of eight offers eight
       // controls, and a name that is only the verb is the same name on all of them.
       chip.querySelector(`.${parts.chipRemove.classes[0]}`)
@@ -678,7 +685,7 @@ export function renderMultiselectField(
       // is in the name above and in the announcement the change makes, which is where a list item's
       // number is heard.
       // Which of how many, in the grid's vocabulary — the column index, not a list's position: a gridcell does not carry aria-posinset/aria-setsize and the accessibility layer discarded them. ADR 0148.
-      chip.setAttribute("aria-colindex", String(wanted.length));
+      chip.setAttribute("aria-colindex", String(declared.attributes["aria-colindex"]));
       // The full name, for a chip the strip has narrowed to an ellipsis. `title` is the pointer's
       // half of that; a theme draws the other on focus and long press, which is what reaches a
       // keyboard and a touch.

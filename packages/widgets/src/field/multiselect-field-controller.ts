@@ -23,7 +23,8 @@ import { multiselectValueTransition, overlayLifecycleTransition } from "../behav
 import { optionsWithUnrecognizedValues, sameChoice } from "../options-reconciliation.js";
 import type { MdyUiCommand } from "../commands.js";
 import type { MdyWidgetController, MdyWidgetViewContract } from "../contract.js";
-import { projectMultiselectFieldA11y } from "./multiselect-field-a11y.js";
+import { multiselectChipPart, projectMultiselectFieldA11y, type MdyMultiselectChipAppearance } from "./multiselect-field-a11y.js";
+import type { MdyPartContract } from "../contract.js";
 import { showsAsInvalid } from "./verdict.js";
 import type {
   MdyMultiselectWayBack,
@@ -38,6 +39,15 @@ export interface MdyMultiselectFieldController<TValue>
    * search shared with select. Once a search intent has narrowed the list, the host renders this
    * rather than the full `options` array. */
   readonly filteredOptions: MdySignal<readonly MdySelectOption<TValue>[]>;
+  /**
+   * One chip in the strip, as the contract declares it — its classes, its role, the name a reader
+   * hears, the column it sits in and whether it is the strip's tab stop.
+   *
+   * Separate from `view().parts` because that is a record of contracts and a repeated part needs an
+   * answer per instance. Published only on the projection, the per-chip answer reached no renderer,
+   * and four of them worked out a chip's column index for themselves.
+   */
+  chipFor(key: string, appearance: MdyMultiselectChipAppearance): MdyPartContract;
   /** Set the selected values programmatically without producing a command. */
   setValue(values: ReadonlyArray<TValue>): void;
   /** Update the readonly state. */
@@ -600,6 +610,16 @@ export function createMultiselectFieldController<TValue>(
   return {
     state,
     view,
+    /**
+     * One chip in the strip, as the contract declares it.
+     *
+     * A part the view cannot carry: `parts` is a record of contracts and a repeated part needs an
+     * answer per instance. Without this the per-chip answer was published and unreachable, and four
+     * renderers worked out a chip's column index for themselves — three by arithmetic that happens
+     * to coincide, one not at all.
+     */
+    chipFor: (key: string, appearance: MdyMultiselectChipAppearance): MdyPartContract =>
+      multiselectChipPart(widgetId, key, appearance),
     dispatch,
     filteredOptions,
     setValue,
