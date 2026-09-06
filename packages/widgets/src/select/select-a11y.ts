@@ -167,7 +167,21 @@ export function projectSelectA11y(
     role: "listbox",
     classes: buildListboxClasses(open),
     attributes: {
-      "aria-labelledby": idFactory.part(widgetId, "trigger"),
+      /**
+       * Named by the field's caption, never by the control that opens it.
+       *
+       * `aria-labelledby` pointed at the trigger, and the trigger is a `combobox`. When the name
+       * computation crosses into an **embedded control** it takes that control's *value*, not its
+       * text — so with nothing chosen the listbox inherited the empty string and was announced as
+       * "listbox" and nothing else. The placeholder a person can see inside the button is neither a
+       * label nor a value, so it never travelled either.
+       *
+       * Every attribute in that arrangement was correct and the element pointed at was present and
+       * exposed: the defect lived entirely inside the algorithm, which is why nothing that reads
+       * markup could see it. It is the same rule as the trigger's self-reference above, read from
+       * the other side — there the value is what is wanted, here it is what ruins the name.
+       */
+      "aria-labelledby": fieldShellPartIds(widgetId).labelId,
       "aria-hidden": String(!open),
     },
   };
