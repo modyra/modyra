@@ -25,6 +25,7 @@ const PAGE = `
   <button id="both" aria-label="Perde" aria-labelledby="caption">x</button>
   <button id="from-text">Testo proprio</button>
   <button id="nameless"></button>
+  <button id="unexposed" aria-label="Scritto" style="display:none">x</button>
   <button id="hidden-part">Visibile<span aria-hidden="true"> nascosto</span></button>
 `;
 
@@ -60,8 +61,16 @@ test("the bench reads the name a platform computes, and says nothing when there 
       + "an unnamed control from one named nothing if both arrive as \"\"",
   ).toBeNull();
 
-  // An element that is not there is not an element without a name, and the reader must not invent
-  // one — a selector that matches nothing is the commonest way a naming probe reports "not named".
-  expect(await announcedName(page.locator("#absent")), "a missing element yields null, not a name")
-    .toBeNull();
+  // **The two refusals, and the second is why this reader was rewritten.** A hidden element carries
+  // an `aria-label` and no announcement, so a reader that answers `null` for it says "not named"
+  // about a control that is behaving correctly — which is how a datepicker's hidden month and year
+  // views were once reported as unnamed grids, a finding whose repair would have gone to code that
+  // works. Refusing is what keeps "not exposed" and "not named" from becoming one answer.
+  await expect(announcedName(page.locator("#unexposed")), "an element outside the accessibility tree "
+    + "is refused, because it has no announcement to read rather than an empty one")
+    .rejects.toThrow(/accessibility tree/);
+
+  // A selector that matches nothing is the commonest way a naming probe reports "not named".
+  await expect(announcedName(page.locator("#absent")), "a locator matching nothing is a fault in the "
+    + "call, not a control without a name").rejects.toThrow(/matches nothing/);
 });

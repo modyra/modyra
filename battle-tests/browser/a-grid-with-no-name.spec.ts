@@ -28,7 +28,7 @@ import { MDY_SEMANTICS_REQUIRING_NAME } from "@modyra/widgets";
 // doors these specs need, so a spec that wanted one it lacked left the renderer out, and the
 // next reader copied the list. Sixty-eight files came to exclude it that way. The doors are
 // open now.
-import { HOSTS } from "./bench";
+import { HOSTS, announcedName } from "./bench";
 
 const OPENABLE = ["select", "multiselect", "datepicker", "daterange", "timepicker", "colors"];
 
@@ -43,6 +43,9 @@ for (const host of HOSTS) {
 
     const nameless: Array<Record<string, unknown>> = [];
     let named = 0;
+    // Counted rather than ignored: a suite that silently skips what it cannot read looks like one
+    // that found nothing wrong, and the number is how a reader tells those apart.
+    let unexposed = 0;
 
     for (const kind of OPENABLE) {
       const id = `n-${kind}`;
@@ -61,26 +64,32 @@ for (const host of HOSTS) {
       if (await toggle.count() > 0) await toggle.click({ timeout: 2000 }).catch(() => undefined);
       await page.waitForTimeout(250);
 
-      const found = await page.evaluate((roles) => {
-        // A popup may live outside the field it belongs to, so the whole document is read.
-        const out: Array<{ role: string; named: boolean; label: string | null; labelledby: string | null }> = [];
-        for (const role of roles) {
-          for (const element of Array.from(document.querySelectorAll(`[role="${role}"]`))) {
-            const labelledby = element.getAttribute("aria-labelledby");
-            const hasText = labelledby !== null && labelledby.split(/\s+/).some((token) => {
-              const target = document.getElementById(token);
-              return target !== null && (target.textContent ?? "").trim() !== "";
-            });
-            out.push({
-              role,
-              named: (element.getAttribute("aria-label") ?? "").trim() !== "" || hasText,
-              label: element.getAttribute("aria-label"),
-              labelledby,
-            });
+      // **The announced name, not the attributes that were meant to produce it.** This file used to
+      // rebuild the naming algorithm here — `aria-label` if non-empty, else `aria-labelledby`
+      // pointing at something with text — and that copy was wrong in both directions at once. It
+      // missed every name that comes from an element's own text or a wrapping caption, so a
+      // correctly named control read as nameless; and it counted an `aria-label` written on a role
+      // that forbids naming, which the platform drops, so a control with no name at all read as
+      // named. A reader that can err both ways cannot be corrected by adjusting it in one.
+      //
+      // A popup may live outside the field it belongs to, so the whole document is read.
+      // **Three outcomes, not two.** A role can be named, unnamed, or absent from the accessibility
+      // tree entirely — a datepicker keeps its month and year grids in the document with
+      // `display:none` while the days grid is showing. Folding the third into "unnamed" reports
+      // three grids where a person meets one, and sends a repair to a control that is behaving.
+      // The reader refuses the third rather than answering it, so it is counted here by name.
+      const found: Array<{ role: string; named: boolean; name: string | null }> = [];
+      for (const role of MDY_SEMANTICS_REQUIRING_NAME) {
+        const nodes = page.locator(`[role="${role}"]`);
+        for (let at = 0, total = await nodes.count(); at < total; at += 1) {
+          try {
+            const name = await announcedName(nodes.nth(at));
+            found.push({ role, named: name !== null && name.trim() !== "", name });
+          } catch {
+            unexposed += 1;
           }
         }
-        return out;
-      }, MDY_SEMANTICS_REQUIRING_NAME);
+      }
 
       for (const each of found) {
         if (each.named) named += 1;
@@ -109,6 +118,6 @@ for (const host of HOSTS) {
     // than a page where nothing is named.
     expect(named, JSON.stringify({ named, nameless })).toBeGreaterThan(0);
 
-    expect(nameless, JSON.stringify(nameless, null, 1)).toEqual([]);
+    expect(nameless, JSON.stringify({ nameless, unexposed }, null, 1)).toEqual([]);
   });
 }

@@ -451,14 +451,36 @@ export const arrowsMoveANativeSelect = async (page: Page): Promise<boolean> => {
  * drift apart, and the same reading is what the exit criterion's experience pass needs — one door
  * pays for both.
  *
- * @returns the announced name, or `null` when the element carries none. **Never `""`**: an element
- * with an empty name and an element with no name are different facts, and a caller comparing against
- * a string cannot tell them apart if both arrive as one.
+ * **An element outside the accessibility tree is refused, not answered.** A hidden element has no
+ * announced name for the same reason it has no announcement: it is not there to be read. Returning
+ * `null` for it merges "carries no name" with "was never exposed", which are opposite facts — the
+ * first is a defect and the second is correct behaviour. This reader did merge them once, and
+ * reported a datepicker's hidden month and year views as unnamed grids; the repair that finding
+ * would have prompted was to a control that works. So the caller is told, in the shape ADR 0211
+ * gives every door: an argument it cannot answer about is a fault in the call, not a verdict.
+ *
+ * @returns the announced name, or `null` when the element is in the tree and carries none. **Never
+ * `""`**: an element with an empty name and an element with no name are different facts, and a
+ * caller comparing against a string cannot tell them apart if both arrive as one.
+ * @throws when the locator matches nothing, or matches an element the accessibility tree omits.
  */
 export async function announcedName(target: import("@playwright/test").Locator): Promise<string | null> {
-  if (await target.count() === 0) return null;
+  if (await target.count() === 0) {
+    throw new Error("[bench] announcedName was given a locator that matches nothing. Ask whether the "
+      + "element is there before asking what it is called: a selector that finds nothing is the "
+      + "commonest way a naming probe reports 'not named'.");
+  }
   const snapshot = (await target.ariaSnapshot()).trim();
-  if (snapshot === "") return null;
+  if (snapshot === "") {
+    const why = await target.evaluate((element) => ({
+      display: getComputedStyle(element).display,
+      hidden: element.getAttribute("aria-hidden"),
+      tag: element.tagName.toLowerCase(),
+    })).catch(() => null);
+    throw new Error("[bench] announcedName was given an element the accessibility tree does not "
+      + `carry, so it has no announced name to read: ${JSON.stringify(why)}. Not exposed and not `
+      + "named are opposite facts — filter to what a person can reach before asking what it is called.");
+  }
   // `- role "name":` — the name is the first quoted run on the first line. A node with no name has
   // no quoted run at all, which is the case that must not collapse into an empty string.
   const quoted = snapshot.split("\n")[0].match(/"((?:[^"\\]|\\.)*)"/);
