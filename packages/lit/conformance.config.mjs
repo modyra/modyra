@@ -81,11 +81,19 @@ export const declaresRules = true;
  * established": three separate measurements this night read its silence as a renderer that ignores
  * a declaration, when it was a config that had never been handed one.
  */
-// NOT declared yet, deliberately, and this is the whole reason: turning it on made the kit ask this
-// renderer the section it had been skipping, and the first answer was a real defect — a datepicker
-// announces the field's path where the document declared a name, because this element's `ariaLabel`
-// property collides with the one `HTMLElement` reflects. The flag lands with that repair, not before
-// it, so the gate stays a gate rather than a red nobody can act on.
+// NOT declared yet, deliberately. Turning it on made the kit ask this renderer the section it had
+// been skipping, and the answer was that a datepicker announces the field's path where the document
+// declared a name.
+//
+// **What that answer is has not been established, and the first explanation written here was wrong.**
+// It said the element's `ariaLabel` property collides with the one `HTMLElement` reflects; measured,
+// this environment reflects it and the attribute does arrive. Probing further, the same setup makes
+// a text field and a datepicker behave identically, while the kit's section separated them — so the
+// bench is the variable and not the renderer, and the name a platform actually computes is not
+// something this environment can answer.
+//
+// The flag lands with a diagnosis from a reader that computes names the way a browser does, not
+// before: a gate whose red nobody can explain teaches people to skip it.
 // export const declaresConfig = true;
 
 // Both shapes, because this renderer draws both: a select that filters is the combobox and one that
