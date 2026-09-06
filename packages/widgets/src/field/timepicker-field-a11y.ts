@@ -7,11 +7,11 @@ import { MDY_WIDGET_CONTRACTS } from "../catalog.js";
 import { projectOverlayOpenerA11y } from "../opener-a11y.js";
 import type { MdyFieldError } from "@modyra/core";
 import { assertUsableWidgetId } from "../ids.js";
+import { to24Hour } from "@modyra/core/datetime";
 import { timepickerSegmentAria } from "./timepicker-dial.js";
 import type { MdyPartContract } from "../contract.js";
 import { MDY_FIELD_SHELL_CLASSES } from "../structure.js";
 import type { MdyTimepickerFieldState } from "./timepicker-field-types.js";
-import { timeFieldBounds } from "../time-bounds.js";
 import { errorsVisible, holdsUneditedValue, shownErrors } from "./verdict.js";
 import { fieldShellRootClasses } from "./shell-a11y.js";
 
@@ -102,6 +102,14 @@ export function projectTimepickerFieldA11y(
     descriptionPresent: options.descriptionVisible ?? false,
   });
 
+  // The draft is held canonically as 1-12 with a period, whatever face the field wears. A spinbutton
+  // speaks in the scale of its own bounds, and on a 24-hour face that is a different number for the
+  // same instant: the hour a reader is told must be the hour the box shows, or the value names an
+  // instant outside the one on screen while sitting inside a range that permits it.
+  const hourOnFace = state.format === "24h" ? to24Hour(state.draft) : state.draft.hour;
+  const hourAria = timepickerSegmentAria("hour", state.format, hourOnFace, state.draft.period);
+  const minuteAria = timepickerSegmentAria("minute", state.format, state.draft.minute);
+
   return {
     root: {
       classes: timepickerFieldRootClasses(state),
@@ -161,16 +169,16 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "spinbutton",
         "aria-label": "Hour",
-        // Taken from the same bounds the native `min`/`max` come from rather than written again: an
-        // hour's range is the clock's, so a 24-hour face whose reader is told the maximum is 12
-        // states one of the two ranges falsely, and a reader has no way to see which.
-        "aria-valuemin": timeFieldBounds("hour", state.format).min,
-        "aria-valuemax": timeFieldBounds("hour", state.format).max,
-        "aria-valuenow": state.draft.hour,
+        // All four answers come from one door, which is what keeps them in one scale: the range, the
+        // value inside it and the words for it are a single statement about the same number, and
+        // published from separate places they can disagree without either looking wrong alone.
+        "aria-valuemin": hourAria.valueMin,
+        "aria-valuemax": hourAria.valueMax,
+        "aria-valuenow": hourAria.valueNow,
         // The number said the way the face shows it. This is the only place the hour is announced —
         // the dial repeats it and is hidden — so a bare "3" on a twelve-hour clock would leave a
         // reader to guess which three it is.
-        "aria-valuetext": timepickerSegmentAria("hour", state.format, state.draft.hour, state.draft.period).valueText,
+        "aria-valuetext": hourAria.valueText,
       },
     },
     minute: {
@@ -183,10 +191,10 @@ export function projectTimepickerFieldA11y(
       attributes: {
         role: "spinbutton",
         "aria-label": "Minute",
-        "aria-valuemin": timeFieldBounds("minute", state.format).min,
-        "aria-valuemax": timeFieldBounds("minute", state.format).max,
-        "aria-valuenow": state.draft.minute,
-        "aria-valuetext": timepickerSegmentAria("minute", state.format, state.draft.minute).valueText,
+        "aria-valuemin": minuteAria.valueMin,
+        "aria-valuemax": minuteAria.valueMax,
+        "aria-valuenow": minuteAria.valueNow,
+        "aria-valuetext": minuteAria.valueText,
       },
     },
     description: {

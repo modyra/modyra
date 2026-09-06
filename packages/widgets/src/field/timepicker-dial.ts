@@ -664,8 +664,9 @@ export function timepickerSegmentAria(
   readonly valueNow: number;
   readonly valueText: string;
 } {
-  const min = field === "minute" ? 0 : format === "24h" ? 0 : 1;
-  const max = field === "minute" ? 59 : format === "24h" ? 23 : 12;
+  // The range stated to a reader is the range the arrows honour, so both come from the bounds door
+  // rather than being written a second time here.
+  const { min, max } = timeFieldBounds(field, format);
   // Three on a twelve-hour clock is three in the morning or three in the afternoon, and the number
   // alone says neither. The period sits in a control of its own beside the hour, which a reader
   // meets one stop later — by which point they have already been told a bare "3".
