@@ -357,7 +357,13 @@ export const statesPanel = {
             const held = form.f.all[kind].value();
             if (condition === "valueIsPresent") return valueIsPresent(kind, held);
             if (condition === "valueIsAbsent") return valueIsAbsent(kind, held);
-            if (condition === "fieldIsRequired") return fieldIsRequired(form.f.all[kind].required());
+            // The whole state, not the flag: a field out of play cannot be filled in, so the marker
+            // is not owed of it however the rule reads. Passing the flag alone answered `undefined`
+            // for every kind, which is falsy — the panel printed "not owed" and looked right.
+            if (condition === "fieldIsRequired") {
+              const field = form.f.all[kind];
+              return fieldIsRequired({ required: field.required(), interactivity: field.interactivity() });
+            }
             // Every other condition is a state this panel does not drive, and answering it "yes"
             // would print an owing nobody can check.
             return false;
