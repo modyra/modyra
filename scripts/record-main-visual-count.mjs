@@ -110,9 +110,13 @@ if (log.trim() === "") {
     // The run is red, but not here. Recorded as such rather than measured from another step's words.
     row.note = `no lines from "${BROWSER_STEP}" in this log; the red belongs to another step`;
   }
+  // `null` where the word was not in the step's lines, never 0: a runner prints "N flaky" only when
+  // there were flakes, so a missing word and a measured zero are the same text and opposite facts.
+  // Defaulting to 0 turns "not read" into "none", which is the shape this whole file exists to
+  // refuse — an absence that reads as a measurement.
   row.failed = count("failed");
   row.passed = count("passed");
-  row.flaky = count("flaky") ?? 0;
+  row.flaky = count("flaky");
   // Which error classes produced them, as a set of names rather than a count: a name tells a reader
   // whether a run belongs to this series at all, and cannot be mistaken for a size.
   row.errorKinds = [...new Set((scoped.match(/Error: expect\((?:locator|page|received)\)\.[a-zA-Z]+/g) ?? [])
@@ -125,7 +129,7 @@ writeFileSync(LOG, `${JSON.stringify(record, null, 2)}\n`);
 
 console.log(`Recorded ${row.head} (${row.runId}): `
   + (row.measurable
-    ? `${row.passed} passed, ${row.failed} failed, ${row.flaky} flaky  [${row.errorKinds.join(", ")}]`
+    ? `${row.passed ?? "?"} passed, ${row.failed ?? "?"} failed, ${row.flaky ?? "?"} flaky  [${row.errorKinds.join(", ")}]`
     : "unmeasurable — log no longer served")
   + `\n  failing step(s): ${steps.join(", ") || "(none reported)"}`);
 

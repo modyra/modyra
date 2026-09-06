@@ -52,6 +52,44 @@
         "expect(page).toHaveScreenshot",
         "expect(received).toContain"
       ]
+    },
+    {
+      "runId": 33998671278,
+      "head": "a44653d4",
+      "at": "2026-09-05T23:26:17Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 59,
+      "passed": 971,
+      "flaky": 2,
+      "errorKinds": [
+        "expect(locator).toHaveCount",
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot",
+        "expect(received).toBeGreaterThan"
+      ]
+    },
+    {
+      "runId": 34000658186,
+      "head": "d87372c0",
+      "at": "2026-09-06T00:11:58Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 59,
+      "passed": null,
+      "flaky": null,
+      "errorKinds": [
+        "expect(locator).toHaveCount",
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot",
+        "expect(received).toBe",
+        "expect(received).toBeGreaterThan",
+        "expect(received).toContain"
+      ]
     }
   ]
 }
