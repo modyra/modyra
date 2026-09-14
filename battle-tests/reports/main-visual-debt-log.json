@@ -131,6 +131,23 @@
         "Browser smoke test (full matrix, main)"
       ],
       "measurable": false
+    },
+    {
+      "runId": 34862141888,
+      "head": "a33e1eef",
+      "at": "2026-09-14T15:26:17Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 59,
+      "passed": 972,
+      "flaky": 1,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot",
+        "expect(received).toBe"
+      ]
     }
   ]
 }
