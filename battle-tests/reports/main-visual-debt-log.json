@@ -90,6 +90,47 @@
         "expect(received).toBeGreaterThan",
         "expect(received).toContain"
       ]
+    },
+    {
+      "runId": 34010969669,
+      "head": "328c4e07",
+      "at": "2026-09-06T04:13:46Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 59,
+      "passed": null,
+      "flaky": null,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot"
+      ]
+    },
+    {
+      "runId": 34015098601,
+      "head": "a6966e82",
+      "at": "2026-09-06T05:53:27Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": true,
+      "failed": 59,
+      "passed": 973,
+      "flaky": null,
+      "errorKinds": [
+        "expect(locator).toHaveScreenshot",
+        "expect(page).toHaveScreenshot"
+      ]
+    },
+    {
+      "runId": 34017533021,
+      "head": "27bd014b",
+      "at": "2026-09-06T06:50:07Z",
+      "failedSteps": [
+        "Browser smoke test (full matrix, main)"
+      ],
+      "measurable": false
     }
   ]
 }
