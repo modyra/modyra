@@ -34,7 +34,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
-import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
+import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -341,13 +341,15 @@ export const MdyMultiselectField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("multiselect", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
@@ -364,7 +366,7 @@ export const MdyMultiselectField = defineComponent({
       // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
       // the width matches) is a statement about the field, and measured against the button at its
       // end a list is as wide as an arrow.
-      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("div", {
           class: classesOf("box"),
           // Only when the press lands on the box itself. A chip inside it takes or moves that value,
@@ -520,7 +522,7 @@ export const MdyMultiselectField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "multiselect"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

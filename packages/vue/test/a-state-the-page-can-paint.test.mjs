@@ -20,7 +20,8 @@ const { MDY_WIDGET_CONTRACTS, partClasses, shellStateClasses, valueIsPresent } =
 
 /** The kinds whose shell this renderer reflects. */
 const KINDS = config.kinds.filter((kind) =>
-  ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file"].includes(kind));
+  ["text", "email", "password", "textarea", "number", "checkbox", "toggle", "slider", "file",
+    "radio", "segmented", "select", "multiselect", "colors"].includes(kind));
 
 const on = (classes) => Object.entries(classes).filter(([, isOn]) => isOn).map(([name]) => name);
 

@@ -26,7 +26,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -258,15 +258,17 @@ export const MdySelectField = defineComponent({
 
     const drawNative = (): VNode => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("select", props.field, state.value.open);
       const children: VNode[] = [];
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell) }, [
         h("select", partProps(parts.trigger, {
           name: widgetId.value,
           onChange: (event: Event) =>
@@ -304,12 +306,14 @@ export const MdySelectField = defineComponent({
       // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
       // them had it.
       children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }) }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell) }, children);
     };
 
     return () => {
       if (variantOf("select", { searchable: props.searchable }) === "native") return drawNative();
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("select", props.field, state.value.open);
       const open = state.value.open;
       // The controller's list, not the prop: it has already reconciled a held value the options do
       // not contain, and looking in the prop list leaves that value invisible — the field shows a
@@ -327,14 +331,14 @@ export const MdySelectField = defineComponent({
           // The label names the trigger both ways: the relation the projection points at, and the
           // `for` that makes the caption itself a way to reach the control.
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
       // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
       // the width matches) is a statement about the field, and measured against the button at its
       // end a list is as wide as an arrow.
-      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("button", partProps(parts.trigger, {
           type: "button",
           onClick: () => {
@@ -392,7 +396,7 @@ export const MdySelectField = defineComponent({
       // projection publishes no shell parts, so the id is the factory's in both shapes.
       children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });
