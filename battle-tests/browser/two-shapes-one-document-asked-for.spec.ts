@@ -64,6 +64,11 @@ const TODAY: Record<string, { asked: boolean; shape: "the platform's" | "one bui
     { asked: true, shape: "one built of markup" },
     { asked: false, shape: "the platform's" },
   ],
+  // The shapes ADR 0176 describes, which `MdySelectField` draws through `variantOf`.
+  vue: [
+    { asked: true, shape: "one built of markup" },
+    { asked: false, shape: "the platform's" },
+  ],
 };
 
 for (const host of HOSTS) {

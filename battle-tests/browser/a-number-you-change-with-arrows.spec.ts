@@ -70,7 +70,9 @@ for (const host of HOSTS) {
         // check after this loop, so a press that does not land is a step of the sweep, not a fault.
       });
       await page.waitForTimeout(220);
-      if (await page.locator(".mdy-timepicker-dial").count() > 0) { opened = true; break; }
+      // The dialog showing is what "opened" means. The dial face is a part the contract does not
+      // require, so taking it as the witness reads a picker with no face as one that never opens.
+      if (await page.locator('[role="dialog"]:visible').count() > 0) { opened = true; break; }
     }
     expect(opened, "no time popup opened, so nothing below is a measurement").toBe(true);
 

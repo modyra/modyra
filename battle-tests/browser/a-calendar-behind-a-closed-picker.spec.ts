@@ -46,14 +46,24 @@ const OPTIONS = [{ value: "a", label: "A" }, { value: "b", label: "B" }];
 const contribution = (page: import("@playwright/test").Page, scope: string) => page.evaluate((selector) => {
   const root = document.querySelector(selector);
   if (root === null) return null;
-  const popups = Array.from(root.querySelectorAll(
+  // The panel wherever the renderer put it: one drawn outside the field (ADR 0130) is still the
+  // field's, and is found by the link its opener declares rather than by containment. Searched only
+  // inside the field, such a panel reads as absent in both states — closed correctly and never
+  // opened — and the spec reports the renderer for a placement no record decides.
+  const linked = Array.from(root.querySelectorAll("[aria-controls]"))
+    .flatMap((opener) => (opener.getAttribute("aria-controls") ?? "").split(/\s+/))
+    .map((id) => (id === "" ? null : document.getElementById(id)))
+    .filter((element): element is HTMLElement => element !== null && !root.contains(element));
+  const popups = [...Array.from(root.querySelectorAll(
     ".mdy-popup, [class*='__popup'], [class*='__dropdown'], [role='grid'], [role='listbox'], [role='dialog']",
-  ));
+  )), ...linked];
   const reachable = popups.filter((element) => {
     const style = getComputedStyle(element as HTMLElement);
     if (style.display === "none" || style.visibility === "hidden") return false;
-    if ((element as HTMLElement).hidden) return false;
+    // An ancestor's `hidden` or `display: none` takes the whole subtree out of both trees, and a
+    // linked element sits inside a panel rather than being it.
     for (let node: Element | null = element; node !== null; node = node.parentElement) {
+      if ((node as HTMLElement).hidden || getComputedStyle(node).display === "none") return false;
       if (node.getAttribute("aria-hidden") === "true") return false;
     }
     return true;
