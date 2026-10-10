@@ -16,6 +16,14 @@ const STORE_NAME = "sessions";
 /** Single-slot "current session" key — plan's own scope is "last session restore", not a project browser. */
 const SESSION_KEY = "last";
 
+/** Thrown by a save when the runtime has no IndexedDB, so the work cannot be kept at all. */
+export class StorageUnavailableError extends Error {
+  constructor() {
+    super("this browser has no IndexedDB, so the session is not being kept");
+    this.name = "StorageUnavailableError";
+  }
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -29,6 +37,7 @@ function openDb(): Promise<IDBDatabase> {
 
 /** Auto-save: fire-and-forget from the caller, errors are the caller's to decide whether to surface. */
 export async function saveSession(project: MdyStudioProject): Promise<void> {
+  if (typeof indexedDB === "undefined") throw new StorageUnavailableError();
   const db = await openDb();
   try {
     await new Promise<void>((resolve, reject) => {

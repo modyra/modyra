@@ -166,6 +166,28 @@ test("CommandHistory: apply/undo/redo round-trips through a real history stack",
   assert.equal(history.canRedo(), false);
 });
 
+test("CommandHistory.clear forgets both stacks", () => {
+  const history = new CommandHistory();
+  let project = createCheckoutProject();
+  project = history.apply(project, createUpdateNodeCommand("nd_country", { name: "shippingCountry" }));
+  project = history.apply(project, createUpdateNodeCommand("nd_city", { name: "town" }));
+  history.undo(project);
+  assert.equal(history.canUndo(), true);
+  assert.equal(history.canRedo(), true);
+  history.clear();
+  assert.equal(history.canUndo(), false);
+  assert.equal(history.canRedo(), false);
+});
+
+test("CommandHistory: an undo whose inverse throws leaves the entry on the undo stack", () => {
+  const history = new CommandHistory();
+  const project = createCheckoutProject();
+  history.apply(project, createUpdateNodeCommand("nd_country", { name: "shippingCountry" }));
+  assert.throws(() => history.undo({ ...project, schema: null }));
+  assert.equal(history.canUndo(), true);
+  assert.equal(history.canRedo(), false);
+});
+
 test("CommandHistory rejects an invalid command instead of corrupting state", () => {
   const history = new CommandHistory();
   const project = createCheckoutProject();
