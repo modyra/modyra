@@ -12,6 +12,7 @@ import { buildIndexes, createId, isDuplicateKindAllowed, isValidatorCompatible }
 import type {
   ArrayNode,
   GroupNode,
+  RecordNode,
   MdyStudioProject,
   StudioDiagnostic,
   StudioFieldValidator,
@@ -25,7 +26,7 @@ import type {
 import { validatePlacement, validateRename } from "./placement.js";
 import type { Command, Placement } from "./types.js";
 
-type Slot = { kind: "child"; parent: GroupNode; index: number } | { kind: "item"; parent: ArrayNode };
+type Slot = { kind: "child"; parent: GroupNode; index: number } | { kind: "item"; parent: ArrayNode | RecordNode };
 
 /**
  * Distribute Omit over every StudioSchemaNode variant so updateNode can
@@ -45,7 +46,7 @@ function findNode(root: StudioSchemaNode, id: string): StudioSchemaNode | null {
       const found = findNode(child, id);
       if (found) return found;
     }
-  } else if (root.node === "array") {
+  } else if (root.node === "array" || root.node === "record") {
     return findNode(root.item, id);
   }
   return null;
@@ -59,7 +60,7 @@ function slotOf(root: StudioSchemaNode, id: string): Slot | null {
       const nested = slotOf(child, id);
       if (nested) return nested;
     }
-  } else if (root.node === "array") {
+  } else if (root.node === "array" || root.node === "record") {
     if (root.item.id === id) return { kind: "item", parent: root };
     return slotOf(root.item, id);
   }
@@ -241,7 +242,7 @@ export function createInsertCommand(node: StudioSchemaNode, placement: Placement
       if (placement.kind === "arrayItem") {
         // Inserting as arrayItem *replaces* the array's item; the true inverse is restoring the old one.
         const array = findNode(before.schema, placement.arrayId);
-        if (!array || array.node !== "array") throw new Error(`insert.inverse: array "${placement.arrayId}" missing`);
+        if (!array || (array.node !== "array" && array.node !== "record")) throw new Error(`insert.inverse: array "${placement.arrayId}" missing`);
         return createInsertCommand(structuredClone(array.item), placement);
       }
       return createDeleteCommand(node.id, true);

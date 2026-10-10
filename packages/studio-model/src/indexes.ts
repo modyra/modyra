@@ -159,7 +159,7 @@ export function buildIndexes(project: MdyStudioProject): StudioIndexes {
     }
     if (node.node === "group") {
       for (const child of node.children) visitFieldServerValidators(child);
-    } else if (node.node === "array") {
+    } else if (node.node === "array" || node.node === "record") {
       visitFieldServerValidators(node.item);
     }
   };

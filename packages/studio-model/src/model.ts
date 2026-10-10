@@ -78,7 +78,7 @@ function assertUsableSchema(root: unknown): void {
     if (walked.has(node)) continue;
     walked.add(node);
     const kind = node["node"];
-    if (kind !== "field" && kind !== "group" && kind !== "array") {
+    if (kind !== "field" && kind !== "group" && kind !== "array" && kind !== "record") {
       throw new StudioModelError(`Studio project schema node at ${path} declares no known node type`);
     }
     if (typeof node["id"] !== "string" || node["id"] === "") {
@@ -131,7 +131,7 @@ function assertStructurallyValidProject(raw: unknown): asserts raw is MdyStudioP
   if (
     typeof schema !== "object" ||
     schema === null ||
-    !["field", "group", "array"].includes((schema as Record<string, unknown>)["node"] as string)
+    !["field", "group", "array", "record"].includes((schema as Record<string, unknown>)["node"] as string)
   ) {
     throw new StudioModelError("Studio project missing valid schema root node");
   }
@@ -291,7 +291,7 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
     }
     if (node.node === "group") {
       for (const child of node.children) visit(child);
-    } else if (node.node === "array") {
+    } else if (node.node === "array" || node.node === "record") {
       visit(node.item);
     }
   };
