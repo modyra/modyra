@@ -34,7 +34,9 @@ test("flushing a pending edit does not grow the undo stack past maxEntries", asy
     form.f.a.set(v);
     await wait(50);
   }
+  // The wait lets the effect arm the debounce timer, so redo has a pending edit to flush.
   form.f.a.set("4");
+  await wait(2);
   form.redo();
   let undone = 0;
   while (form.canUndo() && undone < 10) {
