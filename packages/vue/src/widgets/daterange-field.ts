@@ -61,7 +61,12 @@ export const MdyDaterangeField = defineComponent({
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     locale: { type: String, default: "en" },
-    separator: { type: String, default: "–" },
+    separator: { type: String, default: "–" },    /**
+     * The first and last day that may be chosen, as ISO dates. A day outside them is drawn disabled
+     * and refused when pressed.
+     */
+    minDate: { type: String, required: false, default: undefined },
+    maxDate: { type: String, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -78,6 +83,10 @@ export const MdyDaterangeField = defineComponent({
       widgetId: widgetId.value,
       // One value, two readers: the grid the controller lays out and the headers drawn over it.
       firstDayOfWeek: dateLocale.firstDayOfWeek,
+      // The limits the document declared. The controller refuses a day outside them and marks the
+      // cell; a renderer that cannot be handed them offers every day.
+      minDate: props.minDate ?? null,
+      maxDate: props.maxDate ?? null,
     }, reactivity);
 
     // The panel's state does not live on the field handle, so a `computed` over it would read

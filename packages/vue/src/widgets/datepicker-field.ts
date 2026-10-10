@@ -62,7 +62,12 @@ export const MdyDatepickerField = defineComponent({
      * them not to follow the next one.
      */
     supportingText: { type: String, required: false, default: undefined },
-    locale: { type: String, default: "en" },
+    locale: { type: String, default: "en" },    /**
+     * The first and last day that may be chosen, as ISO dates. A day outside them is drawn disabled
+     * and refused when pressed.
+     */
+    minDate: { type: String, required: false, default: undefined },
+    maxDate: { type: String, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -84,6 +89,10 @@ export const MdyDatepickerField = defineComponent({
       // unsaid, the cells start on Sunday whatever the page's language, and the headers above them
       // are then either wrong or right by the accident of the locale being English.
       firstDayOfWeek: dateLocale.firstDayOfWeek,
+      // The limits the document declared. The controller refuses a day outside them and marks the
+      // cell; a renderer that cannot be handed them offers every day.
+      minDate: props.minDate ?? null,
+      maxDate: props.maxDate ?? null,
     }, reactivity);
 
     // The calendar's own state — which month is in view, where the reading position is, whether the
