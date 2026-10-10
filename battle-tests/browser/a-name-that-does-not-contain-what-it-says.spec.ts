@@ -74,6 +74,16 @@ for (const host of HOSTS) {
 
       const found = await page.evaluate((selector) => {
         const normalise = (text: string) => text.replace(/\s+/g, " ").trim().toLowerCase();
+        /**
+         * The text a name computed from content carries: what is under `aria-hidden="true"` is out
+         * of the accessibility tree and contributes nothing, so a placeholder hidden that way is not
+         * part of a name however it reads on screen.
+         */
+        const spoken = (element: Element): string => {
+          const copy = element.cloneNode(true) as Element;
+          copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+          return copy.textContent ?? "";
+        };
         /** The accessible name as it is computed, by the routes a control may be named through. */
         const nameOf = (element: Element): string => {
           // **`aria-labelledby` first.** The naming rules put the reference before the literal, so an
@@ -84,7 +94,7 @@ for (const host of HOSTS) {
           const by = element.getAttribute("aria-labelledby");
           if (by !== null) {
             const joined = by.split(/\s+/)
-              .map((id) => document.getElementById(id)?.textContent ?? "")
+              .map((id) => { const named = document.getElementById(id); return named === null ? "" : spoken(named); })
               .join(" ").trim();
             if (joined !== "") return joined;
           }
@@ -101,7 +111,7 @@ for (const host of HOSTS) {
           const wrapping = element.closest("label");
           if (wrapping !== null && (wrapping.textContent ?? "").trim() !== "") return wrapping.textContent ?? "";
           // Named by its own content, which is the ordinary case and the one that passes trivially.
-          return element.textContent ?? "";
+          return spoken(element);
         };
         /**
          * Whether what a control shows is its label or its value.

@@ -24,7 +24,7 @@ import type { MdyDateRangeValue } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -61,7 +61,12 @@ export const MdyDaterangeField = defineComponent({
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
     locale: { type: String, default: "en" },
-    separator: { type: String, default: "–" },
+    separator: { type: String, default: "–" },    /**
+     * The first and last day that may be chosen, as ISO dates. A day outside them is drawn disabled
+     * and refused when pressed.
+     */
+    minDate: { type: String, required: false, default: undefined },
+    maxDate: { type: String, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -78,6 +83,10 @@ export const MdyDaterangeField = defineComponent({
       widgetId: widgetId.value,
       // One value, two readers: the grid the controller lays out and the headers drawn over it.
       firstDayOfWeek: dateLocale.firstDayOfWeek,
+      // The limits the document declared. The controller refuses a day outside them and marks the
+      // cell; a renderer that cannot be handed them offers every day.
+      minDate: props.minDate ?? null,
+      maxDate: props.maxDate ?? null,
     }, reactivity);
 
     // The panel's state does not live on the field handle, so a `computed` over it would read
@@ -158,6 +167,8 @@ export const MdyDaterangeField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("daterange", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
@@ -166,11 +177,14 @@ export const MdyDaterangeField = defineComponent({
           // Read from the projection, never spelled here: the part is called `startControl` and its
           // id is `__start`, and a `for` built out of the part name points at nothing.
           for: parts.startControl?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         entry("start"),
         // Between the two boxes and read by nobody: what it means is already said by the two
         // controls having their own names, and a screen reader announcing "en dash" between them
@@ -181,7 +195,6 @@ export const MdyDaterangeField = defineComponent({
         // open, the panel it names and the label it is named by. Written by hand it carried a
         // guess at three of them and the panel relation not at all.
         h("button", partProps(parts.toggle, {
-          ref: anchor,
           type: "button",
           // The act, from the dictionary. Named by the field's caption instead, this door announced
           // itself as the field — and a range opener borrowing the calendar's message would say
@@ -220,7 +233,7 @@ export const MdyDaterangeField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "daterange"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

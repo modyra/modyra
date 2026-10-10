@@ -28,10 +28,13 @@ import {
   quantityAnnouncement,
   chipActionName,
   chosenKeyOrder,
+  defaultOptionKey,
+  isTypeaheadCharacter,
+  wayBackActionName,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
-import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
+import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -58,6 +61,11 @@ const classesOf = (part: string): string => declared[part]?.classes.join(" ") ??
  */
 const POINTER_DOOR = MDY_POPUP_OPENERS.multiselect?.alsoOpensFrom;
 const roleOf = (part: string): string | undefined => declared[part]?.role ?? undefined;
+/**
+ * An option's key, spelled the way the controller spells it. `String(value)` turns every object into
+ * `[object Object]`, so a held object would match no option and draw no chip.
+ */
+const keyOf = (option: MdySelectOption<unknown>): string => defaultOptionKey(option.value);
 
 export const MdyMultiselectField = defineComponent({
   name: "MdyMultiselectField",
@@ -175,9 +183,9 @@ export const MdyMultiselectField = defineComponent({
         addedMany: MDY_I18N_MESSAGES_DEFAULT.selectionAddedMany,
         removedMany: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedMany,
         removedManyLast: MDY_I18N_MESSAGES_DEFAULT.selectionRemovedManyLast,
-      }, (key) => state.value.options.find((option) => String(option.value) === key)?.label ?? key);
+      }, (key) => state.value.options.find((option) => keyOf(option) === key)?.label ?? key);
       const labelOf = (key: string): string =>
-        state.value.options.find((option) => String(option.value) === key)?.label ?? key;
+        state.value.options.find((option) => keyOf(option) === key)?.label ?? key;
 
       if (sentence !== null && sentence !== "") {
         announcement.value = sentence;
@@ -253,6 +261,21 @@ export const MdyMultiselectField = defineComponent({
         case "toggle":
           run(controller.dispatch({ type: "select" }));
           break;
+        case "typeahead":
+          // A searchable panel answers typing by narrowing the list, so the letter is the filter
+          // box's; without one, it moves the cursor to the first option it starts.
+          if (props.searchable || !isTypeaheadCharacter(event.key, event)) return;
+          run(controller.dispatch({ type: "typeahead", character: event.key }));
+          break;
+        case "undo":
+          // With nothing to put back the shortcut is the page's: consumed here, it would take the
+          // browser's own undo from a person who has nothing to undo in this field.
+          if (state.value.wayBack === null) return;
+          // Nor inside a text box: there the gesture undoes what was just typed, and taking it
+          // would put a value back and lose the word.
+          if (event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]") !== null) return;
+          run(controller.dispatch({ type: "undo" }));
+          break;
         case "step": {
           // The per-row quantity, and the reason this key exists: the steppers sit on a row, so a
           // tab stop cannot name which row it reaches — only a key pressed on the active one can.
@@ -269,9 +292,20 @@ export const MdyMultiselectField = defineComponent({
       event.preventDefault();
     };
 
+    const wayBackName = computed(() => wayBackActionName(
+      state.value.wayBack,
+      {
+        label: MDY_I18N_MESSAGES_DEFAULT.wayBackLabel,
+        removed: MDY_I18N_MESSAGES_DEFAULT.wayBackRemoved,
+        moved: MDY_I18N_MESSAGES_DEFAULT.wayBackMoved,
+        cleared: MDY_I18N_MESSAGES_DEFAULT.wayBackCleared,
+      },
+      (key) => state.value.options.find((option) => keyOf(option) === key)?.label ?? key,
+    ));
+
     /** One row in the panel. What it owes beyond its label is the variant's answer, not this file's. */
     const optionRow = (option: MdySelectOption<string>): VNode => {
-      const key = String(option.value);
+      const key = keyOf(option);
       const count = state.value.counts.get(key) ?? 0;
       return h("div", { class: classesOf("optionWrapper") }, [
         // The element is the variant's answer: a set of toggles draws each choice as a button,
@@ -307,13 +341,15 @@ export const MdyMultiselectField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("multiselect", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
@@ -325,9 +361,12 @@ export const MdyMultiselectField = defineComponent({
       // for everyone who cannot read the model.
       const chosen = chosenKeyOrder(state.value);
       const held = chosen
-        .map((key) => state.value.options.find((option) => String(option.value) === key))
+        .map((key) => state.value.options.find((option) => keyOf(option) === key))
         .filter((option): option is NonNullable<typeof option> => option !== undefined);
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("div", {
           class: classesOf("box"),
           // Only when the press lands on the box itself. A chip inside it takes or moves that value,
@@ -351,7 +390,7 @@ export const MdyMultiselectField = defineComponent({
           h("div", partProps(parts.chips, { class: classesOf("chips"), role: roleOf("chips") }), [
             h("div", { class: classesOf("chipRow"), role: roleOf("chipRow") },
               held.map((option, index) => {
-                const key = String(option.value);
+                const key = keyOf(option);
                 const held_ = state.value.counts.get(key) ?? 1;
                 /** One of the chip's own controls, named for the act and the value it acts on. */
                 const control = (part: "chipMove" | "chipStep" | "chipRemove", verb: string, act: () => void): VNode =>
@@ -411,9 +450,9 @@ export const MdyMultiselectField = defineComponent({
                   // matched, so the label sat at its text's width and the chip overflowed the row it
                   // had been capped to — the horizontal axis a page that already scrolls must not gain.
                   h("span", { class: MDY_CHIP_CLASSES.label }, option.label),
-                  ...(props.mode === "multi"
-                    ? [h("span", { class: classesOf("chipCount") }, held_ > 1 ? String(held_) : "")]
-                    : []),
+                  // Owed wherever a value is held, in either mode: it says how many of this value the
+                  // field holds, and a value held once says nothing.
+                  h("span", { class: classesOf("chipCount") }, held_ > 1 ? String(held_) : ""),
                   ...stepsUp, ...later,
                   control("chipRemove", MDY_I18N_MESSAGES_DEFAULT.chipRemoveLabel,
                     () => run(controller.dispatch({ type: "toggle", optionKey: key }))),
@@ -424,11 +463,13 @@ export const MdyMultiselectField = defineComponent({
           // A button, not a text box: the placeholder lives *inside* it, and an `<input>` cannot
           // hold anything. What a person types goes in the panel's filter, not here.
           h("button", partProps(parts.trigger, {
-            ref: anchor,
             type: "button",
             onClick: () => run(controller.dispatch({ type: "toggleOpen" })),
           }), [
-            h("span", partProps(parts.placeholder, { class: classesOf("placeholder") }), "Choose…"),
+            // Standing in for the chips, so only while there are none.
+            ...(held.length === 0
+              ? [h("span", partProps(parts.placeholder, { class: classesOf("placeholder") }), "Choose…")]
+              : []),
           ]),
           // The way back from a destructive act, and the one control that must exist whether or not
           // there is anything to undo: a button that appears only once something is lost is a
@@ -441,8 +482,13 @@ export const MdyMultiselectField = defineComponent({
             // undo. A control that comes and goes moves the one beside it under the hands of
             // somebody aiming at it.
             "aria-disabled": String(state.value.wayBack === null),
+            // Named for what it would bring back, and the bare label while there is nothing: beside
+            // the control that discards everything, a name that does not say which act it reverses
+            // leaves a person to find out by pressing it.
+            "aria-label": wayBackName.value,
+            title: wayBackName.value,
             onClick: () => run(controller.dispatch({ type: "undo" })),
-          }, "Undo"),
+          }, MDY_I18N_MESSAGES_DEFAULT.wayBackLabel),
           h("button", {
             type: "button", class: classesOf("clearAll"), "aria-label": "Clear all",
             "aria-disabled": String(state.value.selectedKeys.size === 0),
@@ -476,7 +522,7 @@ export const MdyMultiselectField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "multiselect"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

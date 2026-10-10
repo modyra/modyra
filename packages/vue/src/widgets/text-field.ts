@@ -31,7 +31,7 @@ import {
   numberEntered,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -143,15 +143,17 @@ export const MdyTextField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf(props.kind, props.field);
       const children: VNode[] = [];
 
       // Drawn only when the field was given words to show, which is what the contract's `optional`
       // says about it — not omitted to save an element.
       if (props.label !== "") {
-        children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
+        children.push(h("label", partProps(parts.label, { class: labelStateClasses(shell) }), labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, [
+      children.push(h("div", { class: wrapperClasses(contract.parts.inputWrapper.classes, shell) }, [
         h(tag, partProps(parts.input, {
           // The value the model holds, on the control that shows it.
           //
@@ -164,6 +166,9 @@ export const MdyTextField = defineComponent({
           // a hint shown inside the empty box, and the name it has where nothing captions it.
           ...(props.placeholder === "" ? {} : { placeholder: props.placeholder }),
           ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
+          // Three lines at rest, said in lines rather than a length, so it still means three lines
+          // when a person has enlarged their text. ADR 0181.
+          ...(tag === "textarea" ? { rows: 3 } : {}),
           onInput: (event: Event) => controller.dispatch({
             type: "input",
             // A numeric field holds a number, so the box's text is converted before it reaches the
@@ -184,7 +189,7 @@ export const MdyTextField = defineComponent({
         children.push(drawErrors(parts.error, props.field, props.kind));
       }
 
-      return h("div", { class: rootClasses(contract, { touched: props.field.touched() }), ref: root }, children);
+      return h("div", { class: rootClasses(contract, shell), ref: root }, children);
     };
   },
 });

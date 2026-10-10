@@ -21,7 +21,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
+import { drawDeclaredUnder, partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -93,6 +93,8 @@ export const MdyBooleanField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf(props.kind, props.field);
       const children: VNode[] = [
         // The control's classes come from the catalogue, not from the projection: the projection
         // carries ids, names and ARIA, and for some kinds it carries no class at all. A text field's
@@ -119,11 +121,13 @@ export const MdyBooleanField = defineComponent({
         // rather than inventing either. The text field's projection carries the `for` itself, this
         // kind's does not, and a renderer cannot tell which without looking — so it is set from the
         // control's own id, which is right in both cases.
-        h("label", partProps(parts.label, { for: parts.input?.id }), [...drawUnder("label"), props.label, requiredMark(props.field)]),
+        // The words beside the box, not a caption over a value: the box shows whether it is on, so
+        // of the caption's states they wear only the refusal, as in every other renderer.
+        h("label", partProps(parts.label, { class: labelStateClasses({ error: shell.error }), for: parts.input?.id }), [...drawUnder("label"), props.label, requiredMark(props.field)]),
       ];
 
       const outer: VNode[] = [
-        h("div", { class: contract.parts.inputWrapper.classes.join(" ") }, children),
+        h("div", { class: wrapperClasses(contract.parts.inputWrapper.classes, shell) }, children),
       ];
       if (parts.description !== undefined) outer.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));
       // The list and what is in it. Framed and left empty, it was a reference `aria-describedby`
@@ -132,7 +136,7 @@ export const MdyBooleanField = defineComponent({
         outer.push(drawErrors(parts.error, props.field, props.kind));
       }
 
-      return h("div", { class: rootClasses(contract, { touched: props.field.touched() }), ref: root }, outer);
+      return h("div", { class: rootClasses(contract, shell), ref: root }, outer);
     };
   },
 });

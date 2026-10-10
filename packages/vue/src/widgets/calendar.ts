@@ -14,7 +14,7 @@ import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
   keyBindingFor,
   type MdyWidgetKind,
 } from "@modyra/widgets";
-import type { MdyPartContract } from "@modyra/widgets";
+import type { MdyDatepickerFieldCell, MdyDaterangeFieldCell, MdyPartContract } from "@modyra/widgets";
 import type { MdyDateLocale } from "@modyra/core/datetime";
 import { partProps, type MdyDeclaredPart } from "./part.js";
 
@@ -22,10 +22,8 @@ import { partProps, type MdyDeclaredPart } from "./part.js";
 const DAYS_IN_WEEK = 7;
 
 type MdyCalendarKind = "datepicker" | "daterange";
-interface MdyCalendarCell {
-  readonly iso: string;
-  readonly day: number;
-}
+/** What a cell needs to be drawn, read from the cell both date controllers lay out. */
+type MdyCalendarCell = Pick<MdyDatepickerFieldCell & MdyDaterangeFieldCell, "iso" | "day" | "disabled">;
 type MdyProjectedParts = Readonly<Record<string, MdyPartContract | undefined>>;
 
 const partsOf = (kind: MdyCalendarKind): Readonly<Record<string, MdyDeclaredPart | undefined>> =>
@@ -126,6 +124,8 @@ export const drawCalendar = (options: {
         h("button", partProps(parts[cell.iso], {
           type: "button",
           class: cls("gridcell"),
+          // A day the limits refuse is a button that cannot be pressed, not one that ignores it.
+          disabled: cell.disabled,
           onClick: () => options.onPick(cell.iso),
           // A range shows what it would take before it takes it, and that answer belongs to the
           // contract: the renderer reports where the pointer is and draws what comes back.

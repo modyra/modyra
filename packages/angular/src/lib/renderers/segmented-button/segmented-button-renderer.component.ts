@@ -78,7 +78,6 @@ import { MdySelectOption } from "../../core/types";
             [disabled]="isDisabled() || opt.disabled === true"
             [attr.data-seg-index]="i"
             (change)="onSelect(opt.value)"
-            [attr.aria-disabled]="isDisabled() || opt.disabled === true"
             [attr.tabindex]="tabIndexFor(i)"
           />
           <mdy-icon

@@ -19,7 +19,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
+import { drawDeclaredUnder, partProps, rootClasses, labelStateClasses, shellStateOf } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -81,12 +81,14 @@ export const MdyFileField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("file", props.field);
       const children: VNode[] = [];
       // The caption names the control it belongs to, which `MDY_WIDGET_RELATIONS` declares and the
       // kit checks. The projection gives this kind's control no id of its own, so the label is given
       // the one the widget is identified by — the same id the control carries.
       if (props.label !== "") {
-        children.push(h("label", partProps(parts.label, { for: widgetId.value }), labelContent(props.label, props.field)));
+        children.push(h("label", partProps(parts.label, { class: labelStateClasses(shell), for: widgetId.value }), labelContent(props.label, props.field)));
       }
 
       children.push(h("div", partProps(parts.dropzone, { class: CONTRACT.parts.dropzone.classes.join(" ") }), [
@@ -126,7 +128,7 @@ export const MdyFileField = defineComponent({
       if (parts.error !== undefined) {
         children.push(drawErrors(parts.error, props.field, "file"));
       }
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }), ref: root }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root }, children);
     };
   },
 });

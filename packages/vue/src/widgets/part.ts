@@ -11,7 +11,15 @@
  * already; the filter is here so the intent is stated rather than inherited from a framework's
  * coincidence.
  */
-import { MDY_ARIA_DISABLED_PARTS, shellStateClasses, type MdyPartContract } from "@modyra/widgets";
+import {
+  MDY_ARIA_DISABLED_PARTS,
+  shellStateClasses,
+  valueIsPresent,
+  visibleErrorsOf,
+  type MdyPartContract,
+  type MdyWidgetKind,
+} from "@modyra/widgets";
+import type { MdyFieldHandle } from "@modyra/core";
 
 /**
  * The widget root's classes: the ones the contract declares, and the states the shell reflects.
@@ -26,14 +34,50 @@ import { MDY_ARIA_DISABLED_PARTS, shellStateClasses, type MdyPartContract } from
  */
 export function rootClasses(
   contract: { readonly rootClasses: readonly string[] },
-  state: { readonly touched?: boolean; readonly open?: boolean },
+  state: MdyShellState,
 ): string {
-  const shell = shellStateClasses({ touched: state.touched, open: state.open });
-  return [
-    ...contract.rootClasses,
-    ...Object.entries(shell.field).filter(([, isOn]) => isOn).map(([className]) => className),
-  ].join(" ");
+  return [...contract.rootClasses, ...switchedOn(shellStateClasses(state).field)].join(" ");
 }
+
+/** The states the shell reflects, in the words `shellStateClasses` takes them. */
+export type MdyShellState = Parameters<typeof shellStateClasses>[0];
+
+/**
+ * What the field is in, read off its handle the way every renderer reads it.
+ *
+ * Refused is what the control already says with `aria-invalid` — the errors a person is shown — so
+ * a caption and a control cannot tell two stories. Filled is the contract's own question about the
+ * value, not a truthiness test written here.
+ */
+export function shellStateOf(kind: MdyWidgetKind, field: MdyFieldHandle<unknown>, open?: boolean): MdyShellState {
+  return {
+    touched: field.touched(),
+    open,
+    disabled: field.disabled(),
+    readonly: field.readonly(),
+    error: visibleErrorsOf(field, kind).length > 0,
+    filled: valueIsPresent(kind, field.value()),
+  };
+}
+
+/**
+ * The input wrapper's classes: its declared ones and the states it reflects.
+ *
+ * A refused field is `--error` here and `--has-error` on its caption, a field held for review
+ * `--readonly`, one switched off `--disabled`. Without them a theme has nothing to paint, and a
+ * locked form reads as one waiting to be filled in.
+ */
+export function wrapperClasses(declared: readonly string[], state: MdyShellState): string {
+  return [...declared, ...switchedOn(shellStateClasses(state).control)].join(" ");
+}
+
+/** The caption's state classes, to go beside whatever classes the caption already carries. */
+export function labelStateClasses(state: MdyShellState): string {
+  return switchedOn(shellStateClasses(state).label).join(" ");
+}
+
+const switchedOn = (classes: Readonly<Record<string, boolean>>): string[] =>
+  Object.entries(classes).filter(([, isOn]) => isOn).map(([className]) => className);
 
 export type MdyVuePartProps = Record<string, unknown>;
 

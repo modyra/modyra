@@ -19,7 +19,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
-import { drawDeclaredUnder, partProps, rootClasses } from "./part.js";
+import { drawDeclaredUnder, partProps, rootClasses, labelStateClasses, shellStateOf } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -104,8 +104,10 @@ export const MdySliderField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("slider", props.field);
       const children: VNode[] = [];
-      if (props.label !== "") children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
+      if (props.label !== "") children.push(h("label", partProps(parts.label, { class: labelStateClasses(shell) }), labelContent(props.label, props.field)));
 
       children.push(h("div", { class: CONTRACT.parts[holder as "track"].classes.join(" ") }, [
         h("input", partProps(parts.input, {
@@ -147,7 +149,7 @@ export const MdySliderField = defineComponent({
       if (parts.error !== undefined) {
         children.push(drawErrors(parts.error, props.field, "slider"));
       }
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }), ref: root }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root }, children);
     };
   },
 });

@@ -43,7 +43,9 @@ const DRAWN_BY = {
   toggle: [MdyBooleanField, { kind: "toggle" }],
   radio: [MdyOptionField, { kind: "radio" }],
   segmented: [MdyOptionField, { kind: "segmented" }],
-  select: [MdySelectField, { searchable: true }],
+  // No shape forced: whether a select filters is the document's word, forwarded below, and
+  // `variantOf` turns it into the native or the custom shape as it does for every other host.
+  select: [MdySelectField, {}],
   multiselect: [MdyMultiselectField, { mode: "single" }],
   slider: [MdySliderField, {}],
   file: [MdyFileField, {}],
@@ -63,9 +65,11 @@ const NOT_A_PROP = ["name", "kind", "label", "initialValue", "validators"];
  * first, so mounting straight into the group a document declared would delete the field mounted
  * before it. The container is what makes several fields in one group possible.
  *
- * **`widgetId` is always passed**, never left to the component. Vue requires it and React can derive
- * one, so a host that passes it always is correct for both, and the day a renderer that could have
- * generated one is added, nothing here changes.
+ * **`widgetId` is never passed.** The component derives it from the field's path and its form's
+ * scope, which is what a consumer who names nothing gets. A host that writes the bare name puts the
+ * path's separator into ids and gives two forms built from one document the same ids. A host that
+ * joins a prefix with `__` writes the id delimiter, which the id policy refuses, so nothing renders.
+ * A scope the caller asked for travels as `idScope`, the way the other hosts hand it over.
  */
 function mountOneField({ declared, handle, into, idPrefix }) {
   const drawn = DRAWN_BY[declared.kind];
@@ -87,9 +91,7 @@ function mountOneField({ declared, handle, into, idPrefix }) {
   }
   props.field = handle;
   props.label = declared.label ?? declared.name;
-  props.widgetId = idPrefix === null || idPrefix === undefined
-    ? declared.name
-    : `${idPrefix}__${declared.name}`;
+  if (idPrefix !== null && idPrefix !== undefined) props.idScope = String(idPrefix);
 
   const container = document.createElement("div");
   into.append(container);

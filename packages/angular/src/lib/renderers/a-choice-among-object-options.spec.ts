@@ -1,4 +1,5 @@
 import { Component } from "@angular/core";
+import { MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { TestBed } from "@angular/core/testing";
 import { field, mdyForm } from "../core/typed-form";
 import { MdyFormComponent } from "../form/mdy-form.component";
@@ -91,6 +92,16 @@ describe("a radio group and a segmented control over object-valued options", () 
     it(`${kind}: an option switched off is disabled on its own, the others stay live`, () => {
       const { inputs } = mount();
       expect(inputs(kind).map((input) => input.disabled)).toEqual([false, true, false]);
+    });
+
+    // The native `disabled` is what tells assistive technology an option is off. The part declares
+    // the states it may assert, and an `aria-disabled` it does not declare is a second, unchecked
+    // statement of the same thing on an element that already makes it.
+    it(`${kind}: a switched-off option asserts no state its part does not declare`, () => {
+      const { inputs } = mount();
+      const declared = (MDY_WIDGET_CONTRACTS[kind].parts as Record<string, { states?: readonly string[] }>)["optionControl"]?.states ?? [];
+      const asserted = inputs(kind).map((input) => input.getAttribute("aria-disabled"));
+      expect(asserted).toEqual(declared.includes("disabled") ? ["false", "true", "false"] : [null, null, null]);
     });
   }
 

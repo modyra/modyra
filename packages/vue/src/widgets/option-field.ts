@@ -29,7 +29,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -110,8 +110,10 @@ export const MdyOptionField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf(props.kind, props.field);
       const children: VNode[] = [];
-      if (props.label !== "") children.push(h("label", partProps(parts.label), labelContent(props.label, props.field)));
+      if (props.label !== "") children.push(h("label", partProps(parts.label, { class: labelStateClasses(shell) }), labelContent(props.label, props.field)));
 
       children.push(h("div", partProps(parts.group),
         props.options.map((option) => {
@@ -122,7 +124,9 @@ export const MdyOptionField = defineComponent({
             // control, which is what assistive tech reads and what a form submits. Its *classes*
             // belong to the row instead — the contract paints the option on the `option` element —
             // so the control carries only the classes its own part declares.
-            h("input", partProps({ ...parts[key], classes: [] }, {
+            // Not its `aria-disabled` either: the native `disabled` the projection also carries is
+            // what says the choice is off, and the control part declares no state to assert it again.
+            h("input", partProps({ ...parts[key], classes: [], attributes: { ...parts[key]?.attributes, "aria-disabled": null } }, {
               type: "radio",
               class: classesOf("optionControl"),
               name: widgetId.value,
@@ -143,7 +147,7 @@ export const MdyOptionField = defineComponent({
       if (parts.error !== undefined) {
         children.push(drawErrors(parts.error, props.field, props.kind));
       }
-      return h("div", { class: rootClasses(contract, { touched: props.field.touched() }), ref: root }, children);
+      return h("div", { class: rootClasses(contract, shell), ref: root }, children);
     };
   },
 });

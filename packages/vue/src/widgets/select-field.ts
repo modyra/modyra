@@ -26,7 +26,7 @@ import {
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -79,7 +79,12 @@ export const MdySelectField = defineComponent({
     supportingText: { type: String, required: false, default: undefined },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
-    placeholder: { type: String, default: "Select…" },
+    /**
+     * The words standing in for a value. Absent, the contract's default words are shown; given, the
+     * platform chooser keeps its "nothing chosen" entry after a choice, because the document has
+     * something to say about the absence.
+     */
+    placeholder: { type: String, required: false, default: undefined },
     /**
      * Whether this select filters. It decides the shape rather than an option on it: `variantOf`
      * answers `custom` for a select that filters and `native` for one that does not, and the two
@@ -249,28 +254,44 @@ export const MdySelectField = defineComponent({
      * by having an option for it: without one, index 0 is a real choice, the control reads the first
      * label while the form holds nothing, and the field looks answered when it is not.
      */
+    const placeholderText = (): string => props.placeholder ?? MDY_I18N_MESSAGES_DEFAULT.selectPlaceholder;
+
     const drawNative = (): VNode => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("select", props.field, state.value.open);
       const children: VNode[] = [];
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell) }, [
         h("select", partProps(parts.trigger, {
           name: widgetId.value,
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value })),
         }), [
-          h("option", { class: classesOf("placeholder"), value: "", disabled: true,
-            selected: state.value.selectedKey === null }, props.placeholder),
-          ...state.value.options.map((option) => h("option", {
-            value: String(option.value),
-            selected: String(option.value) === state.value.selectedKey,
-          }, option.label)),
+          // Kept while it is the state, or while the document gave it words. Once something is
+          // chosen and there is nothing to say about the absence, the entry goes: a list still
+          // offering "nothing" after a choice has a row nobody can use.
+          ...(state.value.selectedKey === null || props.placeholder !== undefined
+            ? [h("option", { class: classesOf("placeholder"), value: "", disabled: true,
+              selected: state.value.selectedKey === null }, placeholderText())]
+            : []),
+          // The controller's key, never `String()`: an `<option>`'s value is a string, so object
+          // values would all read `[object Object]` and a choice would resolve to the first of them.
+          // And the document's own availability, or the platform offers a refused option as a choice.
+          ...state.value.options.map((option, index) => {
+            const key = state.value.optionKeys[index] ?? defaultOptionKey(option.value);
+            return h("option", {
+              value: key,
+              disabled: option.disabled === true,
+              selected: key === state.value.selectedKey,
+            }, option.label);
+          }),
         ]),
         // The foundation takes the platform's arrow off every native chooser so a page of them
         // reads as one page, and a kind that removes an affordance owes one back. Beside the
@@ -285,17 +306,20 @@ export const MdySelectField = defineComponent({
       // the platform draws its chooser: `invalid` requires the part in both shapes, and only one of
       // them had it.
       children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched() }) }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell) }, children);
     };
 
     return () => {
       if (variantOf("select", { searchable: props.searchable }) === "native") return drawNative();
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("select", props.field, state.value.open);
       const open = state.value.open;
       // The controller's list, not the prop: it has already reconciled a held value the options do
       // not contain, and looking in the prop list leaves that value invisible — the field shows a
       // placeholder while holding something a person can neither see nor replace.
-      const selected = state.value.options.find((option) => String(option.value) === state.value.selectedKey);
+      const selected = state.value.options.find((option, index) =>
+        (state.value.optionKeys[index] ?? defaultOptionKey(option.value)) === state.value.selectedKey);
       const children: VNode[] = [];
 
       // The trigger's name is a relation to this element, and the projection points it at the id
@@ -307,13 +331,15 @@ export const MdySelectField = defineComponent({
           // The label names the trigger both ways: the relation the projection points at, and the
           // `for` that makes the caption itself a way to reach the control.
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("button", partProps(parts.trigger, {
-          ref: anchor,
           type: "button",
           onClick: () => {
             run(controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" }));
@@ -324,7 +350,7 @@ export const MdySelectField = defineComponent({
           // what the control *is*, and a person hears "T Select…" where the control is a T. The
           // chosen value stays in the name, because that is what the control is holding.
           selected === undefined
-            ? h("span", { class: classesOf("placeholder"), "aria-hidden": "true" }, props.placeholder)
+            ? h("span", { class: classesOf("placeholder"), "aria-hidden": "true" }, placeholderText())
             : h("span", { class: classesOf("value") }, selected.label),
         ]),
         // Beside the trigger, because that is where the contract puts it: `arrow` declares
@@ -370,7 +396,7 @@ export const MdySelectField = defineComponent({
       // projection publishes no shell parts, so the id is the factory's in both shapes.
       children.push(drawErrors(errorsPartFor(widgetId.value), props.field, "select"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

@@ -24,7 +24,7 @@ import {
 import { observerFor } from "@modyra/core";
 import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -62,7 +62,12 @@ export const MdyDatepickerField = defineComponent({
      * them not to follow the next one.
      */
     supportingText: { type: String, required: false, default: undefined },
-    locale: { type: String, default: "en" },
+    locale: { type: String, default: "en" },    /**
+     * The first and last day that may be chosen, as ISO dates. A day outside them is drawn disabled
+     * and refused when pressed.
+     */
+    minDate: { type: String, required: false, default: undefined },
+    maxDate: { type: String, required: false, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -84,6 +89,10 @@ export const MdyDatepickerField = defineComponent({
       // unsaid, the cells start on Sunday whatever the page's language, and the headers above them
       // are then either wrong or right by the accident of the locale being English.
       firstDayOfWeek: dateLocale.firstDayOfWeek,
+      // The limits the document declared. The controller refuses a day outside them and marks the
+      // cell; a renderer that cannot be handed them offers every day.
+      minDate: props.minDate ?? null,
+      maxDate: props.maxDate ?? null,
     }, reactivity);
 
     // The calendar's own state — which month is in view, where the reading position is, whether the
@@ -158,6 +167,8 @@ export const MdyDatepickerField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("datepicker", props.field, state.value.open);
       const cells = state.value.cells;
       const children: VNode[] = [];
 
@@ -165,11 +176,14 @@ export const MdyDatepickerField = defineComponent({
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: defaultWidgetIdFactory.part(widgetId.value, "trigger"),
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         // The projection calls this part the trigger and gives it everything the contract asks of
         // the control: the combobox role, the relation to the grid it opens, and the one to the
         // description. Written by hand instead, it carried none of them.
@@ -211,7 +225,6 @@ export const MdyDatepickerField = defineComponent({
           },
         })),
         h("button", {
-          ref: anchor,
           // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
           // staying pressable opens a panel over a field the model has taken out of play.
           disabled: props.field.disabled(),
@@ -250,7 +263,7 @@ export const MdyDatepickerField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "datepicker"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

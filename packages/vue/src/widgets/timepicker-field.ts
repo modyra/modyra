@@ -23,12 +23,13 @@ import {
   timepickerPartSelector,
   timepickerTabOrder,
   keyBindingFor,
-
-  timepickerPlaceholder,} from "@modyra/widgets";
+  keyMeans,
+  timepickerPlaceholder,
+} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
-import type { MdyTimeFormat } from "@modyra/core/datetime";
-import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
+import { formatTimeAs, parseAnyTime, type MdyTimeFormat } from "@modyra/core/datetime";
+import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -92,6 +93,13 @@ export const MdyTimepickerField = defineComponent({
       handle: props.field,
       widgetId: widgetId.value,
       ...(props.format === undefined ? {} : { format: props.format }),
+      // The reading is this renderer's; the judgement is the controller's, so a typed entry means
+      // the same thing here as in every renderer. Canonical, as the dial commits: a time is `HH:mm`
+      // wherever it is held.
+      parseEntry: (text) => {
+        const parsed = parseAnyTime(text.trim().toUpperCase(), controller.state().format);
+        return parsed ? formatTimeAs(parsed, "24h") : null;
+      },
     }, reactivity);
 
     // Measured and placed against the control that opens it, and drawn outside the field so it
@@ -178,6 +186,18 @@ export const MdyTimepickerField = defineComponent({
         event.preventDefault();
         return;
       }
+      // The contract's commit, asked with the press so a held modifier is not read as it. A button
+      // answers Enter for itself — the platform turns it into a click — so the dialog speaks only for
+      // the rest of it, which is where a person setting the time by keyboard stands.
+      if (
+        !event.defaultPrevented
+        && (event.target as Element | null)?.closest?.("button") == null
+        && keyMeans("timepicker", event, "commit", true)
+      ) {
+        event.preventDefault();
+        run(controller.dispatch({ type: "confirm" }));
+        return;
+      }
       if (event.key !== "Tab") return;
       const ring = stops();
       if (ring.length === 0) return;
@@ -212,17 +232,22 @@ export const MdyTimepickerField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("timepicker", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("input", partProps(parts.trigger, {
           // The name, where nothing on the page captions the control. The projection names a
           // control against a caption that exists; this is the other case, and without it a
@@ -233,9 +258,12 @@ export const MdyTimepickerField = defineComponent({
           // according to the format. Without it the box says nothing about what to type, and a
           // person guesses at a format the field will refuse.
           placeholder: timepickerPlaceholder(state.value.format),
-          value: state.value.entryText,
+          // What the controller says to show: the held time in this field's notation, or the
+          // keystrokes it could not read.
+          value: state.value.display,
+          // Handed over as typed, to be judged: readable commits, unreadable is kept and explained.
           onChange: (event: Event) =>
-            run(controller.dispatch({ type: "set-time", time: (event.target as HTMLInputElement).value })),
+            run(controller.dispatch({ type: "type", text: (event.target as HTMLInputElement).value })),
           // The door the contract names first. `MDY_POPUP_OPENERS` declares the *control* as this
           // kind's opener and the toggle beside it as a second way in; drawn without a handler, the
           // declared one was dead and a person pressing the field got nothing.
@@ -259,7 +287,6 @@ export const MdyTimepickerField = defineComponent({
         })),
         h("button", {
           type: "button",
-          ref: anchor,
         class: classesOf("toggle"),
           // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
           // staying pressable opens a panel over a field the model has taken out of play.
@@ -325,7 +352,7 @@ export const MdyTimepickerField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "timepicker"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

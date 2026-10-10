@@ -321,6 +321,14 @@ state instead: it keeps its place in the tree, its selector and its ARIA, and on
 changes. This is what lets a theme restyle a control down to its anatomy while the conformance
 checks, which assert that every declared part is present, keep passing unchanged.
 
+**The words beside a box do not show whether it is ticked.** A checkbox's or switch's caption looks
+the same checked and unchecked. Only the box or the track shows the value. `--filled` is the
+floating-label signal: it lifts and shrinks a caption that sits inside an empty box. A caption next
+to a box has no empty box to leave, so on a boolean the class would move the words for no reason, and
+the caption would become a second, competing state signal. Disabled, error and focus may still
+restyle the caption, because they describe the whole control rather than its value.
+[ADR 0215](docs/architecture/0215-a-caption-beside-a-box-does-not-say-whether-it-is-ticked.md).
+
 ## Overlays
 
 **The primitive positions; a separate class paints.** `.mdy-popup` owns where a popup is, how it is

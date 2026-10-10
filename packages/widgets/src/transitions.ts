@@ -699,7 +699,9 @@ export function keyBindingFor(
     const named = binding.key === name
       || (binding.key === MDY_ANY_PRINTABLE_KEY && [...name].length === 1 && name !== " ");
     if (!named) return false;
-    return press === null || matchesKeyGesture(binding, press);
+    // The modifier is read against the character pressed: the printable binding's own key is a
+    // stand-in that no press ever equals, so compared as written it refused every real keystroke.
+    return press === null || matchesKeyGesture({ ...binding, key: name }, press);
   };
   return MDY_WIDGET_KEYBOARD[kind].find(
     (binding) => answers(binding)

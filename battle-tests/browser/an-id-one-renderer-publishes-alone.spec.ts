@@ -79,8 +79,10 @@ for (const kind of KINDS) {
 
     // Only parts every renderer drew are compared. A part one of them does not build at all is a
     // different defect, and `a-part-the-contract-requires.spec.ts` is the file that owns it.
+    // Every host in the shared list, not a list written here: a renderer added to the bench and left
+    // out of this filter has its undrawn parts read as `none` and compared as missing ids.
     const everywhere = Object.keys(seen.plain!)
-      .filter((part) => part in seen.lit! && part in seen.angular!);
+      .filter((part) => HOSTS.every((host) => part in seen[host.name]!));
     expect(
       everywhere.length,
       `the three renderers share no parts for a ${kind}, so nothing here is being compared`,

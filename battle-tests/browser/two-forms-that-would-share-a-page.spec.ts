@@ -77,10 +77,19 @@ for (const host of HOSTS) {
       const second = document.querySelector('[data-form="two"]');
       const first = document.querySelector('[data-form="one"]');
       const active = document.activeElement;
-      return {
-        inSecond: second !== null && active !== null && second.contains(active),
-        inFirst: first !== null && active !== null && first.contains(active),
+      // A form owns what it contains and the panels its openers name. A panel drawn outside the
+      // field (ADR 0130) is still the field's (ADR 0167), so focus that went into it is in the form
+      // whose control opened it, wherever the panel sits in the document.
+      const owns = (form: Element | null): boolean => {
+        if (form === null || active === null) return false;
+        if (form.contains(active)) return true;
+        return Array.from(form.querySelectorAll("[aria-controls]")).some((opener) =>
+          (opener.getAttribute("aria-controls") ?? "").split(/\s+/).some((id) => {
+            const panel = id === "" ? null : document.getElementById(id);
+            return panel !== null && (panel === active || panel.contains(active));
+          }));
       };
+      return { inSecond: owns(second), inFirst: owns(first) };
     });
 
     expect(landed.inSecond, "clicking a form's own label did not focus a control in that form").toBe(true);
