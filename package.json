@@ -7,7 +7,7 @@
     "setup": "pnpm install && pnpm run build:packages && pnpm run build:angular",
     "start": "npm run demo:angular",
     "start:lib": "npm run build:angular && npm --prefix examples/angular run start",
-    "build:angular": "pnpm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json packages/zod/tsconfig.json && ng-packagr -p packages/angular/ng-package.json -c packages/angular/tsconfig.lib.json && node scripts/prepare-angular-dist.mjs",
+    "build:angular": "npm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json packages/zod/tsconfig.json && ng-packagr -p packages/angular/ng-package.json -c packages/angular/tsconfig.lib.json && node scripts/prepare-angular-dist.mjs",
     "build:lib": "npm run build:angular",
     "pack:analyze": "node scripts/pack-analyze.mjs",
     "build:demo": "npm run build:angular && npm --prefix examples/angular run build",
