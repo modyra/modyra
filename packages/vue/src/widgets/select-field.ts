@@ -267,10 +267,17 @@ export const MdySelectField = defineComponent({
         }), [
           h("option", { class: classesOf("placeholder"), value: "", disabled: true,
             selected: state.value.selectedKey === null }, props.placeholder),
-          ...state.value.options.map((option) => h("option", {
-            value: String(option.value),
-            selected: String(option.value) === state.value.selectedKey,
-          }, option.label)),
+          // The controller's key, never `String()`: an `<option>`'s value is a string, so object
+          // values would all read `[object Object]` and a choice would resolve to the first of them.
+          // And the document's own availability, or the platform offers a refused option as a choice.
+          ...state.value.options.map((option, index) => {
+            const key = state.value.optionKeys[index] ?? defaultOptionKey(option.value);
+            return h("option", {
+              value: key,
+              disabled: option.disabled === true,
+              selected: key === state.value.selectedKey,
+            }, option.label);
+          }),
         ]),
         // The foundation takes the platform's arrow off every native chooser so a page of them
         // reads as one page, and a kind that removes an affordance owes one back. Beside the
@@ -295,7 +302,8 @@ export const MdySelectField = defineComponent({
       // The controller's list, not the prop: it has already reconciled a held value the options do
       // not contain, and looking in the prop list leaves that value invisible — the field shows a
       // placeholder while holding something a person can neither see nor replace.
-      const selected = state.value.options.find((option) => String(option.value) === state.value.selectedKey);
+      const selected = state.value.options.find((option, index) =>
+        (state.value.optionKeys[index] ?? defaultOptionKey(option.value)) === state.value.selectedKey);
       const children: VNode[] = [];
 
       // The trigger's name is a relation to this element, and the projection points it at the id
