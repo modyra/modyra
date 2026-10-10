@@ -989,7 +989,6 @@
         "mdy-supporting-text"
       ],
       "aria": [
-        "aria-disabled",
         "aria-hidden",
         "aria-label",
         "aria-labelledby"
