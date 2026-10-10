@@ -23,6 +23,7 @@ import {
 
   fieldDescribedBy,
   visibleErrorsOf,  overlayControlledId,
+  projectOverlayOpenerA11y,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
@@ -197,8 +198,9 @@ export const MdyColorsField = defineComponent({
           ref: anchor,
           class: classesOf("nativePicker"),
           disabled: props.field.disabled(),
-          "aria-expanded": String(state.value.open),
-          "aria-controls": overlayControlledId("colors", widgetId.value) ?? undefined,
+          // The relation the contract declares for this opener: what it promises, whether the
+          // panel is showing and what it controls, all from one projection.
+          ...projectOverlayOpenerA11y("colors", { widgetId: widgetId.value, open: state.value.open })?.attributes,
           // The act, from the dictionary; see the datepicker's door for why the caption is not it.
           "aria-label": messages.value.selectColorPrefix,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),

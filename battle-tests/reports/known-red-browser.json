@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-09-06T05:52:03Z",
-  "openReds": 69,
+  "recordedAt": "2026-10-10T15:28:11Z",
+  "openReds": 67,
   "bySeverity": {
-    "S1": 53,
+    "S1": 51,
     "S2": 16
   },
   "knownRed": [
@@ -23,7 +23,6 @@
     "a-list-you-cannot-type-your-way-into.spec.ts › typing a letter reaches the option that starts with it, vue",
     "a-mark-too-faint-to-find.spec.ts › every mark on a trailing control carries its own contrast, vue",
     "a-name-a-palette-was-given.spec.ts › a name a palette was given is the name that is heard, vue",
-    "a-name-a-palette-was-given.spec.ts › one palette is announced one way, whoever drew it",
     "a-name-that-does-not-contain-what-it-says.spec.ts › every control answers to the words written on it, vue",
     "a-number-that-counts-what-it-cannot-see.spec.ts › the mark reports the number of values it is covering for, vue",
     "a-number-you-change-with-arrows.spec.ts › the hour and minute segments carry what the contract declares, vue",
@@ -57,7 +56,6 @@
     "no-reference-that-points-at-nothing.spec.ts › no attribute names an id that is not there, vue",
     "one-gesture-three-answers.spec.ts › one press down reaches one value for a timepicker, in every renderer",
     "the-model-changing-under-the-page.spec.ts › every kind follows a value it was given, vue",
-    "the-ring-a-colours-panel-closes.spec.ts › the colours panel keeps the keyboard and gives it back, vue",
     "two-choices-that-become-one.spec.ts › two choices held at once are two chips, vue",
     "two-forms-that-would-share-a-page.spec.ts › two forms on one page keep their own ids, vue",
     "what-a-form-sends-is-what-the-field-holds.spec.ts › a form sends the value each field holds, vue",
