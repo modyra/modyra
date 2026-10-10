@@ -186,5 +186,5 @@ export type {
 
 export { sliderFillRatio } from "./text-field-controller.js";
 export { focusPartOnOpen } from "./focus-on-open.js";
-export { errorsVisible, fieldAccessibleName, fieldCanBeInvalid, fieldNameAttributes, formErrorsOf, nameIsAFallback, holdsUneditedValue, shownErrors, shownErrorsOf, showsAsInvalid, visibleErrorsOf } from "./verdict.js";
+export { errorsVisible, fieldAccessibleName, fieldAriaLabel, fieldCanBeInvalid, fieldNameAttributes, formErrorsOf, nameIsAFallback, holdsUneditedValue, shownErrors, shownErrorsOf, showsAsInvalid, visibleErrorsOf } from "./verdict.js";
 export type { MdyFieldVerdictSource } from "./verdict.js";

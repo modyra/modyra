@@ -187,6 +187,12 @@ export function projectFieldShellA11y(
   readonly control: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
+  /**
+   * The caption's required mark. Decoration: the caption's words name the control and
+   * `aria-required` says it must be filled, so a readable mark would turn "Email" into "Email *".
+   * ADR 0214.
+   */
+  readonly requiredMarker: MdyPartContract;
 } {
   const { labelId, descriptionId, errorId } = fieldShellPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
@@ -285,6 +291,10 @@ export function projectFieldShellA11y(
         // role would cost the structure and add nothing.
         "aria-live": "polite",
       },
+    },
+    requiredMarker: {
+      classes: [MDY_FIELD_SHELL_CLASSES.requiredMarker],
+      attributes: { "aria-hidden": "true" },
     },
   };
 }

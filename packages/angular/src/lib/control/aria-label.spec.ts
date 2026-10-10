@@ -46,13 +46,27 @@ describe("naming a control with no visible label", () => {
     expect(fixture.nativeElement.querySelector("label")?.textContent).toContain("Item");
   });
 
-  it("falls back to the label's own text, which the required marker never enters", () => {
+  // `aria-label` replaces a native label rather than adding to it, so a caption is not copied onto
+  // the control: it names the box through `for`. ADR 0214.
+  it("leaves a captioned control to its label", () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.label = "Item";
     fixture.componentInstance.ariaLabel = null;
     fixture.detectChanges();
 
     const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
-    expect(input.getAttribute("aria-label")).toBe("Item");
+    const label = fixture.nativeElement.querySelector("label") as HTMLLabelElement;
+    expect(input.getAttribute("aria-label")).toBeNull();
+    expect(input.id).not.toBe("");
+    expect(label.htmlFor).toBe(input.id);
+  });
+
+  it("writes the field's own name where no caption names it", () => {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.ariaLabel = null;
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector("input") as HTMLInputElement;
+    expect(input.getAttribute("aria-label")).toBe("n");
   });
 });

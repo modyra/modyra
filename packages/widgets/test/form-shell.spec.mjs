@@ -15,8 +15,11 @@ import {
   MDY_FORM_SHELL_CLASSES,
   MDY_FORM_SHELL_STRUCTURE,
   fieldAccessibleName,
+  fieldAriaLabel,
   formErrorsOf,
   nameIsAFallback,
+  projectBooleanFieldA11y,
+  projectFieldShellA11y,
   sliderTrack,
 } from "../dist/index.js";
 
@@ -110,6 +113,40 @@ test("a control is named by what was written for a person, then by the field", (
   // Whitespace is not a name: a label of spaces reads as an empty one to anybody looking at it.
   assert.equal(fieldAccessibleName({ label: "   ", name: "city" }), "city");
   assert.equal(fieldAccessibleName({}), "");
+});
+
+/**
+ * What is written as `aria-label` on a control its caption can name. ADR 0214.
+ *
+ * `aria-label` replaces a native label rather than adding to it, so a caption with words is never
+ * copied: it names the control through the platform's association, and a copy is a second source
+ * that wins silently the first time the two differ.
+ */
+test("a caption with words is not copied onto the control it names", () => {
+  assert.equal(fieldAriaLabel({ label: "City", name: "city" }), null);
+  // A declared name is the document's own choice, written as given, caption or not.
+  assert.equal(fieldAriaLabel({ ariaLabel: "Where", label: "City", name: "city" }), "Where");
+  assert.equal(fieldAriaLabel({ ariaLabel: "Where", name: "city" }), "Where");
+  // No caption words: the fallback order, because a control with no name is announced as its role.
+  assert.equal(fieldAriaLabel({ name: "city" }), "city");
+  assert.equal(fieldAriaLabel({ label: "   ", name: "city" }), "city");
+  assert.equal(fieldAriaLabel({ ariaLabel: "  ", label: "City", name: "city" }), null);
+  assert.equal(fieldAriaLabel({}), null);
+});
+
+test("the required mark is declared out of the name the caption gives", () => {
+  // Decoration on the caption: `aria-required` carries the fact, and a readable mark makes the name
+  // "Email *". Declared on both projections a caption with a mark comes from. ADR 0214.
+  const shell = projectFieldShellA11y(
+    { disabled: false, touched: false, required: true, invalid: false, readonly: false },
+    [], { widgetId: "w", kind: "text" },
+  );
+  assert.equal(shell.requiredMarker.attributes["aria-hidden"], "true");
+  const box = projectBooleanFieldA11y(
+    { disabled: false, touched: false, required: true, invalid: false, readonly: false, checked: false },
+    [], { widgetId: "w", variant: "checkbox" },
+  );
+  assert.equal(box.requiredMarker.attributes["aria-hidden"], "true");
 });
 
 test("a fallback name is recognisable as one", () => {

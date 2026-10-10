@@ -13,6 +13,7 @@ import { multiselectChipPart } from "@modyra/widgets";
 import {
   MDY_WIDGET_CONTRACTS,
   fieldAccessibleName,
+  fieldAriaLabel,
   fieldIsRequired,
   focusIsInsideField,
   nameIsAFallback,
@@ -178,6 +179,7 @@ export const statesPanel = {
     "factsOfAll",
     "field",
     "fieldAccessibleName",
+    "fieldAriaLabel",
     "fieldCanBeInvalid",
     "fieldDescribedBy",
     "fieldIsRequired",
@@ -408,6 +410,10 @@ export const statesPanel = {
       // And the name each control ends up carrying — what a screen reader announces.
       controlNames: Object.fromEntries(
         KINDS.map(([kind, , extra]) => [kind, fieldAccessibleName({ label: extra?.label, name: kind })]),
+      ),
+      // And which of those words are written as `aria-label`: none where a caption names the control.
+      controlAriaLabels: Object.fromEntries(
+        KINDS.map(([kind, , extra]) => [kind, fieldAriaLabel({ label: extra?.label, name: kind })]),
       ),
     }));
 
