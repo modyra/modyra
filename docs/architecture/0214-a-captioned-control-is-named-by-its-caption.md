@@ -48,7 +48,7 @@ assistive technology, and the caption's words alone form the name.
 
 - Plain, Lit and Angular must stop copying the caption into `aria-label`, and every renderer must hide
   the required marker from the name. Those changes cross three adapters and are a separate batch.
-  Until they land, the ten rows stay on the known-red list.
+  Until they land, the spec stays on the known-red list, failing on the ten rows it reports.
 - The asterisk argument is answered at its source, the marker, rather than by a second naming
   channel. A theme or renderer that puts other decoration inside the caption takes on the same
   obligation to hide it.
@@ -73,8 +73,8 @@ assistive technology, and the caption's words alone form the name.
 
 `battle-tests/browser/an-aria-promise-that-depends-on-the-adapter.spec.ts` fails while any renderer
 writes `aria-label` on a captioned field that some other renderer leaves off. Today it is red on the
-ten rows listed in `battle-tests/reports/known-red-browser.json`. Once the adapter batch lands, the
-rows leave the list and the spec guards the rule. No check yet asserts that the required marker is
+ten rows it reports, and `battle-tests/reports/known-red-browser.json` lists it once. Once the adapter
+batch lands, the spec leaves the list and guards the rule. No check yet asserts that the required marker is
 outside the name. That check belongs with the adapter batch.
 
 ## Security and privacy
