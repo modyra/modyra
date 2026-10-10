@@ -164,6 +164,9 @@ export const MdyTextField = defineComponent({
           // a hint shown inside the empty box, and the name it has where nothing captions it.
           ...(props.placeholder === "" ? {} : { placeholder: props.placeholder }),
           ...(props.ariaLabel === "" ? {} : { "aria-label": props.ariaLabel }),
+          // Three lines at rest, said in lines rather than a length, so it still means three lines
+          // when a person has enlarged their text. ADR 0181.
+          ...(tag === "textarea" ? { rows: 3 } : {}),
           onInput: (event: Event) => controller.dispatch({
             type: "input",
             // A numeric field holds a number, so the box's text is converted before it reaches the
