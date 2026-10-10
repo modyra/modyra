@@ -291,7 +291,7 @@ function diagnoseProject(project: MdyStudioProject, idx: StudioIndexes): StudioD
     }
     if (node.node === "group") {
       for (const child of node.children) visit(child);
-    } else if (node.node === "array") {
+    } else if (node.node === "array" || node.node === "record") {
       visit(node.item);
     }
   };

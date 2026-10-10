@@ -311,6 +311,39 @@ test("a record node, at any depth, is a node the loader accepts", () => {
   assert.ok(buildIndexes(loaded).nodeById.has("nd_rec_f"));
 });
 
+function withRecordRowField(field) {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "record",
+    id: "nd_rec",
+    name: "byKey",
+    item: field,
+    initialRows: {},
+    validators: [],
+  });
+  return project;
+}
+
+test("a sensitive field inside a record's row gets the draft warning", () => {
+  const project = withRecordRowField({
+    node: "field", id: "nd_rec_pw", name: "password", fieldKind: "text", valueType: "string", initialValue: "", validators: [],
+  });
+  const { diagnostics } = normalize(project);
+  assert.ok(diagnostics.some((d) => d.code === "SENSITIVE_FIELD_IN_DRAFT" && d.nodeId === "nd_rec_pw"));
+});
+
+test("a server validator inside a record's row is indexed by what it depends on", () => {
+  const project = withRecordRowField({
+    node: "field", id: "nd_rec_code", name: "code", fieldKind: "text", valueType: "string", initialValue: "", validators: [],
+    serverValidator: {
+      id: "val_rec_server", kind: "server", implementationRef: "impl_validate_coupon",
+      dependencies: [{ nodeId: "nd_country" }], debounceMs: 400, timeoutMs: 5000, errorMessage: "no",
+    },
+  });
+  const idx = buildIndexes(project);
+  assert.ok(idx.referencesByTargetNode.get("nd_country").includes("val_rec_server"));
+});
+
 test("a record node without its validators array is refused by name, like an array", () => {
   const project = createCheckoutProject();
   project.schema.children.push({
