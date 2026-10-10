@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { test } from "node:test";
+import { STUDIO_FIELD_KINDS } from "@modyra/studio-model";
 import { createCoreTarget, coreTargetManifest } from "../dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
 import { createCheckoutProject, createNestedCollectionProject } from "../../studio-model/test/fixtures/checkout.fixture.mjs";
@@ -205,4 +206,9 @@ test("a bound that is not a finite number is reported and left out, never emitte
   const form = artifact.files.find((file) => file.path === "form.ts").content;
   assert.match(form, /minLength\(3\)/);
   assert.deepEqual(artifact.diagnostics, []);
+});
+
+test("core target declares every field kind the model has", () => {
+  assert.deepEqual([...createCoreTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
+  assert.equal(STUDIO_FIELD_KINDS.length, 14);
 });

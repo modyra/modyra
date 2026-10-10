@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { test } from "node:test";
+import { STUDIO_FIELD_KINDS } from "@modyra/studio-model";
 import { createReactTarget, reactTargetManifest } from "../dist/index.js";
 import { createCoreTarget } from "../../studio-target-core/dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
@@ -169,4 +170,9 @@ test("an arranged project is told its arrangement is not carried into the code",
   assert.equal(dropped[0].severity, "info");
   // The recipe that closes the gap is named where the loss is reported, not only in the guide.
   assert.match(dropped[0].message, /layoutNodeAttributes/);
+});
+
+test("react target declares every field kind the model has", () => {
+  assert.deepEqual([...createReactTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
+  assert.equal(STUDIO_FIELD_KINDS.length, 14);
 });

@@ -11,7 +11,7 @@ import {
   type TargetManifest,
 } from "@modyra/studio-codegen";
 import { compileToContract } from "@modyra/studio-contract";
-import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
+import { STUDIO_FIELD_KINDS, type MdyStudioProject, type StudioDiagnostic } from "@modyra/studio-model";
 
 const ANGULAR_PROFILE = { factoryImportSource: "@modyra/angular/adapter", createCallName: "mdyForm" };
 
@@ -20,7 +20,7 @@ export interface AngularTargetOptions {
 }
 
 const CAPABILITIES: TargetCapabilities = {
-  fieldKinds: ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date"],
+  fieldKinds: STUDIO_FIELD_KINDS,
   validatorKinds: ["required", "email", "min", "max", "minLength", "maxLength", "pattern", "oneOf", "eachOneOf", "customRef"],
   supportsArrays: true,
   supportsGroups: true,

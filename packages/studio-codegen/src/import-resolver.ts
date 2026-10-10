@@ -25,6 +25,9 @@ import { isValidBindingName, printString } from "./ts-print.js";
  * caller collects `problems` into its diagnostics, and a host gets a finding it can show beside the
  * others rather than an exception out of `generate()`.
  */
+/** The "source" recorded for a name the module declares itself rather than imports. An empty specifier is never a valid source, so it cannot be mistaken for one. */
+const DECLARED_HERE = "";
+
 export class ImportResolver {
   #bySource = new Map<string, Set<string>>();
   /** Which source each name was claimed by, so a second claim on it is refused rather than printed. */
@@ -32,6 +35,14 @@ export class ImportResolver {
 
   /** What could not be imported, for the caller to report. Empty when the block is usable. */
   readonly problems: string[] = [];
+
+  /**
+   * Marks `name` as declared by the module itself — a local constant or export — so an import of the
+   * same name is refused like any other second claim on a binding.
+   */
+  declare(...names: string[]): void {
+    for (const name of names) this.#sourceOfName.set(name, DECLARED_HERE);
+  }
 
   add(source: string, ...names: string[]): void {
     if (typeof source !== "string" || source.length === 0) {
@@ -47,6 +58,10 @@ export class ImportResolver {
         continue;
       }
       const claimed = this.#sourceOfName.get(name);
+      if (claimed === DECLARED_HERE) {
+        this.problems.push(`"${name}" is imported from "${source}", but the module declares a binding of that name itself`);
+        continue;
+      }
       if (claimed !== undefined && claimed !== source) {
         this.problems.push(
           `"${name}" is imported from both "${claimed}" and "${source}", and one module can bind it once`,

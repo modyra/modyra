@@ -29,7 +29,8 @@ function stubBody(role: StudioImplementationRef["role"], name: string): string {
 export function buildStubsModule(project: MdyStudioProject): StubsResult {
   const diagnostics: StudioDiagnostic[] = [];
   const nameFor = new Map<string, string>();
-  const usedNames = new Set<string>();
+  // `MdyAsyncValidationContext` is imported by the module this builds, so a stub cannot also declare it.
+  const usedNames = new Set<string>(["MdyAsyncValidationContext"]);
 
   const impls = Object.values(project.implementations).sort((a, b) => a.id.localeCompare(b.id));
   const blocks: string[] = [];

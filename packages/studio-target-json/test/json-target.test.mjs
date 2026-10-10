@@ -5,6 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { STUDIO_FIELD_KINDS } from "@modyra/studio-model";
 import { createJsonTarget, jsonTargetManifest } from "../dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
 import { serializeProject } from "@modyra/studio-model";
@@ -46,4 +47,9 @@ test("jsonTargetManifest loads lazily to a target with id 'json'", async () => {
   const target = await jsonTargetManifest.load();
   assert.equal(target.id, "json");
   assert.equal(jsonTargetManifest.displayName, "Contract + Studio JSON");
+});
+
+test("json target declares every field kind the model has", () => {
+  assert.deepEqual([...createJsonTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
+  assert.equal(STUDIO_FIELD_KINDS.length, 14);
 });

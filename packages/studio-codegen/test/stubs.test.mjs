@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildStubsModule } from "../dist/index.js";
+import { buildFormModule, buildStubsModule } from "../dist/index.js";
 
 function project(implementations) {
   return { studioVersion: 1, id: "p", name: "P", schema: { node: "group", id: "root", name: "root", children: [] }, formValidators: [], behaviors: {}, implementations, presentation: {}, targets: {}, metadata: {} };
@@ -73,6 +73,35 @@ test("a stub named after a reserved word is emitted as something the language ac
     }));
     assert.match(code, new RegExp(`export function _${word}\\(`), `${word} was emitted as written`);
     assert.doesNotMatch(code, new RegExp(`export function ${word}\\(`));
+  }
+});
+
+test("a stub is never given a name the stubs module itself binds", () => {
+  const { nameFor, diagnostics, code } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "serverValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+  }));
+  assert.notEqual(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.equal(diagnostics.length, 1);
+  assert.equal(diagnostics[0].code, "STUB_NAME_COLLISION");
+  assert.doesNotMatch(code, /function MdyAsyncValidationContext\b/);
+});
+
+test("a referenced stub named like something form.ts binds is an error, not a module that does not compile", () => {
+  for (const bound of ["schema", "form", "createForm", "field"]) {
+    const p = {
+      ...project({ impl_a: { id: "impl_a", role: "customValidator", displayName: bound, mode: "stub" } }),
+      schema: { node: "group", id: "root", name: "root", children: [{
+        node: "field", id: "nd_a", name: "a", fieldKind: "text", valueType: "string", initialValue: "",
+        validators: [{ id: "v", kind: "customRef", implementationRef: "impl_a" }],
+      }] },
+    };
+    const stubs = buildStubsModule(p);
+    const result = buildFormModule(p, stubs.nameFor, { factoryImportSource: "@modyra/core", createCallName: "createForm" });
+    assert.ok(
+      result.diagnostics.some((d) => d.severity === "error" && d.message.includes(`"${bound}"`)),
+      `"${bound}" collided with no error: ${JSON.stringify(result.diagnostics)}`,
+    );
+    assert.equal(result.code, "", `"${bound}" still produced a module`);
   }
 });
 
