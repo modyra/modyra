@@ -25,7 +25,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
 const BASELINE = join(root, "packages/widgets/contract-baseline/coverage-baseline.json");
@@ -101,7 +101,9 @@ const tracked = (() => {
   }
 })();
 
-const keeps = (path) => (tracked === null ? !/(^|\/)\.[^/]+\//.test(path) : tracked.has(resolve(path)));
+// The fallback tests the path relative to the repository root: a checkout that itself sits under a
+// dot-directory would otherwise match on its own ancestors and drop every file.
+const keeps = (path) => (tracked === null ? !/(^|\/)\.[^/]+\//.test(relative(root, path)) : tracked.has(resolve(path)));
 
 function collect(dir, out = []) {
   let entries;
