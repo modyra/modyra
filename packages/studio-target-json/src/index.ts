@@ -1,4 +1,4 @@
-import { serializeProject, type MdyStudioProject } from "@modyra/studio-model";
+import { serializeProject, STUDIO_FIELD_KINDS, type MdyStudioProject } from "@modyra/studio-model";
 import { compileToContract } from "@modyra/studio-contract";
 import type { Artifact, StudioTarget, TargetAnalysis, TargetCapabilities, TargetManifest } from "@modyra/studio-codegen";
 
@@ -7,7 +7,7 @@ export interface JsonTargetOptions {
 }
 
 const CAPABILITIES: TargetCapabilities = {
-  fieldKinds: ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date"],
+  fieldKinds: STUDIO_FIELD_KINDS,
   validatorKinds: ["required", "email", "min", "max", "minLength", "maxLength", "pattern"],
   supportsArrays: true,
   supportsGroups: true,

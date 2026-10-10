@@ -29,11 +29,12 @@ function stubBody(role: StudioImplementationRef["role"], name: string): string {
 export function buildStubsModule(project: MdyStudioProject): StubsResult {
   const diagnostics: StudioDiagnostic[] = [];
   const nameFor = new Map<string, string>();
-  const usedNames = new Set<string>();
-
   const impls = Object.values(project.implementations).sort((a, b) => a.id.localeCompare(b.id));
+  // The module imports `MdyAsyncValidationContext` as soon as one server-validator stub exists, so no
+  // stub may declare that name then; without one the name is free.
+  const needsAsyncContextType = impls.some((impl) => impl.role === "serverValidator");
+  const usedNames = new Set<string>(needsAsyncContextType ? ["MdyAsyncValidationContext"] : []);
   const blocks: string[] = [];
-  let needsAsyncContextType = false;
 
   for (const impl of impls) {
     let name = isValidBindingName(impl.displayName) ? impl.displayName : toBindingName(impl.displayName);
@@ -49,7 +50,6 @@ export function buildStubsModule(project: MdyStudioProject): StubsResult {
     }
     usedNames.add(name);
     nameFor.set(impl.id, name);
-    if (impl.role === "serverValidator") needsAsyncContextType = true;
     blocks.push(stubBody(impl.role, name));
   }
 

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { test } from "node:test";
+import { STUDIO_FIELD_KINDS } from "@modyra/studio-model";
 import { createAngularTarget, angularTargetManifest } from "../dist/index.js";
 import { createCoreTarget } from "../../studio-target-core/dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
@@ -203,4 +204,20 @@ test("the JSON target carries the arrangement, so it reports no loss", async () 
   const contract = artifact.files.find((f) => f.path === "contract.json");
   assert.ok(contract, "the JSON target must emit a contract");
   assert.ok(JSON.parse(contract.content).layout, "the contract must carry the layout");
+});
+
+test("angular target declares every field kind the model has", () => {
+  assert.deepEqual([...createAngularTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
+  assert.equal(STUDIO_FIELD_KINDS.length, 14);
+});
+
+test("angular target spells a field of every model kind with its initial value and reports nothing", async () => {
+  const { createEveryKindProject } = await import("../../studio-model/test/fixtures/every-kind.fixture.mjs");
+  const artifact = await createAngularTarget().generate(createEveryKindProject(), {});
+  assert.deepEqual(artifact.diagnostics, []);
+  const source = artifact.files.find((f) => f.path === "form.ts").content;
+  const initial = { number: "0", slider: "0", checkbox: "false", toggle: "false", multiselect: "[]" };
+  for (const kind of STUDIO_FIELD_KINDS) {
+    assert.ok(source.includes(`  ${kind}: field(${initial[kind] ?? '""'}),\n`), `${kind} is not emitted as a field in:\n${source}`);
+  }
 });

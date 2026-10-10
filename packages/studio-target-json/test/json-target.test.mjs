@@ -5,6 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { STUDIO_FIELD_KINDS } from "@modyra/studio-model";
 import { createJsonTarget, jsonTargetManifest } from "../dist/index.js";
 import { runConformanceSuite } from "@modyra/studio-codegen";
 import { serializeProject } from "@modyra/studio-model";
@@ -46,4 +47,24 @@ test("jsonTargetManifest loads lazily to a target with id 'json'", async () => {
   const target = await jsonTargetManifest.load();
   assert.equal(target.id, "json");
   assert.equal(jsonTargetManifest.displayName, "Contract + Studio JSON");
+});
+
+test("json target declares every field kind the model has", () => {
+  assert.deepEqual([...createJsonTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
+  assert.equal(STUDIO_FIELD_KINDS.length, 14);
+});
+
+test("json target emits every model field kind as the control it names, with its options and no unsupported-kind finding", async () => {
+  const { createEveryKindProject } = await import("../../studio-model/test/fixtures/every-kind.fixture.mjs");
+  const artifact = await createJsonTarget().generate(createEveryKindProject(), {});
+  assert.deepEqual(artifact.diagnostics.filter((d) => d.code === "UNSUPPORTED_FIELD_KIND" || d.severity === "error"), []);
+  const contract = JSON.parse(artifact.files.find((f) => f.path === "contract.json").content);
+  const widgetOf = { date: "datepicker", time: "timepicker" };
+  assert.deepEqual(Object.keys(contract.schema.children), [...STUDIO_FIELD_KINDS]);
+  for (const kind of STUDIO_FIELD_KINDS) {
+    const emitted = contract.schema.children[kind].field;
+    assert.equal(emitted.kind, widgetOf[kind] ?? kind, `${kind} was emitted as ${emitted.kind}`);
+    const optioned = ["select", "radio", "segmented", "multiselect"].includes(kind);
+    assert.equal(Array.isArray(emitted.options), optioned, `${kind} options`);
+  }
 });

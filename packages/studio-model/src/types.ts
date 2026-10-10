@@ -12,21 +12,24 @@ export const STUDIO_VERSION = 1 as const;
  * FIELD_KIND_MAP — the value type drives validator compatibility, the kind only
  * drives which control renders.
  */
-export type StudioFieldKind =
-  | "text"
-  | "textarea"
-  | "email"
-  | "password"
-  | "number"
-  | "slider"
-  | "checkbox"
-  | "toggle"
-  | "select"
-  | "radio"
-  | "segmented"
-  | "multiselect"
-  | "date"
-  | "time";
+export const STUDIO_FIELD_KINDS = [
+  "text",
+  "textarea",
+  "email",
+  "password",
+  "number",
+  "slider",
+  "checkbox",
+  "toggle",
+  "select",
+  "radio",
+  "segmented",
+  "multiselect",
+  "date",
+  "time",
+] as const;
+
+export type StudioFieldKind = (typeof STUDIO_FIELD_KINDS)[number];
 
 export type StudioValueType = "string" | "number" | "boolean" | "date" | "string[]";
 

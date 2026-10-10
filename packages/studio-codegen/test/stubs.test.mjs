@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildStubsModule } from "../dist/index.js";
+import { buildFormModule, buildStubsModule } from "../dist/index.js";
 
 function project(implementations) {
   return { studioVersion: 1, id: "p", name: "P", schema: { node: "group", id: "root", name: "root", children: [] }, formValidators: [], behaviors: {}, implementations, presentation: {}, targets: {}, metadata: {} };
@@ -76,6 +76,35 @@ test("a stub named after a reserved word is emitted as something the language ac
   }
 });
 
+test("a stub is never given a name the stubs module itself binds", () => {
+  const { nameFor, diagnostics, code } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "serverValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+  }));
+  assert.notEqual(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.equal(diagnostics.length, 1);
+  assert.equal(diagnostics[0].code, "STUB_NAME_COLLISION");
+  assert.doesNotMatch(code, /function MdyAsyncValidationContext\b/);
+});
+
+test("a referenced stub named like something form.ts binds is an error, not a module that does not compile", () => {
+  for (const bound of ["schema", "form", "createForm", "field"]) {
+    const p = {
+      ...project({ impl_a: { id: "impl_a", role: "customValidator", displayName: bound, mode: "stub" } }),
+      schema: { node: "group", id: "root", name: "root", children: [{
+        node: "field", id: "nd_a", name: "a", fieldKind: "text", valueType: "string", initialValue: "",
+        validators: [{ id: "v", kind: "customRef", implementationRef: "impl_a" }],
+      }] },
+    };
+    const stubs = buildStubsModule(p);
+    const result = buildFormModule(p, stubs.nameFor, { factoryImportSource: "@modyra/core", createCallName: "createForm" });
+    assert.ok(
+      result.diagnostics.some((d) => d.severity === "error" && d.message.includes(`"${bound}"`)),
+      `"${bound}" collided with no error: ${JSON.stringify(result.diagnostics)}`,
+    );
+    assert.equal(result.code, "", `"${bound}" still produced a module`);
+  }
+});
+
 test("a name the language accepts is emitted as it was typed", () => {
   // The boundary: repairing more than necessary renames code that compiles, and the name is what a
   // person reads in their own module. `type` and `as` are TypeScript's soft keywords and are legal
@@ -86,4 +115,21 @@ test("a name the language accepts is emitted as it was typed", () => {
     }));
     assert.match(code, new RegExp(`export function ${name.replace("$", "\\$")}\\(`), `${name} was renamed`);
   }
+});
+
+test("MdyAsyncValidationContext is a free name when no server validator imports it", () => {
+  const { nameFor, diagnostics } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "customValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+  }));
+  assert.equal(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.deepEqual(diagnostics, []);
+});
+
+test("MdyAsyncValidationContext is taken once any server validator imports it, whichever stub carries the name", () => {
+  const { nameFor, diagnostics } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "customValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+    impl_b: { id: "impl_b", role: "serverValidator", displayName: "check", mode: "stub" },
+  }));
+  assert.notEqual(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.equal(diagnostics.length, 1);
 });

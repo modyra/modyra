@@ -8,7 +8,7 @@
  */
 import { buildStubsModule, capabilityDiagnostics, type Artifact, type ArtifactFile, type StudioTarget, type TargetAnalysis, type TargetCapabilities, type TargetManifest } from "@modyra/studio-codegen";
 import { compileToContract } from "@modyra/studio-contract";
-import type { MdyStudioProject, StudioDiagnostic } from "@modyra/studio-model";
+import { STUDIO_FIELD_KINDS, type MdyStudioProject, type StudioDiagnostic } from "@modyra/studio-model";
 import { buildFormModule } from "./field-mapper.js";
 
 export interface CoreTargetOptions {
@@ -16,7 +16,7 @@ export interface CoreTargetOptions {
 }
 
 const CAPABILITIES: TargetCapabilities = {
-  fieldKinds: ["text", "textarea", "email", "number", "checkbox", "select", "multiselect", "date"],
+  fieldKinds: STUDIO_FIELD_KINDS,
   validatorKinds: ["required", "email", "min", "max", "minLength", "maxLength", "pattern", "oneOf", "eachOneOf", "customRef"],
   supportsArrays: true,
   supportsGroups: true,

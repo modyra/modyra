@@ -69,7 +69,14 @@ function collectRefs(expr: StudioExpression, out: string[]): void {
   }
 }
 
-/** `serverValidator()`'s `when` receives the field's own value as its first argument — only usable when `skipWhen` refers to that same field, never a sibling (that would need the whole form value, a different calling convention). */
+/**
+ * The expression under which the validator is skipped, compiled against the field's own value.
+ * `serverValidator()`'s `when` says when the validator *runs*, so the caller negates it.
+ *
+ * `when` receives the field's own value as its first argument, so this is only usable when `skipWhen`
+ * refers to that same field, never a sibling (that would need the whole form value, a different
+ * calling convention).
+ */
 function mapSkipWhen(expr: StudioExpression, fieldId: string, fieldName: string, diagnostics: StudioDiagnostic[]): string | null {
   const refs: string[] = [];
   collectRefs(expr, refs);
@@ -82,7 +89,33 @@ function mapSkipWhen(expr: StudioExpression, fieldId: string, fieldName: string,
     });
     return null;
   }
-  return compileExpressionToJs(expr, (id) => (id === fieldId ? "" : id));
+  return compileGuarded(expr, (id) => (id === fieldId ? "" : id), diagnostics, { nodeId: fieldId }, `skipWhen on "${fieldName}"`);
+}
+
+/**
+ * Compiles an expression, answering a refusal with a diagnostic instead of an exception.
+ *
+ * The compiler throws on an operand it cannot print faithfully; a project file decides what it is
+ * handed, so that refusal is a finding about the project and the caller omits what depended on it.
+ */
+function compileGuarded(
+  expr: StudioExpression,
+  pathOf: (nodeId: string) => string,
+  diagnostics: StudioDiagnostic[],
+  where: Pick<StudioDiagnostic, "nodeId" | "validatorId">,
+  what: string,
+): string | null {
+  try {
+    return compileExpressionToJs(expr, pathOf);
+  } catch (error) {
+    diagnostics.push({
+      code: "INVALID_EXPRESSION",
+      severity: "error",
+      message: `${what} cannot be compiled and was omitted: ${error instanceof Error ? error.message : String(error)}`,
+      ...where,
+    });
+    return null;
+  }
 }
 
 function mapFieldValidator(
@@ -180,7 +213,7 @@ function mapServerValidatorArg(node: FieldNode, idx: StudioIndexes, imports: Imp
   if (sv.timeoutMs !== undefined) optionProps.push({ key: "timeoutMs", value: literalCode(sv.timeoutMs) });
   if (sv.skipWhen) {
     const when = mapSkipWhen(sv.skipWhen, node.id, node.name, diagnostics);
-    if (when) optionProps.push({ key: "when", value: `(value) => (${when})` });
+    if (when) optionProps.push({ key: "when", value: `(value) => !(${when})` });
   }
   return printCall("serverValidator", optionProps.length ? [stubName, printObject(optionProps)] : [stubName]);
 }
@@ -223,9 +256,10 @@ function mapNode(node: StudioSchemaNode, idx: StudioIndexes, imports: ImportReso
   return mapCollection(node, idx, imports, diagnostics, stubNameFor, profile, validatorSource);
 }
 
-function mapFormValidator(fv: StudioFormValidator, idx: StudioIndexes): string {
+function mapFormValidator(fv: StudioFormValidator, idx: StudioIndexes, diagnostics: StudioDiagnostic[]): string | null {
   const pathOf = (id: string): string => idx.pathByNode.get(id) ?? id;
-  const condition = compileExpressionToJs(fv.condition, pathOf);
+  const condition = compileGuarded(fv.condition, pathOf, diagnostics, { validatorId: fv.id }, `Form validator "${fv.id}"`);
+  if (condition === null) return null;
   const targetRefs = fv.errorTarget ? [fv.errorTarget] : fv.dependencies;
   const paths = targetRefs.map((r) => pathOf(r.nodeId)).filter((p) => p !== "");
   return `crossField(${literalCode(paths)}, (value) => (${condition}) ? null : ${literalCode(fv.message)})`;
@@ -235,6 +269,8 @@ function mapFormValidator(fv: StudioFormValidator, idx: StudioIndexes): string {
 export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<string, string>, profile: TargetProfile): FormModuleResult {
   const diagnostics: StudioDiagnostic[] = [];
   const imports = new ImportResolver();
+  // The module's own top-level declarations: an import of either name would be a duplicate binding.
+  imports.declare("schema", profile.hookExportName ?? "form");
 
   if (project.schema.node !== "group") {
     diagnostics.push({ code: "INVALID_ROOT", severity: "error", message: "Project schema root must be a group", nodeId: project.schema.id });
@@ -263,9 +299,10 @@ export function buildFormModule(project: MdyStudioProject, stubNameFor: Map<stri
   const schemaCode = printObject(schemaProps);
 
   const formOptionProps: TsProp[] = [];
-  if (project.formValidators.length) {
+  const mapped = project.formValidators.map((fv) => mapFormValidator(fv, idx, diagnostics)).filter((c): c is string => c !== null);
+  if (mapped.length) {
     imports.add(validatorSource, "crossField");
-    formOptionProps.push({ key: "validators", value: printArray(project.formValidators.map((fv) => mapFormValidator(fv, idx))) });
+    formOptionProps.push({ key: "validators", value: printArray(mapped) });
   }
   if (project.behaviors.draft) {
     const draft = project.behaviors.draft;
