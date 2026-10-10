@@ -227,6 +227,9 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0210: A promise points at what keeps it](0210-a-promise-points-at-what-keeps-it.md) — `aria-haspopup` claims a role and `aria-controls` says which element has it: the reference names the sub-region carrying it, not the panel around it
 - [ADR 0211: An argument of the wrong shape is a defect](0211-an-argument-of-the-wrong-shape-is-a-defect.md) — a value is a verdict and an argument is a code defect: two audiences, two policies, and a wrong shape that never passes in silence
 - [ADR 0212: What a calendar is called](0212-what-a-calendar-is-called.md) — the grid is named by the month it shows, through the visible heading rather than a second copy of it; the panel is named by the field, and no element carries two naming channels
+- [ADR 0213: A time picker is complete without a clock face](0213-a-time-picker-is-complete-without-a-clock-face.md) — the face stays optional and redundant to the typed boxes; a renderer without one conforms, owes parity as debt, and a spec of the face judges only hosts that draw it
+- [ADR 0214: A captioned control is named by its caption](0214-a-captioned-control-is-named-by-its-caption.md) — no aria-label copied from a visible caption; aria-label only when declared; the required marker is outside the name
+- [ADR 0215: A caption beside a box does not say whether it is ticked](0215-a-caption-beside-a-box-does-not-say-whether-it-is-ticked.md) — a boolean caption never carries --filled; the floating-label signal keeps one meaning
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
