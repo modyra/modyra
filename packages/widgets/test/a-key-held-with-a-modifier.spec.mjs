@@ -63,3 +63,20 @@ test("a caller naming a literal still asks what the contract declares", () => {
   assert.equal(keyBindingFor(kind, "Enter", false)?.intent, "open");
   assert.equal(keyMeans(kind, "Enter", "open", false), true);
 });
+
+test("a letter pressed bare reaches the type-ahead a kind declares, and a letter held does not", () => {
+  // The printable binding stands for every character, so its own key never equals the one pressed.
+  // Asked with the press, the gesture has to be read off the character that was typed — otherwise a
+  // renderer passing its event is told the letter means nothing, and type-ahead is unreachable from
+  // every road that carries what was held.
+  const typing = Object.keys(MDY_POPUP_OPENERS).filter((kind) => keyBindingFor(kind, "m", true)?.intent === "typeahead");
+  assert.ok(typing.length > 0, "no kind declares type-ahead, so this asks nothing");
+  for (const kind of typing) {
+    assert.equal(keyBindingFor(kind, press("m"), true)?.intent, "typeahead", `${kind}: a bare letter is not type-ahead`);
+    assert.equal(keyBindingFor(kind, press("M", { shiftKey: true }), true)?.intent, "typeahead", `${kind}: a capital is not type-ahead`);
+    for (const held of [{ metaKey: true }, { ctrlKey: true }]) {
+      assert.notEqual(keyBindingFor(kind, press("m", held), true)?.intent, "typeahead",
+        `${kind}: ${Object.keys(held)[0]}+m is the platform's and was read as type-ahead`);
+    }
+  }
+});
