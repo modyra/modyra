@@ -79,7 +79,12 @@ export const MdySelectField = defineComponent({
     supportingText: { type: String, required: false, default: undefined },
     /** Which form on the page this widget belongs to, where a host renders more than one. */
     idScope: { type: String, required: false, default: undefined },
-    placeholder: { type: String, default: "Select…" },
+    /**
+     * The words standing in for a value. Absent, the contract's default words are shown; given, the
+     * platform chooser keeps its "nothing chosen" entry after a choice, because the document has
+     * something to say about the absence.
+     */
+    placeholder: { type: String, required: false, default: undefined },
     /**
      * Whether this select filters. It decides the shape rather than an option on it: `variantOf`
      * answers `custom` for a select that filters and `native` for one that does not, and the two
@@ -249,6 +254,8 @@ export const MdySelectField = defineComponent({
      * by having an option for it: without one, index 0 is a real choice, the control reads the first
      * label while the form holds nothing, and the field looks answered when it is not.
      */
+    const placeholderText = (): string => props.placeholder ?? MDY_I18N_MESSAGES_DEFAULT.selectPlaceholder;
+
     const drawNative = (): VNode => {
       const parts = view.value.parts;
       const children: VNode[] = [];
@@ -265,8 +272,13 @@ export const MdySelectField = defineComponent({
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value })),
         }), [
-          h("option", { class: classesOf("placeholder"), value: "", disabled: true,
-            selected: state.value.selectedKey === null }, props.placeholder),
+          // Kept while it is the state, or while the document gave it words. Once something is
+          // chosen and there is nothing to say about the absence, the entry goes: a list still
+          // offering "nothing" after a choice has a row nobody can use.
+          ...(state.value.selectedKey === null || props.placeholder !== undefined
+            ? [h("option", { class: classesOf("placeholder"), value: "", disabled: true,
+              selected: state.value.selectedKey === null }, placeholderText())]
+            : []),
           // The controller's key, never `String()`: an `<option>`'s value is a string, so object
           // values would all read `[object Object]` and a choice would resolve to the first of them.
           // And the document's own availability, or the platform offers a refused option as a choice.
@@ -334,7 +346,7 @@ export const MdySelectField = defineComponent({
           // what the control *is*, and a person hears "T Select…" where the control is a T. The
           // chosen value stays in the name, because that is what the control is holding.
           selected === undefined
-            ? h("span", { class: classesOf("placeholder"), "aria-hidden": "true" }, props.placeholder)
+            ? h("span", { class: classesOf("placeholder"), "aria-hidden": "true" }, placeholderText())
             : h("span", { class: classesOf("value") }, selected.label),
         ]),
         // Beside the trigger, because that is where the contract puts it: `arrow` declares

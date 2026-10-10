@@ -66,3 +66,42 @@ test("choosing an object option stores that option's value", async () => {
     view.dispose();
   }
 });
+
+/**
+ * The entry for "nothing chosen" is the placeholder, owed while nothing is held (`valueIsAbsent`).
+ * Once something is chosen it goes, unless the document gave it words of its own: a list still
+ * offering "nothing" after a choice has a row nobody can use.
+ */
+test("the nothing-chosen entry is there while nothing is held, and goes once something is", async () => {
+  const entry = (host) => host.querySelector("select option[value='']");
+  const form = m.createVueForm({ plan: field(null) });
+  const host = document.createElement("div");
+  document.body.append(host);
+  const app = createApp({ render: () => h(m.MdySelectField, { field: form.f.plan, label: "Plan", options: PLANS }) });
+  app.mount(host);
+  try {
+    await settle();
+    assert.ok(entry(host), "nothing is held and there is no entry saying so");
+    form.f.plan.set(PLANS[0].value);
+    await settle();
+    assert.equal(entry(host), null, "a value is held and the nothing-chosen entry is still offered");
+  } finally {
+    app.unmount();
+    host.remove();
+  }
+});
+
+test("a placeholder the document wrote keeps its entry after a choice", async () => {
+  const form = m.createVueForm({ plan: field(PLANS[0].value) });
+  const host = document.createElement("div");
+  document.body.append(host);
+  const app = createApp({ render: () => h(m.MdySelectField, { field: form.f.plan, label: "Plan", options: PLANS, placeholder: "Nessun piano" }) });
+  app.mount(host);
+  try {
+    await settle();
+    assert.equal(host.querySelector("select option[value='']")?.textContent, "Nessun piano");
+  } finally {
+    app.unmount();
+    host.remove();
+  }
+});
