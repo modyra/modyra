@@ -53,3 +53,18 @@ test("json target declares every field kind the model has", () => {
   assert.deepEqual([...createJsonTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
   assert.equal(STUDIO_FIELD_KINDS.length, 14);
 });
+
+test("json target emits every model field kind as the control it names, with its options and no unsupported-kind finding", async () => {
+  const { createEveryKindProject } = await import("../../studio-model/test/fixtures/every-kind.fixture.mjs");
+  const artifact = await createJsonTarget().generate(createEveryKindProject(), {});
+  assert.deepEqual(artifact.diagnostics.filter((d) => d.code === "UNSUPPORTED_FIELD_KIND" || d.severity === "error"), []);
+  const contract = JSON.parse(artifact.files.find((f) => f.path === "contract.json").content);
+  const widgetOf = { date: "datepicker", time: "timepicker" };
+  assert.deepEqual(Object.keys(contract.schema.children), [...STUDIO_FIELD_KINDS]);
+  for (const kind of STUDIO_FIELD_KINDS) {
+    const emitted = contract.schema.children[kind].field;
+    assert.equal(emitted.kind, widgetOf[kind] ?? kind, `${kind} was emitted as ${emitted.kind}`);
+    const optioned = ["select", "radio", "segmented", "multiselect"].includes(kind);
+    assert.equal(Array.isArray(emitted.options), optioned, `${kind} options`);
+  }
+});

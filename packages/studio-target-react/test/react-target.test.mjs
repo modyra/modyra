@@ -176,3 +176,14 @@ test("react target declares every field kind the model has", () => {
   assert.deepEqual([...createReactTarget().capabilities.fieldKinds].sort(), [...STUDIO_FIELD_KINDS].sort());
   assert.equal(STUDIO_FIELD_KINDS.length, 14);
 });
+
+test("react target spells a field of every model kind with its initial value and reports nothing", async () => {
+  const { createEveryKindProject } = await import("../../studio-model/test/fixtures/every-kind.fixture.mjs");
+  const artifact = await createReactTarget().generate(createEveryKindProject(), {});
+  assert.deepEqual(artifact.diagnostics, []);
+  const source = artifact.files.find((f) => f.path === "form.ts").content;
+  const initial = { number: "0", slider: "0", checkbox: "false", toggle: "false", multiselect: "[]" };
+  for (const kind of STUDIO_FIELD_KINDS) {
+    assert.ok(source.includes(`  ${kind}: field(${initial[kind] ?? '""'}),\n`), `${kind} is not emitted as a field in:\n${source}`);
+  }
+});
