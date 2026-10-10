@@ -3,6 +3,7 @@ import { booleanAttribute, ChangeDetectionStrategy, Component, computed, Element
 import {
   createOptionFieldController,
   defaultOptionKey,
+  sameChoice,
   MDY_WIDGET_CONTRACTS,
   optionNavigationIndex,
   defaultWidgetIdFactory,
@@ -14,7 +15,6 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MdySelectOption } from "../../core/types";
-import { isChosenOption } from "../option-choice";
 
 @Component({
   selector: "mdy-control-segmented",
@@ -165,7 +165,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     optionText: this.widgetContract.parts.optionText.classes.join(" "),
     supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
   } as const;
-  protected readonly isChosenOption = isChosenOption;
+  protected readonly isChosenOption = sameChoice;
   protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
@@ -216,7 +216,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     index = Math.max(0, Math.min(index, count - 1));
 
     const option = this.options()[index];
-    if (option && !option.disabled && !isChosenOption(this.value(), option.value)) {
+    if (option && !option.disabled && !sameChoice(this.value(), option.value)) {
       this.onSelect(option.value);
     }
   }
@@ -239,7 +239,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   private selectedIndex(): number {
-    return this.options().findIndex((o) => isChosenOption(this.value(), o.value));
+    return this.options().findIndex((o) => sameChoice(this.value(), o.value));
   }
 
   protected onKeydown(event: KeyboardEvent): void {
