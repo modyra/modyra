@@ -24,6 +24,7 @@ import {
   fieldDescribedBy,
   visibleErrorsOf,  overlayControlledId,
   projectOverlayOpenerA11y,
+  rowRovingIndex,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
@@ -66,7 +67,8 @@ export const MdyColorsField = defineComponent({
      * them not to follow the next one.
      */
     supportingText: { type: String, required: false, default: undefined },
-    presets: { type: Array as PropType<readonly string[]>, default: undefined },
+    /** The palette: a colour, or a colour with the name the people using it give it. */
+    presets: { type: Array as PropType<NonNullable<Parameters<typeof colorPresetsOf>[0]>>, default: undefined },
   },
   setup(props) {
     // Every part's id comes from here: what the document named, or the field's own path with the
@@ -94,6 +96,9 @@ export const MdyColorsField = defineComponent({
     useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
     const panel = ref<HTMLElement | null>(null);
     const anchor = ref<HTMLElement | null>(null);
+    const native = ref<HTMLInputElement | null>(null);
+    /** The palette's word for a colour, which is its value where the palette gave it none. */
+    const labelOf = (value: string): string => palette.find((entry) => entry.value === value)?.label ?? value;
 
     const state = shallowRef(controller.state());
     // And when the keyboard settles somewhere else: every kind with a popup declares it, and this
@@ -174,6 +179,18 @@ export const MdyColorsField = defineComponent({
       if (binding?.intent === "cancel") {
         run(controller.dispatch({ type: "close", restoreFocus: true }));
         event.preventDefault();
+        return;
+      }
+      // The swatches are a listbox, and walk like one: the keys and the direction are the
+      // contract's, and the reading position is the focus itself.
+      if (binding?.intent === "move") {
+        const grid = swatches();
+        const at = grid.indexOf(document.activeElement as HTMLElement);
+        if (at < 0) return;
+        const to = rowRovingIndex(event.key, at, grid.length, binding.by);
+        if (to === null) return;
+        event.preventDefault();
+        grid[to]?.focus();
       }
     };
 
@@ -223,9 +240,12 @@ export const MdyColorsField = defineComponent({
           // name is the hex box below, which is what a caption points at.
           "aria-hidden": "true",
           tabindex: -1,
+          ref: native,
           class: classesOf("control"),
           value: state.value.value,
-          onInput: (event: Event) =>
+          // `change`, not `input`: the platform reports every colour a drag passes over as input,
+          // and only the one let go on is a choice. ADR 0158.
+          onChange: (event: Event) =>
             run(controller.dispatch({ type: "native", value: (event.target as HTMLInputElement).value })),
         })),
         h("input", {
@@ -295,7 +315,7 @@ export const MdyColorsField = defineComponent({
             class: classesOf("swatch"),
             role: roleOf("swatch"),
             "aria-selected": String(preset.selected),
-            "aria-label": preset.value,
+            "aria-label": labelOf(preset.value),
             // One stop for the whole grid: the arrows move within it, so exactly one swatch is
             // reachable by Tab and the rest are reached by the keys that mean "next colour".
             tabindex: preset.selected || (index === 0 && !state.value.presets.some((other) => other.selected)) ? 0 : -1,
@@ -306,7 +326,10 @@ export const MdyColorsField = defineComponent({
         h("button", {
           type: "button",
           class: classesOf("customEntry"),
-          onClick: () => run(controller.dispatch({ type: "close", restoreFocus: true })),
+          // The platform's chooser, asked for through the native input and with the panel left where
+          // it is: on some platforms the chooser is a separate window, and a panel that closed under
+          // it would take the way back with it.
+          onClick: () => native.value?.click(),
         }, [
           // The tint the custom entry shows, and the only place this part belongs.
           h("span", { class: classesOf("customTint") }),
