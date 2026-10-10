@@ -121,7 +121,9 @@ export const MdyBooleanField = defineComponent({
         // rather than inventing either. The text field's projection carries the `for` itself, this
         // kind's does not, and a renderer cannot tell which without looking — so it is set from the
         // control's own id, which is right in both cases.
-        h("label", partProps(parts.label, { class: labelStateClasses(shell), for: parts.input?.id }), [...drawUnder("label"), props.label, requiredMark(props.field)]),
+        // The words beside the box, not a caption over a value: the box shows whether it is on, so
+        // of the caption's states they wear only the refusal, as in every other renderer.
+        h("label", partProps(parts.label, { class: labelStateClasses({ error: shell.error }), for: parts.input?.id }), [...drawUnder("label"), props.label, requiredMark(props.field)]),
       ];
 
       const outer: VNode[] = [

@@ -28,6 +28,13 @@ const find = (kind, part) => {
   return classes.length === 0 ? null : document.querySelector(classes.map((one) => `.${one}`).join(""));
 };
 
+/**
+ * The words beside a checkbox or a switch are not a caption over a value: the box's own state is
+ * what shows whether it is on. Every other renderer puts only the refusal on them, never `--filled`,
+ * and a stylesheet written once for all of them must not find one renderer's box painted as filled.
+ */
+const WORDS_BESIDE_A_BOX = new Set(["checkbox", "toggle"]);
+
 const STATES = {
   invalid: { drive: "invalid", expected: { error: true } },
   readonly: { drive: "readonly", expected: { readonly: true } },
@@ -46,6 +53,11 @@ for (const kind of KINDS) {
         const label = find(kind, "label");
         assert.ok(label, `${kind} drew no caption`);
         for (const one of on(shell.label)) assert.ok(label.classList.contains(one), `${kind} ${name}: the caption lacks ${one}`);
+        if (WORDS_BESIDE_A_BOX.has(kind)) {
+          const refusal = on(shellStateClasses({ error: true }).label);
+          const extra = [...label.classList].filter((one) => one.startsWith("mdy-label--") && !refusal.includes(one));
+          assert.deepEqual(extra, [], `${kind} ${name}: the words beside the box wear more than the refusal`);
+        }
         const declaresWrapper = MDY_WIDGET_CONTRACTS[kind].structure.nodes.some((node) => node.part === "inputWrapper");
         const wrapper = declaresWrapper ? find(kind, "inputWrapper") : null;
         if (wrapper !== null) {
@@ -68,7 +80,7 @@ for (const kind of KINDS) {
         fixture.drive(drive);
         await fixture.settle?.();
         // Whether the value is there is the contract's question, asked of the value the field holds.
-        const present = valueIsPresent(kind, fixture.value());
+        const present = !WORDS_BESIDE_A_BOX.has(kind) && valueIsPresent(kind, fixture.value());
         assert.equal(find(kind, "label")?.classList.contains(filled), present,
           `${kind} ${drive}: the caption ${present ? "lacks" : "wears"} ${filled}`);
       }
