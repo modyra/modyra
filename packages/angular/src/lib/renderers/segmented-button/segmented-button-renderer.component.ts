@@ -226,9 +226,16 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   protected tabIndexFor(index: number): number {
+    return index === this.tabStopIndex() ? 0 : -1;
+  }
+
+  // A browser skips a disabled control when tabbing, so the stop is never placed on one: the chosen
+  // option when it is enabled, else the first enabled option, else nowhere (-1).
+  private tabStopIndex(): number {
+    const opts = this.options();
     const selected = this.selectedIndex();
-    if (selected >= 0) return index === selected ? 0 : -1;
-    return index === 0 ? 0 : -1;
+    if (selected >= 0 && !opts[selected]?.disabled) return selected;
+    return opts.findIndex((o) => !o.disabled);
   }
 
   private selectedIndex(): number {
