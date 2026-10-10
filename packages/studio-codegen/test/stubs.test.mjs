@@ -116,3 +116,20 @@ test("a name the language accepts is emitted as it was typed", () => {
     assert.match(code, new RegExp(`export function ${name.replace("$", "\\$")}\\(`), `${name} was renamed`);
   }
 });
+
+test("MdyAsyncValidationContext is a free name when no server validator imports it", () => {
+  const { nameFor, diagnostics } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "customValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+  }));
+  assert.equal(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.deepEqual(diagnostics, []);
+});
+
+test("MdyAsyncValidationContext is taken once any server validator imports it, whichever stub carries the name", () => {
+  const { nameFor, diagnostics } = buildStubsModule(project({
+    impl_a: { id: "impl_a", role: "customValidator", displayName: "MdyAsyncValidationContext", mode: "stub" },
+    impl_b: { id: "impl_b", role: "serverValidator", displayName: "check", mode: "stub" },
+  }));
+  assert.notEqual(nameFor.get("impl_a"), "MdyAsyncValidationContext");
+  assert.equal(diagnostics.length, 1);
+});

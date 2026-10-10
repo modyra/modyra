@@ -81,3 +81,17 @@ test("a form validator that compiles is still emitted", () => {
   assert.deepEqual(diagnostics, []);
   assert.match(code, /crossField\(/);
 });
+
+test("a form validator whose operator or pattern cannot be compiled is omitted with an error rather than made always-valid", () => {
+  for (const condition of [
+    { op: "matches", operands: [{ nodeId: "nd_a" }, 5] },
+    { op: "startsWith", operands: [{ nodeId: "nd_a" }, "x"] },
+  ]) {
+    const result = build(project({
+      children: [field("nd_a", "a")],
+      formValidators: [{ id: "val_f", kind: "form", dependencies: [{ nodeId: "nd_a" }], condition, message: "bad" }],
+    }));
+    assert.equal(result.diagnostics.filter((d) => d.code === "INVALID_EXPRESSION" && d.severity === "error").length, 1);
+    assert.doesNotMatch(result.code, /crossField/);
+  }
+});

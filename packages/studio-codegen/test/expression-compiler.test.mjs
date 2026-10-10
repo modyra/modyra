@@ -91,3 +91,14 @@ test("the four kinds a condition does hold compile exactly as they did", () => {
   assert.equal(compiled(true), 'value["a"] === true');
   assert.equal(compiled(null), 'value["a"] === null');
 });
+
+test("matches with a pattern that is not a string is refused, not compiled to a pattern that matches everything", () => {
+  for (const pattern of [5, true, null, undefined, { nodeId: "city" }, ["x"]]) {
+    const expr = { op: "matches", operands: pattern === undefined ? [{ nodeId: "city" }] : [{ nodeId: "city" }, pattern] };
+    assert.throws(() => compileExpressionToJs(expr, pathOf), /pattern/i, `pattern ${JSON.stringify(pattern)} compiled`);
+  }
+});
+
+test("an operator the compiler does not know is refused, not compiled to true", () => {
+  assert.throws(() => compileExpressionToJs({ op: "startsWith", operands: [{ nodeId: "city" }, "R"] }, pathOf), /startsWith/);
+});

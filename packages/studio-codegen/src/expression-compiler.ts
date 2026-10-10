@@ -97,8 +97,10 @@ function compileAt(expr: StudioExpression, pathOf: (nodeId: string) => string, d
     case "lessThan":
       return `${compileOperand(a, pathOf, depth)} < ${compileOperand(b, pathOf, depth)}`;
     case "matches": {
-      const pattern = typeof b === "string" ? b : "";
-      return `${printRegExp(pattern)}.test(${compileOperand(a, pathOf, depth)})`;
+      // A pattern that is not a literal string has no reading; the empty pattern it would collapse to
+      // matches every value, which would turn a failed check into a passing one.
+      if (typeof b !== "string") throw new Error("Expression \"matches\" needs a literal string pattern");
+      return `${printRegExp(b)}.test(${compileOperand(a, pathOf, depth)})`;
     }
     case "and":
       return operands.length
@@ -111,6 +113,7 @@ function compileAt(expr: StudioExpression, pathOf: (nodeId: string) => string, d
     case "not":
       return `!(${compileOperand(a, pathOf, depth)})`;
     default:
-      return "true";
+      // An operator with no reading is not answered with the one that opens.
+      throw new Error(`Expression operator "${String((expr as { op?: unknown }).op)}" is not one this compiler knows`);
   }
 }
