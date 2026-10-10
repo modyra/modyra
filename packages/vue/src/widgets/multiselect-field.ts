@@ -271,6 +271,9 @@ export const MdyMultiselectField = defineComponent({
           // With nothing to put back the shortcut is the page's: consumed here, it would take the
           // browser's own undo from a person who has nothing to undo in this field.
           if (state.value.wayBack === null) return;
+          // Nor inside a text box: there the gesture undoes what was just typed, and taking it
+          // would put a value back and lose the word.
+          if (event.target instanceof HTMLElement && event.target.closest("input, textarea, [contenteditable]") !== null) return;
           run(controller.dispatch({ type: "undo" }));
           break;
         case "step": {

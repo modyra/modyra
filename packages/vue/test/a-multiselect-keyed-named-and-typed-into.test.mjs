@@ -151,3 +151,20 @@ for (const [held, initial] of [["nothing held", []], ["a value held", ["roma"]]]
     }
   });
 }
+
+test("inside the filter box the undo shortcut is the box's own", async () => {
+  const undo = MDY_WIDGET_KEYBOARD.multiselect.find((binding) => binding.intent === "undo");
+  const view = await draw({ initial: ["roma", "milano"], props: { searchable: true } });
+  try {
+    view.findAll("chipRemove")[0].dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    view.find("trigger").dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    const pressed = press(view.find("search"), undo.key, { ctrlKey: true, metaKey: true });
+    await settle();
+    assert.equal(pressed.defaultPrevented, false, "the platform's undo of what was typed was taken");
+    assert.deepEqual([...view.handle.value()], ["milano"], "a removed value came back from inside a text box");
+  } finally {
+    view.dispose();
+  }
+});
