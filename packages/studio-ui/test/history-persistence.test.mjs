@@ -223,3 +223,18 @@ test("a session that saves leaves the status of the edit alone", async () => {
   assert.equal(db.saves, 1);
   assert.doesNotMatch(status(host), /could not be saved/i);
 });
+
+test("a browser without IndexedDB tells the user once, not after every edit", async () => {
+  delete globalThis.indexedDB;
+  const host = createHost();
+  mountStudio(host, createCheckoutProject());
+
+  edit(host, "Renamed");
+  await settle();
+  assert.match(status(host), /could not be saved/i);
+  assert.match(status(host), /no IndexedDB/);
+
+  edit(host, "Renamed again");
+  await settle();
+  assert.equal(status(host), "Rename form to Renamed again", "the second edit keeps its own status");
+});

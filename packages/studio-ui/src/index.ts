@@ -65,7 +65,7 @@ import { StudioCanvasController, StudioRuntimeSession } from "./canvas-controlle
 import { installColumns, type StudioColumns } from "./columns.js";
 import { mountPreviewFields, previewStructureSignature, type PreviewFieldsMount } from "./preview-mount.js";
 import { Region, ScrollMemory } from "./regions.js";
-import { importProjectFromText, loadSession, saveSession } from "./storage.js";
+import { importProjectFromText, loadSession, saveSession, StorageUnavailableError } from "./storage.js";
 import "./studio.css";
 
 type Drag = { nodeId: string } | { template: string };
@@ -684,6 +684,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   const history = new CommandHistory();
   /** True once the user has edited, started a new project or imported one; a late session restore must not overwrite that. */
   let sessionTouched = false;
+  /** Whether the status bar has already said that this browser has no storage for the session. */
+  let storageUnavailableReported = false;
   /** Built once; from then on `render()` only updates the regions whose markup actually changed. */
   let shell: StudioShell | null = null;
   /** Column widths and the narrow-window slide-overs; built with the shell, torn down with it. */
@@ -724,6 +726,11 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function autosave(): void {
     void saveSession(project).catch((error: unknown) => {
       if (disposed) return;
+      // Missing storage is a property of the browser, not of one write: say so once, not after every edit.
+      if (error instanceof StorageUnavailableError) {
+        if (storageUnavailableReported) return;
+        storageUnavailableReported = true;
+      }
       status = `Session could not be saved: ${error instanceof Error ? error.message : String(error)}`;
       render();
     });
@@ -4022,7 +4029,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       .then((result) => {
         if (disposed || !result || sessionTouched) return;
         project = result.project;
-        history.clear();
         selected = project.schema.id;
         status = "Restored last session";
         render();
