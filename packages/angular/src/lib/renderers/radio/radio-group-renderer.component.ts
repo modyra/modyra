@@ -1,11 +1,12 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
-import { createOptionFieldController, defaultWidgetIdFactory, fieldNameAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createOptionFieldController, defaultOptionKey, defaultWidgetIdFactory, fieldNameAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdySelectOption } from "../../core/types";
+import { isChosenOption } from "../option-choice";
 
 @Component({
   selector: "mdy-control-radio",
@@ -42,14 +43,14 @@ import { MdySelectOption } from "../../core/types";
       [attr.aria-label]="namedBy()['aria-label']"
     >
       @for (opt of options(); track opt.value) {
-        <label class="{{ cls.option }}" [class.mdy-radio-item--disabled]="isDisabled()">
+        <label class="{{ cls.option }}" [class.mdy-radio-item--disabled]="isDisabled() || opt.disabled === true">
           <input
             type="radio"
             [class]="cls.optionControl"
             [name]="groupName()"
             [value]="opt.value"
-            [checked]="value() === opt.value"
-            [disabled]="isDisabled()"
+            [checked]="isChosenOption(value(), opt.value)"
+            [disabled]="isDisabled() || opt.disabled === true"
             (change)="onSelectionChange(opt.value)"
             (blur)="onBlur()"
           />
@@ -136,6 +137,7 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
     optionLabel: this.widgetContract.parts.optionLabel.classes.join(" "),
     supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
   } as const;
+  protected readonly isChosenOption = isChosenOption;
   protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
@@ -149,7 +151,7 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
   );
 
   protected onSelectionChange(value: TValue): void {
-    this.controller()?.dispatch({ type: "select", optionKey: String(value) });
+    this.controller()?.dispatch({ type: "select", optionKey: defaultOptionKey(value) });
   }
 
   protected onBlur(): void {

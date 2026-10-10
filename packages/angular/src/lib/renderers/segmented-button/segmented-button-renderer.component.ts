@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from "@angular/common";
 import { booleanAttribute, ChangeDetectionStrategy, Component, computed, ElementRef, input, InputSignalWithTransform, viewChild } from "@angular/core";
 import {
   createOptionFieldController,
+  defaultOptionKey,
   MDY_WIDGET_CONTRACTS,
   optionNavigationIndex,
   defaultWidgetIdFactory,
@@ -13,6 +14,7 @@ import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdyIconComponent } from "../../control/mdy-icon.component";
 import { MdySelectOption } from "../../core/types";
+import { isChosenOption } from "../option-choice";
 
 @Component({
   selector: "mdy-control-segmented",
@@ -65,25 +67,25 @@ import { MdySelectOption } from "../../core/types";
           class="{{ cls.option }}"
           [class.mdy-segmented__button--first]="first"
           [class.mdy-segmented__button--last]="last"
-          [class.mdy-segmented__button--selected]="value() === opt.value"
+          [class.mdy-segmented__button--selected]="isChosenOption(value(), opt.value)"
         >
           <input
             type="radio"
             class="{{ cls.optionControl }}"
             [name]="groupName()"
             [value]="opt.value"
-            [checked]="value() === opt.value"
-            [disabled]="isDisabled()"
+            [checked]="isChosenOption(value(), opt.value)"
+            [disabled]="isDisabled() || opt.disabled === true"
             [attr.data-seg-index]="i"
             (change)="onSelect(opt.value)"
-            [attr.aria-disabled]="isDisabled()"
+            [attr.aria-disabled]="isDisabled() || opt.disabled === true"
             [attr.tabindex]="tabIndexFor(i)"
           />
           <mdy-icon
             name="CHECKMARK"
             class="{{ cls.optionCheck }}"
-            [style.visibility]="value() === opt.value ? 'visible' : 'hidden'"
-            [attr.aria-hidden]="value() !== opt.value"
+            [style.visibility]="isChosenOption(value(), opt.value) ? 'visible' : 'hidden'"
+            [attr.aria-hidden]="!isChosenOption(value(), opt.value)"
           />
           <span class="{{ cls.optionText }}" [attr.data-text]="opt.label">{{ opt.label }}</span>
         </label>
@@ -163,6 +165,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     optionText: this.widgetContract.parts.optionText.classes.join(" "),
     supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
   } as const;
+  protected readonly isChosenOption = isChosenOption;
   protected override readonly widgetKind = "segmented" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
@@ -213,13 +216,13 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     index = Math.max(0, Math.min(index, count - 1));
 
     const option = this.options()[index];
-    if (option && this.value() !== option.value) {
+    if (option && !option.disabled && !isChosenOption(this.value(), option.value)) {
       this.onSelect(option.value);
     }
   }
 
   protected onSelect(value: TValue): void {
-    this.controller()?.dispatch({ type: "select", optionKey: String(value) });
+    this.controller()?.dispatch({ type: "select", optionKey: defaultOptionKey(value) });
   }
 
   protected tabIndexFor(index: number): number {
@@ -229,7 +232,7 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
   }
 
   private selectedIndex(): number {
-    return this.options().findIndex((o) => o.value === this.value());
+    return this.options().findIndex((o) => isChosenOption(this.value(), o.value));
   }
 
   protected onKeydown(event: KeyboardEvent): void {
@@ -244,11 +247,16 @@ export class MdySegmentedButtonComponent<TValue = unknown> extends MdyBaseContro
     // contract stays as short as the practice: the extra gesture goes rather than the two others
     // gaining it, because nobody expects it and nobody loses it.
     if (event.key === "Home" || event.key === "End") return;
-    const next = optionNavigationIndex(event.key, Math.max(0, this.selectedIndex()), opts.length);
+    // An option switched off is stepped over in the direction of travel; a ring with nothing live
+    // in it leaves the selection where it is.
+    let next = optionNavigationIndex(event.key, Math.max(0, this.selectedIndex()), opts.length);
     if (next === null) return;
     event.preventDefault();
+    for (let guard = 0; guard < opts.length && opts[next]?.disabled; guard += 1) {
+      next = optionNavigationIndex(event.key, next, opts.length) ?? next;
+    }
     const opt = opts[next];
-    if (!opt) return;
+    if (!opt || opt.disabled) return;
     this.onSelect(opt.value);
     this.track()
       ?.nativeElement.querySelector<HTMLElement>(`[data-seg-index="${next}"]`)
