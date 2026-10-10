@@ -122,7 +122,9 @@ export const MdyOptionField = defineComponent({
             // control, which is what assistive tech reads and what a form submits. Its *classes*
             // belong to the row instead — the contract paints the option on the `option` element —
             // so the control carries only the classes its own part declares.
-            h("input", partProps({ ...parts[key], classes: [] }, {
+            // Not its `aria-disabled` either: the native `disabled` the projection also carries is
+            // what says the choice is off, and the control part declares no state to assert it again.
+            h("input", partProps({ ...parts[key], classes: [], attributes: { ...parts[key]?.attributes, "aria-disabled": null } }, {
               type: "radio",
               class: classesOf("optionControl"),
               name: widgetId.value,
