@@ -216,6 +216,9 @@ export function kindValidators<T>(kind: MdyValueKind): ReadonlyArray<ValidatorFn
 export const pattern = (regex: RegExp, message = 'Invalid format'): ValidatorFn<string | null> =>
   withFacts((value) => {
     if (!value) return [];
+    // `test` on a global or sticky expression reads and advances `lastIndex`, so the verdict would
+    // depend on the previous call; every test starts from the beginning.
+    regex.lastIndex = 0;
     return regex.test(value) ? [] : [message];
     // `<input pattern>` is anchored and has no flags, so only a source without them can be offered;
     // a flagged expression stays a rule, which is where it was working already.

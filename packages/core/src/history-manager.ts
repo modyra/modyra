@@ -229,13 +229,18 @@ export class MdyHistoryManager {
     const last = this._lastSnapshot;
     if (last !== null && shallowEqualRecords(last, current)) return;
     if (last !== null) {
-      this._undoStack.push(last);
-      if (this._undoStack.length > this._maxEntries) this._undoStack.shift();
+      this._pushUndo(last);
       this._redoStack.length = 0;
       this._stackedUndo.set(true);
       this._stackedRedo.set(false);
     }
     this._lastSnapshot = current;
+  }
+
+  /** Every growth of the undo stack goes through here, so `maxEntries` bounds all of them. */
+  private _pushUndo(snapshot: Record<string, unknown>): void {
+    this._undoStack.push(snapshot);
+    if (this._undoStack.length > this._maxEntries) this._undoStack.shift();
   }
 
   /**
@@ -271,8 +276,10 @@ export class MdyHistoryManager {
     const current = this._rx.untracked(() => this._getValue());
     const last = this._lastSnapshot;
     if (last !== null && !shallowEqualRecords(last, current)) {
-      this._undoStack.push(last);
+      this._pushUndo(last);
       this._redoStack.length = 0;
+      this._stackedUndo.set(true);
+      this._stackedRedo.set(false);
     }
     this._lastSnapshot = current;
   }
@@ -332,7 +339,7 @@ export class MdyHistoryManager {
     const next = this._redoStack.pop();
     if (!next) return;
     const current = this._rx.untracked(() => this._getValue());
-    this._undoStack.push(current);
+    this._pushUndo(current);
     this._lastSnapshot = next;
     this._restoring = true;
     try {

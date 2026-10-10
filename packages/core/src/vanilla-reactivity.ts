@@ -131,14 +131,17 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
   private readonly _equal: MdyEqualityFn<T>;
   private _value!: T;
   private _dirty = true;
+  /** The last evaluation threw: dependents saw the failure, though the computed is still dirty. */
+  private _failed = false;
 
   constructor(private readonly _fn: () => T, equal?: MdyEqualityFn<T>) {
     this._equal = equal ?? Object.is;
   }
 
   markStale(): void {
-    if (this._dirty) return;
+    if (this._dirty && !this._failed) return;
     this._dirty = true;
+    this._failed = false;
     for (const consumer of [...this.consumers]) consumer.markStale();
   }
 
@@ -155,6 +158,12 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
       const hadValue = !this._isInitial;
       try {
         this._value = this._fn();
+      } catch (error) {
+        // A computed that failed stays dirty so the next read retries, but its dependents have
+        // already read the failure: the next source change must reach them, which `markStale`
+        // would otherwise refuse for a computed that is dirty.
+        this._failed = true;
+        throw error;
       } finally {
         activeConsumer = prev;
         activeComputed = prevComputed;
@@ -167,6 +176,7 @@ class VanillaComputed<T> implements ProducerNode, Consumer {
       }
       this._isInitial = false;
       this._dirty = false;
+      this._failed = false;
     }
     return this._value;
   }
