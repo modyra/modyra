@@ -29,7 +29,7 @@ import {
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle } from "@modyra/core";
 import { formatTimeAs, parseAnyTime, type MdyTimeFormat } from "@modyra/core/datetime";
-import { partProps, type MdyDeclaredPart, rootClasses } from "./part.js";
+import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -232,20 +232,22 @@ export const MdyTimepickerField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("timepicker", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
         children.push(h("label", {
           id: defaultWidgetIdFactory.part(widgetId.value, "label"),
           for: parts.trigger?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
       // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
       // the width matches) is a statement about the field, and measured against the button at its
       // end a list is as wide as an arrow.
-      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         h("input", partProps(parts.trigger, {
           // The name, where nothing on the page captions the control. The projection names a
           // control against a caption that exists; this is the other case, and without it a
@@ -350,7 +352,7 @@ export const MdyTimepickerField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "timepicker"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });

@@ -24,7 +24,7 @@ import type { MdyDateRangeValue } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
-import { partProps, rootClasses } from "./part.js";
+import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
@@ -167,6 +167,8 @@ export const MdyDaterangeField = defineComponent({
 
     return () => {
       const parts = view.value.parts;
+      // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
+      const shell = shellStateOf("daterange", props.field, state.value.open);
       const children: VNode[] = [];
 
       if (props.label !== "") {
@@ -175,14 +177,14 @@ export const MdyDaterangeField = defineComponent({
           // Read from the projection, never spelled here: the part is called `startControl` and its
           // id is `__start`, and a `for` built out of the part name points at nothing.
           for: parts.startControl?.id,
-          class: classesOf("label"),
+          class: [classesOf("label"), labelStateClasses(shell)].join(" ").trim(),
         }, labelContent(props.label, props.field)));
       }
 
       // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
       // the width matches) is a statement about the field, and measured against the button at its
       // end a list is as wide as an arrow.
-      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
+      children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell), ref: anchor }, [
         entry("start"),
         // Between the two boxes and read by nobody: what it means is already said by the two
         // controls having their own names, and a screen reader announcing "en dash" between them
@@ -231,7 +233,7 @@ export const MdyDaterangeField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "daterange"));
 
-      return h("div", { class: rootClasses(CONTRACT, { touched: props.field.touched(), open: state.value.open }), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
     };
   },
 });
