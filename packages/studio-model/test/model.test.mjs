@@ -288,3 +288,37 @@ test("a schema deeper than the editor will place is reported, and one it cannot 
   // The known-good case in the same run: an ordinary schema loads with nothing said.
   assert.deepEqual(loadProject(root(5)).diagnostics, []);
 });
+
+test("a record node, at any depth, is a node the loader accepts", () => {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "record",
+    id: "nd_rec",
+    name: "byKey",
+    item: {
+      node: "group",
+      id: "nd_rec_row",
+      name: "row",
+      children: [
+        { node: "field", id: "nd_rec_f", name: "f", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+      ],
+    },
+    initialRows: {},
+    validators: [],
+  });
+  const { project: loaded } = loadProject(project);
+  assert.equal(loaded.schema.children.at(-1).node, "record");
+  assert.ok(buildIndexes(loaded).nodeById.has("nd_rec_f"));
+});
+
+test("a record node without its validators array is refused by name, like an array", () => {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "record",
+    id: "nd_rec",
+    name: "byKey",
+    item: { node: "field", id: "nd_rec_i", name: "i", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+    initialRows: {},
+  });
+  assert.throws(() => loadProject(project), (e) => e instanceof StudioModelError && /validators/.test(e.message));
+});

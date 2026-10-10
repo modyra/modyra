@@ -440,3 +440,59 @@ test("a sequence looks at every step, and an advisory one does not hide an inval
   // The known-good case in the same run: a clean sequence validates clean.
   assert.deepEqual(createSequenceCommand([step([], "a"), step([], "b")], "clean").validate(project), []);
 });
+
+function withRecord() {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "record",
+    id: "nd_rec",
+    name: "byKey",
+    item: {
+      node: "group",
+      id: "nd_rec_row",
+      name: "row",
+      children: [
+        { node: "field", id: "nd_rec_a", name: "a", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+        { node: "field", id: "nd_rec_b", name: "b", fieldKind: "text", valueType: "string", initialValue: "", validators: [] },
+      ],
+    },
+    initialRows: {},
+    validators: [],
+  });
+  return project;
+}
+
+const recordRow = (project) => project.schema.children.find((n) => n.id === "nd_rec").item;
+
+test("a field inside a record's row is deletable and the delete round-trips", () => {
+  const original = withRecord();
+  const command = createDeleteCommand("nd_rec_a");
+  assert.deepEqual(command.validate(original), []);
+  const applied = roundTrip(original, command);
+  assert.deepEqual(recordRow(applied).children.map((c) => c.id), ["nd_rec_b"]);
+});
+
+test("a record's row itself is not deletable or movable, as an array's is not", () => {
+  const original = withRecord();
+  assert.match(createDeleteCommand("nd_rec_row").validate(original)[0].message, /Replace the array item/);
+  assert.match(createMoveCommand("nd_rec_row", { kind: "inside", parentId: "nd_root", index: 0 }).validate(original)[0].message, /not movable/);
+});
+
+test("insert before a sibling inside a record's row round-trips", () => {
+  const original = withRecord();
+  const field = { node: "field", id: "nd_rec_c", name: "c", fieldKind: "text", valueType: "string", initialValue: "", validators: [] };
+  const command = createInsertCommand(field, { kind: "before", targetId: "nd_rec_b" });
+  assert.deepEqual(command.validate(original), []);
+  const applied = roundTrip(original, command);
+  assert.deepEqual(recordRow(applied).children.map((c) => c.id), ["nd_rec_a", "nd_rec_c", "nd_rec_b"]);
+});
+
+test("replacing a record's row (arrayItem insert) is undone to exactly the prior row", () => {
+  const original = withRecord();
+  const replacement = { node: "field", id: "nd_rec_new", name: "n", fieldKind: "text", valueType: "string", initialValue: "", validators: [] };
+  const command = createInsertCommand(replacement, { kind: "arrayItem", arrayId: "nd_rec" });
+  assert.deepEqual(command.validate(original), []);
+  const applied = command.apply(original);
+  assert.equal(recordRow(applied).id, "nd_rec_new");
+  assert.deepEqual(command.inverse(original).apply(applied), original);
+});
