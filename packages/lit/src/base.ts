@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind, observerFor} from "@modyra/core";
-import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, defaultOptionKey, messagesForLocale, widgetScopeOf, type MdyI18nMessages,
+import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, messagesForLocale, sameChoice, widgetScopeOf, type MdyI18nMessages,
   shellStateClasses,
 } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
@@ -139,21 +139,9 @@ export abstract class MdyFieldElement<T> extends LitElement {
    * with nothing to derive an id from. Its ids are not stable across mounts, because nothing about
    * such a widget is.
    */
-  /**
-   * Whether a held value is this option's, asked the way the contract asks it.
-   *
-   * Identity first, then the key: a draft, a refetch or an import hands the field a fresh object that
-   * *is* an option's value without *being* it, and asked only the exact question no option admitted
-   * to the value the model holds. Asked through `String()` instead — which was the other half of the
-   * same defect — every plain object matched every other, and a single-choice group marked all of
-   * them.
-   */
+  /** Whether a held value is this option's, by the contract's `sameChoice`. */
   protected isChosen(held: unknown, optionValue: unknown): boolean {
-    if (held === optionValue) return true;
-    if (held === null || held === undefined || optionValue === null || optionValue === undefined) {
-      return false;
-    }
-    return defaultOptionKey(held) === defaultOptionKey(optionValue);
+    return sameChoice(held, optionValue);
   }
 
   protected get fieldId(): string {

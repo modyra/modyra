@@ -1,12 +1,11 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, input } from "@angular/core";
-import { createOptionFieldController, defaultOptionKey, defaultWidgetIdFactory, fieldNameAttributes, MDY_WIDGET_CONTRACTS } from "@modyra/widgets";
+import { createOptionFieldController, defaultOptionKey, defaultWidgetIdFactory, fieldNameAttributes, MDY_WIDGET_CONTRACTS, sameChoice } from "@modyra/widgets";
 import { MdyPartDirective } from "../../control/mdy-part.directive";
 import { MdyBaseControl } from "../../control/control.directive";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
 import { MdySelectOption } from "../../core/types";
-import { isChosenOption } from "../option-choice";
 
 @Component({
   selector: "mdy-control-radio",
@@ -137,7 +136,7 @@ export class MdyRadioGroupComponent<TValue = unknown> extends MdyBaseControl<TVa
     optionLabel: this.widgetContract.parts.optionLabel.classes.join(" "),
     supportingText: this.widgetContract.parts.supportingText.classes.join(" "),
   } as const;
-  protected readonly isChosenOption = isChosenOption;
+  protected readonly isChosenOption = sameChoice;
   protected override readonly widgetKind = "radio" as const;
   protected readonly widgetHasRootClass = this.widgetContract.rootClasses.includes("mdy-renderer");
   readonly options = input<readonly MdySelectOption<TValue>[]>([]);
