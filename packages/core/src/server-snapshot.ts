@@ -79,7 +79,9 @@ export function mdyServerSnapshot<S extends MdyFormSchema>(
   const pending = fields.some((each) => each.pending) || form.state.pending();
   return {
     value: form.getValue(),
-    verdict: fields.some((each) => each.verdict === "invalid")
+    // The form's own rule decides invalid: it leaves out a disabled field and counts the errors no
+    // field owns, which the per-field verdicts cannot see.
+    verdict: form.state.valid() === false
       ? "invalid"
       : pending
         ? "unknown"

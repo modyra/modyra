@@ -1402,6 +1402,7 @@ export class MdyFormEngine
 
   patchValue(partial: Partial<Record<string, unknown>>): void {
     for (const [key, val] of inPathOrder(partial)) {
+      if (val === undefined) continue;
       if (!this._offerToGate(key, val)) continue;
       const rec = this._getOrCreate(key);
       rec.state.value.set(val);
