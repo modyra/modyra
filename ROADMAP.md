@@ -151,10 +151,9 @@ Six items, in the order their dependencies allow:
    and a reference config that shows the members of `MdyStateFixture` instead of delegating them to a
    fixture the reader does not open.
 
-4. **The two capabilities that nothing reads gain their consumers.** `graphInspection` and
-   `serverSnapshots` are declared by every runtime, answered `no` by all eight, and read by no code —
-   a column constant on every row carries no information. They stay because their consumers are in
-   scope here: the devtools panel reads the first, an SSR path uses the second.
+4. **The capability that nothing reads gains its consumer.** `graphInspection` is declared by every
+   runtime, answered `false` by all of them, and read by no code — a column constant on every row
+   carries no information. It stays because its consumer, the devtools panel, is in scope here.
 
 5. **The deprecation harvest.** The aliases 2.5.0 shipped, and the names kept pointing at an older
    meaning, fall here. It is the cheapest item and the only one already fully specified, which is
@@ -201,9 +200,10 @@ This list is the perimeter freeze. Adding to the system is what the roadmap is s
 ## Known open
 
 The contract's defects are published in [known issues](docs/known-issues.md) rather than kept
-private. One is open and stays open on purpose: the iOS theme pairs white on Apple's system blue,
+private. Two are open. One stays open on purpose: the iOS theme pairs white on Apple's system blue,
 which measures below the 4.5:1 floor. It is the pairing Apple specifies, and a theme that quietly
-darkened it would ship an iOS theme Apple does not.
+darkened it would ship an iOS theme Apple does not. The other is the plain demo page's one-pixel
+height flap under load, which reaches no consumer.
 
 ---
 

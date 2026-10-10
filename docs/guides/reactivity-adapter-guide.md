@@ -57,7 +57,7 @@ export interface MdyReactivityCapabilities {
 ### What each one asserts, and what answering `false` costs
 
 `false` is usually the truth and saying so is the point of the flags. What it is
-not is free: every `false` buys a conformance check out of running, and two of
+not is free: every `false` buys a conformance check out of running, and three of
 them change what the engine does. The three groups below cost very different
 things, so they are worth telling apart before you answer.
 
@@ -67,6 +67,7 @@ things, so they are worth telling apart before you answer.
 | --- | --- | --- | --- |
 | `effects` | reactions run when their dependencies change | an array field reconciles itself through an effect; devtools observe live | `_reconcile` is null and nothing watches for you — reconciliation has to be driven explicitly, and four conformance checks go unasked |
 | `batching` | several writes in one block propagate once | the engine groups its writes through your `batch` | every write pays its own propagation. Declaring it `true` without a working `batch` is worse than `false`: intermediate states become observable |
+| `serverSnapshots` | a coherent snapshot can be produced and restored outside a browser, with the same verdicts | `mdyServerSnapshot` and `mdyRestoreSnapshot` accept the runtime | both refuse it with a `TypeError`: a runtime whose computations do not re-run outside a browser would serialise verdicts that disagree with the ones a person sees |
 
 **Read only by the conformance suite — answering costs you a check.**
 
@@ -83,12 +84,11 @@ things, so they are worth telling apart before you answer.
 | flag | asserts | why it is here |
 | --- | --- | --- |
 | `graphInspection` | the runtime can expose its dependency graph | the devtools panel is its intended consumer, and is planned for 3.0.0 |
-| `serverSnapshots` | a coherent snapshot can be produced and restored outside a browser, with the same verdicts | the SSR path is its intended consumer, same release |
 | `effectOwnership` | effects created in a scope die with the scope | **nothing reads it — not the engine, not the suite.** Every adapter declares it and no code consults it. Answer it honestly, and know that today the answer changes nothing |
 
-The three in the last group are the ones to be most careful with, for opposite
-reasons: the first two are promises whose consumers do not exist yet, so a `true`
-there will be checked for the first time when they arrive; the third is measured
+The two in the last group are the ones to be most careful with, for opposite
+reasons: the first is a promise whose consumer does not exist yet, so a `true`
+there will be checked for the first time when it arrives; the second is measured
 by nothing at all.
 
 **Do not answer `true` out of ambition.** Conformance will check it and fail

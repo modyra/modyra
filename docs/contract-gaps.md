@@ -32,7 +32,6 @@ does not want to scroll, and `npm run test:docs` fails if the two disagree.
   the colour metric decided and its estimate still approximate
 - **Closed without a fix, deliberately** — C4 (no honest consumer to add), E3 (a scope boundary,
   documented)
-- **Open** — R, U
 
 Nothing here is urgent, and every entry carries the reason it is where it is.
 

@@ -46,13 +46,6 @@ WebKit or Firefox* who wants a per-engine guarantee rather than a Chromium one.
 estimate behind automatic colour selection is still approximate. *Affects theme authors* generating
 palettes rather than writing them.
 
-**S — the conformance kit's two browser sections do not run in this repository.** *Keyboard
-behaviour* and *Accessibility audit* need a browser transport no config here supplies, so the kit
-reports eight sections of ten. The questions are answered anyway, by this repository's own browser
-suite — nineteen keyboard cases and three accessible-name cases, on every renderer. *Affects an
-implementer* conforming a fourth renderer, who gets eight sections from the kit and must write those
-two checks themselves.
-
 **E2 and F** are internal: test scripts that `npm test` did not reach, and contract tables keyed by
 a bare `string` where a narrower type belongs. Neither changes what a consumer sees.
 
