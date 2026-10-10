@@ -29,6 +29,8 @@ function openDb(): Promise<IDBDatabase> {
 
 /** Auto-save: fire-and-forget from the caller, errors are the caller's to decide whether to surface. */
 export async function saveSession(project: MdyStudioProject): Promise<void> {
+  // An environment with no IndexedDB (server render, a bare test runtime) has nowhere to write; that is not a failed write.
+  if (typeof indexedDB === "undefined") return;
   const db = await openDb();
   try {
     await new Promise<void>((resolve, reject) => {

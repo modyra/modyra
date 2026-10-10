@@ -43,18 +43,27 @@ export class CommandHistory {
     return this.#redoStack.length > 0;
   }
 
+  /** Forgets every entry. The stacks describe edits to one project, so they end when another replaces it. */
+  clear(): void {
+    this.#undoStack = [];
+    this.#redoStack = [];
+  }
+
+  /** An entry leaves its stack only once it has applied, so a throwing inverse leaves the history as it was. */
   undo(project: MdyStudioProject): MdyStudioProject {
-    const entry = this.#undoStack.pop();
+    const entry = this.#undoStack.at(-1);
     if (!entry) return project;
     const next = entry.inverse.apply(project);
+    this.#undoStack.pop();
     this.#redoStack.push(entry);
     return next;
   }
 
   redo(project: MdyStudioProject): MdyStudioProject {
-    const entry = this.#redoStack.pop();
+    const entry = this.#redoStack.at(-1);
     if (!entry) return project;
     const next = entry.command.apply(project);
+    this.#redoStack.pop();
     this.#undoStack.push(entry);
     return next;
   }

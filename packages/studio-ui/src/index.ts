@@ -680,7 +680,10 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   /** Node IDs referenced by the current diagnostics — recomputed at the top of every render(),
       read by nodeIndicatorsMarkup() so the tree shows an at-a-glance error marker too. */
   let diagnosticNodeIds = new Set<string>();
+  /** Edits belong to one project: the history ends whenever another project replaces it. */
   const history = new CommandHistory();
+  /** True once the user has edited, started a new project or imported one; a late session restore must not overwrite that. */
+  let sessionTouched = false;
   /** Built once; from then on `render()` only updates the regions whose markup actually changed. */
   let shell: StudioShell | null = null;
   /** Column widths and the narrow-window slide-overs; built with the shell, torn down with it. */
@@ -704,6 +707,7 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   function commit(command: Command, focusTarget: string = selected, focusOverride?: string): void {
     try {
       project = history.apply(project, command);
+      sessionTouched = true;
       status = command.description;
       autosave();
     } catch (error) {
@@ -716,15 +720,26 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     render();
   }
 
-  /** Fire-and-forget IndexedDB auto-save — never blocks the render, never surfaces a write failure as an app error (best-effort, same spirit as localStorage-backed draft persistence). */
+  /** Fire-and-forget IndexedDB auto-save — never blocks the render. A failed write is reported in the status bar, because the work it should have kept is then not kept. */
   function autosave(): void {
-    void saveSession(project).catch(() => {});
+    void saveSession(project).catch((error: unknown) => {
+      if (disposed) return;
+      status = `Session could not be saved: ${error instanceof Error ? error.message : String(error)}`;
+      render();
+    });
   }
 
   // ─── Actions: one implementation each, driven by both a control and a shortcut ───
 
   function undo(): void {
-    project = history.undo(project);
+    try {
+      project = history.undo(project);
+    } catch (error) {
+      status = `Undo failed: ${error instanceof Error ? error.message : String(error)}`;
+      focusSelector = "[data-undo]";
+      render();
+      return;
+    }
     status = "Undo";
     autosave();
     // Undo may just have run out (button about to go `disabled`, which refuses focus) —
@@ -734,7 +749,14 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   }
 
   function redo(): void {
-    project = history.redo(project);
+    try {
+      project = history.redo(project);
+    } catch (error) {
+      status = `Redo failed: ${error instanceof Error ? error.message : String(error)}`;
+      focusSelector = "[data-redo]";
+      render();
+      return;
+    }
     status = "Redo";
     autosave();
     focusSelector = history.canRedo() ? "[data-redo]" : "[data-undo]";
@@ -3135,6 +3157,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
     root.querySelector<HTMLElement>("[data-redo]")?.addEventListener("click", redo);
     root.querySelector<HTMLElement>("[data-new]")?.addEventListener("click", () => {
       project = createBlankProject();
+      history.clear();
+      sessionTouched = true;
       selected = project.schema.id;
       status = "New blank project";
       autosave();
@@ -3153,6 +3177,8 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
             status = `Import failed: ${result.error}`;
           } else {
             project = result.project;
+            history.clear();
+            sessionTouched = true;
             selected = project.schema.id;
             inspectorTab = "node"; // an inspector tab left over from the previous project (e.g. stale Export output) would be confusing
             status = result.diagnostics.length
@@ -3994,8 +4020,9 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
   if (!initial) {
     void loadSession()
       .then((result) => {
-        if (disposed || !result) return;
+        if (disposed || !result || sessionTouched) return;
         project = result.project;
+        history.clear();
         selected = project.schema.id;
         status = "Restored last session";
         render();
