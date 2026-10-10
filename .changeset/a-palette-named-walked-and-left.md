@@ -1,5 +1,5 @@
 ---
-"@modyra/vue": patch
+"@modyra/vue": minor
 ---
 
 `MdyColorsField` names, walks and leaves its palette the way its contract declares

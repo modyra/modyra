@@ -1,5 +1,5 @@
 ---
-"@modyra/vue": patch
+"@modyra/vue": minor
 ---
 
 `MdyDatepickerField` and `MdyDaterangeField` take `minDate` and `maxDate`
