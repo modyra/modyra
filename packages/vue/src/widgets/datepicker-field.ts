@@ -178,7 +178,10 @@ export const MdyDatepickerField = defineComponent({
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
         // The projection calls this part the trigger and gives it everything the contract asks of
         // the control: the combobox role, the relation to the grid it opens, and the one to the
         // description. Written by hand instead, it carried none of them.
@@ -220,7 +223,6 @@ export const MdyDatepickerField = defineComponent({
           },
         })),
         h("button", {
-          ref: anchor,
           // A refusal that is announced and enforced: a toggle that keeps `aria-disabled` while
           // staying pressable opens a panel over a field the model has taken out of play.
           disabled: props.field.disabled(),

@@ -361,7 +361,10 @@ export const MdyMultiselectField = defineComponent({
       const held = chosen
         .map((key) => state.value.options.find((option) => keyOf(option) === key))
         .filter((option): option is NonNullable<typeof option> => option !== undefined);
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
         h("div", {
           class: classesOf("box"),
           // Only when the press lands on the box itself. A chip inside it takes or moves that value,
@@ -458,7 +461,6 @@ export const MdyMultiselectField = defineComponent({
           // A button, not a text box: the placeholder lives *inside* it, and an `<input>` cannot
           // hold anything. What a person types goes in the panel's filter, not here.
           h("button", partProps(parts.trigger, {
-            ref: anchor,
             type: "button",
             onClick: () => run(controller.dispatch({ type: "toggleOpen" })),
           }), [

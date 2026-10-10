@@ -319,9 +319,11 @@ export const MdySelectField = defineComponent({
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
         h("button", partProps(parts.trigger, {
-          ref: anchor,
           type: "button",
           onClick: () => {
             run(controller.dispatch(open ? { type: "close", restoreFocus: false } : { type: "open", source: "pointer" }));

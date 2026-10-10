@@ -179,7 +179,10 @@ export const MdyDaterangeField = defineComponent({
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
         entry("start"),
         // Between the two boxes and read by nobody: what it means is already said by the two
         // controls having their own names, and a screen reader announcing "en dash" between them
@@ -190,7 +193,6 @@ export const MdyDaterangeField = defineComponent({
         // open, the panel it names and the label it is named by. Written by hand it carried a
         // guess at three of them and the panel relation not at all.
         h("button", partProps(parts.toggle, {
-          ref: anchor,
           type: "button",
           // The act, from the dictionary. Named by the field's caption instead, this door announced
           // itself as the field — and a range opener borrowing the calendar's message would say

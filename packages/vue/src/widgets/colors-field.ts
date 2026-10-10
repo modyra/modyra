@@ -206,13 +206,15 @@ export const MdyColorsField = defineComponent({
         }, labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: classesOf("inputWrapper") }, [
+      // The field's box is what the panel hangs from: the contract's anchoring (which edge, whether
+      // the width matches) is a statement about the field, and measured against the button at its
+      // end a list is as wide as an arrow.
+      children.push(h("div", { class: classesOf("inputWrapper"), ref: anchor }, [
         // The platform's own picker: the button a person presses, carrying the swatch that shows
         // what is held. It is also what opens the panel — the part named `toggle` is the area
         // around it and is declared presentation, so it presses nothing.
         h("button", {
           type: "button",
-          ref: anchor,
           class: classesOf("nativePicker"),
           disabled: props.field.disabled(),
           // The relation the contract declares for this opener: what it promises, whether the
