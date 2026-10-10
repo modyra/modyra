@@ -1282,8 +1282,12 @@
      * inside it, so the empty remainder of the row was a target. The `<label>` is now the words —
      * and the drawn box sits inside it, because the native input is visually hidden and the label is
      * the only thing left that forwards a click. Outside it, the box a person actually aims at is
-     * inert. */
-    .mdy-checkbox>label {
+     * inert.
+     *
+     * The label also carries the shell's `mdy-label` class, which `.mdy-renderer .mdy-label` sets to
+     * `display: block`. That rule outranks a bare `label` selector, so this one names the class too:
+     * the words stay sized to their content, and only this label is changed. */
+    .mdy-checkbox>label.mdy-label {
         display: inline-flex;
         align-items: center;
         gap: var(--mdy-checkbox-gap);
