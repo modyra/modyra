@@ -97,7 +97,6 @@ export function createCheckoutProject() {
             debounceMs: 400,
             timeoutMs: 5000,
             skipWhen: { op: "isEmpty", operand: { nodeId: "nd_coupon" } },
-            errorMessage: "Coupon not valid for your country",
           },
         },
       ],

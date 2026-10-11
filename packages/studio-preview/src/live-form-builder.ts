@@ -18,12 +18,12 @@ import {
   field,
   group,
   parseDynamicForm,
+  record,
   serverValidator,
   type MdyDraftStorage,
   type MdyFormSchema,
   type MdyReactivity,
   type MdyTypedForm,
-  type ValidatorFn,
 } from "@modyra/core";
 import {
   buildIndexes,
@@ -87,51 +87,57 @@ function withMockServerValidators(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, descriptor] of Object.entries(schema)) {
-    const here = path ? `${path}.${key}` : key;
-    const record = descriptor as { kind?: string; children?: Record<string, unknown>; initial?: unknown; validators?: unknown };
-
-    if (record.kind === "group" && record.children) {
-      out[key] = group(withMockServerValidators(record.children, here, nodesByPath, idx, mockConfigByImplId) as MdyFormSchema);
-      continue;
-    }
-    // An array's rows are all built from its item descriptor, so the descriptor is where a row's
-    // server validator has to go — patching a row would leave every later row without one.
-    if (record.kind === "array") {
-      const arrayDescriptor = descriptor as { item: unknown; initial?: ReadonlyArray<unknown>; validators?: ReadonlyArray<ValidatorFn<readonly unknown[]>> };
-      const patched = withMockServerValidators({ item: arrayDescriptor.item }, here, nodesByPath, idx, mockConfigByImplId);
-      out[key] = array(patched.item as never, {
-        ...(arrayDescriptor.initial !== undefined ? { initial: arrayDescriptor.initial } : {}),
-        ...(arrayDescriptor.validators ? { validators: arrayDescriptor.validators } : {}),
-      });
-      continue;
-    }
-
-    const node = nodesByPath.get(here);
-    if (record.kind !== "field" || !node?.serverValidator) {
-      out[key] = descriptor;
-      continue;
-    }
-
-    const sv = node.serverValidator;
-    // `skipWhen` is evaluated against the field's *own* value, so a reference to this node reads the
-    // whole of it — path `""`. Any other reference is as meaningless here as it was before, and
-    // resolves to undefined rather than throwing.
-    const selfScoped = new Map(idx.pathByNode);
-    selfScoped.set(node.id, "");
-    const skipWhen = sv.skipWhen ? toContractExpression(sv.skipWhen, selfScoped) : undefined;
-
-    out[key] = field(
-      record.initial as never,
-      (record.validators ?? []) as never,
-      serverValidator(createMockAsyncValidator(mockConfigByImplId[sv.implementationRef] ?? {}), {
-        debounceMs: sv.debounceMs,
-        timeoutMs: sv.timeoutMs,
-        dependsOn: sv.dependencies.map((d) => idx.pathByNode.get(d.nodeId) ?? d.nodeId),
-        ...(skipWhen ? { when: (value: unknown) => !evaluateExpression(skipWhen, value) } : {}),
-      }),
-    );
+    out[key] = withMockServerValidator(descriptor, path ? `${path}.${key}` : key, nodesByPath, idx, mockConfigByImplId);
   }
   return out;
+}
+
+function withMockServerValidator(
+  descriptor: unknown,
+  here: string,
+  nodesByPath: ReadonlyMap<string, FieldNode>,
+  idx: StudioIndexes,
+  mockConfigByImplId: Record<string, MockServerConfig>,
+): unknown {
+  const shape = descriptor as { kind?: string; children?: Record<string, unknown>; item?: unknown; initial?: unknown; validators?: unknown };
+
+  if (shape.kind === "group" && shape.children) {
+    return group(withMockServerValidators(shape.children, here, nodesByPath, idx, mockConfigByImplId) as MdyFormSchema);
+  }
+  // A collection's rows are all built from its item descriptor, so the descriptor is where a row's
+  // server validator has to go — patching a row would leave every later row without one. The row
+  // template has no name of its own: the index files it, and everything under it, at the
+  // collection's path, so the item is looked up at `here` rather than below it.
+  if (shape.kind === "array" || shape.kind === "record") {
+    const item = withMockServerValidator(shape.item, here, nodesByPath, idx, mockConfigByImplId) as never;
+    const options = {
+      ...(shape.initial !== undefined ? { initial: shape.initial as never } : {}),
+      ...(shape.validators ? { validators: shape.validators as never } : {}),
+    };
+    return shape.kind === "array" ? array(item, options) : record(item, options);
+  }
+
+  const node = nodesByPath.get(here);
+  if (shape.kind !== "field" || !node?.serverValidator) return descriptor;
+
+  const sv = node.serverValidator;
+  // `skipWhen` is evaluated against the field's *own* value, so a reference to this node reads the
+  // whole of it — path `""`. Any other reference is as meaningless here as it was before, and
+  // resolves to undefined rather than throwing.
+  const selfScoped = new Map(idx.pathByNode);
+  selfScoped.set(node.id, "");
+  const skipWhen = sv.skipWhen ? toContractExpression(sv.skipWhen, selfScoped) : undefined;
+
+  return field(
+    shape.initial as never,
+    (shape.validators ?? []) as never,
+    serverValidator(createMockAsyncValidator(mockConfigByImplId[sv.implementationRef] ?? {}), {
+      debounceMs: sv.debounceMs,
+      timeoutMs: sv.timeoutMs,
+      dependsOn: sv.dependencies.map((d) => idx.pathByNode.get(d.nodeId) ?? d.nodeId),
+      ...(skipWhen ? { when: (value: unknown) => !evaluateExpression(skipWhen, value) } : {}),
+    }),
+  );
 }
 
 /**

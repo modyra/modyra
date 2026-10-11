@@ -320,7 +320,6 @@ export function serverValidatorMarkup(project: MdyStudioProject, idx: StudioInde
     <label>Debounce (ms)<input type="number" data-server-debounce value="${sv.debounceMs ?? 0}"></label>
     <label>Timeout (ms)<input type="number" data-server-timeout value="${sv.timeoutMs ?? 0}"></label>
     <label class="dep-row"><input type="checkbox" data-server-skip-empty ${skipsWhenEmpty ? "checked" : ""}> Skip when this field is empty</label>
-    <label>Error message<input data-server-message value="${escapeHtml(sv.errorMessage ?? "")}"></label>
     <fieldset class="server-deps">
       <legend>Depends on</legend>
       ${depRows}
@@ -3773,11 +3772,6 @@ export function mountStudio(host: HTMLElement, initial?: MdyStudioProject, optio
       if ((e.target as HTMLInputElement).checked) next.skipWhen = { op: "isEmpty", operand: { nodeId: selected } };
       else delete next.skipWhen;
       commit(createSetServerValidatorCommand(selected, next));
-    });
-    root.querySelector<HTMLInputElement>("[data-server-message]")?.addEventListener("change", (e) => {
-      const field = getSelectedField();
-      if (!field?.serverValidator) return;
-      commit(createSetServerValidatorCommand(selected, { ...field.serverValidator, errorMessage: (e.target as HTMLInputElement).value }));
     });
     root.querySelectorAll<HTMLInputElement>("[data-server-dependency]").forEach((el) =>
       el.addEventListener("change", () => {
