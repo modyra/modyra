@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "fields": [
+    {
+      "name": "a",
+      "kind": "text"
+    }
+  ],
+  "validations": [
+    {
+      "message": "Required",
+      "target": "a",
+      "when": {
+        "op": "isEmpty"
+      }
+    }
+  ]
+}

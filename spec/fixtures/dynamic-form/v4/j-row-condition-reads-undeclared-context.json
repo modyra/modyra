@@ -1,0 +1,39 @@
+{
+  "version": 4,
+  "schema": {
+    "node": "group",
+    "children": {
+      "lines": {
+        "node": "array",
+        "item": {
+          "node": "group",
+          "children": {
+            "sku": {
+              "node": "field",
+              "field": {
+                "kind": "text",
+                "label": "SKU"
+              }
+            },
+            "vatNote": {
+              "node": "field",
+              "field": {
+                "kind": "text",
+                "label": "VAT note"
+              },
+              "when": {
+                "op": "equals",
+                "operands": [
+                  {
+                    "context": "tier"
+                  },
+                  "business"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

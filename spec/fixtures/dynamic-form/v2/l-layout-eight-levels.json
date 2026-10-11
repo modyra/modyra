@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "fields": [
+    {
+      "name": "a",
+      "kind": "text"
+    }
+  ],
+  "layout": [
+    {
+      "kind": "section",
+      "id": "s1",
+      "children": [
+        {
+          "kind": "section",
+          "id": "s2",
+          "children": [
+            {
+              "kind": "section",
+              "id": "s3",
+              "children": [
+                {
+                  "kind": "section",
+                  "id": "s4",
+                  "children": [
+                    {
+                      "kind": "section",
+                      "id": "s5",
+                      "children": [
+                        {
+                          "kind": "section",
+                          "id": "s6",
+                          "children": [
+                            {
+                              "kind": "section",
+                              "id": "s7",
+                              "children": [
+                                {
+                                  "kind": "section",
+                                  "id": "s8",
+                                  "children": [
+                                    "a"
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

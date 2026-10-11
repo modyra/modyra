@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "fields": [
+    {
+      "name": "first",
+      "kind": "text"
+    },
+    {
+      "name": "last",
+      "kind": "text"
+    }
+  ],
+  "layout": [
+    {
+      "kind": "columns",
+      "id": "name",
+      "columns": [
+        [
+          "first"
+        ],
+        [
+          {
+            "ref": "last",
+            "at": {
+              "sm": {
+                "column": 2
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

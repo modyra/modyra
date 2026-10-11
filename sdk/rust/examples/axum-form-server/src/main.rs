@@ -126,7 +126,8 @@ fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
 
     DynamicFormV2 {
         version: 5, id: Some("checkout".into()), fields: vec![],
-        schema: Some(schema), layout: vec![], rules: vec![], requires_context: vec![],
+        schema: Some(schema), layout: vec![], rules: vec![], validations: vec![],
+        requires_context: vec![],
     }
 }
 

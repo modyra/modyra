@@ -53,6 +53,8 @@ fn serializes_recursive_schema_without_null_optionals() {
         }),
         layout: vec![],
         rules: vec![],
+        validations: vec![],
+
         requires_context: vec![],
     };
 
@@ -423,3 +425,130 @@ fn reads_every_document_in_the_shared_corpus() {
     }
 }
 
+
+/// The codes a v4 document gets when one field carries `when`.
+fn codes_for_clause(when: serde_json::Value) -> Vec<&'static str> {
+    let document = serde_json::json!({
+        "version": 4,
+        "requiresContext": ["plan"],
+        "schema": { "node": "group", "children": {
+            "code": { "node": "field", "field": { "kind": "text" } },
+            "note": { "node": "field", "field": { "kind": "text" }, "when": when }
+        }}
+    });
+    let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+    result.diagnostics.iter().map(|d| d.code).collect()
+}
+
+#[test]
+fn an_operand_names_one_thing_of_the_right_type() {
+    use serde_json::json;
+    for operand in [
+        json!({ "path": "__proto__" }),
+        json!({ "path": 4 }),
+        json!({ "self": "yes" }),
+        json!({ "self": true, "root": true }),
+        json!({ "context": "" }),
+        json!({ "kind": "a reference nobody declared" }),
+        json!(["a", "list"]),
+    ] {
+        assert_eq!(
+            codes_for_clause(json!({ "op": "equals", "operands": [operand.clone(), "x"] })),
+            ["MDY_DYNAMIC_INVALID_CONDITION"],
+            "{operand}"
+        );
+    }
+    for operand in [
+        json!({ "path": "code" }),
+        json!({ "self": true }),
+        json!({ "root": true }),
+        json!({ "context": "plan" }),
+        json!(null),
+    ] {
+        assert!(
+            codes_for_clause(json!({ "op": "equals", "operands": [operand.clone(), "x"] })).is_empty(),
+            "{operand}"
+        );
+    }
+}
+
+#[test]
+fn an_expression_nests_thirty_two_levels_and_no_further() {
+    let nested = |levels: usize| {
+        (0..levels).fold(serde_json::json!({ "op": "isEmpty", "operand": { "self": true } }), |inner, _| {
+            serde_json::json!({ "op": "not", "operand": inner })
+        })
+    };
+    assert!(codes_for_clause(nested(32)).is_empty());
+    assert_eq!(codes_for_clause(nested(33)), ["MDY_DYNAMIC_INVALID_CONDITION"]);
+}
+
+#[test]
+fn a_matches_pattern_is_a_short_literal_string() {
+    use serde_json::json;
+    let matching = |pattern: serde_json::Value| {
+        codes_for_clause(json!({ "op": "matches", "operands": [{ "self": true }, pattern] }))
+    };
+    assert!(matching(json!("^[a-z]+$")).is_empty());
+    assert!(matching(json!("é".repeat(256))).is_empty());
+    assert_eq!(matching(json!("a".repeat(257))), ["MDY_DYNAMIC_INVALID_CONDITION"]);
+    assert_eq!(matching(json!({ "self": true })), ["MDY_DYNAMIC_INVALID_CONDITION"]);
+}
+
+#[test]
+fn a_validation_needs_words_a_known_target_and_a_readable_condition() {
+    let codes = |validation: serde_json::Value| {
+        let document = serde_json::json!({
+            "version": 2,
+            "fields": [{ "name": "a", "kind": "text" }],
+            "validations": [validation]
+        });
+        let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+        result.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+    };
+    let when = serde_json::json!({ "op": "isEmpty", "operand": { "path": "a" } });
+    assert!(codes(serde_json::json!({ "message": "Say something", "target": "a", "when": when })).is_empty());
+    assert_eq!(
+        codes(serde_json::json!({ "message": "  ", "when": when })),
+        ["MDY_DYNAMIC_INVALID_VALIDATION"]
+    );
+    assert_eq!(
+        codes(serde_json::json!({ "message": "x", "target": "b", "when": when })),
+        ["MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"]
+    );
+    // The empty path is the whole form, which a validation reaches through `{ "root": true }`.
+    assert_eq!(
+        codes(serde_json::json!({ "message": "x", "when": { "op": "isEmpty", "operand": { "path": "" } } })),
+        ["MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"]
+    );
+}
+
+#[test]
+fn ordering_a_date_needs_a_full_iso_date() {
+    let codes = |value: serde_json::Value| {
+        let document = serde_json::json!({
+            "version": 2,
+            "fields": [{ "name": "from", "kind": "datepicker" }, { "name": "b", "kind": "text" }],
+            "rules": [{ "effect": "visible", "target": "b",
+                        "when": { "field": "from", "operator": "greaterThan", "value": value } }]
+        });
+        let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+        result.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+    };
+    assert!(codes(serde_json::json!("2024-02-29")).is_empty());
+    assert_eq!(codes(serde_json::json!("2023-02-29")), ["MDY_DYNAMIC_INVALID_RULE"]);
+    assert_eq!(codes(serde_json::json!("2026-2-01")), ["MDY_DYNAMIC_INVALID_RULE"]);
+    assert_eq!(codes(serde_json::json!({ "at": 1 })), ["MDY_DYNAMIC_INVALID_RULE"]);
+}
+
+#[test]
+fn a_top_level_section_cannot_be_placed() {
+    let document = serde_json::json!({
+        "version": 3,
+        "fields": [{ "name": "a", "kind": "text" }],
+        "layout": [{ "kind": "section", "id": "s", "children": ["a"], "at": { "sm": { "column": 1 } } }]
+    });
+    let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+    let codes: Vec<_> = result.diagnostics.iter().map(|d| d.code).collect();
+    assert_eq!(codes, ["MDY_DYNAMIC_INVALID_LAYOUT"]);
+}
