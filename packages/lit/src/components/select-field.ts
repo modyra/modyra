@@ -1,5 +1,5 @@
 import { type MdyFieldHandle, type MdySelectOption } from "@modyra/core";
-import { defaultOptionKey, fieldDescribedBy, filterOptionsByQuery, presentationClass, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stepOutOfOverlay } from "@modyra/widgets";
+import { defaultOptionKey, fieldAriaLabel, fieldDescribedBy, filterOptionsByQuery, presentationClass, MDY_FIELD_SHELL_CLASSES, MDY_FIELD_STATE_CLASSES, partClasses, stepOutOfOverlay } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations, type PropertyValueMap } from "lit";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 import {
@@ -569,7 +569,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
             aria-readonly=${handle.readonly() ? "true" : nothing}
             aria-invalid=${this.showErrors(handle) ? "true" : "false"}
             aria-required=${handle.required() ? "true" : "false"}
-            aria-label=${this.label || nothing}
+            aria-label=${fieldAriaLabel({ ariaLabel: this._pendingName, label: this.label, name: this.field?.path }) ?? nothing}
             ?disabled=${handle.disabled()}
             @click=${(e: Event) => {
         if (!this._open) this.overlay.open(e);

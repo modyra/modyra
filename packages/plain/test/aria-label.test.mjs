@@ -59,9 +59,18 @@ test("a labelled control is named by its label, without the required marker", ()
     form.f.n,
   );
 
+  // `aria-label` replaces a native label rather than adding to it, so a copy of the caption is a
+  // second source for one name. The caption names the box through `for`, and the marker inside it is
+  // hidden, so the words a reader hears are the caption's words. ADR 0214.
   const input = container.querySelector("input");
-  assert.equal(input.getAttribute("aria-label"), "Item", "the asterisk is decoration, not a name");
-  assert.match(container.querySelector("label").textContent, /\*/, "which the label still shows");
+  const label = container.querySelector("label");
+  assert.equal(input.getAttribute("aria-label"), null, "the caption is not copied onto the control");
+  assert.ok(input.id && label.htmlFor === input.id, "the caption is the box's label");
+  assert.match(label.textContent, /\*/, "the label still shows the marker");
+  const heard = [...label.childNodes]
+    .filter((node) => !(node.nodeType === 1 && node.getAttribute("aria-hidden") === "true"))
+    .map((node) => node.textContent).join("").trim();
+  assert.equal(heard, "Item", "the asterisk is decoration, not a name");
 });
 
 test("a field nobody named is named by the field", () => {

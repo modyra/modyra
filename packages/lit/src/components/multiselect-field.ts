@@ -22,7 +22,7 @@ import {
   isTypeaheadCharacter,
 } from "@modyra/widgets";
 import { type MdyFieldHandle, type MdyMultiselectMode, type MdySelectOption } from "@modyra/core";
-import { multiselectChipPart } from "@modyra/widgets";
+import { fieldAriaLabel, multiselectChipPart } from "@modyra/widgets";
 import {
   createMultiselectFieldController,
   MDY_CHIP_CLASSES,
@@ -689,7 +689,8 @@ export class MdyMultiselectFieldElement extends MdyDropdownFieldElement<readonly
               if (!this._open) this.overlay.open(e);
               this.toggleOpen(handle);
             }}
-            aria-label=${this.label || nothing}
+            aria-labelledby=${this.label ? `${this.fieldId}__label` : nothing}
+            aria-label=${this.label ? nothing : (fieldAriaLabel({ ariaLabel: this.declaredName(), name: this.field?.path }) ?? nothing)}
             role=${MDY_POPUP_OPENERS.multiselect?.role ?? nothing}
             aria-haspopup=${this.popupPromise}
             aria-expanded=${this._open ? "true" : "false"}

@@ -44,7 +44,7 @@ declare const ngDevMode: boolean | undefined;
 import { MdyPrefixDirective } from "./prefix.directive";
 import { MdySuffixDirective } from "./suffix.directive";
 import { MdySupportingTextDirective } from "./supporting-text.directive";
-import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAccessibleName, fieldCanBeInvalid, fieldDescribedBy, fieldNameAttributes, fieldShellPartIds, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, blocksValueChange, errorsVisible, fieldAriaLabel, fieldCanBeInvalid, fieldDescribedBy, fieldNameAttributes, fieldShellPartIds, holdsUneditedValue, keepKeyboardInPlay, reportIdCollision, shownErrors, showsAsInvalid, stateClass } from "@modyra/widgets";
 import type { MdyValueKind } from "@modyra/core";
 
 /** Global counter for generating unique field IDs. */
@@ -228,28 +228,22 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
   public readonly ariaLabel = input<string | null>(null);
 
   /**
-   * The name on the control element.
+   * The `aria-label` on the control element, or `null` where the caption names it.
    *
-   * The explicit one when it is given, otherwise the visible label's text. Naming the control from
-   * the label as well as through `for` is redundant on paper and load-bearing in practice: the
-   * label element also holds the required marker, so a name computed from its content carries an
-   * asterisk the user's word does not — and anything matching on the name exactly, a test or an
-   * assistive tool's find-by-name, then misses the control the user is asking for.
-   */
-  /**
-   * What this control is announced as.
+   * A declared name is written as given. A caption with words names the control through `for`, and
+   * a copy of it here would replace that association rather than add to it; the required marker
+   * inside the caption is hidden, so the caption's words alone form the name. With neither, the
+   * field's own name is written, because a control with no name is announced as its role and nothing
+   * else. ADR 0214.
    *
-   * The order is the contract's: a spoken name a document wrote, the visible label, and the field's
-   * own name when there is neither. A control with none of the three is announced as its role and
-   * nothing else — a text box, on a form of them — and the field name is the one thing always
-   * present, so it is a poor name and better than no name.
+   * Also the words a caption-less label shows: there the answer is the same as the field's full name.
    */
   protected readonly controlAriaLabel: Signal<string | null> = computed(
-    () => fieldAccessibleName({
+    () => fieldAriaLabel({
       ariaLabel: this.ariaLabel(),
       label: this.label(),
       name: this.effectiveName(),
-    }) || null,
+    }),
   );
 
   /**

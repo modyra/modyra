@@ -6,7 +6,7 @@
  *
  * Renderers build the control themselves and insert it into the wrapper.
  */
-import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, type MdyWidgetKind, shellStateClasses } from "@modyra/widgets";
+import { MDY_FIELD_SHELL_CLASSES, MDY_WIDGET_CONTRACTS, fieldAccessibleName, fieldAriaLabel, type MdyWidgetKind, shellStateClasses } from "@modyra/widgets";
 import type { MdyFieldConstraints } from "@modyra/core";
 import { fieldCanBeInvalid } from "@modyra/widgets";
 import { el, setText } from "./dom.js";
@@ -69,6 +69,9 @@ export function buildFieldShell(
   // label and what takes it out.
   const requiredMark = el("span", MDY_FIELD_SHELL_CLASSES.requiredMarker);
   setText(requiredMark, "*");
+  // Decoration, not words: the caption names the control, and `aria-required` already says the field
+  // must be filled. Left readable, the name becomes "Email address *". ADR 0214.
+  requiredMark.setAttribute("aria-hidden", "true");
 
   /**
    * The box, on the kinds whose value is read inside one.
@@ -182,17 +185,16 @@ export function buildFieldShell(
 /**
  * Puts the control inside the input wrapper, where every renderer and every theme expects it.
  *
- * This is also where the control gets its name: the explicit one when given, the label's own text
- * otherwise. Naming it here as well as through `for` is redundant on paper and load-bearing in
- * practice — the label element also holds the required marker, so a name read from its content
- * carries an asterisk the user's word does not, and anything matching the name exactly then misses
- * the control the user is asking for.
+ * This is also where the control gets an `aria-label`, and only where one is owed: the name a
+ * document declared, or the field's own name when there is no caption to name it. A caption with
+ * words names the control through `for`, and a copy written here would replace that association
+ * rather than add to it. ADR 0214.
  */
 export function insertControl(shell: FieldShell, control: HTMLElement): void {
   // A control with no accessible name is announced as its role and nothing else. A label is optional
   // in a document by design, so the field's own name is what is left to say — see
-  // `fieldAccessibleName`, which is where the order lives so both renderers answer the same.
-  const name = fieldAccessibleName({
+  // `fieldAriaLabel`, which is where the order lives so every renderer answers the same.
+  const name = fieldAriaLabel({
     ariaLabel: shell.ariaLabel,
     label: shell.labelText,
     name: shell.fieldName,

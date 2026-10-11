@@ -170,8 +170,11 @@ for (const host of HOSTS) {
         await page.keyboard.press("Tab");
         const arrived = await page.evaluate(() => {
           const active = document.activeElement as HTMLElement | null;
+          // The caption names a captioned control through `for`, not through a copy in `aria-label`
+          // (ADR 0214), so the field is recognised by its label as well as by the attribute.
+          const caption = (active as HTMLInputElement | null)?.labels?.[0]?.textContent?.trim();
           return active?.closest("[data-field]")?.getAttribute("data-field")
-            ?? (active?.getAttribute("aria-label") ?? active?.tagName ?? "none");
+            ?? (active?.getAttribute("aria-label") ?? caption ?? active?.tagName ?? "none");
         });
         if (arrived === "after" || arrived === "Dopo") return pressed;
       }

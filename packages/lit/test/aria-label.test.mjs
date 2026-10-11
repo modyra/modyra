@@ -49,5 +49,23 @@ test("a labelled control is named by its label", async () => {
     el.label = "Item";
   });
 
-  assert.equal(element.querySelector("input").getAttribute("aria-label"), "Item");
+  // `aria-label` replaces a native label rather than adding to it, so the caption names the box
+  // through `for` and is not copied onto it. ADR 0214.
+  const input = element.querySelector("input");
+  assert.equal(input.getAttribute("aria-label"), null);
+  assert.equal(element.querySelector("label").htmlFor, input.id);
+});
+
+test("a caption that arrives later takes over from the field's own name", async () => {
+  const form = createLitForm({ n: field("") });
+  const element = await mount("mdy-text-field", (el) => {
+    el.field = form.f.n;
+  });
+  const input = element.querySelector("input");
+  assert.equal(input.getAttribute("aria-label"), "n", "with no caption, the field's own name");
+
+  element.label = "Item";
+  await element.updateComplete;
+
+  assert.equal(input.getAttribute("aria-label"), null, "the fallback does not outlive the caption");
 });

@@ -1,10 +1,10 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-10-10T16:46:58Z",
-  "openReds": 23,
+  "recordedAt": "2026-10-11T08:39:43Z",
+  "openReds": 24,
   "bySeverity": {
-    "S1": 15,
+    "S1": 16,
     "S2": 8
   },
   "knownRed": [
@@ -13,6 +13,7 @@
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, vue",
     "a-hand-that-says-which-ring.spec.ts › the hand is shorter on the inner ring, vue",
     "a-mark-too-faint-to-find.spec.ts › every mark on a trailing control carries its own contrast, vue",
+    "a-name-the-required-mark-stays-out-of.spec.ts › a declared name and a caption, on controls that are not text boxes, vue",
     "a-number-that-counts-what-it-cannot-see.spec.ts › the mark reports the number of values it is covering for, vue",
     "a-quantity-only-a-mouse-can-change.spec.ts › a quantity can be changed without a pointer, vue",
     "a-refusal-in-two-renderers.spec.ts › vue: a refusal that names no field reaches the person too",

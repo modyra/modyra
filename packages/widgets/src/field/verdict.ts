@@ -207,7 +207,8 @@ export function formErrorsOf(errors: ReadonlyArray<MdyFormError>): ReadonlyArray
  * platform's, not a preference.** A control a `<label for>` can name natively — a text box, a
  * number, a checkbox, a `<select>` — is already named by its caption without anything being written
  * on it, so what a document *declares* is the extra thing to say, and it goes on as `aria-label`.
- * That is this door: what to call it, in one string.
+ * That is this door: what to call it, in one string. Which of those words are *written* on the
+ * control is `fieldAriaLabel`'s answer, and a caption with words is never one of them.
  *
  * A **composite** has no such association: a radiogroup, a segmented control, a calendar grid are
  * elements a `<label for>` cannot point at, so the caption reaches them only by being referenced.
@@ -234,6 +235,30 @@ export function fieldAccessibleName(sources: {
     if (typeof candidate === "string" && candidate.trim().length > 0) return candidate;
   }
   return "";
+}
+
+/**
+ * The `aria-label` a control carries when its caption can name it, or `null` for none. ADR 0214.
+ *
+ * `aria-label` does not add to a native label, it replaces it. So where the field has a caption with
+ * words, the caption names the control through the platform's own association and nothing is
+ * written: a copy would be a second source for one name, and the hidden one wins the first time the
+ * two differ. A name the document declared is written as given, because it is the document's own
+ * choice. A field with no caption words has nothing to be named by, so it falls back to
+ * `fieldAccessibleName`'s order.
+ *
+ * For the controls a `<label for>` reaches. A composite asks `fieldNameAttributes` instead.
+ */
+export function fieldAriaLabel(sources: {
+  readonly ariaLabel?: string | null;
+  readonly label?: string | null;
+  readonly name?: string | null;
+}): string | null {
+  const declared = typeof sources.ariaLabel === "string" && sources.ariaLabel.trim().length > 0;
+  if (declared) return sources.ariaLabel as string;
+  const captioned = typeof sources.label === "string" && sources.label.trim().length > 0;
+  if (captioned) return null;
+  return fieldAccessibleName(sources) || null;
 }
 
 /**
