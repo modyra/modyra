@@ -8,6 +8,7 @@ import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   type MdyDaterangeFieldIntent,
   type MdyDaterangeFieldState,
   projectCalendarViewA11y,
+  daterangeFieldPartIds,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
@@ -30,6 +31,10 @@ import {
 const CLASS = {
   calendar: partClasses("daterange", "calendar").join(" "),
   dialogHeader: partClasses("daterange", "dialogHeader").join(" "),
+  headerPrevious: partClasses("daterange", "headerPrevious").join(" "),
+  viewToggle: partClasses("daterange", "viewToggle").join(" "),
+  headerTitle: partClasses("daterange", "headerTitle").join(" "),
+  headerNext: partClasses("daterange", "headerNext").join(" "),
   grid: partClasses("daterange", "grid").join(" "),
   gridcell: partClasses("daterange", "gridcell").join(" "),
   root: partClasses("daterange", "root").join(" "),
@@ -597,44 +602,40 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       >
         ${modalHeader}
         <div class="${CLASS.dialogHeader}">
-          <div class="mdy-datepicker__header-label">
-            <button
-              type="button"
-              class="mdy-datepicker__view-toggle"
-              aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
-              @click=${this.onToggleView}
-            >
-              <span class="mdy-datepicker__title">${monthLabel} ${this.view.viewYear}</span>
-              ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
-            </button>
-          </div>
-          <div class="mdy-datepicker__header-nav">
-            <button
-              type="button"
-              class="mdy-datepicker__nav-btn"
-              aria-label=${this.messages.datepickerPreviousMonth}
-              ?disabled=${this.view.viewMode !== "days"}
-              @click=${() => this.navigateMonths(-1)}
-            >
-              ${mdyIcon("CHEVRON_LEFT", "")}
-            </button>
-            <button
-              type="button"
-              class="mdy-datepicker__nav-btn"
-              aria-label=${this.messages.datepickerNextMonth}
-              ?disabled=${this.view.viewMode !== "days"}
-              @click=${() => this.navigateMonths(1)}
-            >
-              ${mdyIcon("CHEVRON_RIGHT", "")}
-            </button>
-          </div>
+          <button
+            type="button"
+            class="${CLASS.headerPrevious}"
+            aria-label=${this.messages.datepickerPreviousMonth}
+            ?disabled=${this.view.viewMode !== "days"}
+            @click=${() => this.navigateMonths(-1)}
+          >
+            ${mdyIcon("CHEVRON_LEFT", "")}
+          </button>
+          <button
+            type="button"
+            class="${CLASS.viewToggle}"
+            aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
+            @click=${this.onToggleView}
+          >
+            <span class="${CLASS.headerTitle}" id=${daterangeFieldPartIds(this.fieldId).headingId}>${monthLabel} ${this.view.viewYear}</span>
+            ${mdyIcon("CHEVRON_DOWN", "mdy-datepicker__view-icon")}
+          </button>
+          <button
+            type="button"
+            class="${CLASS.headerNext}"
+            aria-label=${this.messages.datepickerNextMonth}
+            ?disabled=${this.view.viewMode !== "days"}
+            @click=${() => this.navigateMonths(1)}
+          >
+            ${mdyIcon("CHEVRON_RIGHT", "")}
+          </button>
         </div>
         ${this.view.viewMode === "days"
           ? html`<div
               class="${CLASS.grid}"
               id=${overlayControlledId("daterange", this.fieldId) ?? nothing}
               role="grid"
-              aria-label="${monthLabel} ${this.view.viewYear}"
+              aria-labelledby=${daterangeFieldPartIds(this.fieldId).headingId}
             >
               ${this.renderCalendarGrid(handle)}
             </div>

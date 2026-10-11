@@ -1,4 +1,4 @@
-import { type MdyDatepickerFieldController , keyBindingFor, calendarViewOnZoom, partClasses } from "@modyra/widgets";
+import { datepickerFieldPartIds, type MdyDatepickerFieldController , keyBindingFor, calendarViewOnZoom, partClasses } from "@modyra/widgets";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -44,6 +44,7 @@ import { calendarViewState } from "../../core/calendar-view-state";
   },
   template: `
     <mdy-calendar-header
+      [headingId]="headingId()"
       [year]="viewYear()"
       [month]="viewMonth()"
       (previousMonth)="goToPreviousMonth()"
@@ -90,6 +91,9 @@ export class MdyCalendarComponent {
   readonly gridId = input<string>("");
   /** The widget these cells belong to, which is what their ids are built from. */
   readonly widgetId = input<string>("");
+  /** The id of the line that says the month, derived from the widget: the grid names itself by
+   * referring to it, and both come from one contract. ADR 0212. */
+  protected readonly headingId = computed(() => (this.widgetId() ? datepickerFieldPartIds(this.widgetId()).headingId : ""));
 
   /** Whether the popup holding this calendar is showing; a closed one draws no cells. */
   readonly showCells = input<boolean>(true);

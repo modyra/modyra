@@ -2904,8 +2904,62 @@
           ],
           "states": []
         },
-        "calendar": {
+        "headerPrevious": {
           "order": 8,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__nav-btn",
+            "mdy-datepicker__nav-btn--previous"
+          ],
+          "states": []
+        },
+        "viewToggle": {
+          "order": 9,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__view-toggle"
+          ],
+          "states": []
+        },
+        "headerTitle": {
+          "order": 10,
+          "element": "text",
+          "parent": "viewToggle",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__title"
+          ],
+          "states": []
+        },
+        "headerNext": {
+          "order": 11,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__nav-btn",
+            "mdy-datepicker__nav-btn--next"
+          ],
+          "states": []
+        },
+        "calendar": {
+          "order": 12,
           "element": "popup",
           "parent": "popup",
           "optional": false,
@@ -2918,7 +2972,7 @@
           "states": []
         },
         "grid": {
-          "order": 9,
+          "order": 13,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -2932,7 +2986,7 @@
           "states": []
         },
         "weekdays": {
-          "order": 10,
+          "order": 14,
           "element": "group",
           "parent": "grid",
           "optional": true,
@@ -2945,7 +2999,7 @@
           "states": []
         },
         "weekday": {
-          "order": 11,
+          "order": 15,
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
@@ -2958,7 +3012,7 @@
           "states": []
         },
         "row": {
-          "order": 12,
+          "order": 16,
           "element": "group",
           "parent": "grid",
           "optional": true,
@@ -2971,7 +3025,7 @@
           "states": []
         },
         "gridcell": {
-          "order": 13,
+          "order": 17,
           "element": "gridcell",
           "parent": "row",
           "optional": true,
@@ -2993,7 +3047,7 @@
           ]
         },
         "monthPicker": {
-          "order": 14,
+          "order": 18,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -3006,7 +3060,7 @@
           "states": []
         },
         "monthCell": {
-          "order": 15,
+          "order": 19,
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
@@ -3021,7 +3075,7 @@
           ]
         },
         "yearPicker": {
-          "order": 16,
+          "order": 20,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -3034,7 +3088,7 @@
           "states": []
         },
         "yearCell": {
-          "order": 17,
+          "order": 21,
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
@@ -3049,7 +3103,7 @@
           ]
         },
         "inlineError": {
-          "order": 18,
+          "order": 22,
           "element": "image",
           "parent": "label",
           "optional": true,
@@ -3062,7 +3116,7 @@
           "states": []
         },
         "supportingText": {
-          "order": 19,
+          "order": 23,
           "element": "text",
           "parent": "root",
           "optional": true,
@@ -3075,7 +3129,7 @@
           "states": []
         },
         "errors": {
-          "order": 20,
+          "order": 24,
           "element": "status",
           "parent": "root",
           "optional": true,
@@ -3088,7 +3142,7 @@
           "states": []
         },
         "errorItem": {
-          "order": 21,
+          "order": 25,
           "element": "status",
           "parent": "errors",
           "optional": true,
@@ -3315,8 +3369,62 @@
           ],
           "states": []
         },
-        "calendar": {
+        "headerPrevious": {
           "order": 10,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__nav-btn",
+            "mdy-datepicker__nav-btn--previous"
+          ],
+          "states": []
+        },
+        "viewToggle": {
+          "order": 11,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__view-toggle"
+          ],
+          "states": []
+        },
+        "headerTitle": {
+          "order": 12,
+          "element": "text",
+          "parent": "viewToggle",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__title"
+          ],
+          "states": []
+        },
+        "headerNext": {
+          "order": 13,
+          "element": "button",
+          "parent": "dialogHeader",
+          "optional": true,
+          "presentWhen": "overlayIsOpen",
+          "repeated": false,
+          "role": null,
+          "classes": [
+            "mdy-datepicker__nav-btn",
+            "mdy-datepicker__nav-btn--next"
+          ],
+          "states": []
+        },
+        "calendar": {
+          "order": 14,
           "element": "popup",
           "parent": "popup",
           "optional": false,
@@ -3329,7 +3437,7 @@
           "states": []
         },
         "grid": {
-          "order": 11,
+          "order": 15,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -3343,7 +3451,7 @@
           "states": []
         },
         "weekdays": {
-          "order": 12,
+          "order": 16,
           "element": "group",
           "parent": "grid",
           "optional": true,
@@ -3356,7 +3464,7 @@
           "states": []
         },
         "weekday": {
-          "order": 13,
+          "order": 17,
           "element": "columnheader",
           "parent": "weekdays",
           "optional": true,
@@ -3369,7 +3477,7 @@
           "states": []
         },
         "row": {
-          "order": 14,
+          "order": 18,
           "element": "group",
           "parent": "grid",
           "optional": true,
@@ -3382,7 +3490,7 @@
           "states": []
         },
         "gridcell": {
-          "order": 15,
+          "order": 19,
           "element": "gridcell",
           "parent": "row",
           "optional": true,
@@ -3404,7 +3512,7 @@
           ]
         },
         "monthPicker": {
-          "order": 16,
+          "order": 20,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -3417,7 +3525,7 @@
           "states": []
         },
         "monthCell": {
-          "order": 17,
+          "order": 21,
           "element": "gridcell",
           "parent": "monthPicker",
           "optional": true,
@@ -3432,7 +3540,7 @@
           ]
         },
         "yearPicker": {
-          "order": 18,
+          "order": 22,
           "element": "grid",
           "parent": "calendar",
           "optional": true,
@@ -3445,7 +3553,7 @@
           "states": []
         },
         "yearCell": {
-          "order": 19,
+          "order": 23,
           "element": "gridcell",
           "parent": "yearPicker",
           "optional": true,
@@ -3460,7 +3568,7 @@
           ]
         },
         "inlineError": {
-          "order": 20,
+          "order": 24,
           "element": "image",
           "parent": "label",
           "optional": true,
@@ -3473,7 +3581,7 @@
           "states": []
         },
         "supportingText": {
-          "order": 21,
+          "order": 25,
           "element": "text",
           "parent": "root",
           "optional": true,
@@ -3486,7 +3594,7 @@
           "states": []
         },
         "errors": {
-          "order": 22,
+          "order": 26,
           "element": "status",
           "parent": "root",
           "optional": true,
@@ -3499,7 +3607,7 @@
           "states": []
         },
         "errorItem": {
-          "order": 23,
+          "order": 27,
           "element": "status",
           "parent": "errors",
           "optional": true,

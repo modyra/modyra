@@ -47,7 +47,9 @@ async function openCalendar(kind) {
   opener.focus();
   opener.dispatchEvent(new window.Event("click", { bubbles: true }));
   await settle();
-  const heading = () => root.querySelector(".mdy-datepicker__header-label")?.textContent?.trim() ?? null;
+  // The title inside the view-toggle button. The class says what the control does rather than where
+  // it sits, and the month is its own element because the grid is named by referring to it.
+  const heading = () => root.querySelector(".mdy-datepicker__title")?.textContent?.trim() ?? null;
   assert.ok(heading(), "the calendar drew no heading, so there is nothing that says which month is showing");
   return { host, heading };
 }

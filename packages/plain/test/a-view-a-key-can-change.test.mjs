@@ -26,8 +26,8 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
 const CELL = { days: partClasses("datepicker", "gridcell")[0], months: partClasses("datepicker", "monthCell")[0], years: partClasses("datepicker", "yearCell")[0] };
 
 /** The two gestures the kind declares for stepping between its views, by the direction each goes. */
-function zoomKeys() {
-  const declared = MDY_WIDGET_KEYBOARD.datepicker.filter((one) => one.intent === "view" && one.when === "open");
+function zoomKeys(kind) {
+  const declared = MDY_WIDGET_KEYBOARD[kind].filter((one) => one.intent === "view" && one.when === "open");
   const out = declared.find((one) => one.by === 1);
   const back = declared.find((one) => one.by === -1);
   assert.ok(out && back, "the kind declares no pair of gestures for stepping between its views");
@@ -41,10 +41,10 @@ function zoomKeys() {
 // the other declared and unexercised.
 const ACCELERATORS = [{ ctrlKey: true }, { metaKey: true }];
 
-async function openCalendar() {
+async function openCalendar(kind) {
   const host = document.createElement("div");
   document.body.append(host);
-  mountMdyForm(host, [{ name: "d", kind: "datepicker", label: "D" }], { submitLabel: null });
+  mountMdyForm(host, [{ name: "d", kind, label: "D" }], { submitLabel: null });
   await settle();
   const root = host.querySelector('[data-mdy-field="d"]');
   const opener = root.querySelector("[aria-haspopup]") ?? root.querySelector("[aria-expanded]");
@@ -73,57 +73,61 @@ const viewHoldingFocus = () => {
   return found?.[0] ?? `nothing (.${at?.className ?? "?"})`;
 };
 
-for (const accelerator of ACCELERATORS) {
-  const held = Object.keys(accelerator)[0];
-  test(`${held}: the accelerator steps out to the months, then to the years, and the keyboard goes with it`, async () => {
-    const { host } = await openCalendar();
-    const { out } = zoomKeys();
+// Both kinds: a range shares the controller's view state and the gesture, and the one that had no
+// views at all is the reason this is measured rather than assumed.
+for (const kind of ["datepicker", "daterange"]) {
+  for (const accelerator of ACCELERATORS) {
+    const held = Object.keys(accelerator)[0];
+    test(`${kind}, ${held}: the accelerator steps out to the months, then to the years, and the keyboard goes with it`, async () => {
+      const { host } = await openCalendar(kind);
+      const { out } = zoomKeys(kind);
 
-    await press(out, accelerator);
-    assert.equal(viewHoldingFocus(), "months", "stepping out of the days did not land the keyboard in the months");
+      await press(out, accelerator);
+      assert.equal(viewHoldingFocus(), "months", "stepping out of the days did not land the keyboard in the months");
 
-    await press(out, accelerator);
-    assert.equal(viewHoldingFocus(), "years", "stepping out of the months did not land the keyboard in the years");
+      await press(out, accelerator);
+      assert.equal(viewHoldingFocus(), "years", "stepping out of the months did not land the keyboard in the years");
 
-    // Clamped, not wrapped: a ring would send a held key from the widest view straight back to the
-    // narrowest and oscillate there.
-    await press(out, accelerator);
-    assert.equal(viewHoldingFocus(), "years", "stepping out of the widest view wrapped round instead of stopping");
+      // Clamped, not wrapped: a ring would send a held key from the widest view straight back to the
+      // narrowest and oscillate there.
+      await press(out, accelerator);
+      assert.equal(viewHoldingFocus(), "years", "stepping out of the widest view wrapped round instead of stopping");
+      host.remove();
+    });
+  }
+
+  test(`${kind}: and back in again, one view at a time`, async () => {
+    const { host } = await openCalendar(kind);
+    const { out, back } = zoomKeys(kind);
+
+    await press(out, ACCELERATORS[0]);
+    await press(out, ACCELERATORS[0]);
+    assert.equal(viewHoldingFocus(), "years", "the walk out did not reach the years, so the walk back is measuring nothing");
+
+    await press(back, ACCELERATORS[0]);
+    assert.equal(viewHoldingFocus(), "months", "stepping back in from the years did not stop at the months");
+
+    await press(back, ACCELERATORS[0]);
+    assert.equal(viewHoldingFocus(), "days", "stepping back in from the months did not reach the days");
+    host.remove();
+  });
+
+  test(`${kind}: the bare arrow still walks the grid, and the held one does not move a day`, async () => {
+    const { host, root } = await openCalendar(kind);
+    const { back } = zoomKeys(kind);
+    const focusedDay = () => root.querySelector('[role="grid"]')?.querySelector('[tabindex="0"]')?.textContent?.trim();
+
+    const before = focusedDay();
+    assert.ok(before, "no day carries the reading position, so a movement cannot be seen");
+
+    // The collision this gesture was chosen to avoid. Asserted where it could actually happen — inside
+    // the grid, with a press that changes no view because it is already at the narrowest one. Measured
+    // from the trigger instead, the grid's own handler never runs and the collision cannot appear.
+    await press(back, ACCELERATORS[0]);
+    assert.equal(focusedDay(), before, `the held arrow moved the reading position from ${before} to ${focusedDay()} as well as meaning a view change`);
+
+    await press(back);
+    assert.notEqual(focusedDay(), before, "the bare arrow stopped walking the grid");
     host.remove();
   });
 }
-
-test("and back in again, one view at a time", async () => {
-  const { host } = await openCalendar();
-  const { out, back } = zoomKeys();
-
-  await press(out, ACCELERATORS[0]);
-  await press(out, ACCELERATORS[0]);
-  assert.equal(viewHoldingFocus(), "years", "the walk out did not reach the years, so the walk back is measuring nothing");
-
-  await press(back, ACCELERATORS[0]);
-  assert.equal(viewHoldingFocus(), "months", "stepping back in from the years did not stop at the months");
-
-  await press(back, ACCELERATORS[0]);
-  assert.equal(viewHoldingFocus(), "days", "stepping back in from the months did not reach the days");
-  host.remove();
-});
-
-test("the bare arrow still walks the grid, and the held one does not move a day", async () => {
-  const { host, root } = await openCalendar();
-  const { back } = zoomKeys();
-  const focusedDay = () => root.querySelector('[role="grid"]')?.querySelector('[tabindex="0"]')?.textContent?.trim();
-
-  const before = focusedDay();
-  assert.ok(before, "no day carries the reading position, so a movement cannot be seen");
-
-  // The collision this gesture was chosen to avoid. Asserted where it could actually happen — inside
-  // the grid, with a press that changes no view because it is already at the narrowest one. Measured
-  // from the trigger instead, the grid's own handler never runs and the collision cannot appear.
-  await press(back, ACCELERATORS[0]);
-  assert.equal(focusedDay(), before, `the held arrow moved the reading position from ${before} to ${focusedDay()} as well as meaning a view change`);
-
-  await press(back);
-  assert.notEqual(focusedDay(), before, "the bare arrow stopped walking the grid");
-  host.remove();
-});

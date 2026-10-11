@@ -172,6 +172,7 @@
     "protected focusedDate: _angular_core.Signal<CalendarDate>",
     "protected goToNextMonth-> returns: void",
     "protected goToPreviousMonth-> returns: void",
+    "protected headingId: _angular_core.Signal<string>",
     "protected onDatePicked(0) date: CalendarDate,-> returns: void",
     "protected onKeydown(0) event: KeyboardEvent,-> returns: void",
     "protected onMonthSelected(0) month: number,-> returns: void",
@@ -196,7 +197,7 @@
     "minDate: _angular_core.InputSignal<CalendarDate | null>",
     "month: _angular_core.InputSignal<number>",
     "protected dayId(0) iso: string,-> returns: string",
-    "protected gridName: _angular_core.Signal<string>",
+    "protected headingId: _angular_core.Signal<string>",
     "protected isCellDisabled(0) cell: CalendarCell,-> returns: boolean",
     "protected isCellFocused(0) cell: CalendarCell,-> returns: boolean",
     "protected isCellSelected(0) cell: CalendarCell,-> returns: boolean",
@@ -212,6 +213,7 @@
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarGridComponent, never>"
   ],
   "angular:MdyCalendarHeaderComponent": [
+    "headingId: _angular_core.InputSignal<string>",
     "month: _angular_core.InputSignal<number>",
     "nextMonth: _angular_core.OutputEmitterRef<void>",
     "previousMonth: _angular_core.OutputEmitterRef<void>",
@@ -219,14 +221,14 @@
     "protected monthLabel: _angular_core.Signal<string>",
     "toggleView: _angular_core.OutputEmitterRef<void>",
     "year: _angular_core.InputSignal<number>",
-    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarHeaderComponent, \"mdy-calendar-header\", never, { \"year\": { \"alias\": \"year\"; \"required\": true; \"isSignal\": true; }; \"month\": { \"alias\": \"month\"; \"required\": true; \"isSignal\": true; }; }, { \"previousMonth\": \"previousMonth\"; \"nextMonth\": \"nextMonth\"; \"toggleView\": \"toggleView\"; }, never, never, true, never>",
+    "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCalendarHeaderComponent, \"mdy-calendar-header\", never, { \"year\": { \"alias\": \"year\"; \"required\": true; \"isSignal\": true; }; \"headingId\": { \"alias\": \"headingId\"; \"required\": false; \"isSignal\": true; }; \"month\": { \"alias\": \"month\"; \"required\": true; \"isSignal\": true; }; }, { \"previousMonth\": \"previousMonth\"; \"nextMonth\": \"nextMonth\"; \"toggleView\": \"toggleView\"; }, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyCalendarHeaderComponent, never>"
   ],
   "angular:MdyCheckboxComponent": [
     "protected cls: Readonly<Record<string, string>>",
     "protected onBlur-> returns: void",
     "protected onChange(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"indicator\" | \"submitFalse\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"submitFalse\" | \"indicator\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyCheckboxComponent, \"mdy-control-checkbox\", never, {}, {}, never, never, true, never>",
@@ -265,7 +267,7 @@
     "protected popupId: _angular_core.Signal<string>",
     "protected selectColor(0) color: string,-> returns: void",
     "protected walkPanelStops(0) event: KeyboardEvent,-> returns: boolean",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"popup\" | \"toggle\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"customEntry\" | \"customTint\" | \"hexInput\" | \"nativePicker\" | \"presets\" | \"preview\" | \"swatch\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"colors\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyColorsComponent, \"mdy-control-colors\", never, { \"placeholder\": { \"alias\": \"placeholder\"; \"required\": false; \"isSignal\": true; }; \"presets\": { \"alias\": \"presets\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -341,7 +343,7 @@
     "protected parsedSelectedDate: _angular_core.Signal<CalendarDate | null>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"grid\" | \"gridcell\" | \"popup\" | \"toggle\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"yearCell\" | \"monthCell\" | \"calendar\" | \"dialogHeader\" | \"headerNext\" | \"headerPrevious\" | \"headerTitle\" | \"monthPicker\" | \"row\" | \"viewToggle\" | \"weekday\" | \"weekdays\" | \"yearPicker\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"datepicker\"",
     "variant: _angular_core.InputSignal<\"docked\" | \"modal\">",
@@ -361,7 +363,7 @@
     "protected endId: _angular_core.Signal<string>",
     "protected forceModalPlacement-> returns: boolean",
     "protected i18n: _modyra_widgets.MdyI18nMessages",
-    "protected lastFocused: _angular_core.WritableSignal<\"end\" | \"start\">",
+    "protected lastFocused: _angular_core.WritableSignal<\"start\" | \"end\">",
     "protected modalDisplayValue: _angular_core.Signal<string>",
     "protected onBeforeOpen-> returns: void",
     "protected onEndpointBlur(0) event: FocusEvent,(1) endpoint: \"start\" | \"end\",-> returns: void",
@@ -377,7 +379,7 @@
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected startId: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"calendar\" | \"dialogHeader\" | \"grid\" | \"gridcell\" | \"monthCell\" | \"monthPicker\" | \"row\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"grid\" | \"gridcell\" | \"popup\" | \"toggle\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"yearCell\" | \"monthCell\" | \"calendar\" | \"dialogHeader\" | \"headerNext\" | \"headerPrevious\" | \"headerTitle\" | \"monthPicker\" | \"row\" | \"viewToggle\" | \"weekday\" | \"weekdays\" | \"yearPicker\" | \"endControl\" | \"separator\" | \"startControl\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"daterange\"",
     "startPlaceholder: _angular_core.InputSignal<string>",
@@ -502,7 +504,7 @@
     "protected onDrop(0) event: DragEvent,-> returns: void",
     "protected onFileChange(0) event: Event,-> returns: void",
     "protected rejectedNames: _angular_core.WritableSignal<readonly string[]>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"clear\" | \"control\" | \"content\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"control\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"clear\" | \"content\" | \"dropzone\" | \"fileItem\" | \"fileList\" | \"rejected\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"file\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyFileComponent, \"mdy-control-file\", never, { \"accept\": { \"alias\": \"accept\"; \"required\": false; \"isSignal\": true; }; \"multiple\": { \"alias\": \"multiple\"; \"required\": false; \"isSignal\": true; }; \"maxFileSize\": { \"alias\": \"maxFileSize\"; \"required\": false; \"isSignal\": true; }; \"maxFiles\": { \"alias\": \"maxFiles\"; \"required\": false; \"isSignal\": true; }; }, { \"fileSelected\": \"fileSelected\"; \"filesRejected\": \"filesRejected\"; }, never, never, true, never>",
@@ -780,7 +782,7 @@
     "protected overlayKind: \"multiselect\"",
     "protected overlayOwner-> returns: MdyOverlayOwner | undefined",
     "protected paintedOptions: _angular_core.Signal<readonly _modyra_core.MdySelectOption<TValue>[]>",
-    "protected parts: Readonly<Record<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\", MdyPartContract>>",
+    "protected parts: Readonly<Record<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"search\" | \"optionCheck\" | \"optionLabel\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\", MdyPartContract>>",
     "protected popupClass: string",
     "protected popupId: _angular_core.Signal<string>",
     "protected removeChip(0) optionKey: string,(1) value: TValue,(2) direction?: \"forward\" | \"backward\",-> returns: void",
@@ -793,7 +795,7 @@
     "protected valueChipClasses-> returns: string",
     "protected wayBack: _angular_core.Signal<_modyra_widgets.MdyMultiselectWayBack | null>",
     "protected wayBackName: _angular_core.Signal<string>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"search\" | \"optionCheck\" | \"optionLabel\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\" | \"announcement\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"optionCount\" | \"optionStep\" | \"optionWrapper\" | \"overflowCount\" | \"wayBackAction\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"multiselect\"",
     "reorderable: _angular_core.InputSignalWithTransform<boolean, unknown>",
@@ -808,7 +810,7 @@
     "protected cls: Readonly<Record<string, string>>",
     "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"decrement\" | \"increment\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"increment\" | \"decrement\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "showSpinButtons: _angular_core.InputSignal<boolean>",
@@ -911,7 +913,7 @@
     "protected namedBy: _angular_core.Signal<Readonly<Record<string, string | null>>>",
     "protected onBlur-> returns: void",
     "protected onSelectionChange(0) value: TValue,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"label\" | \"option\" | \"optionCheck\" | \"optionLabel\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"group\" | \"optionControl\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"group\" | \"option\" | \"requiredMarker\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"optionCheck\" | \"optionControl\" | \"optionLabel\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"radio\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyRadioGroupComponent<any>, \"mdy-control-radio\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"layout\": { \"alias\": \"layout\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -931,6 +933,7 @@
     "protected focusedDate: _angular_core.Signal<CalendarDate>",
     "protected goToNextMonth-> returns: void",
     "protected goToPreviousMonth-> returns: void",
+    "protected headingId: _angular_core.Signal<string>",
     "protected hoverDate: _angular_core.Signal<CalendarDate | null>",
     "protected onDateHovered(0) date: CalendarDate,-> returns: void",
     "protected onDatePicked(0) date: CalendarDate,-> returns: void",
@@ -966,7 +969,7 @@
     "minDate: _angular_core.InputSignal<CalendarDate | null>",
     "month: _angular_core.InputSignal<number>",
     "protected dayId(0) iso: string,-> returns: string",
-    "protected gridName: _angular_core.Signal<string>",
+    "protected headingId: _angular_core.Signal<string>",
     "protected isCellDisabled(0) cell: CalendarCell,-> returns: boolean",
     "protected isCellFocused(0) cell: CalendarCell,-> returns: boolean",
     "protected isCellInRange(0) cell: CalendarCell,-> returns: boolean",
@@ -1011,7 +1014,7 @@
     "protected onTrackPointerUp-> returns: void",
     "protected segmentsCount: _angular_core.Signal<number>",
     "protected tabIndexFor(0) index: number,-> returns: number",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"label\" | \"option\" | \"optionCheck\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"group\" | \"optionControl\" | \"optionText\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"group\" | \"option\" | \"requiredMarker\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"optionCheck\" | \"optionControl\" | \"optionText\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"segmented\"",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdySegmentedButtonComponent<any>, \"mdy-control-segmented\", never, { \"options\": { \"alias\": \"options\"; \"required\": false; \"isSignal\": true; }; \"fullWidth\": { \"alias\": \"fullWidth\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -1050,7 +1053,7 @@
     "protected selectedOption: _angular_core.Signal<MdySelectOption<TValue> | null>",
     "protected showCreateOption: _angular_core.Signal<boolean>",
     "protected triggerId-> returns: string",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"arrow\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"options\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"value\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"option\" | \"popup\" | \"requiredMarker\" | \"inputWrapper\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"loading\" | \"search\" | \"value\" | \"arrow\" | \"empty\" | \"options\" | \"placeholder\" | \"trigger\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"select\"",
     "resetSelection-> returns: void",
@@ -1067,7 +1070,7 @@
     "protected narrowedConstraints-> returns: Partial<MdyFieldConstraints>",
     "protected onChange(0) _event: Event,-> returns: void",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"value\" | \"control\" | \"track\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"track\" | \"value\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"slider\"",
     "showValue: _angular_core.InputSignal<boolean>",
@@ -1094,7 +1097,7 @@
     "protected inputType: _angular_core.Signal<string>",
     "protected onBlur-> returns: void",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"prefix\" | \"suffix\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"prefix\" | \"control\" | \"suffix\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "type: _angular_core.InputSignal<string>",
@@ -1105,7 +1108,7 @@
     "placeholder: _angular_core.InputSignal<string>",
     "protected cls: Readonly<Record<string, string>>",
     "protected onInput(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "rows: _angular_core.InputSignal<number>",
@@ -1139,7 +1142,7 @@
     "protected send(0) intent: MdyTimepickerFieldIntent,-> returns: void",
     "protected shownField: _angular_core.Signal<\"hour\" | \"minute\">",
     "protected shownViewMode: _angular_core.Signal<MdyTimepickerViewMode$1>",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"toggle\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"header\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"dialog\" | \"container\" | \"popup\" | \"toggle\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"header\" | \"action\" | \"actions\" | \"clock\" | \"content\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"hour\" | \"hourControl\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: \"timepicker\"",
     "showUnavailable: _angular_core.InputSignal<boolean>",
@@ -1151,7 +1154,7 @@
     "protected cls: Readonly<Record<string, string>>",
     "protected onBlur-> returns: void",
     "protected onChange(0) event: Event,-> returns: void",
-    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"control\" | \"track\" | \"submitFalse\" | \"thumb\">",
+    "protected widgetContract: _modyra_widgets.MdyWidgetDefinition<\"root\" | \"label\" | \"requiredMarker\" | \"inputWrapper\" | \"control\" | \"inlineError\" | \"supportingText\" | \"errors\" | \"errorItem\" | \"track\" | \"submitFalse\" | \"thumb\">",
     "protected widgetHasRootClass: boolean",
     "protected widgetKind: (inferred)",
     "ɵcmp: _angular_core.ɵɵComponentDeclaration<MdyToggleComponent, \"mdy-control-toggle\", never, {}, {}, never, never, true, never>",
@@ -4447,7 +4450,7 @@
     "const: readonly {\n    readonly name: string;\n    readonly package: string;\n    readonly describes: string;\n}[]"
   ],
   "widgets:MDY_WIDGET_CONTRACTS": [
-    "const: Readonly<{\n    text: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    email: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    password: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    textarea: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    number: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"decrement\" | \"errorItem\" | \"errors\" | \"increment\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    slider: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"value\">;\n    checkbox: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"indicator\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\">;\n    toggle: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\" | \"thumb\" | \"track\">;\n    radio: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionLabel\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    segmented: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionText\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    select: import(\"./kinds.js\").MdyWidgetDefinition<\"arrow\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"options\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"value\">;\n    multiselect: import(\"./kinds.js\").MdyWidgetDefinition<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\">;\n    datepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"control\" | \"dialogHeader\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    daterange: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"dialogHeader\" | \"endControl\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"separator\" | \"startControl\" | \"supportingText\" | \"toggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    timepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"control\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"errorItem\" | \"errors\" | \"header\" | \"hour\" | \"hourControl\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"toggle\">;\n    file: import(\"./kinds.js\").MdyWidgetDefinition<\"clear\" | \"content\" | \"control\" | \"dropzone\" | \"errorItem\" | \"errors\" | \"fileItem\" | \"fileList\" | \"label\" | \"rejected\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    colors: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"customEntry\" | \"customTint\" | \"errorItem\" | \"errors\" | \"hexInput\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"nativePicker\" | \"popup\" | \"presets\" | \"preview\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"swatch\" | \"toggle\">;\n}>"
+    "const: Readonly<{\n    text: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    email: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    password: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"prefix\" | \"requiredMarker\" | \"root\" | \"suffix\" | \"supportingText\">;\n    textarea: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    number: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"decrement\" | \"errorItem\" | \"errors\" | \"increment\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    slider: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"label\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"track\" | \"value\">;\n    checkbox: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"indicator\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\">;\n    toggle: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"requiredMarker\" | \"root\" | \"submitFalse\" | \"supportingText\" | \"thumb\" | \"track\">;\n    radio: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionLabel\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    segmented: import(\"./kinds.js\").MdyWidgetDefinition<\"errorItem\" | \"errors\" | \"group\" | \"label\" | \"option\" | \"optionCheck\" | \"optionControl\" | \"optionText\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    select: import(\"./kinds.js\").MdyWidgetDefinition<\"arrow\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"options\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"value\">;\n    multiselect: import(\"./kinds.js\").MdyWidgetDefinition<\"announcement\" | \"arrow\" | \"box\" | \"chip\" | \"chipCount\" | \"chipLabel\" | \"chipMove\" | \"chipRemove\" | \"chipRow\" | \"chipStep\" | \"chipTooltip\" | \"chips\" | \"clearAll\" | \"empty\" | \"errorItem\" | \"errors\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"loading\" | \"option\" | \"optionCheck\" | \"optionCount\" | \"optionLabel\" | \"optionStep\" | \"optionWrapper\" | \"options\" | \"overflowCount\" | \"placeholder\" | \"popup\" | \"requiredMarker\" | \"root\" | \"search\" | \"supportingText\" | \"trigger\" | \"wayBackAction\">;\n    datepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"control\" | \"dialogHeader\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"headerNext\" | \"headerPrevious\" | \"headerTitle\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"supportingText\" | \"toggle\" | \"viewToggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    daterange: import(\"./kinds.js\").MdyWidgetDefinition<\"calendar\" | \"dialogHeader\" | \"endControl\" | \"errorItem\" | \"errors\" | \"grid\" | \"gridcell\" | \"headerNext\" | \"headerPrevious\" | \"headerTitle\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"monthCell\" | \"monthPicker\" | \"popup\" | \"requiredMarker\" | \"root\" | \"row\" | \"separator\" | \"startControl\" | \"supportingText\" | \"toggle\" | \"viewToggle\" | \"weekday\" | \"weekdays\" | \"yearCell\" | \"yearPicker\">;\n    timepicker: import(\"./kinds.js\").MdyWidgetDefinition<\"action\" | \"actions\" | \"clock\" | \"container\" | \"content\" | \"control\" | \"dialFace\" | \"dialHand\" | \"dialNumber\" | \"dialUnavailable\" | \"dialUnavailableArc\" | \"dialog\" | \"errorItem\" | \"errors\" | \"header\" | \"hour\" | \"hourControl\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"minute\" | \"minuteControl\" | \"modeToggle\" | \"period\" | \"periodOption\" | \"popup\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"toggle\">;\n    file: import(\"./kinds.js\").MdyWidgetDefinition<\"clear\" | \"content\" | \"control\" | \"dropzone\" | \"errorItem\" | \"errors\" | \"fileItem\" | \"fileList\" | \"label\" | \"rejected\" | \"requiredMarker\" | \"root\" | \"supportingText\">;\n    colors: import(\"./kinds.js\").MdyWidgetDefinition<\"control\" | \"customEntry\" | \"customTint\" | \"errorItem\" | \"errors\" | \"hexInput\" | \"inlineError\" | \"inputWrapper\" | \"label\" | \"nativePicker\" | \"popup\" | \"presets\" | \"preview\" | \"requiredMarker\" | \"root\" | \"supportingText\" | \"swatch\" | \"toggle\">;\n}>"
   ],
   "widgets:MDY_WIDGET_CONTRACT_VERSION": [
     "const: 5"
@@ -5177,7 +5180,7 @@
   "widgets:MdyKeyBinding": [
     "awaits?: string",
     "by?: -1 | 1",
-    "intent: \"cancel\" | \"commit\" | \"grab\" | \"move\" | \"open\" | \"remove\" | \"reorder\" | \"step\" | \"toggle\" | \"typeahead\" | \"undo\" | \"view\"",
+    "intent: MdyKeyIntent",
     "key: string",
     "longStride?: boolean",
     "modifier?: \"any\" | \"primary\"",
@@ -6150,6 +6153,8 @@
     "order: number",
     "parent?: TPart",
     "part: TPart",
+    "performs?: MdyKeyIntent",
+    "performsPage?: boolean",
     "presentWhen?: MdyPartPresence",
     "repeated?: boolean",
     "requires?: string"
@@ -6529,11 +6534,15 @@
   ],
   "widgets:datepickerFieldPartIds": [
     "(0) widgetId: string",
-    "-> returns: { readonly labelId: string; readonly triggerId: string; readonly gridId: string; readonly descriptionId: string; readonly errorId: string; }"
+    "-> returns: { readonly labelId: string; readonly triggerId: string; readonly gridId: string; /** * The visible line that says which month the grid is showing. * * The grid is named by referring to it rather than by a caption written a second time: one copy on * the page, so the month a reader hears is the month a reader sees. ADR 0212. */ readonly headingId: string; readonly descriptionId: string; readonly errorId: string; }"
   ],
   "widgets:datepickerFieldRootClasses": [
     "(0) state: MdyDatepickerFieldState",
     "-> returns: readonly string[]"
+  ],
+  "widgets:daterangeFieldPartIds": [
+    "(0) widgetId: string",
+    "-> returns: { readonly labelId: string; readonly startId: string; readonly endId: string; readonly gridId: string; /** * The visible line that says which month the grid is showing. * * The grid is named by referring to it rather than by a caption written a second time: one copy on * the page, so the month a reader hears is the month a reader sees. ADR 0212. */ readonly headingId: string; readonly descriptionId: string; readonly errorId: string; }"
   ],
   "widgets:decideOverlayAlignment": [
     "(0) input: MdyOverlayGeometry",
@@ -6957,6 +6966,11 @@
     "(1) facts: { /** Whether the widget is in the state the condition names. */ readonly holds: (condition: MdyPartPresence) => boolean; /** Whether the field was given the capability the part is gated on. */ readonly offers: (capability: string) => boolean; }",
     "-> returns: boolean"
   ],
+  "widgets:partIsReachedByAKey": [
+    "(0) node: Pick<MdyWidgetStructureNode, \"performs\" | \"performsPage\">",
+    "(1) bindings: readonly MdyKeyBinding[]",
+    "-> returns: boolean"
+  ],
   "widgets:partSelector": [
     "(0) kind: K",
     "(1) part: MdyWidgetPart<K> | string",
@@ -6979,6 +6993,7 @@
   ],
   "widgets:popupHoldsAnAction": [
     "(0) kind: MdyWidgetKind",
+    "(1) bindings?: readonly MdyKeyBinding[]",
     "-> returns: boolean"
   ],
   "widgets:popupPlacementClass": [

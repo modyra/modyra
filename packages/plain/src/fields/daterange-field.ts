@@ -9,7 +9,7 @@
 import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseLocalizedDate, today } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { fieldAccessibleName, applySubmissionNames,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
@@ -26,14 +26,14 @@ import { fieldAccessibleName, applySubmissionNames,
   keyBindingFor,
   MDY_PART_NAMES,
   presentationClass,
-  overlayControlledId,
-} from "@modyra/widgets";
+  calendarViewOnToggle,
+  overlayControlledId, daterangeFieldPartIds} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
-import { buildCalendarGrid, fillCalendar } from "./calendar.js";
+import { bindViewZoom, buildCalendarGrid, buildPeriodViews, fillCalendar } from "./calendar.js";
 
 /**
  * The class every part and box wears, asked of the contract once.
@@ -43,8 +43,6 @@ import { buildCalendarGrid, fillCalendar } from "./calendar.js";
  */
 const CLASS = {
   box: presentationClass("daterange", "box"),
-  headerLabel: presentationClass("daterange", "headerLabel"),
-  navButton: presentationClass("daterange", "navButton"),
 } as const;
 
 
@@ -137,20 +135,37 @@ export function renderDaterangeField(
   popup.id = defaultWidgetIdFactory.part(widgetId, "popup");
   toggle.setAttribute("aria-controls", overlayControlledId("daterange", widgetId) ?? popup.id);
   const header = el("div", definition.parts.dialogHeader.classes.join(" ")) as HTMLDivElement;
-  const prevButton = el("button", CLASS.navButton) as HTMLButtonElement;
+  const prevButton = el("button", definition.parts.headerPrevious.classes.join(" ")) as HTMLButtonElement;
   prevButton.type = "button";
   prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   setIcon(prevButton, "CHEVRON_LEFT");
-  const monthLabel = el("span", CLASS.headerLabel);
-  const nextButton = el("button", CLASS.navButton) as HTMLButtonElement;
+  // The header's middle child opens the month view, which opens the year view — the same funnel as
+  // the single-date picker, since a range far from the month on screen is as many clicks away.
+  const viewToggle = el("button", definition.parts.viewToggle.classes.join(" ")) as HTMLButtonElement;
+  viewToggle.type = "button";
+  // The month as its own element inside the button. The grid is named by referring to it, and the
+  // button carries a name of its own — "change view, currently …" — so a reference crossing into the
+  // button would announce the way out instead of where you are. ADR 0212.
+  const monthTitle = el("span", definition.parts.headerTitle.classes.join(" "));
+  monthTitle.id = daterangeFieldPartIds(widgetId).headingId;
+  viewToggle.append(monthTitle);
+  const nextButton = el("button", definition.parts.headerNext.classes.join(" ")) as HTMLButtonElement;
   nextButton.type = "button";
   nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   setIcon(nextButton, "CHEVRON_RIGHT");
-  header.append(prevButton, monthLabel, nextButton);
+  header.append(prevButton, viewToggle, nextButton);
   const grid = buildCalendarGrid("daterange");
   // The element the promise names: the opener says it opens a grid, and the panel that holds this
   // one carries no role of its own (ADR 0210).
   grid.id = overlayControlledId("daterange", widgetId) ?? grid.id;
+  // Named by the line that says the month, and by nothing else: a written label beside a reference
+  // loses to it in the name computation every time. ADR 0212.
+  grid.setAttribute("aria-labelledby", monthTitle.id);
+  const { monthPicker, yearPicker, render: renderPeriodView } = buildPeriodViews(
+    "daterange", widgetId, dateLocale,
+    () => ({ min: parseIsoDate(bounds.minIso), max: parseIsoDate(bounds.maxIso) }),
+    dispatch,
+  );
   // Same frame as the single-date picker: the popup positions, the calendar lays out.
   const calendar = el("div", MDY_WIDGET_CONTRACTS.daterange.parts.calendar.classes.join(" "));
   // What the opener promises, carried by the thing it opens. The other two renderers wrote the role
@@ -161,7 +176,7 @@ export function renderDaterangeField(
   // appeared and not what it is for. The field's own words where there are any, the kind's sentence
   // otherwise — the same order the other two renderers use.
   calendar.setAttribute("aria-label", fieldAccessibleName({ label: f.label, name: f.name }) || messages.daterangeChooseRange);
-  calendar.append(header, grid);
+  calendar.append(header, grid, monthPicker, yearPicker);
   popup.append(calendar);
 
   // The start input is what the label names: a range has two controls and `for` can point at only
@@ -215,6 +230,14 @@ export function renderDaterangeField(
   }
   prevButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: -1 }));
   nextButton.addEventListener("click", () => dispatch({ type: "navigate-month", delta: 1 }));
+  // The header goes to the top of the funnel and choosing narrows back down. Which view it opens
+  // is `calendarViewOnToggle`'s answer, not this renderer's.
+  viewToggle.addEventListener("click", () =>
+    dispatch({ type: "set-view-mode", mode: calendarViewOnToggle(controller.state().viewMode) }),
+  );
+  // The other views, reached from the keyboard by the gesture the kind declares.
+  bindViewZoom("daterange", [wrapper, popup], { days: grid, months: monthPicker, years: yearPicker },
+    () => controller.state(), (mode) => dispatch({ type: "set-view-mode", mode }));
   // The calendar's own keys, answered by the controller that owns the month — the same intent the
   // single-date sibling sends. Without this the grid took focus when the popup opened and then
   // answered nothing: a range was pickable with a pointer and with nothing else.
@@ -368,9 +391,14 @@ export function renderDaterangeField(
     });
 
     const monthKey = `${anchor.year}-${anchor.month}`;
-    setText(monthLabel, `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
-    // Named by the month, not by the numbers inside it — which are gone while the calendar is closed.
-    grid.setAttribute("aria-label", `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
+    setText(monthTitle, `${dateLocale.monthNamesLong[anchor.month - 1]} ${anchor.year}`);
+    viewToggle.setAttribute("aria-label", messages.datepickerChangeView(monthTitle.textContent ?? ""));
+    // Paging belongs to the day view: in the other two the arrows would move a month nobody is
+    // looking at.
+    prevButton.hidden = state.viewMode !== "days";
+    nextButton.hidden = state.viewMode !== "days";
+    grid.hidden = state.viewMode !== "days";
+    renderPeriodView(state.viewMode, state.viewYear, state.viewMonth);
     // A closed calendar holds no cells: the popup element stays, because it is built once and lives
     // as long as the field, and what is inside it is six weeks of buttons that a screen reader
     // counts and a Tab key walks through while nothing is open.

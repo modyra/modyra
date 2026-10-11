@@ -9,8 +9,7 @@ import { projectCalendarDayCellA11y, capabilityOf, keyMeans,
   calendarViewOnToggle,
   subscribeController,
   presentationClass,
-  dateEntryText,
-} from "@modyra/widgets";
+  dateEntryText, datepickerFieldPartIds} from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, formatLocalizedDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
@@ -31,8 +30,6 @@ import {
  */
 const CLASS = {
   box: presentationClass("datepicker", "box"),
-  headerLabel: presentationClass("datepicker", "headerLabel"),
-  headerNav: presentationClass("datepicker", "headerNav"),
   icon: presentationClass("datepicker", "icon"),
   modalHeader: presentationClass("datepicker", "modalHeader"),
   modalLabel: presentationClass("datepicker", "modalLabel"),
@@ -499,44 +496,40 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       >
         ${modalHeader}
         <div class="${CLASS.dialogHeader}">
-          <div class="${CLASS.headerLabel}">
-            <button
-              type="button"
-              class="${CLASS.viewToggle}"
-              aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
-              @click=${this.onToggleView}
-            >
-              <span class="${CLASS.title}">${monthLabel} ${this.view.viewYear}</span>
-              ${mdyIcon("CHEVRON_DOWN", CLASS.viewIcon)}
-            </button>
-          </div>
-          <div class="${CLASS.headerNav}">
-            <button
-              type="button"
-              class="${CLASS.navButton}"
-              aria-label=${this.messages.datepickerPreviousMonth}
-              ?disabled=${this.view.viewMode !== "days"}
-              @click=${() => this.navigateMonths(-1)}
-            >
-              ${mdyIcon("CHEVRON_LEFT", "")}
-            </button>
-            <button
-              type="button"
-              class="${CLASS.navButton}"
-              aria-label=${this.messages.datepickerNextMonth}
-              ?disabled=${this.view.viewMode !== "days"}
-              @click=${() => this.navigateMonths(1)}
-            >
-              ${mdyIcon("CHEVRON_RIGHT", "")}
-            </button>
-          </div>
+          <button
+            type="button"
+            class="${CLASS.navButton} ${CLASS.navButton}--previous"
+            aria-label=${this.messages.datepickerPreviousMonth}
+            ?disabled=${this.view.viewMode !== "days"}
+            @click=${() => this.navigateMonths(-1)}
+          >
+            ${mdyIcon("CHEVRON_LEFT", "")}
+          </button>
+          <button
+            type="button"
+            class="${CLASS.viewToggle}"
+            aria-label=${this.messages.datepickerChangeView(`${monthLabel} ${this.view.viewYear}`)}
+            @click=${this.onToggleView}
+          >
+            <span class="${CLASS.title}" id=${datepickerFieldPartIds(this.fieldId).headingId}>${monthLabel} ${this.view.viewYear}</span>
+            ${mdyIcon("CHEVRON_DOWN", CLASS.viewIcon)}
+          </button>
+          <button
+            type="button"
+            class="${CLASS.navButton} ${CLASS.navButton}--next"
+            aria-label=${this.messages.datepickerNextMonth}
+            ?disabled=${this.view.viewMode !== "days"}
+            @click=${() => this.navigateMonths(1)}
+          >
+            ${mdyIcon("CHEVRON_RIGHT", "")}
+          </button>
         </div>
         ${this.view.viewMode === "days"
           ? html`<div
               class="${CLASS.grid}"
               role="grid"
               id=${overlayControlledId("datepicker", this.fieldId) ?? nothing}
-              aria-label="${monthLabel} ${this.view.viewYear}"
+              aria-labelledby=${datepickerFieldPartIds(this.fieldId).headingId}
             >
               ${this.renderCalendarGrid(handle)}
             </div>`

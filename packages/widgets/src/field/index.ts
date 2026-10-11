@@ -149,6 +149,7 @@ export type { MdyDaterangeFieldController } from "./daterange-field-controller.j
 
 export {
   projectDaterangeFieldA11y,
+  daterangeFieldPartIds,
 } from "./daterange-field-a11y.js";
 export type { MdyDaterangeFieldA11yOptions } from "./daterange-field-a11y.js";
 

@@ -80,7 +80,12 @@ const PART_SEMANTICS: Readonly<Record<string, MdyWidgetSemanticElement>> = Objec
   monthPicker: "grid", monthCell: "gridcell", yearPicker: "grid", yearCell: "gridcell",
   // Containers the contract deliberately leaves unconstrained.
   group: "group", inputWrapper: "group", prefix: "group", suffix: "group", container: "group",
-  content: "group", header: "group", dialogHeader: "group", actions: "group", chips: "group",
+  content: "group", header: "group", dialogHeader: "group",
+  // The calendar's header. Declared rather than left to presentation classes: three renderers
+  // shipped operable buttons in a panel whose anatomy could not see them, so the door asking
+  // whether a popup holds an action answered about parts that were not there. The middle one
+  // is named for the act it performs, not the place it sits. ADR 0212.
+  headerPrevious: "button", viewToggle: "button", headerTitle: "text", headerNext: "button", actions: "group", chips: "group",
   // The single row a grid structures its cells in. ADR 0148.
   chipRow: "group",
   options: "group", optionWrapper: "group", dropzone: "group", fileList: "group",

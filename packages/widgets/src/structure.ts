@@ -422,6 +422,16 @@ export const MDY_PART_PRESENCE: Readonly<Record<string, MdyPartPresence>> = Obje
 });
 
 /** One node in a widget's framework-independent structural anatomy. */
+/**
+ * What a key press means, named once so a part can declare the same act it performs.
+ *
+ * The union was written inline on the binding; a second copy on the part is a pair that drifts the
+ * day a verb is added.
+ */
+export type MdyKeyIntent =
+  | "move" | "step" | "toggle" | "open" | "commit" | "cancel"
+  | "reorder" | "remove" | "grab" | "undo" | "typeahead" | "view";
+
 export interface MdyWidgetStructureNode<TPart extends string = string> {
   readonly part: TPart;
   readonly element: MdyWidgetSemanticElement;
@@ -455,6 +465,21 @@ export interface MdyWidgetStructureNode<TPart extends string = string> {
    * binding, and one word carrying two meanings is how a declaration comes to be read two ways.
    */
   readonly presentWhen?: MdyPartPresence;
+  /**
+   * The act this part performs, where it performs one.
+   *
+   * Declared so a reader can ask whether an act is reachable some other way than by landing on the
+   * control that does it. WCAG asks for keyboard reachability, not for a Tab stop.
+   */
+  readonly performs?: MdyKeyIntent;
+  /**
+   * Whether the act is the page-sized one, where an intent has two sizes.
+   *
+   * `move` is a day under the arrows and a month under the pager. Matching the verb alone let a
+   * cursor key stand in for a month key, and the exemption survived deleting the very binding that
+   * justified it — which is what the falsification was written to catch.
+   */
+  readonly performsPage?: boolean;
   /**
    * A capability the kind must have been given before the part is owed at all.
    *

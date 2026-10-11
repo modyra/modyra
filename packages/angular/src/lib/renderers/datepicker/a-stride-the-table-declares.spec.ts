@@ -46,9 +46,10 @@ describe("the calendar's longer stride", () => {
     opener.click();
     fixture.detectChanges();
 
+    // The title inside the view-toggle button: the month is its own element because the grid is
+    // named by referring to it.
     const heading = (): string | null =>
-      (fixture.nativeElement.querySelector(".mdy-datepicker__header-label")
-        ?? fixture.nativeElement.querySelector(".mdy-datepicker__view-toggle"))?.textContent?.trim() ?? null;
+      fixture.nativeElement.querySelector(".mdy-datepicker__title")?.textContent?.trim() ?? null;
     expect(heading()).toBeTruthy();
 
     const press = (key: string, held: Record<string, boolean> = {}): void => {

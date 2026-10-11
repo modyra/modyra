@@ -25,6 +25,10 @@ export { canonicalWidgetSnapshot, compareToCanonical, MDY_CANONICAL_AFTER_ESCAPE
 export type { MdyCanonicalExpectation, MdyCanonicalOptions, MdyCanonicalOverlay, MdyCanonicalPart, MdyCanonicalRelationship, MdyCanonicalSnapshot } from "./canonical.js";
 
 export { MDY_PAINT_BEATS, settleFor } from "./paint-beat.js";
+// The per-part half of `popupHoldsAnAction`, for a bench that judges one part rather than a panel.
+// It lives with the runtime because the panel's Tab is decided by it; it is published here, not at
+// the package root, because only a bench asks it of a single part.
+export { partIsReachedByAKey } from "../transitions.js";
 export type { MdyPaintBeat } from "./paint-beat.js";
 
 /**

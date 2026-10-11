@@ -9,7 +9,7 @@
 import { createForm, field as mdyField, group as mdyGroup, required as mdyRequired } from "@modyra/core";
 import { renderField } from "@modyra/plain";
 import { KINDS } from "./kinds.js";
-import { multiselectChipPart } from "@modyra/widgets";
+import { daterangeFieldPartIds, multiselectChipPart } from "@modyra/widgets";
 import {
   MDY_WIDGET_CONTRACTS,
   fieldAccessibleName,
@@ -241,6 +241,7 @@ export const statesPanel = {
     "projectCalendarViewA11y",
     "projectDatepickerFieldA11y",
     "projectFieldShellA11y",
+    "daterangeFieldPartIds",
     "multiselectChipPart",
     "projectMultiselectFieldA11y",
     "projectOptionFieldA11y",
@@ -374,6 +375,11 @@ export const statesPanel = {
         }) && node.optional === true).map((node) => node.part)])
         .filter(([, parts]) => parts.length > 0)
         .map(([kind, parts]) => `${kind}: ${parts.join(", ")}`),
+      // The ids a range's parts answer to, asked of the contract rather than spelled: the grid names
+      // itself by referring to the line that says the month, and both ends of that reference come
+      // from here. ADR 0212.
+      rangePartIds: Object.entries(daterangeFieldPartIds("states-daterange"))
+        .map(([part, id]) => `${part}: ${id}`),
       // Which of how many, asked of the contract for each chip a multiselect is holding. A
       // `gridcell` cannot carry `aria-posinset`, so the position is a column index — the reason is
       // ADR 0148, and this shows the answer rather than restating it.

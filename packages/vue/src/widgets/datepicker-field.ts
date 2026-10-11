@@ -20,6 +20,8 @@ import {
   keyBindingFor,
   dateEntryText,
   fieldAccessibleName,
+  datepickerFieldPartIds,
+  calendarViewOnToggle,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
@@ -238,6 +240,20 @@ export const MdyDatepickerField = defineComponent({
         cells,
         parts,
         locale: dateLocale,
+        // The month the panel shows, and the ways out of it. The controller has held it all along.
+        heading: {
+          title: `${dateLocale.monthNamesLong[state.value.viewMonth - 1]} ${state.value.viewYear}`,
+          headingId: datepickerFieldPartIds(widgetId.value).headingId,
+          onPreviousMonth: () => run(controller.dispatch({ type: "navigate-month", delta: -1 })),
+          onNextMonth: () => run(controller.dispatch({ type: "navigate-month", delta: 1 })),
+          onToggleView: () => run(controller.dispatch({
+            type: "set-view-mode", mode: calendarViewOnToggle(state.value.viewMode),
+          })),
+          previousLabel: messages.value.datepickerPreviousMonth,
+          nextLabel: messages.value.datepickerNextMonth,
+          toggleLabel: messages.value.datepickerChangeView(
+            `${dateLocale.monthNamesLong[state.value.viewMonth - 1]} ${state.value.viewYear}`),
+        },
         onPick: (iso) => run(controller.dispatch({ type: "select-date", iso })),
       }));
 

@@ -1,4 +1,4 @@
-import { type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
+import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
 import { calendarViewState } from "../../core/calendar-view-state";
 import {
   afterNextRender,
@@ -49,6 +49,7 @@ type RangePhase = "pick-start" | "pick-end";
   },
   template: `
     <mdy-calendar-header
+      [headingId]="headingId()"
       [year]="viewYear()"
       [month]="viewMonth()"
       (previousMonth)="goToPreviousMonth()"
@@ -108,6 +109,9 @@ export class MdyRangeCalendarComponent {
   /** Passed through to the grid, which is what the opener points at. */
   readonly gridId = input<string>("");
   readonly widgetId = input<string>("");
+  /** The id of the line that says the month, derived from the widget: the grid names itself by
+   * referring to it, and both come from one contract. ADR 0212. */
+  protected readonly headingId = computed(() => (this.widgetId() ? daterangeFieldPartIds(this.widgetId()).headingId : ""));
 
   /** Whether the popup holding this calendar is showing; a closed one draws no cells. */
   readonly showCells = input<boolean>(true);

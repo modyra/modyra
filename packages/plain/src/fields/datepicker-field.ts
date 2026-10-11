@@ -5,7 +5,7 @@
  * controller already wires up).
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
-import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseLocalizedDate, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, parseIsoDate } from "@modyra/core/datetime";
+import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseLocalizedDate, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyDynamicDateField } from "@modyra/core";
 import { fieldAccessibleName, keyMeans, applySubmissionNames,
   syncSubmitValues,
@@ -15,21 +15,16 @@ import { fieldAccessibleName, keyMeans, applySubmissionNames,
   visibleErrorsOf,
   type MdyElementLookup,
   partClasses,
-  projectCalendarPeriodCellA11y,
-  projectCalendarViewA11y,
   calendarViewOnToggle,
-  calendarViewOnZoom,
-  type MdyCalendarViewMode,
   MDY_I18N_MESSAGES_DEFAULT,
   type MdyI18nMessages,
   keyBindingFor,
   presentationClass,
-  dateEntryText,
-} from "@modyra/widgets";
+  dateEntryText, datepickerFieldPartIds} from "@modyra/widgets";
 import { applyPart, el, setErrors, setText, setIcon } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 import { withControls, type MdyMountedField } from "../field-controls.js";
-import { buildCalendarGrid, fillCalendar } from "./calendar.js";
+import { bindViewZoom, buildCalendarGrid, buildPeriodViews, fillCalendar } from "./calendar.js";
 import { runCommands } from "../command-runtime.js";
 import { dismissOnFocusOutside } from "../overlay.js";
 import { dismissOnOutsidePointer, positionOverlay, releaseOverlayPlacement, reflectOverlayOpen, trackOverlay } from "../overlay.js";
@@ -45,7 +40,8 @@ const CLASS = {
   dialogHeader: partClasses("datepicker", "dialogHeader").join(" "),
   toggle: partClasses("datepicker", "toggle").join(" "),
   box: presentationClass("datepicker", "box"),
-  headerLabel: presentationClass("datepicker", "headerLabel"),
+  viewToggle: presentationClass("datepicker", "viewToggle"),
+  title: presentationClass("datepicker", "title"),
   navButton: presentationClass("datepicker", "navButton"),
 } as const;
 
@@ -98,29 +94,29 @@ export function renderDatepickerField(
   // month nav) — the controller only names the trigger and the grid.
   const popup = el("div", `${MDY_WIDGET_CONTRACTS.datepicker.parts.popup.classes.join(" ")} mdy-overlay`) as HTMLDivElement;
   const header = el("div", CLASS.dialogHeader) as HTMLDivElement;
-  const prevButton = el("button", CLASS.navButton) as HTMLButtonElement;
+  const prevButton = el("button", `${CLASS.navButton} ${CLASS.navButton}--previous`) as HTMLButtonElement;
   prevButton.type = "button";
   setIcon(prevButton, "CHEVRON_LEFT");
   prevButton.setAttribute("aria-label", messages.datepickerPreviousMonth);
   // The header label opens the month view, which opens the year view: paging a month at a time put
   // a birth date thirty clicks away, and the other two renderers had grown this and this one had
   // not. Nobody decided that — see the calendar view contract.
-  const monthLabel = el("button", CLASS.headerLabel) as HTMLButtonElement;
+  const monthLabel = el("button", CLASS.viewToggle) as HTMLButtonElement;
   monthLabel.type = "button";
-  const nextButton = el("button", CLASS.navButton) as HTMLButtonElement;
+  // The month as its own element inside the button. The grid is named by referring to it, and the
+  // button carries a name of its own — "change view, currently …" — so a reference crossing into the
+  // button would announce the way out instead of where you are. ADR 0212.
+  const monthTitle = el("span", CLASS.title);
+  monthTitle.id = datepickerFieldPartIds(widgetId).headingId;
+  monthLabel.append(monthTitle);
+  const nextButton = el("button", `${CLASS.navButton} ${CLASS.navButton}--next`) as HTMLButtonElement;
   nextButton.type = "button";
   setIcon(nextButton, "CHEVRON_RIGHT");
   nextButton.setAttribute("aria-label", messages.datepickerNextMonth);
   header.append(prevButton, monthLabel, nextButton);
   const grid = buildCalendarGrid("datepicker");
-  // The two views exist from the start, hidden: an element that only gains its classes when it is
-  // shown is an element no test and no theme can name while it is not.
-  const monthPicker = el("div") as HTMLDivElement;
-  const yearPicker = el("div") as HTMLDivElement;
-  applyPart(monthPicker, projectCalendarViewA11y("months", { kind: "datepicker", widgetId })!);
-  applyPart(yearPicker, projectCalendarViewA11y("years", { kind: "datepicker", widgetId })!);
-  monthPicker.hidden = true;
-  yearPicker.hidden = true;
+  const bounds = () => ({ min: parseIsoDate(options.minDate ?? null), max: parseIsoDate(options.maxDate ?? null) });
+  const { monthPicker, yearPicker, render: renderPeriodView } = buildPeriodViews("datepicker", widgetId, dateLocale, bounds, dispatch);
   // The calendar frames the month inside the popup. The popup positions and the calendar lays out:
   // the themes give this element the column flow the header and grid sit in, so a popup holding them
   // directly is a picker the shipped themes cannot arrange.
@@ -140,44 +136,6 @@ export function renderDatepickerField(
   wrapper.append(control, toggle, popup);
   insertControl(shell, wrapper);
   container.appendChild(shell.root);
-
-  /**
-   * The month and year views, drawn from the contract's projection: which cells there are, which is
-   * chosen, which the bounds refuse and what each announces are its answers, not this renderer's.
-   */
-  function renderPeriodView(mode: MdyCalendarViewMode, year: number, month: number): void {
-    for (const [host, own] of [[monthPicker, "months"], [yearPicker, "years"]] as const) {
-      host.hidden = mode !== own;
-      if (mode !== own) continue;
-      const values = own === "months"
-        ? Array.from({ length: 12 }, (_, index) => index + 1)
-        : [...calendarYearRange(year, parseIsoDate(options.minDate ?? null), parseIsoDate(options.maxDate ?? null))];
-      const current = own === "months" ? month : year;
-      host.replaceChildren(...values.map((value) => {
-        const button = el("button") as HTMLButtonElement;
-        button.type = "button";
-        setText(button, own === "months" ? (dateLocale.monthNamesShort[value - 1] ?? String(value)) : String(value));
-        applyPart(button, projectCalendarPeriodCellA11y(own, {
-          value,
-          label: button.textContent ?? String(value),
-          selected: value === current,
-          disabled: own === "months"
-            ? isMonthOutOfRange(year, value, parseIsoDate(options.minDate ?? null), parseIsoDate(options.maxDate ?? null))
-            : isYearOutOfRange(value, parseIsoDate(options.minDate ?? null), parseIsoDate(options.maxDate ?? null)),
-        }, { kind: "datepicker", widgetId }));
-        button.addEventListener("click", () =>
-          dispatch(own === "months" ? { type: "select-month", month: value } : { type: "select-year", year: value }));
-        return button;
-      }));
-      if (own === "years") {
-        // Guarded: a document without layout has no `scrollIntoView`, and a picker that throws
-        // there takes the whole effect down with it.
-        host
-          .querySelector<HTMLElement>(`.${partClasses("datepicker", "yearCell", { selected: true }).join(".")}`)
-          ?.scrollIntoView?.({ block: "center" });
-      }
-    }
-  }
 
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedYear: number | null = null;
@@ -267,29 +225,9 @@ export function renderDatepickerField(
   // one press can reach it twice. A dismissal survives that — closing a closed panel is closing it —
   // but a step does not: two runs of one press walked the days to the months and straight on to the
   // years, which reads as a key that skips a view rather than as a handler that ran twice.
-  const zoomed = new WeakSet<KeyboardEvent>();
-  const onZoomView = (event: KeyboardEvent): void => {
-    const state = controller.state();
-    if (!state.open || zoomed.has(event)) return;
-    const binding = keyBindingFor("datepicker", event, state.open);
-    if (binding?.intent !== "view" || binding.by === undefined) return;
-    event.preventDefault();
-    zoomed.add(event);
-    const reached = calendarViewOnZoom(state.viewMode, binding.by);
-    if (reached === state.viewMode) return;
-    dispatch({ type: "set-view-mode", mode: reached });
-    // The keys follow the eye. A step that changed the view and left focus in the one it came from
-    // would leave the next press going to a view nobody is looking at — and in this renderer the
-    // view it came from is hidden, so focus would be on an element in no accessibility tree at all.
-    queueMicrotask(() => {
-      const host = reached === "months" ? monthPicker : reached === "years" ? yearPicker : grid;
-      const landing = host.querySelector<HTMLElement>('[aria-selected="true"], [tabindex="0"]')
-        ?? host.querySelector<HTMLElement>("button:not([disabled])");
-      landing?.focus();
-    });
-  };
-  wrapper.addEventListener("keydown", onZoomView);
-  popup.addEventListener("keydown", onZoomView);
+  // The other views, reached from the keyboard by the gesture the kind declares.
+  bindViewZoom("datepicker", [wrapper, popup], { days: grid, months: monthPicker, years: yearPicker },
+    () => controller.state(), (mode) => dispatch({ type: "set-view-mode", mode }));
 
   // The header goes to the top of the funnel and choosing narrows back down. Which view it opens
   // is `calendarViewOnToggle`'s answer, not this renderer's: writing it here is how three renderers
@@ -356,12 +294,10 @@ export function renderDatepickerField(
     // A header that reads `2026` while the years are on screen is a button whose text is identical
     // to one of the cells under it: anything looking for the year — a person, a test, a tool — finds
     // the header first and presses the way back instead of the year they meant.
-    setText(monthLabel, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
-    monthLabel.setAttribute("aria-label", messages.datepickerChangeView(monthLabel.textContent ?? ""));
-    // The grid is named by the month it shows, rather than by whatever text happens to be inside it:
-    // a name made of day numbers is not a name, and it disappears with them when the calendar is
-    // closed and its cells go.
-    grid.setAttribute("aria-label", `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
+    setText(monthTitle, `${dateLocale.monthNamesLong[state.viewMonth - 1]} ${state.viewYear}`);
+    monthLabel.setAttribute("aria-label", messages.datepickerChangeView(monthTitle.textContent ?? ""));
+    // No name written here. The grid is named by referring to the month in the header, and a written
+    // label beside that reference loses to it in the name computation every time. ADR 0212.
     // Paging belongs to the day view: in the other two the arrows would move a month nobody is
     // looking at.
     prevButton.hidden = state.viewMode !== "days";
