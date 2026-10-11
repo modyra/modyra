@@ -221,11 +221,13 @@ export class MdyCalendarComponent {
         if (dismissal.restoresFocus === true) {
           event.preventDefault();
           event.stopPropagation();
+          // Only the press that keeps the keyboard here lands it on the days: after a Tab the
+          // browser has already carried focus on, and a landing would pull it back.
+          afterNextRender(() => landOnTheDays(this.hostRef.nativeElement), { injector: this.injector });
         }
         const controller = this.controller();
         if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });
         else this.viewState.reset(this.focusedDate());
-        afterNextRender(() => landOnTheDays(this.hostRef.nativeElement), { injector: this.injector });
       }
       return;
     }
