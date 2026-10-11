@@ -22,7 +22,6 @@ import type {
   MdyFieldTeardown,
   MdyFocusDismissalOptions,
   MdyPartContent,
-  MdySignalStore,
   MdyAccessibleNameSource,
   MdyAffordance,
   MdyAffordanceRole,
@@ -973,6 +972,3 @@ void held298;
 
 declare const held299: MdyPartContent;
 void held299;
-
-declare const held300: MdySignalStore;
-void held300;

@@ -71,9 +71,6 @@ const TESTING_ONLY = new Set([
   // their own reactivity; a page has only the adapters that already work, so demonstrating it would
   // mean shipping a broken one to have something to refuse.
   "missingReactivityMembers",
-  // The subscribable view an adapter builds its rendering on. A page sees only what the adapter
-  // renders from it; showing the store itself would mean writing an adapter on the page.
-  "createSignalStore", "createFieldSignalStore",
 ]);
 
 const PANELS = join(root, "examples/plain/panels");

@@ -5692,11 +5692,6 @@
     "intent: MdySelectIntent",
     "name: string"
   ],
-  "widgets:MdySignalStore": [
-    "destroy: void",
-    "getSnapshot: number",
-    "subscribe: () => void"
-  ],
   "widgets:MdySilentWriteBinding": [
     "navigation?: () => string | undefined",
     "root: Element",
@@ -6439,10 +6434,6 @@
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdyDaterangeFieldController"
   ],
-  "widgets:createFieldSignalStore": [
-    "(0) handle: MdyFieldHandle<unknown>",
-    "-> returns: MdySignalStore"
-  ],
   "widgets:createFileFieldController": [
     "(0) options: MdyFileFieldControllerOptions<TFile>",
     "(1) reactivity?: MdyReactivity",
@@ -6483,11 +6474,6 @@
     "(0) options: MdySelectFieldControllerOptions<TValue>",
     "(1) reactivity?: MdyReactivity",
     "-> returns: MdySelectFieldController<TValue>"
-  ],
-  "widgets:createSignalStore": [
-    "(0) signals: ReadonlyArray<MdySignal<unknown>>",
-    "(1) reactivity: MdyReactivity",
-    "-> returns: MdySignalStore"
   ],
   "widgets:createTextFieldController": [
     "(0) options: MdyTextFieldControllerOptions<TValue>",

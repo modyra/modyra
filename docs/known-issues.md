@@ -29,6 +29,15 @@ is isolated. Contents are byte-identical between the flapping captures; only the
 
 *Who it affects:* nobody in production; the suite pays for it in wall time.
 
+**`@modyra/react` and `@modyra/preact` each carry their own copy of the field store** behind
+`createStore` and `createFieldStore`. Both stores track the form only while something is subscribed,
+and they resume with the latest value. The only way to share the body would be a new public export
+from the foundation, and each export there is permanent. The copies are kept identical instead: the
+cross-adapter similarity gate records the pair and fails when one copy changes without the other.
+
+*Who it affects:* nobody using the packages. A contributor who fixes the store has to fix it in both
+adapters.
+
 ## Partly fixed
 
 - **Partly fixed** — C2, E2, F, L, M
