@@ -3815,6 +3815,7 @@
     "view: MdyWidgetViewContract"
   ],
   "solid:MdySolidSelectApi": [
+    "destroy: void",
     "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
     "setOptions: void",
     "setValue: void",
@@ -4087,6 +4088,7 @@
     "view: Readable<MdyWidgetViewContract>"
   ],
   "svelte:MdySvelteSelectApi": [
+    "destroy: void",
     "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
     "setOptions: void",
     "setValue: void",
@@ -4175,6 +4177,7 @@
     "-> Record"
   ],
   "vue:MdyVueSelectApi": [
+    "destroy: void",
     "dispatch: readonly import(\"@modyra/widgets\").MdyUiCommand[]",
     "setOptions: void",
     "setValue: void",

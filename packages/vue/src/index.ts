@@ -10,7 +10,13 @@ import {
   MdyTypedForm,
 } from "@modyra/core";
 
-import { getCurrentScope, onScopeDispose } from "vue";
+import {
+  getCurrentInstance,
+  getCurrentScope,
+  onBeforeUnmount,
+  onMounted,
+  onScopeDispose,
+} from "vue";
 
 import { vueReactivity } from "./reactivity.js";
 
@@ -32,14 +38,26 @@ export function createVueForm<S extends MdyFormSchema>(
 }
 
 /**
- * Vue composable variant of {@link createVueForm}: when called inside an
- * active effect scope, the form is automatically destroyed on scope dispose.
+ * Vue composable variant of {@link createVueForm}. In a component's setup
+ * the form is built inactive, activated on mount and paused before unmount:
+ * a server render never mounts, so draft storage, history and async
+ * validators never start there. Outside a component the form is active at
+ * once, like {@link createVueForm}. Inside an active effect scope it is
+ * destroyed on scope dispose.
  */
 export function useVueForm<S extends MdyFormSchema>(
   schema: S,
   options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
 ): MdyTypedForm<S> {
-  const form = createVueForm(schema, options);
+  const inComponent = getCurrentInstance() !== null;
+  const form = createVueForm(
+    schema,
+    inComponent ? { ...options, autoActivate: false } : options,
+  );
+  if (inComponent) {
+    onMounted(() => form.activate());
+    onBeforeUnmount(() => form.deactivate());
+  }
   if (getCurrentScope() !== undefined) {
     onScopeDispose(() => form.destroy());
   }

@@ -30,6 +30,8 @@ export interface MdyVueSelectApi<TValue> {
   dispatch(intent: MdySelectIntent): readonly import("@modyra/widgets").MdyUiCommand[];
   setValue(value: TValue | null): void;
   setOptions(options: readonly MdySelectOption<TValue>[]): void;
+  /** Releases what the composable started. Called on scope dispose; idempotent. */
+  destroy(): void;
 }
 
 /**
@@ -54,12 +56,15 @@ export function useMdySelect<TValue>(
     triggerRef(viewRef);
   });
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => {
-      effectRef.destroy();
-      controller.destroy();
-    });
-  }
+  let destroyed = false;
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    effectRef.destroy();
+    controller.destroy();
+  };
+
+  if (getCurrentScope() !== undefined) onScopeDispose(destroy);
 
   return {
     get state(): Readonly<MdySelectState<TValue>> {
@@ -77,5 +82,6 @@ export function useMdySelect<TValue>(
     setOptions(options) {
       controller.setOptions(options);
     },
+    destroy,
   };
 }

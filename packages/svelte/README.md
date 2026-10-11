@@ -83,6 +83,22 @@ Same microtask-batching caveat as `toStore()` above: a dispatched intent
 (`email.dispatch({ type: "input", value: ... })`) is reflected in
 `$email.state` one microtask later, not synchronously.
 
+## Server rendering
+
+`createSvelteForm` starts draft persistence, history and async validators as
+soon as it is called. In a component that renders on the server, build the
+form inactive and start it on mount, which never happens on the server:
+
+```ts
+import { onMount } from "svelte";
+
+const form = createSvelteForm(schema, { autoActivate: false });
+onMount(() => {
+  form.activate();
+  return () => form.deactivate();
+});
+```
+
 ## What's included
 
 - **`createSvelteForm(schema, options?)`** — typed form on the vanilla

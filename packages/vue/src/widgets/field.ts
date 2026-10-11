@@ -3,7 +3,7 @@
  */
 
 import { getCurrentScope, onScopeDispose, shallowRef, triggerRef } from "vue";
-import type { MdyFieldHandle } from "@modyra/core";
+import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import {
   fieldCommandHandlers,
   createTextFieldController,
@@ -13,7 +13,6 @@ import {
   type MdyWidgetViewContract,
 } from "@modyra/widgets";
 
-import { vueReactivity } from "../reactivity.js";
 import { executeVueCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
@@ -34,25 +33,31 @@ export function useMdyField<TValue>(
   handle: MdyFieldHandle<TValue>,
   options: UseMdyFieldOptions<TValue>,
 ): MdyVueFieldApi<TValue> {
-  const reactivity = vueReactivity();
-  const controller = createTextFieldController({ ...options, handle }, reactivity);
+  // The controller reads the handle, so it observes through the runtime that owns the handle's
+  // signals; only the mirrored state is a Vue ref. A Vue effect cannot track a signal from another
+  // runtime, and a field whose form runs elsewhere would never update.
+  const observer = observerFor(handle);
+  const controller = createTextFieldController({ ...options, handle }, observer);
 
   const stateRef = shallowRef(controller.state());
   const viewRef = shallowRef(controller.view());
 
-  const effectRef = reactivity.effect(() => {
+  const effectRef = observer.effect(() => {
     stateRef.value = controller.state();
     viewRef.value = controller.view();
     triggerRef(stateRef);
     triggerRef(viewRef);
   });
 
-  if (getCurrentScope() !== undefined) {
-    onScopeDispose(() => {
-      effectRef.destroy();
-      controller.destroy();
-    });
-  }
+  let destroyed = false;
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    effectRef.destroy();
+    controller.destroy();
+  };
+
+  if (getCurrentScope() !== undefined) onScopeDispose(destroy);
 
   const dispatch = (intent: MdyTextFieldIntent<TValue>) => {
     executeVueCommands(
@@ -76,6 +81,6 @@ export function useMdyField<TValue>(
     setReadonly(readonly) {
       controller.setReadonly(readonly);
     },
-    destroy: controller.destroy,
+    destroy,
   };
 }

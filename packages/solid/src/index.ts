@@ -10,7 +10,7 @@ import {
   MdyTypedForm,
 } from "@modyra/core";
 
-import { getOwner, onCleanup } from "solid-js";
+import { getOwner, onCleanup, onMount } from "solid-js";
 
 import { solidReactivity } from "./reactivity.js";
 
@@ -32,18 +32,20 @@ export function createSolidForm<S extends MdyFormSchema>(
 }
 
 /**
- * Solid variant of {@link createSolidForm}: when called inside an active
- * owner (a component or `createRoot`), the form is automatically destroyed
- * on owner cleanup.
+ * Solid variant of {@link createSolidForm}. Inside an active owner (a
+ * component or `createRoot`) the form is built inactive and activated on
+ * mount, and destroyed on owner cleanup: a server render never mounts, so
+ * draft storage, history and async validators never start there. With no
+ * owner the form is active at once, like {@link createSolidForm}.
  */
 export function useSolidForm<S extends MdyFormSchema>(
   schema: S,
   options?: Omit<MdyCoreFormOptions<MdyFormValue<S>>, "reactivity">,
 ): MdyTypedForm<S> {
-  const form = createSolidForm(schema, options);
-  if (getOwner() !== null) {
-    onCleanup(() => form.destroy());
-  }
+  if (getOwner() === null) return createSolidForm(schema, options);
+  const form = createSolidForm(schema, { ...options, autoActivate: false });
+  onMount(() => form.activate());
+  onCleanup(() => form.destroy());
   return form;
 }
 

@@ -369,10 +369,24 @@ safe under React Strict Mode's dev-only mount→unmount→remount cycle and
 during SSR: the hook constructs with `autoActivate: false` and calls
 `form.activate()` in its effect / `form.deactivate()` on cleanup, instead
 of the effect ever running before hydration or corrupting state across the
-extra dev-mode cycle. Angular, Vue, Solid, Svelte and Lit forms typically
-never need to touch `autoActivate`/`activate()`/`deactivate()` directly —
-their construction model already matches the default (`autoActivate:
-true`) behavior.
+extra dev-mode cycle. `@modyra/vue`'s `useVueForm` in a component's setup
+and `@modyra/solid`'s `useSolidForm` inside an owner do the same with their
+framework's mount hook, so a server render starts nothing. The factories
+(`createVueForm`, `createSolidForm`, `createSvelteForm`) keep the default
+(`autoActivate: true`): a form built with one during a server render starts
+there. Angular and Lit forms are built with the default too, and start at
+construction. In Svelte, a component that renders on the server builds its form
+inactive and activates it on mount:
+
+```ts
+const form = createSvelteForm(schema, { autoActivate: false });
+onMount(() => {
+  form.activate();
+  return () => form.deactivate();
+});
+```
+
+See [ADR 0222](../architecture/0222-a-form-starts-when-its-component-mounts.md).
 
 ## Field arrays
 
