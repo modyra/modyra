@@ -54,4 +54,43 @@ for (const host of HOSTS) {
 
     expect(heard).toEqual(expected);
   });
+
+  /**
+   * Which words a control that is not a text box is called by, when a document declared a name
+   * and also wrote a caption.
+   *
+   * The platform's chooser and the colour box are named by `<label for>`, so a declared name on the
+   * control wins and is what a person hears. The multiselect trigger is named by `aria-labelledby`
+   * at the caption alone (ADR 0175), and a reference wins the computation, so the caption is the
+   * answer there. A renderer that copies the caption into `aria-label` instead answers the same on
+   * the trigger and overrides the declared name everywhere else.
+   */
+  test(`a declared name and a caption, on controls that are not text boxes, ${host.name}`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    const heard: Record<string, string | null> = {};
+    for (const kind of ["select", "multiselect", "colors"]) {
+      const id = `declared-${kind}`;
+      await page.evaluate(
+        ({ api, mountId, k, options }) => {
+          const battle = (window as never as Record<string, { mountFields(id: string, f: unknown[]): unknown }>)[api];
+          const field: Record<string, unknown> = { name: "f", kind: k, label: "Caption", ariaLabel: "spoken name" };
+          if (k !== "colors") field.options = options;
+          battle.mountFields(mountId, [field]);
+        },
+        { api: host.api, mountId: id, k: kind, options: OPTIONS },
+      );
+      await page.waitForTimeout(150);
+
+      const caption = page.locator(`[data-form="${id}"] label[for]`).first();
+      const target = await caption.getAttribute("for");
+      // The premise: the caption points at something, or there is no control to read a name from.
+      expect(target, `${kind}: no caption points at a control`).not.toBeNull();
+      heard[kind] = await announcedName(page.locator(`[id="${target}"]`).first());
+    }
+
+    expect(heard).toEqual({ select: "spoken name", multiselect: "Caption", colors: "spoken name" });
+  });
 }

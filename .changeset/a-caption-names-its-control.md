@@ -22,6 +22,12 @@ The required marker (`*`) is declared decorative: `projectFieldShellA11y` and
 now write that attribute, as Lit and Angular already did, so a required field captioned "Email address" is announced as "Email address" rather than
 "Email address *". `aria-required` still tells a reader that the field is required.
 
+Two more places follow the same rule. In Lit, the multiselect trigger is named by `aria-labelledby` at
+the caption, as the contract and the other renderers name it, rather than by a copy of the caption.
+The colour field's hex box asks `fieldAriaLabel` too. In Angular, the options grid of an open
+multiselect is named by the caption through `aria-labelledby`. It used to borrow the control's
+`aria-label`, which is now null wherever a caption exists, so the grid was left unnamed.
+
 **Migration.** If a test or tool finds controls by their `aria-label` attribute, it should find them by
 their accessible name instead (`getByRole(role, { name })`). Under ADR 0214 the caption supplies that
 name rather than an attribute. A test that matched the name with the asterisk included now has to

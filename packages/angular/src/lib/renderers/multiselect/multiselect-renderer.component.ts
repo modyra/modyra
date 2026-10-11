@@ -325,7 +325,8 @@ const CHIPS = partSelector("multiselect", "chips") ?? "";
           [id]="optionsGridId()"
           class="mdy-multiselect__options mdy-multiselect-overlay__grid"
           [attr.role]="optionsRole"
-          [attr.aria-label]="controlAriaLabel()"
+          [attr.aria-labelledby]="label() ? labelId() : null"
+          [attr.aria-label]="label() ? null : controlAriaLabel()"
           (keydown)="onOverlayKeydown($event)"
         >
           @for (opt of searchResults(); track opt.value; let i = $index) {
