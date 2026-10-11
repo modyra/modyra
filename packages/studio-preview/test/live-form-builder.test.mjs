@@ -232,3 +232,48 @@ test("a project that cannot be exported cannot be previewed", async () => {
   // The builder is told why, in the compiler's own words, so it can point at the field.
   assert.ok(previewed.some((d) => d.code === "UNCOMPILABLE_FIELD"));
 });
+
+function serverCheck(implementationRef) {
+  return { id: `val_${implementationRef}`, kind: "server", implementationRef, dependencies: [] };
+}
+
+test("server mock: a server validator on a field inside an array row runs on every row, the ones added later included", async () => {
+  const project = createCheckoutProject();
+  const items = project.schema.children.find((child) => child.name === "items");
+  items.item.children.find((child) => child.name === "sku").serverValidator = serverCheck("impl_validate_coupon");
+  const { form } = buildLiveForm(project, { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5, forceError: "Unknown SKU" } } });
+
+  form.f.items.push({ sku: "HAT-01", qty: 1 });
+  form.f.items.at(0).sku.set("X");
+  form.f.items.at(1).sku.set("Y");
+  await new Promise((r) => setTimeout(r, 100));
+  assert.deepEqual(form.f.items.at(0).sku.errors().map((e) => e.message), ["Unknown SKU"]);
+  assert.deepEqual(form.f.items.at(1).sku.errors().map((e) => e.message), ["Unknown SKU"]);
+});
+
+test("server mock: a server validator on a record's row field runs on every keyed row", async () => {
+  const project = createCheckoutProject();
+  project.schema.children.push({
+    node: "record",
+    id: "nd_notes",
+    name: "notes",
+    item: {
+      node: "field",
+      id: "nd_note",
+      name: "note",
+      fieldKind: "text",
+      valueType: "string",
+      initialValue: "",
+      validators: [],
+      serverValidator: serverCheck("impl_validate_coupon"),
+    },
+    initialRows: { a: "first" },
+    validators: [],
+  });
+  const { form, diagnostics } = buildLiveForm(project, { mockConfigByImplId: { impl_validate_coupon: { delayMs: 5, forceError: "Refused" } } });
+  assert.ok(form, diagnostics.map((d) => d.message).join("\n"));
+
+  form.f.notes.row("a").set("changed");
+  await new Promise((r) => setTimeout(r, 100));
+  assert.deepEqual(form.f.notes.row("a").errors().map((e) => e.message), ["Refused"]);
+});
