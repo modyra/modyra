@@ -5,7 +5,7 @@
  * the queue once the host has rendered. What belongs to this adapter is the last part: **when** it
  * has rendered.
  */
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DependencyList } from "react";
 import {
   createCommandRuntime,
   comparableControllerOptions,
@@ -87,4 +87,31 @@ export function useMdyStableOptions<T>(options: T): T {
     built.current = stableControllerOptions(options, () => latest.current);
   }
   return built.current;
+}
+
+/** Controllers whose component has run an effect cleanup since they were built. */
+const retired = new WeakSet<object>();
+
+/**
+ * A widget controller, memoized on `deps`, that is built again if a cleanup ended it while the
+ * component stayed mounted.
+ *
+ * Strict Mode mounts a component, runs every effect cleanup, and mounts it again with the same
+ * memoized values. The cleanup that unsubscribes a controller also destroys it, so the remount would
+ * hold a controller that answers nothing. Destroying is final in `@modyra/widgets`, and that is
+ * right for every host that unmounts only once; the rehearsal belongs to this host, so it is
+ * answered here: a controller that comes back from a cleanup is replaced, and the component renders
+ * with the new one.
+ */
+export function useMdyController<C extends object>(create: () => C, deps: DependencyList): C {
+  const [generation, rebuild] = useState(0);
+  const controller = useMemo(create, [...deps, generation]);
+  useEffect(() => {
+    if (retired.has(controller)) {
+      rebuild((g) => g + 1);
+      return undefined;
+    }
+    return () => { retired.add(controller); };
+  }, [controller]);
+  return controller;
 }

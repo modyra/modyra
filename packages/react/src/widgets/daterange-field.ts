@@ -20,7 +20,7 @@ import {
   type MdyDaterangeFieldState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue, useMdyStableOptions } from "./runtime.js";
+import { useMdyCommandQueue, useMdyController, useMdyStableOptions } from "./runtime.js";
 import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdyDaterangeFieldOptions = Omit<
@@ -56,7 +56,7 @@ export function useMdyDaterangeField(
   // Held while it says the same thing: a configuration written at the call is a new object every
   // render, and rebuilding the controller on its identity never settles.
   const stableOptions = useMdyStableOptions(options);
-  const controller = useMemo(
+  const controller = useMdyController(
     () => createDaterangeFieldController({ ...stableOptions, handle }, reactivity),
     [stableOptions, handle, reactivity],
   );

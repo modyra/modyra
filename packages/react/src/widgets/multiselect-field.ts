@@ -13,7 +13,7 @@ import {
   type MdyMultiselectFieldState,
 } from "@modyra/widgets";
 
-import { useMdyCommandQueue, useMdyStableOptions, type MdyElementLookup } from "./runtime.js";
+import { useMdyCommandQueue, useMdyController, useMdyStableOptions, type MdyElementLookup } from "./runtime.js";
 import type { MdyWidgetViewContract } from "@modyra/widgets";
 
 export type UseMdyMultiselectFieldOptions<TValue> = Omit<
@@ -57,7 +57,7 @@ export function useMdyMultiselectField<TValue>(
   // Held while it says the same thing: a configuration written at the call is a new object every
   // render, and rebuilding the controller on its identity never settles.
   const stableOptions = useMdyStableOptions(options);
-  const controller = useMemo(
+  const controller = useMdyController(
     () => createMultiselectFieldController({ ...stableOptions, handle }, reactivity),
     [stableOptions, handle, reactivity],
   );

@@ -57,6 +57,13 @@ export interface MdyStore {
  * Defaults to a fresh
  * `vanillaReactivity()` only for direct callers that don't have a handle to
  * resolve an owner from (matches this function's pre-M5 behavior).
+ *
+ * The tracking effect lives exactly as long as the store has a subscriber: the first `subscribe`
+ * starts it and the last unsubscribe ends it. A component's cleanup therefore never ends the store
+ * for good, which is what lets a component that is cleaned up and mounted again over the same
+ * memoised store find one that still answers. A value that moved while nobody was subscribed bumps the snapshot when
+ * tracking resumes, so the remounted component reads it. `destroy()` is the final end: after it the
+ * store notifies no one.
  */
 export function createStore(
   signals: ReadonlyArray<MdySignal<unknown>>,
@@ -65,23 +72,45 @@ export function createStore(
   const rx = reactivity;
   const listeners = new Set<() => void>();
   let version = 0;
-  let first = true;
-  const ref = rx.effect(() => {
-    for (const signal of signals) signal();
-    if (first) {
-      first = false; // the initial run only collects dependencies
-      return;
-    }
-    version++;
-    for (const listener of [...listeners]) listener();
-  });
+  let ended = false;
+  let ref: { destroy(): void } | null = null;
+  // What the last snapshot was taken over, compared only when tracking resumes.
+  let seen = signals.map((signal) => signal());
+
+  function start(): void {
+    let resuming = true;
+    ref = rx.effect(() => {
+      const now = signals.map((signal) => signal());
+      const moved = !resuming || now.some((value, i) => !Object.is(value, seen[i]));
+      resuming = false;
+      seen = now;
+      if (!moved) return;
+      version++;
+      for (const listener of [...listeners]) listener();
+    });
+  }
+
+  function stop(): void {
+    ref?.destroy();
+    ref = null;
+  }
+
   return {
     subscribe(onChange) {
+      if (ended) return () => undefined;
       listeners.add(onChange);
-      return () => listeners.delete(onChange);
+      if (!ref) start();
+      return () => {
+        listeners.delete(onChange);
+        if (listeners.size === 0) stop();
+      };
     },
     getSnapshot: () => version,
-    destroy: () => ref.destroy(),
+    destroy: () => {
+      ended = true;
+      listeners.clear();
+      stop();
+    },
   };
 }
 
@@ -112,21 +141,39 @@ export function createFieldStore(
     getFieldHandleOwner(handle),
   );
 
-  // The form's teardown reaches this one. A component's cleanup and the form's destroy race on
-  // unmount, and the consumer does not get to order them: a store still notifying after the form
-  // ended re-renders a component against a form that is gone. Tearing down twice is harmless — the
-  // second call finds the effect already destroyed — and `destroy()` stops answering to the form so
-  // a store the consumer ended is not held by it.
+  // The form's teardown reaches this one while anyone is subscribed. A component's cleanup and the
+  // form's destroy race on unmount, and the consumer does not get to order them: a store still
+  // notifying after the form ended re-renders a component against a form that is gone. The
+  // registration is held only while the store is tracking, so a long-lived form does not keep one
+  // entry for every component that ever mounted a field. Tearing down twice is harmless — the second
+  // call finds the effect already gone.
   // `handleFormOf` is deliberately loose about what a form is — the registry predates any one
   // form type and a hand-built handle answers nothing — so the affordance is asked for rather than
   // assumed: a form from a version without it simply does not reach this store.
   const form = handleFormOf(handle) as { onDestroy?: (teardown: () => void) => () => void } | undefined;
-  const release = form?.onDestroy?.(() => store.destroy());
-  if (!release) return store;
+  const onDestroy = form?.onDestroy?.bind(form);
+  if (!onDestroy) return store;
+  let release: (() => void) | undefined;
+  let subscribers = 0;
+  const unregister = () => {
+    release?.();
+    release = undefined;
+  };
   return {
     ...store,
+    subscribe(onChange) {
+      const unsubscribe = store.subscribe(onChange);
+      if (subscribers++ === 0) release = onDestroy(() => store.destroy());
+      let done = false;
+      return () => {
+        if (done) return;
+        done = true;
+        unsubscribe();
+        if (--subscribers === 0) unregister();
+      };
+    },
     destroy: () => {
-      release();
+      unregister();
       store.destroy();
     },
   };
@@ -204,8 +251,8 @@ export function useMdyField<T>(handle: MdyFieldHandle<T>): {
     () => createFieldStore(handle as MdyFieldHandle<unknown>),
     [handle],
   );
-  // The tracking effect must not outlive the component.
-  useEffect(() => () => store.destroy(), [store]);
+  // No cleanup of its own: the store tracks while it has a subscriber and stops when the last one
+  // leaves, so unmounting ends the tracking and a remount resumes it.
   // Preact's `useSyncExternalStore` (via preact/compat) takes no
   // getServerSnapshot argument, unlike React's.
   useSyncExternalStore(store.subscribe, store.getSnapshot);

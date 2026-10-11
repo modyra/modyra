@@ -17,7 +17,7 @@ import {
 import {
   useMdyCommandQueue,
   type MdyElementLookup,
-  type MdyReactCommandHandlers, useMdyStableOptions } from "./runtime.js";
+  type MdyReactCommandHandlers, useMdyController, useMdyStableOptions } from "./runtime.js";
 
 export interface UseMdySelectOptions<TValue>
   extends Omit<MdySelectControllerOptions<TValue>, "onChange"> {
@@ -50,7 +50,7 @@ export function useMdySelect<TValue>(
   // Held while it says the same thing: a configuration written at the call is a new object every
   // render, and rebuilding the controller on its identity never settles.
   const stableOptions = useMdyStableOptions(options);
-  const controller = useMemo(
+  const controller = useMdyController(
     () => createSelectController(stableOptions, reactivity),
     // Recreate only when the identity of options changes; callers should
     // memoize options or use a stable key.
