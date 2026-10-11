@@ -208,10 +208,21 @@ export const MdyMultiselectField = defineComponent({
      */
     let reorderSays: string | null = null;
 
+    /**
+     * The chip a person is carrying, and where they picked it up from.
+     *
+     * A grab is a state and the arrows read it: the same key walks the strip when nothing is held and
+     * carries what is held when something is. `from` is what `Escape` puts back — a person who picks
+     * up the wrong chip has to be able to abandon the move, not undo it afterwards. A ref, because the
+     * held chip is drawn differently. A value that leaves the selection by any route is let go: chosen
+     * again later, it would come back already held.
+     */
+    const grabbed = shallowRef<{ readonly key: string; readonly from: number } | null>(null);
     const watching = reactivity.effect(() => {
       state.value = controller.state();
       view.value = controller.view();
       const chosen = [...state.value.selectedKeys].map(String);
+      if (grabbed.value !== null && !chosen.includes(grabbed.value.key)) grabbed.value = null;
       // A render describing no change leaves the region alone: writing "" over a sentence takes it
       // back before a reader has reached it, and a second pass over the same state is an ordinary
       // thing for a renderer to do.
@@ -359,15 +370,6 @@ export const MdyMultiselectField = defineComponent({
       });
     };
 
-    /**
-     * The chip a person is carrying, and where they picked it up from.
-     *
-     * A grab is a state and the arrows read it: the same key walks the strip when nothing is held and
-     * carries what is held when something is. `from` is what `Escape` puts back — a person who picks
-     * up the wrong chip has to be able to abandon the move, not undo it afterwards. A ref, because the
-     * held chip is drawn differently.
-     */
-    const grabbed = shallowRef<{ readonly key: string; readonly from: number } | null>(null);
     const labelOfKey = (key: string): string =>
       state.value.options.find((option) => keyOf(option) === key)?.label ?? key;
     /** Move one chip, told as `sentence` or, by default, as that chip moving. */

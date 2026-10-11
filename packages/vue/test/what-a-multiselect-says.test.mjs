@@ -216,3 +216,33 @@ test("a chip moved by its pointer handle is the one the sentence names", async (
     assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionMoved, "First", 2, 2));
   });
 });
+
+test("a held chip whose value is taken away is no longer held when it comes back", async () => {
+  await using(await withTwoHeldShut({ variant: "multi", config: { reorderable: true } }), async (fixture) => {
+    const dragging = `${partClasses("multiselect", "chip")[0]}--dragging`;
+    await press(fixture, chipsOf(fixture.root)[0], "Enter");
+    assert.ok(chipsOf(fixture.root)[0].classList.contains(dragging), "the held chip is not drawn as held");
+    // Taken off from the list rather than from the chip, which is the route the chip cannot see.
+    fixture.drive?.("open");
+    await fixture.settle?.();
+    // Through the panel this trigger controls: a panel is portalled out of the fixture's root, and a
+    // document-wide query can find one an earlier mount left behind.
+    const option = () => {
+      const panel = fixture.root.ownerDocument.getElementById(
+        fixture.root.querySelector("[aria-haspopup]")?.getAttribute("aria-controls") ?? "",
+      );
+      return panel?.querySelector(`[data-key="a"]${partClasses("multiselect", "option").map((one) => `.${one}`).join("")}`)
+        ?? panel?.querySelectorAll(partClasses("multiselect", "option").map((one) => `.${one}`).join(""))[0];
+    };
+    // A counter row's own press adds one; the remove control on the chip is the list-independent way off.
+    const remove = chipsOf(fixture.root)[0].querySelector(partClasses("multiselect", "chipRemove").map((one) => `.${one}`).join(""));
+    assert.ok(remove, "the chip offers no way to take it off");
+    remove.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    await fixture.settle?.();
+    option().dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    await fixture.settle?.();
+    const back = chipsOf(fixture.root).find((chip) => chip.getAttribute("data-key") === "a");
+    assert.ok(back, "the value did not come back");
+    assert.equal(back.classList.contains(dragging), false, "the value came back already held");
+  });
+});
