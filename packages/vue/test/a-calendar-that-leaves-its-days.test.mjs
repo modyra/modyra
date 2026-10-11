@@ -77,8 +77,8 @@ for (const one of CASES) {
     }
   });
 
-  // The arrows still reach the controller from the root while a year has focus. Whatever they move
-  // underneath, the hidden days must not take the value or the focus, and the years stay on screen.
+  // A year's keys are the button's: an arrow on it moves nothing underneath, so the hidden days take
+  // neither the value nor the focus, and the years stay on screen.
   test(`${one.kind}: an arrow pressed on a year leaves the value and the years where they are`, async () => {
     const form = m.createVueForm({ when: field(one.held) });
     const host = document.createElement("div");
