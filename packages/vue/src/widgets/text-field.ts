@@ -34,6 +34,7 @@ import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { useFormReset } from "./form-reset.js";
 import { widgetIdOf } from "./widget-id.js";
 
 /**
@@ -134,6 +135,7 @@ export const MdyTextField = defineComponent({
     // The widget's own element, held so the keyboard has a place to be put back to.
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
+    useFormReset(props.field as object, root);
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       view.value = controller.view();
