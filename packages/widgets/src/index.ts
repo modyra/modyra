@@ -128,6 +128,9 @@ export type {
   MdyWidgetCommandHandlers,
 } from "./command-runtime.js";
 
+export { createFieldSignalStore, createSignalStore } from "./signal-store.js";
+export type { MdySignalStore } from "./signal-store.js";
+
 export * from "./select/index.js";
 export { narrowConstraints, nativeConstraintAttributes, sliderTrack } from "./native-constraints.js";
 export type { MdyNativeAttributes } from "./native-constraints.js";

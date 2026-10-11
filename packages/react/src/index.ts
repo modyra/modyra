@@ -7,8 +7,6 @@
  */
 import {
   createForm,
-  getFieldHandleOwner,
-  handleFormOf,
   type MdyFieldConstraints,
   MdyBatchingCapability,
   MdyCoreFormOptions,
@@ -22,7 +20,7 @@ import {
   MdyTypedForm,
   vanillaReactivity,
 } from "@modyra/core";
-import { errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
+import { createFieldSignalStore, createSignalStore, errorsVisible, shownErrors, showsAsInvalid } from "@modyra/widgets";
 import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 /**
@@ -60,125 +58,22 @@ export interface MdyStore {
  * `vanillaReactivity()` only for direct callers that don't have a handle to
  * resolve an owner from (matches this function's pre-M5 behavior).
  *
- * The tracking effect lives exactly as long as the store has a subscriber: the first `subscribe`
- * starts it and the last unsubscribe ends it. A component's cleanup therefore never ends the store
- * for good, which is what lets Strict Mode's mount → cleanup → remount, and any later remount, find
- * a store that still answers. A value that moved while nobody was subscribed bumps the snapshot when
- * tracking resumes, so the remounted component reads it. `destroy()` is the final end: after it the
- * store notifies no one.
+ * Subscription lifetime, resumption and `destroy()` follow {@link createSignalStore}.
  */
 export function createStore(
   signals: ReadonlyArray<MdySignal<unknown>>,
   reactivity: MdyReactivity = vanillaReactivity(),
 ): MdyStore & { destroy(): void } {
-  const rx = reactivity;
-  const listeners = new Set<() => void>();
-  let version = 0;
-  let ended = false;
-  let ref: { destroy(): void } | null = null;
-  // What the last snapshot was taken over, compared only when tracking resumes.
-  let seen = signals.map((signal) => signal());
-
-  function start(): void {
-    let resuming = true;
-    ref = rx.effect(() => {
-      const now = signals.map((signal) => signal());
-      const moved = !resuming || now.some((value, i) => !Object.is(value, seen[i]));
-      resuming = false;
-      seen = now;
-      if (!moved) return;
-      version++;
-      for (const listener of [...listeners]) listener();
-    });
-  }
-
-  function stop(): void {
-    ref?.destroy();
-    ref = null;
-  }
-
-  return {
-    subscribe(onChange) {
-      if (ended) return () => undefined;
-      listeners.add(onChange);
-      if (!ref) start();
-      return () => {
-        listeners.delete(onChange);
-        if (listeners.size === 0) stop();
-      };
-    },
-    getSnapshot: () => version,
-    destroy: () => {
-      ended = true;
-      listeners.clear();
-      stop();
-    },
-  };
+  return createSignalStore(signals, reactivity);
 }
 
 /**
- * Store over everything a field row usually renders. Observes through the
- * reactivity that actually created `handle` (resolved via
- * {@link getFieldHandleOwner}) instead of a fresh, unrelated instance — the
- * fix for the cross-runtime observation trap: this makes it safe to pass a handle from a form built
- * by any host at all, not only one created by this package's own `useMdyForm`.
+ * Store over everything a field row usually renders; see {@link createFieldSignalStore}.
  */
 export function createFieldStore(
   handle: MdyFieldHandle<unknown>,
 ): MdyStore & { destroy(): void } {
-  const store = createStore(
-    [
-      handle.value,
-      handle.errors,
-      handle.touched,
-      handle.dirty,
-      handle.valid,
-      handle.pending,
-      handle.disabled,
-      // Returned for `aria-required` and native bounds on the consumer's control, so a rule that
-      // changes them has to re-render it like any other member the hook reads.
-      handle.required,
-      handle.constraints,
-    ],
-    getFieldHandleOwner(handle),
-  );
-
-  // The form's teardown reaches this one while anyone is subscribed. A component's cleanup and the
-  // form's destroy race on unmount, and the consumer does not get to order them: a store still
-  // notifying after the form ended re-renders a component against a form that is gone. The
-  // registration is held only while the store is tracking, so a long-lived form does not keep one
-  // entry for every component that ever mounted a field. Tearing down twice is harmless — the second
-  // call finds the effect already gone.
-  // `handleFormOf` is deliberately loose about what a form is — the registry predates any one
-  // form type and a hand-built handle answers nothing — so the affordance is asked for rather than
-  // assumed: a form from a version without it simply does not reach this store.
-  const form = handleFormOf(handle) as { onDestroy?: (teardown: () => void) => () => void } | undefined;
-  const onDestroy = form?.onDestroy?.bind(form);
-  if (!onDestroy) return store;
-  let release: (() => void) | undefined;
-  let subscribers = 0;
-  const unregister = () => {
-    release?.();
-    release = undefined;
-  };
-  return {
-    ...store,
-    subscribe(onChange) {
-      const unsubscribe = store.subscribe(onChange);
-      if (subscribers++ === 0) release = onDestroy(() => store.destroy());
-      let done = false;
-      return () => {
-        if (done) return;
-        done = true;
-        unsubscribe();
-        if (--subscribers === 0) unregister();
-      };
-    },
-    destroy: () => {
-      unregister();
-      store.destroy();
-    },
-  };
+  return createFieldSignalStore(handle);
 }
 
 /**
