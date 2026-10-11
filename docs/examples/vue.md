@@ -6,7 +6,7 @@ This page shows the [shared checkout scenario](checkout-scenario.md) in Vue.
 npm install @modyra/vue
 ```
 
-`createVueForm` runs the engine on `@vue/reactivity`, so calling
+`createVueForm` runs the engine on the reactivity that `vue` itself exports, so calling
 `form.f.*.value()` / `.errors()` / `.pending()` inside the template (or a
 `computed`) tracks automatically — no hooks, no stores.
 
@@ -168,5 +168,5 @@ async function save(): Promise<void> {
 ## Going further
 
 - [`@modyra/vue` package README](../../packages/vue/README.md)
-- [Multi-framework architecture](../guides/multi-framework.md) — the binding recipe (`@vue/reactivity` over the four primitives)
+- [Multi-framework architecture](../guides/multi-framework.md) — the binding recipe (Vue's own reactivity over the four primitives)
 - [Typed forms guide](../guides/typed-forms.md) — the engine API, framework-free

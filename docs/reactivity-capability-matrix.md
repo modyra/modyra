@@ -17,7 +17,7 @@ Generated 2026-09-01.
 | preact | yes | yes | yes | no | yes | yes | yes | no | yes | yes | = vanilla (no signal primitive of its own) |
 | svelte | yes | yes | yes | no | yes | yes | yes | no | yes | yes | = vanilla (no signal primitive of its own); toStore() bridges to a Readable |
 | lit | yes | yes | yes | no | yes | yes | yes | no | yes | yes | = vanilla (no signal primitive of its own) |
-| vue | yes | yes | yes | no | yes | yes | yes | no | no | no | native @vue/reactivity; effect() scheduler + createScope() via effectScope() (the current implementation) |
+| vue | yes | yes | yes | no | yes | yes | yes | no | no | no | native Vue reactivity, imported from vue; effect() scheduler + createScope() via effectScope() (the current implementation) |
 | solid | yes | yes | yes | yes | yes | yes | yes | no | no | no | native createSignal/createMemo/createEffect; equals comparator honored on both signal and memo (the current implementation) |
 
 "—" means the adapter has no `capabilities` object yet (pre-Milestone-1 shape) or could not be constructed by this script — not the same as every capability being false.

@@ -136,7 +136,7 @@ layer's internal state-sync) is now microtask-batched instead of always
 synchronous — bringing Vue in line with vanilla/React/Preact/Svelte/Lit's
 own timing model, not a regression (see any test awaiting a tick after a
 `dispatch()`/`set()` for why). `computedEquality` stays honestly `false`:
-`@vue/reactivity`'s own `computed()` has no public custom-comparator hook
+Vue's own `computed()` has no public custom-comparator hook
 the way Angular's native one does, and reimplementing computed by hand
 around a raw effect would stop being *native* Vue reactivity.
 
