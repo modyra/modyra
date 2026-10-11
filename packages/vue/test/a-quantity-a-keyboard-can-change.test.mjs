@@ -61,6 +61,24 @@ test("the arrows on a counter chip change its quantity and leave the list shut",
   fixture.dispose?.();
 });
 
+test("a chip that holds no quantity leaves the arrows to the field", async () => {
+  // The step binding requires a countable field. Answered on a chip in the single mode, the press
+  // dispatched a step on a value with no count and moved focus to the neighbouring chip; left to the
+  // field, ArrowDown opens the list, as it does from anywhere else in the control.
+  const fixture = await cfg.mount("multiselect", { value: ["a", "b"], variant: "single" });
+  await fixture.settle?.();
+
+  const chip = fixture.root.querySelector(".mdy-chip--value");
+  assert.ok(chip, "the fixture drew no chip");
+  chip.focus();
+  press(chip, "ArrowDown");
+  await fixture.settle?.();
+  assert.deepEqual(fixture.value(), ["a", "b"], "ArrowDown on a chip that is not a counter changed the value");
+  assert.ok(fixture.root.querySelector("[aria-expanded='true']"),
+    "the chip kept a key it has no binding for, and the field never heard it");
+  fixture.dispose?.();
+});
+
 test("a key pressed on a control inside the chip is that control's", async () => {
   const fixture = await cfg.mount("multiselect", { value: ["a", "a"], variant: "multi" });
   await fixture.settle?.();

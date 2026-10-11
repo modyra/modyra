@@ -365,6 +365,9 @@ export const MdyMultiselectField = defineComponent({
       const order = chosenKeyOrder(state.value);
       switch (binding.intent) {
         case "step":
+          // The binding requires a countable field, and the lookup does not filter by capability: a
+          // chip that holds no quantity leaves the key to the field.
+          if (props.mode !== "multi") return;
           run(controller.dispatch(event.key === "ArrowUp"
             ? { type: "increment", optionKey: key }
             : { type: "decrement", optionKey: key }));
