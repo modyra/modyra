@@ -233,6 +233,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0216: A restored value is the option it copies](0216-a-restored-value-is-the-option-it-copies.md) — a widget recognises an option by sameChoice and reports the option's own value; the validator and draft restore share one strict, key-order-independent rule
 - [ADR 0217: A project id cannot leave its quotes](0217-a-project-id-cannot-leave-its-quotes.md) — Studio refuses a project whose ids, references or implementation keys fall outside a safe character set, so no id can break out of the quoted HTML and selectors the editor writes
 - [ADR 0218: An expression past the depth limit is a document question](0218-an-expression-past-the-depth-limit-is-a-document-question.md) — the evaluator keeps answering true past the depth cap, which the parser enforces on documents; questions with a polarity-free answer, such as a non-text matches pattern, decide nothing
+- [ADR 0219: A development server answers only its own page and build](0219-a-dev-server-answers-only-its-own.md) — the Studio and plain-preview dev servers serve only the page and dist, follow links to their real place before serving, and refuse a foreign Host
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
