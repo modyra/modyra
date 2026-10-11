@@ -1,6 +1,6 @@
 # ADR 0217: A project id cannot leave its quotes
 
-Status: Accepted
+Status: Accepted. Amended 2026-10-11 — "where the door is, and what stays outside it", below.
 
 ## Context
 
@@ -45,6 +45,19 @@ lowercase letters and digits), which the rule admits.
 - **Build the UI with DOM APIs instead of HTML text.** That is the structural fix. It is a rewrite of a
   4,000-line module, outside the scope of a security repair.
 
+## Amendment, 2026-10-11: where the door is, and what stays outside it
+
+The guarantee belongs to `loadProject`, not to the project type. `normalize` from
+`@modyra/studio-model` and `compileToContract` from `@modyra/studio-contract` are exported and do not
+re-check identifiers: they take a project that has already been loaded. Code that builds or receives a
+project by any other route and hands it to either of them has not passed the door, and must call
+`loadProject` first if that project is untrusted.
+
+A node's `name` is not an identifier under this rule, although it is the field closest to one. It
+holds dotted paths, and it is author text: today it reaches the editor through DOM APIs or through
+`escapeHtml` in markup, and generated code through printers that quote it. A template that writes `name` into HTML text unescaped
+would reopen the path this record closes, and nothing here would catch it.
+
 ## Verification
 
 `packages/studio-model/test/an-id-that-cannot-leave-its-quotes.test.mjs` checks three hostile
@@ -56,4 +69,6 @@ ordinary separators opens. Removing the `assertSafeIdentifiers` call turns the t
 This closes a stored cross-site scripting path. A crafted project file ran script in the Studio page
 on open, with access to everything the page holds, including the session's saved projects. The
 residual risk is the rest of `studio-ui`'s HTML-text construction: text fields are escaped site by
-site, and a missed escape there is not covered by this rule. No data handling changes.
+site, and a missed escape there is not covered by this rule. That includes a node's `name`, and any
+project passed to `normalize` or `compileToContract` without first going through `loadProject`. No
+data handling changes.
