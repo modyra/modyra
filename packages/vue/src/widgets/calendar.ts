@@ -69,7 +69,8 @@ export const weekdayLabels = (locale: MdyDateLocale): readonly string[] => {
  *
  * Only the day view gives the days the focus. With the months or years on screen the grid is
  * hidden, and a press that moves the tab stop underneath it must not pull the focus off the button
- * a person is on into a cell nobody can see.
+ * a person is on into a cell nobody can see. In the days, a control of the calendar that holds the
+ * keyboard and is still showing keeps it.
  */
 export const followTheReadingPosition = (
   widgetId: string,
@@ -81,7 +82,14 @@ export const followTheReadingPosition = (
     // renderer a beat after the dispatch.
     await nextTick();
     const target = document.getElementById(defaultWidgetIdFactory.item(widgetId, "day", focused));
-    if (target instanceof HTMLElement && target !== document.activeElement) target.focus();
+    if (!(target instanceof HTMLElement) || target === document.activeElement) return;
+    // Paging moves the day under the header's buttons too, and the keyboard stays on the button
+    // that paged: taken into the grid, the next press of Next would pick a day instead.
+    const grid = document.getElementById(`${widgetId}__grid`);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && grid?.parentElement?.contains(active) === true
+      && !grid.contains(active) && active.getClientRects().length > 0) return;
+    target.focus();
   }, { immediate: true });
 };
 

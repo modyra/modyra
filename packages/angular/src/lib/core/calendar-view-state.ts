@@ -143,6 +143,20 @@ export function landOnTheDays(host: HTMLElement): void {
 }
 
 /**
+ * Whether a control of this calendar other than its days holds the keyboard, and is still showing.
+ *
+ * Paging moves the day under the header's buttons too, and the keyboard stays on the button that
+ * paged: taken into the grid, the next press of Next would pick a day instead. A control the render
+ * has hidden holds nothing, so the days may take the keyboard from it.
+ */
+export function heldOffTheDays(host: HTMLElement): boolean {
+  const active = document.activeElement;
+  const grid = host.querySelector('[role="grid"]');
+  return active instanceof HTMLElement && host.contains(active) && !(grid?.contains(active) ?? false)
+    && active.getClientRects().length > 0;
+}
+
+/**
  * Puts the keyboard on the months a chosen year has just narrowed to: the shown month, or the first
  * the bounds allow.
  *

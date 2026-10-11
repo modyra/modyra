@@ -115,6 +115,20 @@ export function landOnTheDays(root: ParentNode, kind: "datepicker" | "daterange"
 }
 
 /**
+ * Whether a control of this calendar other than its days holds the keyboard, and is still showing.
+ *
+ * Paging moves the day under the header's buttons too, and the keyboard stays on the button that
+ * paged: taken into the grid, the next press of Next would pick a day instead. A control the render
+ * has hidden holds nothing, so the days may take the keyboard from it.
+ */
+export function heldOffTheDays(day: Element): boolean {
+  const active = document.activeElement;
+  const grid = day.closest('[role="grid"]');
+  return active instanceof HTMLElement && grid?.parentElement?.contains(active) === true
+    && !grid.contains(active) && active.getClientRects().length > 0;
+}
+
+/**
  * What a key does inside the grid, for a calendar whose state a controller holds.
  *
  * `Escape` leaves the view it is in — a month or year picker closes back to the days, the days close

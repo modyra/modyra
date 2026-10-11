@@ -16,7 +16,7 @@ import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/cor
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, formatLocalizedDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { calendarGridKey, calendarRows, landOnTheDays, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
+import { calendarGridKey, calendarRows, heldOffTheDays, landOnTheDays, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -396,9 +396,12 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
       if (this.view.viewMode === "days") {
         const focused = this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused");
         // The fallback only on the render that brings the days back: every other render keeps the
-        // keyboard where it is, and a landing taken on each would pull it off a header button.
-        if (focused !== null) focused.focus();
-        else if (this.shownView !== "days") landOnTheDays(this, "daterange");
+        // keyboard where it is, and a landing taken on each would pull it off a header button. The
+        // render that brings the days back takes the keyboard from the header too: the title that
+        // toggled the view is still showing, and the days are where a person returns to.
+        if (focused !== null) {
+          if (this.shownView !== "days" || !heldOffTheDays(focused)) focused.focus();
+        } else if (this.shownView !== "days") landOnTheDays(this, "daterange");
       } else if (this.view.viewMode === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("daterange", "yearCell", { selected: true }).join(".")}`,

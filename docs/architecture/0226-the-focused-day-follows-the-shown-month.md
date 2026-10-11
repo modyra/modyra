@@ -81,6 +81,27 @@ landing it already had.
   and in Plain and Angular wherever the browser focuses a clicked button. This is not asserted either
   way.
 
+## Amendment, 2026-10-11: paging keeps the keyboard on the button
+
+Because `focusedDate` now moves on `navigate-month`, a renderer that answers a new focused day by
+focusing its cell takes the keyboard off Next or Previous on the first press. The second press then
+lands in the grid. Measured on Chromium with a click, all four renderers did this after Next and
+Previous. On the base commit, Previous already did it whenever the open day stayed drawn as an
+outside day of the earlier month.
+
+Rule: in the day view, a new focused day takes the keyboard only when no visible control of the
+calendar outside the grid holds it. A control the render has just hidden, such as a year that was
+chosen, holds nothing. The render that brings the days back from the months or years takes the
+keyboard as it did before, in the renderers that already took it there. Each renderer carries the
+check next to its own landing: Plain in its render, Vue in `followTheReadingPosition`, Lit in
+`heldOffTheDays` (`updated`), Angular in `heldOffTheDays` (`afterNextRender`).
+
+Verification: `battle-tests/browser/a-page-turn-keeps-the-button.spec.ts` presses Next and Previous
+twice on every host. After each press the keyboard is still on the button, and the grid has exactly
+one visible tab stop. All 8 cases pass with the rule and all 8 fail without it. Chromium only, and
+the press is a click. A keyboard press is not asserted, because Enter and Space on these buttons
+already misbehave in Vue, Angular and Lit on the base commit, for reasons unrelated to this rule.
+
 ## Security and privacy
 
 None. This is view state inside a field's popup. No data crosses a boundary, and no value is

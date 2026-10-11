@@ -15,7 +15,7 @@ import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, formatIsoDate, formatLocalizedDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { calendarGridKey, calendarRows, landOnTheDays, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
+import { calendarGridKey, calendarRows, heldOffTheDays, landOnTheDays, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -254,9 +254,12 @@ export class MdyDatepickerFieldElement extends MdyFieldElement<string | null> {
       if (this.view.viewMode === "days") {
         const focused = this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused");
         // The fallback only on the render that brings the days back: every other render keeps the
-        // keyboard where it is, and a landing taken on each would pull it off a header button.
-        if (focused !== null) focused.focus();
-        else if (this.shownView !== "days") landOnTheDays(this, "datepicker");
+        // keyboard where it is, and a landing taken on each would pull it off a header button. The
+        // render that brings the days back takes the keyboard from the header too: the title that
+        // toggled the view is still showing, and the days are where a person returns to.
+        if (focused !== null) {
+          if (this.shownView !== "days" || !heldOffTheDays(focused)) focused.focus();
+        } else if (this.shownView !== "days") landOnTheDays(this, "datepicker");
       } else {
         const cell = this.view.viewMode === "years" ? "yearCell" : "monthCell";
         const selected = this.querySelector<HTMLElement>(

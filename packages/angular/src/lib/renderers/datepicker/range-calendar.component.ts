@@ -1,5 +1,5 @@
 import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
-import { calendarViewState, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
+import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -144,7 +144,9 @@ export class MdyRangeCalendarComponent {
   constructor() {
     effect(() => {
       const date = this.focusedDate();
-      afterNextRender(() => this.grid()?.focusDate(date), { injector: this.injector });
+      afterNextRender(() => {
+        if (!heldOffTheDays(this.hostRef.nativeElement)) this.grid()?.focusDate(date);
+      }, { injector: this.injector });
     });
   }
 
