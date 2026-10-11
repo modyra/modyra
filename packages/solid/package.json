@@ -35,7 +35,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --conditions=browser --test test/*.test.mjs"
+    "test": "node --conditions=browser --test test/*.test.mjs && node --test test/a-form-rendered-on-the-server-stays-still.test.mjs"
   },
   "sideEffects": false,
   "dependencies": {

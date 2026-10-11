@@ -236,6 +236,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0219: A development server answers only its own page and build](0219-a-dev-server-answers-only-its-own.md) — the Studio and plain-preview dev servers serve only the page and dist, follow links to their real place before serving, and refuse a foreign Host
 - [ADR 0220: The Vue adapter runs on the reactivity Vue itself runs on](0220-one-vue-reactivity-runtime.md) — every reactive primitive is imported from `vue` and `@vue/reactivity` is no longer a peer, so a consumer's `computed` and `watchEffect` track form state in every install layout
 - [ADR 0221: A server validator carries no message of its own](0221-a-server-validator-carries-no-message-of-its-own.md) — `StudioServerValidator` has no `errorMessage` and the inspector no message input: a server refusal's text comes from the server, or from the preview mock's configuration
+- [ADR 0222: A form a component owns starts when the component mounts](0222-a-form-starts-when-its-component-mounts.md) — `useVueForm` and `useSolidForm` build inactive and activate on mount, so a server render starts no draft, history or async validator; the factories keep the active default, and Svelte documents the pattern instead of adding a hook
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records
@@ -253,7 +254,9 @@ restore), [0217](0217-a-project-id-cannot-leave-its-quotes.md) (a Studio project
 and its ids are refused at the door), [0218](0218-an-expression-past-the-depth-limit-is-a-document-question.md)
 (where expression depth is enforced, and what an application owes when it evaluates untrusted
 expressions itself), [0219](0219-a-dev-server-answers-only-its-own.md) (what the development
-servers expose to a page the developer has open).
+servers expose to a page the developer has open),
+[0222](0222-a-form-starts-when-its-component-mounts.md) (which form builders read storage and call
+validators during a server render).
 
 ## Changing a record
 
