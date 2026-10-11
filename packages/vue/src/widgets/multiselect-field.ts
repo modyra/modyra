@@ -28,6 +28,7 @@ import {
   quantityAnnouncement,
   chipActionName,
   chosenKeyOrder,
+  chipFocusAfterRemoval,
   defaultOptionKey,
   isTypeaheadCharacter,
   wayBackActionName,
@@ -338,6 +339,58 @@ export const MdyMultiselectField = defineComponent({
       onKeydown(event);
     };
 
+    /** The chip that stands for a value, found again after a render may have replaced it. */
+    const focusChip = (key: string | null): void => {
+      void nextTick(() => {
+        const at = key === null ? -1 : chosenKeyOrder(state.value).indexOf(key);
+        const chip = at < 0 ? null : root.value?.querySelectorAll(`.${classesOf("chip").split(" ")[0]}`)[at];
+        if (chip instanceof HTMLElement) chip.focus();
+        else if (key === null) document.getElementById(view.value.parts.trigger?.id ?? "")?.focus();
+      });
+    };
+
+    /**
+     * The chip's own keys, as the contract declares them on the chip.
+     *
+     * A counter chip's steppers are pointer affordances, so `step` is the only way to its number
+     * without a mouse; `move` walks the strip and `remove` takes the value off with the direction
+     * every text field gives `Backspace` and `Delete`. Answered here and stopped: left to bubble, the
+     * field's own handler read `ArrowDown` as "open" and the chip never heard it. A key pressed on a
+     * control inside the chip is that control's.
+     */
+    const onChipKeydown = (key: string) => (event: KeyboardEvent): void => {
+      if (event.target !== event.currentTarget) return;
+      const binding = keyBindingFor("multiselect", event, state.value.open, "chip");
+      if (!binding) return;
+      const order = chosenKeyOrder(state.value);
+      switch (binding.intent) {
+        case "step":
+          run(controller.dispatch(event.key === "ArrowUp"
+            ? { type: "increment", optionKey: key }
+            : { type: "decrement", optionKey: key }));
+          focusChip((state.value.counts.get(key) ?? 0) > 0 ? key : chipFocusAfterRemoval(order, key));
+          break;
+        case "move": {
+          const at = order.indexOf(key);
+          const to = binding.toEnd
+            ? (binding.by === -1 ? 0 : order.length - 1)
+            : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+          focusChip(order[to] ?? key);
+          break;
+        }
+        case "remove": {
+          const next = chipFocusAfterRemoval(order, key, event.key === "Backspace" ? "backward" : "forward");
+          run(controller.dispatch({ type: "toggle", optionKey: key }));
+          focusChip(next);
+          break;
+        }
+        default:
+          return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
     const wayBackName = computed(() => wayBackActionName(
       state.value.wayBack,
       {
@@ -491,7 +544,7 @@ export const MdyMultiselectField = defineComponent({
                   // chip carrying it is what makes the strip reachable rather than skipped.
                   active: index === 0,
                   named: false,
-                })), [
+                }), { onKeydown: onChipKeydown(key) }), [
                   ...moves, ...steps,
                   // The class the contract declares for it. Drawn bare, the words were a span nothing
                   // could address: the rule that truncates a chip's label on a narrow screen never
