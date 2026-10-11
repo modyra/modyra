@@ -30,6 +30,7 @@
  */
 import { expect, test } from "@playwright/test";
 import { MDY_WIDGET_CONTRACTS, MDY_WIDGET_KEYBOARD, timepickerTabOrder } from "@modyra/widgets";
+import { partIsReachedByAKey } from "@modyra/widgets/testing";
 import { HOSTS } from "./bench";
 
 const OPTIONS = ["Roma", "Milano", "Napoli", "Torino"].map((label) => ({ value: label.toLowerCase(), label }));
@@ -115,6 +116,24 @@ function reachedByADeclaredKey(kind: string): string[] {
 }
 
 /**
+ * Classes of parts whose act a declared key performs while open, though no key names the part.
+ *
+ * A calendar's header buttons page the month and switch the view; `PageUp`/`PageDown` and
+ * `Ctrl+ArrowUp`/`Ctrl+ArrowDown` do the same acts with the panel open. The part's `performs` is what
+ * ties the two, and the rule is the runtime's own — the one that decides whether the panel keeps
+ * Tab — so this guardian and the panel cannot come to disagree about what a key reaches. Remove the
+ * covering binding and the part is flagged here and the panel holds Tab again, for the same reason.
+ */
+function reachedThroughItsAct(kind: string): string[] {
+  const bindings = MDY_WIDGET_KEYBOARD[kind] ?? [];
+  const nodes = MDY_WIDGET_CONTRACTS[kind]?.structure?.nodes ?? [];
+  const parts = MDY_WIDGET_CONTRACTS[kind]?.parts ?? {};
+  return nodes
+    .filter((node) => partIsReachedByAKey(node, bindings))
+    .flatMap((node) => parts[String(node.part)]?.classes ?? []);
+}
+
+/**
  * Classes a kind's own declared tab order reaches, for the kinds that declare one.
  *
  * A kind whose `Tab@open` intent is `move` keeps the keyboard and walks its panel itself, so the
@@ -156,31 +175,14 @@ function repeatedClasses(kind: string): string[] {
  * key leaves the contract** rather than only when the button does — an exemption that outlives the
  * reason it was granted for is the stale entry this suite's other gates already refuse.
  *
- * The second kind is the finding that rule produces. `view-toggle` and `header-label` open the
- * months and years views, and **no binding declares a view change**: the arrows move *within* a
- * view, `PageUp`/`PageDown` move the month. Applying the rule honestly, the act behind those two has
- * no keyboard path at all — which is the same species as the colours entry, not an affordance. They
- * are recorded as an open defect rather than as an exemption, because calling them exempt would be
- * the guardian granting itself the decision it was told to ask for.
+ * The second kind is an act with no keyboard path at all, recorded as an open defect rather than as
+ * an exemption: calling it exempt would be the guardian granting itself a decision that is not its to
+ * take. A part whose act a declared key performs is not recorded here; `reachedThroughItsAct`
+ * derives it from the contract, so it cannot outlive the key either.
  */
 interface PanelAction { readonly at: string; readonly reachableBy: string | null; readonly why: string }
 
-const RECORDED: Record<string, PanelAction[]> = {
-  plain: [
-    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
-    { at: "datepicker: button.mdy-datepicker__header-label", reachableBy: null, why: "opens the months view, and no key declares a view change" },
-  ],
-  lit: [
-    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
-    { at: "datepicker: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
-    { at: "daterange: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
-    { at: "daterange: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
-  ],
-  angular: [
-    { at: "datepicker: button.mdy-datepicker__nav-btn", reachableBy: "PageUp", why: "the month moves on PageUp and PageDown" },
-    { at: "datepicker: button.mdy-datepicker__view-toggle", reachableBy: null, why: "opens the months view, and no key declares a view change" },
-  ],
-};
+const RECORDED: Record<string, PanelAction[]> = {};
 
 for (const host of HOSTS) {
   test(`every action in an open panel can be reached, ${host.name}`, async ({ page }) => {
@@ -225,7 +227,7 @@ for (const host of HOSTS) {
         (binding) => binding.key === "Tab" && binding.when === "open" && binding.intent === "move",
       );
 
-      const found = await page.evaluate(({ declaredClasses, repeated, popups, tabCounts, movesWithArrows, rovingSubjects, byDeclaredKey, ordered }) => {
+      const found = await page.evaluate(({ declaredClasses, repeated, popups, tabCounts, movesWithArrows, rovingSubjects, byDeclaredKey, byItsAct, ordered }) => {
         const panel = popups.map((cls) => document.querySelector(`.${cls}`)).find((node) => node !== null) ?? null;
         if (panel === null || panel.getClientRects().length === 0) return null;
 
@@ -252,6 +254,7 @@ for (const host of HOSTS) {
           if (roving !== null && element.id !== "" && panel.querySelector(`#${CSS.escape(roving)}`) !== null) continue;
           if (declaredClasses.some((cls) => element.classList.contains(cls))) continue;
           if (byDeclaredKey.some((cls) => element.classList.contains(cls))) continue;
+          if (byItsAct.some((cls) => element.classList.contains(cls))) continue;
           if (ordered.some((cls) => element.classList.contains(cls))) continue;
           mute.push(`${element.tagName.toLowerCase()}.${element.className || "(no class)"}`);
         }
@@ -263,6 +266,7 @@ for (const host of HOSTS) {
         declaredClasses: classesAKeyNames(kind),
         rovingSubjects: rovingSubjectClasses(kind),
         byDeclaredKey: reachedByADeclaredKey(kind),
+        byItsAct: reachedThroughItsAct(kind),
         ordered: orderedClasses(kind),
         repeated: repeatedClasses(kind),
         popups: popupClasses,
