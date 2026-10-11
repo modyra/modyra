@@ -899,6 +899,7 @@
         "aria-expanded",
         "aria-haspopup",
         "aria-label",
+        "aria-labelledby",
         "aria-live",
         "aria-pressed",
         "aria-rowcount",
