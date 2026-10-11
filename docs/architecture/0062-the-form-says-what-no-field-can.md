@@ -102,3 +102,16 @@ The region shows what `lastSubmitErrors` holds, which [ADR 0060](0060-a-refusal-
 already filtered: an unsafe path is dropped before it gets here, and a message that is not a string
 is replaced rather than rendered. Both renderers set the text as text — no markup a server sent
 becomes markup on the page.
+
+## Amendment, 2026-10-11: `@modyra/vue` ships the region the way Lit does
+
+`@modyra/vue` had no form-level region, measured by the browser suite: a refusal naming no field and
+a submission whose handler threw both left the Vue page unchanged while the other renderers showed
+them. Vue is in Lit's position — the package is a control catalogue and a Vue form is whatever its
+host writes — so it takes Lit's answer, not a form component: `MdyFormErrors`, a component taking
+`form` as a prop and placed by the host, drawing the same `status` list with the same classes from
+`formErrorsOf`. A Vue application gets no region until it places one, which is the cost this record
+already accepted for Lit.
+
+Verification adds `a-refusal-in-two-renderers` and `a-submission-that-fell-over` for the vue host.
+Security and privacy are unchanged: the component renders each message as a text node.

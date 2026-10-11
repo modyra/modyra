@@ -85,6 +85,11 @@ export const MdyFileField = defineComponent({
       const parts = view.value.parts;
       // What the field is in, once per render: the root, the wrapper and the caption all reflect it.
       const shell = shellStateOf("file", props.field);
+      // A read-only file field has no word of its own: the picker is the browser's and the control's
+      // role carries no `aria-readonly`. What is true and expressible is that the affordance is not
+      // operable, so read-only takes the picker out of play the way disabled does, while the field
+      // itself stays submitted and validated.
+      const cannotPick = props.field.disabled?.() === true || props.field.readonly?.() === true;
       const children: VNode[] = [];
       // The caption names the control it belongs to, which `MDY_WIDGET_RELATIONS` declares and the
       // kit checks. The projection gives this kind's control no id of its own, so the label is given
@@ -102,6 +107,7 @@ export const MdyFileField = defineComponent({
           id: widgetId.value,
           type: CONTRACT.controlType,
           class: CONTRACT.parts.control.classes.join(" "),
+          disabled: cannotPick,
           onChange: (event: Event) => controller.dispatch({
             type: "select",
             files: Array.from((event.target as HTMLInputElement).files ?? []),
@@ -118,7 +124,7 @@ export const MdyFileField = defineComponent({
           (tag, attrs, kids) => h(tag, attrs, kids as VNode[]),
           new Set(["control"]),
           "file",
-          props.field.disabled?.() === true,
+          cannotPick,
           undefined,
           parts,
         ) as VNode[]),
