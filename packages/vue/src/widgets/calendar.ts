@@ -12,7 +12,7 @@
 import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
 import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
   keyBindingFor, partClasses, projectCalendarPeriodCellA11y, projectCalendarViewA11y,
-  type MdyCalendarViewMode, type MdyWidgetKind, presentationClass,
+  type MdyCalendarViewMode, presentationClass,
 } from "@modyra/widgets";
 import type { MdyDatepickerFieldCell, MdyDaterangeFieldCell, MdyPartContract } from "@modyra/widgets";
 import { calendarYearRange, isMonthOutOfRange, isYearOutOfRange, type CalendarDate, type MdyDateLocale } from "@modyra/core/datetime";
@@ -66,13 +66,17 @@ export const weekdayLabels = (locale: MdyDateLocale): readonly string[] => {
  * opening leaves a calendar whose `tabindex` walks and whose focus does not — the grid looks right,
  * the arrows appear to work to anyone reading the markup, and a person using a screen reader is
  * told nothing at all, because focus never left the day they started on.
+ *
+ * Only the day view gives the days the focus. With the months or years on screen the grid is
+ * hidden, and a press that moves the tab stop underneath it must not pull the focus off the button
+ * a person is on into a cell nobody can see.
  */
 export const followTheReadingPosition = (
   widgetId: string,
-  read: () => { readonly open: boolean; readonly focusedDate: string },
+  read: () => { readonly open: boolean; readonly focusedDate: string; readonly mode: MdyCalendarViewMode },
 ): void => {
-  watch(() => [read().open, read().focusedDate], async ([open, focused]) => {
-    if (open !== true || typeof focused !== "string") return;
+  watch(() => [read().open, read().focusedDate, read().mode], async ([open, focused, mode]) => {
+    if (open !== true || typeof focused !== "string" || mode !== "days") return;
     // The cell has to be drawn before it can take focus, and the controller's signals reach the
     // renderer a beat after the dispatch.
     await nextTick();
@@ -291,7 +295,7 @@ export const followTheChosenYear = (
  * it would make the field a place a person can enter and not leave.
  */
 export const forwardCalendarKeys = (
-  kind: MdyWidgetKind,
+  kind: MdyCalendarKind,
   isOpen: () => boolean,
   dispatch: (press: {
     readonly type: "keydown";
@@ -316,6 +320,17 @@ export const forwardCalendarKeys = (
   const target = event.target;
   const insidePanel = target instanceof Element && target.closest(".mdy-popup") !== null;
   if (!insidePanel && keyBindingFor(kind, event, isOpen()) === null) return;
+  /**
+   * A month or a year is a native button, and its keys are the button's.
+   *
+   * The calendar's keys move and commit the days. Taken from a month or year, Enter and Space
+   * would be read as committing the day underneath and their default — the click that chooses the
+   * period — prevented, leaving those views reachable from the keyboard and choosable by nobody.
+   * Escape still closes the panel from there.
+   */
+  const inPeriodView = target instanceof Element && (["monthPicker", "yearPicker"] as const)
+    .some((part) => target.closest(`.${partClasses(kind, part).join(".")}`) !== null);
+  if (inPeriodView && event.key !== "Escape") return;
 
   const before = isOpen();
   dispatch({

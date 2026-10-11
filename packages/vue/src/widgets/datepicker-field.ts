@@ -164,6 +164,7 @@ export const MdyDatepickerField = defineComponent({
     followTheReadingPosition(widgetId.value, () => ({
       open: state.value.open,
       focusedDate: state.value.focusedDate,
+      mode: state.value.viewMode,
     }));
     followTheChosenYear("datepicker", widgetId.value, () => ({ open: state.value.open, mode: state.value.viewMode }));
 

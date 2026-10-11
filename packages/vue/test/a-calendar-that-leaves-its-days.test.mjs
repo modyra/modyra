@@ -76,4 +76,58 @@ for (const one of CASES) {
       document.body.innerHTML = "";
     }
   });
+
+  // The arrows still reach the controller from the root while a year has focus. Whatever they move
+  // underneath, the hidden days must not take the value or the focus, and the years stay on screen.
+  test(`${one.kind}: an arrow pressed on a year leaves the value and the years where they are`, async () => {
+    const form = m.createVueForm({ when: field(one.held) });
+    const host = document.createElement("div");
+    document.body.append(host);
+    const app = createApp({
+      render: () => h(one.component(), { field: form.f.when, label: "Quando", widgetId: "w", minDate: "2025-03-10", maxDate: "2026-06-20" }),
+    });
+    const thrown = [];
+    app.config.errorHandler = (error) => { thrown.push(error); };
+    app.mount(host);
+    await settle();
+    try {
+      press(host.querySelector("button"));
+      await settle();
+      const byId = (id) => document.getElementById(id);
+      press(byId("w__heading").closest("button"));
+      await settle();
+      const year = byId("w__years").querySelectorAll("button")[1];
+      year.focus();
+      for (const key of ["ArrowRight", "ArrowDown", "ArrowLeft", "PageDown"]) {
+        year.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+        await settle();
+      }
+      assert.deepEqual(thrown, [], "an arrow on a year threw");
+      assert.deepEqual(form.f.when.value(), one.held, "an arrow on a year changed the value");
+      assert.equal(byId("w__years").hidden, false, "an arrow on a year left the years");
+      assert.equal(byId("w__grid").hidden, true, "an arrow on a year brought the days back");
+      assert.ok(!byId("w__grid").contains(document.activeElement), "an arrow on a year sent the focus into the hidden days");
+
+      // Enter on a year is the button's own press: it chooses the year, and commits no day.
+      const keyed = byId("w__years").querySelectorAll("button")[0];
+      keyed.focus();
+      const enter = new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+      if (keyed.dispatchEvent(enter)) press(keyed);
+      await settle();
+      assert.deepEqual(form.f.when.value(), one.held, "Enter on a year committed a day");
+      assert.equal(byId("w__months").hidden, false, "Enter on a year did not reach its months");
+
+      // The button keeps its own keys, and the panel still closes from it.
+      const opener = host.querySelector("[aria-expanded]");
+      assert.equal(opener.getAttribute("aria-expanded"), "true");
+      byId("w__months").querySelector("button").dispatchEvent(
+        new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await settle();
+      assert.equal(opener.getAttribute("aria-expanded"), "false", "Escape on a month did not close the panel");
+    } finally {
+      app.unmount();
+      host.remove();
+      document.body.innerHTML = "";
+    }
+  });
 }
