@@ -2,8 +2,7 @@
  * Svelte primitive for the Modyra headless primitive field controller.
  */
 
-import type { MdyFieldHandle } from "@modyra/core";
-import { vanillaReactivity } from "@modyra/core";
+import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import {
   fieldCommandHandlers,
   createTextFieldController,
@@ -14,7 +13,7 @@ import {
 } from "@modyra/widgets";
 import type { Readable } from "svelte/store";
 
-import { toStore } from "../reactivity.js";
+import { storeThrough } from "../reactivity.js";
 import { executeSvelteCommands } from "./runtime.js";
 
 export type UseMdyFieldOptions<TValue> = Omit<
@@ -35,8 +34,10 @@ export function useMdyField<TValue>(
   handle: MdyFieldHandle<TValue>,
   options: UseMdyFieldOptions<TValue>,
 ): MdySvelteFieldApi<TValue> {
-  const reactivity = vanillaReactivity();
-  const controller = createTextFieldController({ ...options, handle }, reactivity);
+  // Observed through the runtime that owns the handle's signals: a store tracking on any other
+  // runtime would never hear a write to a field whose form runs there.
+  const observer = observerFor(handle);
+  const controller = createTextFieldController({ ...options, handle }, observer);
 
   const dispatch = (intent: MdyTextFieldIntent<TValue>) => {
     executeSvelteCommands(
@@ -47,8 +48,8 @@ export function useMdyField<TValue>(
   };
 
   return {
-    state: toStore(controller.state),
-    view: toStore(controller.view),
+    state: storeThrough(controller.state, observer),
+    view: storeThrough(controller.view, observer),
     dispatch,
     setValue(value) {
       controller.setValue(value);

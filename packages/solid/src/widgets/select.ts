@@ -25,6 +25,8 @@ export interface MdySolidSelectApi<TValue> {
   dispatch(intent: MdySelectIntent): readonly import("@modyra/widgets").MdyUiCommand[];
   setValue(value: TValue | null): void;
   setOptions(options: readonly MdySelectOption<TValue>[]): void;
+  /** Releases what the primitive started. Called on owner cleanup; idempotent. */
+  destroy(): void;
 }
 
 /**
@@ -47,12 +49,15 @@ export function useMdySelect<TValue>(
     viewSig.set(controller.view());
   });
 
-  if (getOwner() !== null) {
-    onCleanup(() => {
-      effectRef.destroy();
-      controller.destroy();
-    });
-  }
+  let destroyed = false;
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    effectRef.destroy();
+    controller.destroy();
+  };
+
+  if (getOwner() !== null) onCleanup(destroy);
 
   return {
     get state(): Readonly<MdySelectState<TValue>> {
@@ -70,5 +75,6 @@ export function useMdySelect<TValue>(
     setOptions(options) {
       controller.setOptions(options);
     },
+    destroy,
   };
 }

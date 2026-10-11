@@ -45,9 +45,16 @@ export function svelteReactivity(): MdyReactivity &
  * after the underlying value changes rather than in the same tick.
  */
 export function toStore<T>(signal: MdySignal<T>): Readable<T> {
+  return storeThrough(signal, vanillaReactivity());
+}
+
+/**
+ * {@link toStore}, tracking through `rx`: a signal is only seen by an effect of the runtime that
+ * made it, so a store over a signal from another runtime's form tracks through that runtime.
+ */
+export function storeThrough<T>(signal: MdySignal<T>, rx: MdyReactivity): Readable<T> {
   return {
     subscribe(run: Subscriber<T>): Unsubscriber {
-      const rx = vanillaReactivity();
       const ref = rx.effect(() => {
         run(signal());
       });

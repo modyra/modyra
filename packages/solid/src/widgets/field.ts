@@ -2,7 +2,7 @@
  * Solid primitive for the Modyra headless primitive field controller.
  */
 
-import type { MdyFieldHandle } from "@modyra/core";
+import { observerFor, type MdyFieldHandle } from "@modyra/core";
 import {
   fieldCommandHandlers,
   createTextFieldController,
@@ -34,23 +34,30 @@ export function useMdyField<TValue>(
   handle: MdyFieldHandle<TValue>,
   options: UseMdyFieldOptions<TValue>,
 ): MdySolidFieldApi<TValue> {
-  const reactivity = solidReactivity();
-  const controller = createTextFieldController({ ...options, handle }, reactivity);
+  // The controller reads the handle, so it observes through the runtime that owns the handle's
+  // signals; only the mirrored state lives in Solid's graph. A Solid computation cannot track a
+  // signal from another runtime, and a field whose form runs elsewhere would never update.
+  const observer = observerFor(handle);
+  const controller = createTextFieldController({ ...options, handle }, observer);
 
-  const stateSig = reactivity.signal(controller.state());
-  const viewSig = reactivity.signal(controller.view());
+  const output = solidReactivity();
+  const stateSig = output.signal(controller.state());
+  const viewSig = output.signal(controller.view());
 
-  const effectRef = reactivity.effect(() => {
+  const effectRef = observer.effect(() => {
     stateSig.set(controller.state());
     viewSig.set(controller.view());
   });
 
-  if (getOwner() !== null) {
-    onCleanup(() => {
-      effectRef.destroy();
-      controller.destroy();
-    });
-  }
+  let destroyed = false;
+  const destroy = () => {
+    if (destroyed) return;
+    destroyed = true;
+    effectRef.destroy();
+    controller.destroy();
+  };
+
+  if (getOwner() !== null) onCleanup(destroy);
 
   const dispatch = (intent: MdyTextFieldIntent<TValue>) => {
     executeSolidCommands(
@@ -74,6 +81,6 @@ export function useMdyField<TValue>(
     setReadonly(readonly) {
       controller.setReadonly(readonly);
     },
-    destroy: controller.destroy,
+    destroy,
   };
 }

@@ -26,6 +26,8 @@ export interface MdySvelteSelectApi<TValue> {
   dispatch(intent: MdySelectIntent): readonly import("@modyra/widgets").MdyUiCommand[];
   setValue(value: TValue | null): void;
   setOptions(options: readonly MdySelectOption<TValue>[]): void;
+  /** Releases what the primitive started; idempotent. The stores release on unsubscribe. */
+  destroy(): void;
 }
 
 /**
@@ -52,5 +54,6 @@ export function useMdySelect<TValue>(
     setOptions(opts) {
       controller.setOptions(opts);
     },
+    destroy: controller.destroy,
   };
 }
