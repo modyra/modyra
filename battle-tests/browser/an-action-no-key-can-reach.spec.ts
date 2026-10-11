@@ -122,7 +122,12 @@ function reachedByADeclaredKey(kind: string): string[] {
  * `Ctrl+ArrowUp`/`Ctrl+ArrowDown` do the same acts with the panel open. The part's `performs` is what
  * ties the two, and the rule is the runtime's own — the one that decides whether the panel keeps
  * Tab — so this guardian and the panel cannot come to disagree about what a key reaches. Remove the
- * covering binding and the part is flagged here and the panel holds Tab again, for the same reason.
+ * covering binding and the exemption here ends with it, while the panel's Tab turns to `move` and
+ * reaches the part in sequence: the part stays reachable, by a different route.
+ *
+ * Matching is by class, as everywhere in this file, and `nav-btn` is shared by the previous and next
+ * buttons. That is sound only while both perform the same act; a header part whose act no key covers
+ * needs a class of its own, or the shared one would excuse it.
  */
 function reachedThroughItsAct(kind: string): string[] {
   const bindings = MDY_WIDGET_KEYBOARD[kind] ?? [];
