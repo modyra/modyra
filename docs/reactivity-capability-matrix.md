@@ -6,7 +6,7 @@
 
 # Reactivity adapter capability matrix
 
-Generated 2026-09-01.
+Generated 2026-10-11.
 
 | Adapter | effects | effectOwnership | signalEquality | computedEquality | batching | deterministicFlush | directObservation | graphInspection | serverSnapshots | pureComputeds | Note |
 |---|---|---|---|---|---|---|---|---|---|---|---|

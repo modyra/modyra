@@ -101,7 +101,7 @@ rows.push({ name: "lit", capabilities: litReactivity().capabilities, note: "= va
 rows.push({
   name: "vue",
   capabilities: vueReactivity().capabilities,
-  note: "native @vue/reactivity; effect() scheduler + createScope() via effectScope() (the current implementation)",
+  note: "native Vue reactivity, imported from vue; effect() scheduler + createScope() via effectScope() (the current implementation)",
 });
 
 // Solid's effect() (initial run included) is natively microtask-deferred,
