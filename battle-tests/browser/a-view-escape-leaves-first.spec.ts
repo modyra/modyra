@@ -123,6 +123,17 @@ for (const host of HOSTS) {
     await expect.poll(() => shown(page), SETTLES).toBe(calendarViewAfterPick("years"));
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[id$="__months"]') != null),
       { message: "choosing a year from the keyboard left the keyboard outside the months", ...SETTLES }).toBe(true);
+
+    // On through the funnel: the month chosen shows days of another year than the one the calendar
+    // opened on, and the grid still has its one way in from the keyboard, with the keyboard on it.
+    await page.keyboard.press("Enter");
+    await expect.poll(() => shown(page), SETTLES).toBe(calendarViewAfterPick("months"));
+    await expect.poll(() => page.evaluate(() =>
+      Array.from(document.querySelectorAll('[id$="__grid"] [role="gridcell"][tabindex="0"]'))
+        .filter((cell) => cell.getClientRects().length > 0).length),
+    { message: "the days shown after choosing a year and a month have no single tab stop", ...SETTLES }).toBe(1);
+    await expect.poll(() => focusInDays(page),
+      { message: "choosing a month from the keyboard left the keyboard off the days", ...SETTLES }).toBe(true);
   });
 
   test(`Escape on a year goes back to the days, ${host.name}`, async ({ page }) => {

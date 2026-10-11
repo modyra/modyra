@@ -1,5 +1,5 @@
 import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
-import { calendarViewState, landOnTheDays } from "../../core/calendar-view-state";
+import { calendarViewState, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -201,7 +201,11 @@ export class MdyRangeCalendarComponent {
   }
 
   protected onYearSelected(year: number): void {
+    const host = this.hostRef.nativeElement;
+    const held = host.contains(host.ownerDocument.activeElement);
     this.viewState.selectYear(year);
+    // After the render: the months do not exist until this component has drawn them.
+    if (held) afterNextRender(() => landOnTheMonths(host), { injector: this.injector });
   }
 
   protected goToPreviousMonth(): void {

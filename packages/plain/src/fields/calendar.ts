@@ -143,8 +143,18 @@ export function buildPeriodViews(
           selected: value === current,
           disabled: own === "months" ? isMonthOutOfRange(year, value, min, max) : isYearOutOfRange(value, min, max),
         }, { kind, widgetId }));
-        button.addEventListener("click", () =>
-          onPick(own === "months" ? { type: "select-month", month: value } : { type: "select-year", year: value }));
+        button.addEventListener("click", () => {
+          const held = document.activeElement === button;
+          onPick(own === "months" ? { type: "select-month", month: value } : { type: "select-year", year: value });
+          // A year narrows to its months, and the year view is redrawn hidden: focus held on the
+          // pressed year would sit on an element in no accessibility tree. It lands on the chosen
+          // month, or the first the bounds allow, once the months are drawn.
+          if (own === "years" && held) {
+            queueMicrotask(() =>
+              (monthPicker.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+                ?? monthPicker.querySelector<HTMLElement>("button:not([disabled])"))?.focus());
+          }
+        });
         return button;
       }));
       if (own === "years") {

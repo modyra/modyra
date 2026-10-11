@@ -265,6 +265,11 @@ const drawPeriodViews = (
  * The run is two centuries long where nothing bounds it, and it opens scrolled to its top: without
  * this, a person who pressed the header to change the year meets 1926 and has to hunt for the one
  * they were on.
+ *
+ * And the keyboard, when a chosen year narrows to its months. The years hold no cells once hidden, so
+ * focus on the pressed year falls to the page; it lands on the shown month, or the first the bounds
+ * allow. Only when the keyboard has left the calendar: a step between views lands on its own, and a
+ * landing taken regardless would pull focus back from wherever it went.
  */
 export const followTheChosenYear = (
   kind: MdyCalendarKind,
@@ -279,6 +284,15 @@ export const followTheChosenYear = (
     host?.querySelector<HTMLElement>(`.${partClasses(kind, "yearCell", { selected: true }).join(".")}`)
       ?.scrollIntoView?.({ block: "center" });
   });
+  watch(() => read().mode, (mode, was) => {
+    if (!read().open || mode !== "months" || was !== "years") return;
+    const host = document.getElementById(`${widgetId}__months`);
+    const panel = host?.parentElement;
+    const active = document.activeElement;
+    if (panel == null || (active !== null && active !== document.body && panel.contains(active))) return;
+    (host?.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+      ?? host?.querySelector<HTMLElement>("button:not([disabled])"))?.focus();
+  }, { flush: "post" });
 };
 
 /**
