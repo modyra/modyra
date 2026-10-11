@@ -117,13 +117,24 @@ for (const one of CASES) {
       assert.deepEqual(form.f.when.value(), one.held, "Enter on a year committed a day");
       assert.equal(byId("w__months").hidden, false, "Enter on a year did not reach its months");
 
-      // The button keeps its own keys, and the panel still closes from it.
+      // Escape leaves the view it is in: from a month back to the days, and only from the days out of
+      // the panel, with the focus following each time.
       const opener = host.querySelector("[aria-expanded]");
       assert.equal(opener.getAttribute("aria-expanded"), "true");
-      byId("w__months").querySelector("button").dispatchEvent(
-        new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      const escape = () => {
+        const pressed = new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+        (document.activeElement ?? host).dispatchEvent(pressed);
+        return pressed.defaultPrevented;
+      };
+      byId("w__months").querySelector("button").focus();
+      assert.equal(escape(), true, "Escape on a month was left to the browser");
       await settle();
-      assert.equal(opener.getAttribute("aria-expanded"), "false", "Escape on a month did not close the panel");
+      assert.equal(opener.getAttribute("aria-expanded"), "true", "Escape on a month closed the panel");
+      assert.equal(byId("w__grid").hidden, false, "Escape on a month did not bring the days back");
+      assert.ok(byId("w__grid").contains(document.activeElement), "Escape on a month left the focus off the days");
+      escape();
+      await settle();
+      assert.equal(opener.getAttribute("aria-expanded"), "false", "Escape on the days did not close the panel");
     } finally {
       app.unmount();
       host.remove();

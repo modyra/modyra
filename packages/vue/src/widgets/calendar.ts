@@ -282,8 +282,8 @@ export const followTheChosenYear = (
 };
 
 /**
- * Steps between the three views on the key the catalogue declares for it, and answers whether the
- * press was that step.
+ * Steps between the three views on the key the catalogue declares for it, and back to the days on a
+ * dismissal, and answers whether the press was one of those.
  *
  * The controllers hold the view but leave a press with the accelerator held unanswered, so the step
  * is the renderer's to take. It is asked from every view, not only the days: two of the three views
@@ -307,9 +307,12 @@ export const stepBetweenViews = (
     // Disarmed by any change of view, so a step overtaken by a header press lands nowhere later.
     const stepped = mode === landingIn;
     landingIn = null;
-    if (!stepped || mode === "days") return;
-    const host = document.getElementById(`${widgetId}__${mode}`);
-    const landing = host?.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+    if (!stepped) return;
+    // The days are a grid with one tab stop; the months and years are buttons, one of them chosen.
+    // Either may be off screen — a year chosen elsewhere shows a month without the day being read —
+    // and the first choosable cell is then where the keyboard can start.
+    const host = document.getElementById(`${widgetId}__${mode === "days" ? "grid" : mode}`);
+    const landing = host?.querySelector<HTMLElement>(mode === "days" ? '[tabindex="0"]' : '[aria-selected="true"]:not([disabled])')
       ?? host?.querySelector<HTMLElement>("button:not([disabled])");
     landing?.focus();
   }, { flush: "post" });
@@ -317,6 +320,15 @@ export const stepBetweenViews = (
     const { open, mode } = read();
     if (!open) return false;
     const step = keyBindingFor(kind, event, true);
+    // A dismissal that keeps the key leaves the view it is in: a month or year view gives way to the
+    // days, and only the days give way to a closed panel. `Tab` is a dismissal too, but it carries
+    // the keyboard onward and is not this view's to take.
+    if (step?.intent === "cancel" && step.restoresFocus === true && mode !== "days") {
+      event.preventDefault();
+      landingIn = "days";
+      show("days");
+      return true;
+    }
     if (step?.intent !== "view" || step.by === undefined) return false;
     event.preventDefault();
     const reached = calendarViewOnZoom(mode, step.by);
@@ -376,7 +388,7 @@ export const forwardCalendarKeys = (
    * The calendar's keys move and commit the days. Taken from a month or year, Enter and Space
    * would be read as committing the day underneath and their default — the click that chooses the
    * period — prevented, leaving those views reachable from the keyboard and choosable by nobody.
-   * Escape still closes the panel from there.
+   * Escape from there is `stepView`'s, and has already been answered by the time a press gets here.
    */
   const inPeriodView = target instanceof Element && (["monthPicker", "yearPicker"] as const)
     .some((part) => target.closest(`.${partClasses(kind, part).join(".")}`) !== null);

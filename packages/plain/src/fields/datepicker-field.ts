@@ -207,8 +207,6 @@ export function renderDatepickerField(
     if (binding?.intent !== "cancel") return;
     dispatch({ type: "close", restoreFocus: binding.restoresFocus === true });
   };
-  wrapper.addEventListener("keydown", onEscape);
-  popup.addEventListener("keydown", onEscape);
 
   /**
    * Stepping out to a wider view and back in, from wherever in the calendar the person is standing.
@@ -228,6 +226,9 @@ export function renderDatepickerField(
   // The other views, reached from the keyboard by the gesture the kind declares.
   bindViewZoom("datepicker", [wrapper, popup], { days: grid, months: monthPicker, years: yearPicker },
     () => controller.state(), (mode) => dispatch({ type: "set-view-mode", mode }));
+  // After the views: from a month or a year, Escape is theirs and goes back to the days.
+  wrapper.addEventListener("keydown", onEscape);
+  popup.addEventListener("keydown", onEscape);
 
   // The header goes to the top of the funnel and choosing narrows back down. Which view it opens
   // is `calendarViewOnToggle`'s answer, not this renderer's: writing it here is how three renderers

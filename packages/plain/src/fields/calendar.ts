@@ -162,7 +162,8 @@ export function buildPeriodViews(
 
 /**
  * Wires the gesture the kind declares for stepping between views — the platform's accelerator held
- * with a vertical arrow — on every element a press inside the calendar reaches.
+ * with a vertical arrow — on every element a press inside the calendar reaches, and the way back to
+ * the days on a dismissal. Bound before the panel's own dismissal, which it stops from a wider view.
  *
  * Handled once per press: a press inside the panel reaches each of `listeners`, and a second reading
  * of the same event would step twice. The keys follow the eye: the view a step came from is hidden,
@@ -181,10 +182,16 @@ export function bindViewZoom(
     const current = state();
     if (!current.open || zoomed.has(event)) return;
     const binding = keyBindingFor(kind, event, current.open);
-    if (binding?.intent !== "view" || binding.by === undefined) return;
+    // A dismissal that keeps the key leaves the view it is in, and only the days give way to a closed
+    // panel: stopped here, so the panel's own dismissal never hears it. `Tab` is a dismissal too, but
+    // it carries the keyboard onward and is not this view's to take.
+    const back = binding?.intent === "cancel" && binding.restoresFocus === true && current.viewMode !== "days";
+    const by = binding?.intent === "view" ? binding.by : undefined;
+    if (!back && by === undefined) return;
     event.preventDefault();
+    if (back) event.stopImmediatePropagation();
     zoomed.add(event);
-    const reached = calendarViewOnZoom(current.viewMode, binding.by);
+    const reached = by === undefined ? "days" : calendarViewOnZoom(current.viewMode, by);
     if (reached === current.viewMode) return;
     onZoom(reached);
     queueMicrotask(() => {

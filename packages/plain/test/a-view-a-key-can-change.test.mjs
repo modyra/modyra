@@ -112,6 +112,26 @@ for (const kind of ["datepicker", "daterange"]) {
     host.remove();
   });
 
+  // Escape leaves the view it is in: a wider view gives way to the days, and only the days give way to
+  // a closed panel. Asserted on the opener's `aria-expanded` and on where the keyboard is, because a
+  // panel that stayed open with the focus left behind on a hidden month is one no key reaches.
+  test(`${kind}: Escape from the months goes back to the days, and a second one closes`, async () => {
+    const { host, root } = await openCalendar(kind);
+    const { out } = zoomKeys(kind);
+    const expanded = () => root.querySelector("[aria-expanded]")?.getAttribute("aria-expanded");
+
+    await press(out, ACCELERATORS[0]);
+    assert.equal(viewHoldingFocus(), "months", "the step out did not reach the months, so Escape is measuring nothing");
+
+    await press("Escape");
+    assert.equal(expanded(), "true", "Escape from the months closed the panel");
+    assert.equal(viewHoldingFocus(), "days", "Escape from the months did not land the keyboard in the days");
+
+    await press("Escape");
+    assert.equal(expanded(), "false", "Escape from the days did not close the panel");
+    host.remove();
+  });
+
   test(`${kind}: the bare arrow still walks the grid, and the held one does not move a day`, async () => {
     const { host, root } = await openCalendar(kind);
     const { back } = zoomKeys(kind);
