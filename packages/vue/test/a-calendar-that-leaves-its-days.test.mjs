@@ -130,4 +130,54 @@ for (const one of CASES) {
       document.body.innerHTML = "";
     }
   });
+
+  // The declared step between views, held with the accelerator: out from the days to the months and
+  // the years, clamped there, and back in — from whichever view the keyboard is standing in, with the
+  // focus following into the view reached.
+  test(`${one.kind}: the accelerator and a vertical arrow step out to the years and back to the days`, async () => {
+    const form = m.createVueForm({ when: field(one.held) });
+    const host = document.createElement("div");
+    document.body.append(host);
+    const app = createApp({
+      render: () => h(one.component(), { field: form.f.when, label: "Quando", widgetId: "w", minDate: "2025-03-10", maxDate: "2026-06-20" }),
+    });
+    app.mount(host);
+    await settle();
+    try {
+      press(host.querySelector("button"));
+      await settle();
+      const byId = (id) => document.getElementById(id);
+      const shown = () => ["grid", "months", "years"].filter((part) => byId(`w__${part}`)?.hidden === false);
+      const step = async (key) => {
+        const pressed = new window.KeyboardEvent("keydown", { key, ctrlKey: true, bubbles: true, cancelable: true });
+        (document.activeElement ?? byId("w__grid")).dispatchEvent(pressed);
+        await settle();
+        return pressed.defaultPrevented;
+      };
+      byId("w__grid").querySelector('[tabindex="0"]').focus();
+
+      assert.equal(await step("ArrowUp"), true, "the step out was left to the browser");
+      assert.deepEqual(shown(), ["months"], "the step out from the days did not reach the months");
+      assert.equal(byId("w__months").querySelector('[aria-selected="true"]'), document.activeElement,
+        "the focus did not follow into the months, onto the month on screen");
+
+      await step("ArrowUp");
+      assert.deepEqual(shown(), ["years"], "a second step out did not reach the years");
+      assert.equal(document.activeElement?.textContent, "2026", "the focus did not land on the year on screen");
+
+      await step("ArrowUp");
+      assert.deepEqual(shown(), ["years"], "a step out past the years went somewhere");
+
+      await step("ArrowDown");
+      assert.deepEqual(shown(), ["months"], "the step in from the years did not reach the months");
+      await step("ArrowDown");
+      assert.deepEqual(shown(), ["grid"], "the step in from the months did not reach the days");
+      assert.ok(byId("w__grid").contains(document.activeElement), "the focus did not come back to the days");
+      assert.deepEqual(form.f.when.value(), one.held, "stepping between views changed the value");
+    } finally {
+      app.unmount();
+      host.remove();
+      document.body.innerHTML = "";
+    }
+  });
 }

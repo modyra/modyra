@@ -37,7 +37,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
-import { calendarClassesOf, drawCalendar, followTheChosenYear, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
+import { calendarClassesOf, drawCalendar, followTheChosenYear, followTheReadingPosition, forwardCalendarKeys, stepBetweenViews } from "./calendar.js";
 import { useCommands } from "./commands.js";
 import { resolveLocale, useMessages } from "./locale.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -172,6 +172,9 @@ export const MdyDatepickerField = defineComponent({
       "datepicker",
       () => state.value.open,
       (press) => run(controller.dispatch(press)),
+      stepBetweenViews("datepicker", widgetId.value,
+        () => ({ open: state.value.open, mode: state.value.viewMode }),
+        (mode) => run(controller.dispatch({ type: "set-view-mode", mode }))),
     );
 
     return () => {

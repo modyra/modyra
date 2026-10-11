@@ -10,7 +10,7 @@
  * nobody outside can exercise is surface that has to be kept without ever being checked.
  */
 import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
-import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
+import { MDY_WIDGET_CONTRACTS, calendarViewOnZoom, defaultWidgetIdFactory,
   keyBindingFor, partClasses, projectCalendarPeriodCellA11y, projectCalendarViewA11y,
   type MdyCalendarViewMode, presentationClass,
 } from "@modyra/widgets";
@@ -282,6 +282,53 @@ export const followTheChosenYear = (
 };
 
 /**
+ * Steps between the three views on the key the catalogue declares for it, and answers whether the
+ * press was that step.
+ *
+ * The controllers hold the view but leave a press with the accelerator held unanswered, so the step
+ * is the renderer's to take. It is asked from every view, not only the days: two of the three views
+ * are not the grid, and a step answered only there would work once and then be stuck in the view it
+ * reached.
+ *
+ * The keyboard follows the eye. The view a step leaves is hidden, and focus left there sits on an
+ * element in no accessibility tree, so focus lands on the chosen cell of the view reached, or its
+ * first choosable one, once that view is drawn: a view only holds cells while it is shown. Only a
+ * step moves the focus — a header press leaves it on the header, which stays on screen — and the days
+ * are `followTheReadingPosition`'s to focus.
+ */
+export const stepBetweenViews = (
+  kind: MdyCalendarKind,
+  widgetId: string,
+  read: () => { readonly open: boolean; readonly mode: MdyCalendarViewMode },
+  show: (mode: MdyCalendarViewMode) => void,
+): ((event: KeyboardEvent) => boolean) => {
+  let landingIn: MdyCalendarViewMode | null = null;
+  watch(() => read().mode, (mode) => {
+    // Disarmed by any change of view, so a step overtaken by a header press lands nowhere later.
+    const stepped = mode === landingIn;
+    landingIn = null;
+    if (!stepped || mode === "days") return;
+    const host = document.getElementById(`${widgetId}__${mode}`);
+    const landing = host?.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+      ?? host?.querySelector<HTMLElement>("button:not([disabled])");
+    landing?.focus();
+  }, { flush: "post" });
+  return (event) => {
+    const { open, mode } = read();
+    if (!open) return false;
+    const step = keyBindingFor(kind, event, true);
+    if (step?.intent !== "view" || step.by === undefined) return false;
+    event.preventDefault();
+    const reached = calendarViewOnZoom(mode, step.by);
+    if (reached !== mode) {
+      landingIn = reached;
+      show(reached);
+    }
+    return true;
+  };
+};
+
+/**
  * Forwards a press to whichever calendar is asking, and consumes it if the calendar answered.
  *
  * The key is not interpreted here. Both controllers take a `keydown` intent and decide what the
@@ -304,7 +351,10 @@ export const forwardCalendarKeys = (
     readonly ctrlKey: boolean;
     readonly metaKey: boolean;
   }) => void,
+  /** The step between views, answered before anything else so it reaches every view. */
+  stepView?: (event: KeyboardEvent) => boolean,
 ) => (event: KeyboardEvent): void => {
+  if (stepView?.(event) === true) return;
   /**
    * A key declared on a part belongs to that part.
    *
