@@ -31,7 +31,7 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS, HOSTS_WITHOUT_A_CLOCK_FACE, aPickerWithoutAFace } from "./bench";
 
 for (const host of HOSTS) {
   test(`the hand is shorter on the inner ring, ${host.name}`, async ({ page }) => {
@@ -95,6 +95,13 @@ for (const host of HOSTS) {
 
     // 15:00 is on the inner ring of a 24-hour face; 03:00 is at the same angle on the outer.
     const inner = await handFor("15:00");
+    // A picker with no face has no hand to measure, and ADR 0213 calls it complete. Only on a renderer
+    // that declares it, and only when the panel really is the typed one rather than a picker that
+    // never opened.
+    test.skip(
+      inner === null && HOSTS_WITHOUT_A_CLOCK_FACE.has(host.name) && await aPickerWithoutAFace(page),
+      `${host.name} draws its time picker without a clock face (ADR 0213)`,
+    );
     const outer = await handFor("03:00");
 
     // The premise: a hand was drawn at all, both times. A picker that never opened would make
