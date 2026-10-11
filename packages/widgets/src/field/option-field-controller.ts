@@ -4,7 +4,7 @@
 
 import { blocksFocus, blocksValueChange } from "../interactivity.js";
 import { engageValue, fieldCanBeInvalid } from "./verdict.js";
-import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
+import { optionsWithUnrecognizedValue, sameChoice } from "../options-reconciliation.js";
 import { defaultOptionKey } from "../options-utils.js";
 import type { MdyReactivity, MdySelectOption, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -86,8 +86,13 @@ export function createOptionFieldController<TValue>(
   }
   rebuildIndex();
 
-  const keyForValue = (value: TValue | null): string | null =>
-    value === null ? null : [...optionByKey.entries()].find(([, o]) => o.value === value)?.[0] ?? null;
+  // Identity first, then the contract's `sameChoice`: a value restored from a draft, refetched or
+  // imported is a copy of the option it names, and is still that option (ADR 0216).
+  const keyForValue = (value: TValue | null): string | null => {
+    if (value === null) return null;
+    const entries = [...optionByKey.entries()];
+    return (entries.find(([, o]) => o.value === value) ?? entries.find(([, o]) => sameChoice(value, o.value)))?.[0] ?? null;
+  };
 
   const enabledKeys = (): readonly string[] =>
     allOptions().filter((o) => !o.disabled).map(keyFor);

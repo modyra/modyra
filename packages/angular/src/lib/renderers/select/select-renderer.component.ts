@@ -18,7 +18,7 @@ import {
 } from "@angular/core";
 import { capabilityOf, filterOptionsByQuery,
   defaultWidgetIdFactory, presentationClass } from "@modyra/widgets";
-import { MDY_OVERLAY_PORTAL_CLASS } from "@modyra/widgets";
+import { MDY_OVERLAY_PORTAL_CLASS, sameChoice } from "@modyra/widgets";
 import { MDY_WIDGET_CONTRACTS, createTypeahead, isTypeaheadCharacter, popupAlignmentClass, popupPlacementClass, optionsWithUnrecognizedValue, reconcileSelectValue, selectKeyboardAction, typeaheadMatch, overlayControlledId, projectOverlayOpenerA11y } from "@modyra/widgets";
 import { MdyErrorListComponent } from "../../control/error-list.component";
 import { MdyControlLabelComponent } from "../../control/mdy-control-label.component";
@@ -168,7 +168,7 @@ import { MdyDropdownBase } from "../dropdown-base";
                   class="{{ cls.option }}"
                   [class.mdy-select__option--active]="activeIndex() === i"
                   [class.mdy-select__option--selected]="isChosen(opt.value)"
-                  [attr.aria-selected]="opt.value == value()"
+                  [attr.aria-selected]="isChosen(opt.value)"
                   (click)="selectOption(opt)"
                 >
                   @if (optionTpl(); as tpl) {
@@ -621,19 +621,14 @@ export class MdySelectComponent<TValue = string>
   }
 
   /**
-   * Whether a held value is this option's, asked the way the contract asks it.
+   * Whether a held value is this option's, by the contract's `sameChoice`.
    *
-   * `==` is identity for an object, so a fresh one from a restored draft or a refetch matched no
-   * option and the control showed nothing chosen while the model held a value. The key answers both:
-   * the same object, and a copy carrying the same data.
+   * `==` is identity for an object, so a fresh one from a restored draft or a refetch would match no
+   * option and the control would show nothing chosen while the model held a value. The contract's
+   * rule answers both: the same object, and a copy carrying the same data.
    */
   protected isChosen(optionValue: TValue): boolean {
-    const held = this.value();
-    if ((held as unknown) === (optionValue as unknown)) return true;
-    if (held === null || held === undefined || optionValue === null || optionValue === undefined) {
-      return false;
-    }
-    return this.optionKey(held) === this.optionKey(optionValue);
+    return sameChoice(this.value(), optionValue);
   }
 
   protected onNativeChange(event: Event): void {

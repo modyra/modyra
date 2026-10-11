@@ -48,6 +48,7 @@ import type { MdyInteractivity } from "./types.js";
 import type { MdyPathGate } from "./contracts/form-registry.js";
 import { MDY_DEV } from "./dev-flags.js";
 import { matchesValueShape, type MdyValueShape } from "./value-contracts.js";
+import { sameOption } from "./validators.js";
 import {
   applyValueSecurity,
   draftShapeMatches,
@@ -310,21 +311,15 @@ function offeredHere(
   value: unknown,
 ): boolean {
   if (offered === undefined) return true;
-  if (shape === "option") return offered.some((option) => sameOptionValue(option, value));
+  // The validator's own rule, so a value the field accepts from storage is one `oneOf` accepts too.
+  // Compared by structure and not by serialisation: JSON text follows key order, and a draft read
+  // back with its keys in another order is the same value.
+  if (shape === "option") return offered.some((option) => sameOption(option, value));
   if (shape === "option[]") {
     return Array.isArray(value)
-      && value.every((member) => offered.some((option) => sameOptionValue(option, member)));
+      && value.every((member) => offered.some((option) => sameOption(option, member)));
   }
   return true;
-}
-
-/** Two option values are the same when they hold the same thing — the rule `equals` follows. */
-function sameOptionValue(left: unknown, right: unknown): boolean {
-  if (Object.is(left, right)) return true;
-  if (typeof left !== "object" || typeof right !== "object" || left === null || right === null) {
-    return false;
-  }
-  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 

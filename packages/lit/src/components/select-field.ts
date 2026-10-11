@@ -235,7 +235,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 
   protected override isSelected(handle: MdyFieldHandle<unknown | null>, value: unknown): boolean {
-    return handle.value() === value;
+    return this.isChosen(handle.value(), value);
   }
 
   protected override pick(_handle: MdyFieldHandle<unknown | null>, value: unknown): void {
@@ -243,7 +243,7 @@ export class MdySelectFieldElement extends MdyDropdownFieldElement<unknown | nul
   }
 
   protected override triggerText(handle: MdyFieldHandle<unknown | null>): string {
-    return this.renderedOptions(handle.value()).find((o) => o.value === handle.value())?.label ?? "";
+    return this.renderedOptions(handle.value()).find((o) => this.isChosen(handle.value(), o.value))?.label ?? "";
   }
 
   protected override toggleOpen(handle: MdyFieldHandle<unknown | null>): void {

@@ -13,7 +13,7 @@ import { defaultWidgetIdFactory } from "../ids.js";
 import { projectSelectA11y } from "./select-a11y.js";
 import { variantOf } from "../structure.js";
 import { selectNextActiveKey } from "./select-keyboard.js";
-import { optionsWithUnrecognizedValue } from "../options-reconciliation.js";
+import { optionsWithUnrecognizedValue, sameChoice } from "../options-reconciliation.js";
 import type { MdySelectOption } from "@modyra/core";
 
 import type {
@@ -139,8 +139,21 @@ export function createSelectController<TValue>(
   }
   rebuildOptionIndex(initialValue);
 
-  const keyForValue = (value: TValue | null): string | null =>
-    value === null ? null : valueToKey.get(value) ?? null;
+  /**
+   * The key of the option a value is, by the contract's `sameChoice`.
+   *
+   * Identity first, because it is the common case and a Map answers it at once. A value that comes
+   * back from a draft, a refetch or an import is not the option object the list was built from — an
+   * object returns as a copy, a number read from JSON as text — and it is still the same choice, so
+   * the painted options are asked the contract's question before the value is called unknown.
+   */
+  const keyForValue = (value: TValue | null): string | null => {
+    if (value === null) return null;
+    const direct = valueToKey.get(value);
+    if (direct !== undefined) return direct;
+    const match = paintedOptions().find((option) => sameChoice(value, option.value));
+    return match === undefined ? null : keyOf(match);
+  };
 
   const valueForKey = (key: string | null): TValue | null =>
     key === null ? null : optionByKey.get(key)?.value ?? null;

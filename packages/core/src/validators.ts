@@ -283,7 +283,7 @@ export const integer = (message = 'Enter a whole number'): ValidatorFn<number | 
  * This does not weaken the guard it exists for. A scripted `set({ id: 3 })` is refused, and so is an
  * offered option with a member missing, a member of the wrong type, or a member added.
  */
-function sameOption(offered: unknown, value: unknown, depth = 0): boolean {
+export function sameOption(offered: unknown, value: unknown, depth = 0): boolean {
   if (Object.is(offered, value)) return true;
   // A depth this reaches is a structure no option list has; refusing to recurse further reports "not
   // that option", which is the safe direction.
