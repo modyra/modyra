@@ -374,7 +374,8 @@ and `@modyra/solid`'s `useSolidForm` inside an owner do the same with their
 framework's mount hook, so a server render starts nothing. The factories
 (`createVueForm`, `createSolidForm`, `createSvelteForm`) keep the default
 (`autoActivate: true`): a form built with one during a server render starts
-there. In Svelte, a component that renders on the server builds its form
+there. Angular and Lit forms are built with the default too, and start at
+construction. In Svelte, a component that renders on the server builds its form
 inactive and activates it on mount:
 
 ```ts
