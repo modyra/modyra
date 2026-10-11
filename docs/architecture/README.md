@@ -231,6 +231,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0214: A captioned control is named by its caption](0214-a-captioned-control-is-named-by-its-caption.md) — no aria-label copied from a visible caption; aria-label only when declared; the required marker is outside the name
 - [ADR 0215: A caption beside a box does not say whether it is ticked](0215-a-caption-beside-a-box-does-not-say-whether-it-is-ticked.md) — a boolean caption never carries --filled; the floating-label signal keeps one meaning
 - [ADR 0216: A restored value is the option it copies](0216-a-restored-value-is-the-option-it-copies.md) — a widget recognises an option by sameChoice and reports the option's own value; the validator and draft restore share one strict, key-order-independent rule
+- [ADR 0217: A project id cannot leave its quotes](0217-a-project-id-cannot-leave-its-quotes.md) — Studio refuses a project whose ids, references or implementation keys fall outside a safe character set, so no id can break out of the quoted HTML and selectors the editor writes
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

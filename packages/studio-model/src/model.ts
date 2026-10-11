@@ -113,6 +113,48 @@ function assertUsableSchema(root: unknown): void {
   }
 }
 
+/**
+ * The characters an identifier in a project may use.
+ *
+ * Every id a project carries is written by the editor into HTML attributes and CSS selectors, quoted.
+ * A project is a file anyone may hand to Studio, so an id is untrusted text: one holding a quote, an
+ * angle bracket or a backslash leaves the attribute or selector it is written into, and a crafted one
+ * runs script when the project is opened. Ids Studio makes itself are `prefix_` and twelve lowercase
+ * letters and digits; this admits that and the separators a hand-written or older file reasonably
+ * uses, and nothing that can leave a quoted value.
+ */
+const SAFE_PROJECT_ID = /^[A-Za-z0-9_.:-]{1,128}$/;
+
+/** Whether a property names an identifier or a reference to one. */
+const namesAnId = (key: string): boolean => key === "id" || /(?:Id|Ref)$/.test(key);
+
+/**
+ * Refuses a project with an identifier outside {@link SAFE_PROJECT_ID}, naming where it is.
+ *
+ * Checked once at the door rather than escaped at each of the editor's interpolations, so the
+ * guarantee does not depend on every future template remembering to escape.
+ */
+function assertSafeIdentifiers(project: unknown): void {
+  const pending: Array<{ value: unknown; path: string }> = [{ value: project, path: "project" }];
+  const walked = new WeakSet<object>();
+  while (pending.length > 0) {
+    const { value, path } = pending.pop()!;
+    if (typeof value !== "object" || value === null || walked.has(value)) continue;
+    walked.add(value);
+    const isImplementations = path.endsWith(".implementations");
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      const at = Array.isArray(value) ? `${path}[${key}]` : `${path}.${key}`;
+      if (isImplementations && !SAFE_PROJECT_ID.test(key)) {
+        throw new StudioModelError(`Studio project implementation key at ${at} is not a safe identifier`);
+      }
+      if (typeof child === "string" && !Array.isArray(value) && namesAnId(key) && !SAFE_PROJECT_ID.test(child)) {
+        throw new StudioModelError(`Studio project identifier at ${at} is not a safe identifier`);
+      }
+      pending.push({ value: child, path: at });
+    }
+  }
+}
+
 function assertStructurallyValidProject(raw: unknown): asserts raw is MdyStudioProject {
   if (typeof raw !== "object" || raw === null) {
     throw new StudioModelError("Studio project must be an object");
@@ -509,6 +551,7 @@ export function normalize(project: MdyStudioProject): NormalizeResult {
 export function loadProject(raw: unknown): NormalizeResult {
   assertStructurallyValidProject(raw);
   const migrated = migrate(raw);
+  assertSafeIdentifiers(migrated);
   // A layout nobody can walk is dropped rather than carried: this module's own rule is that a stale
   // arrangement degrades to "unarranged" and never blocks opening the project, and a layout that
   // cannot be cloned is the most stale one there is. The finding says which of the two it was.
