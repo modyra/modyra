@@ -82,6 +82,8 @@ that as a known red.
   Escape from the years, from a year cell and from the months. It checks that the days come back, the
   popup stays open and focus is in the grid, and that a second Escape closes the popup. It failed on
   Angular (the popup closed) and on Lit (focus lost after the months) before the amendment's fixes.
+  It runs on Chromium only. No other engine has checked it, and a difference in how an engine bubbles
+  Escape or moves focus would go unseen.
 
 ## Security and privacy
 
