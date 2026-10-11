@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "fields": [
+    {
+      "name": "stay",
+      "kind": "daterange",
+      "label": "Stay"
+    },
+    {
+      "name": "attachment",
+      "kind": "file",
+      "label": "Attachment"
+    },
+    {
+      "name": "palette",
+      "kind": "colors",
+      "label": "Palette"
+    }
+  ]
+}

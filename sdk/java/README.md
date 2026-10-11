@@ -64,3 +64,34 @@ This SDK reads and writes **Contract v2**. `@modyra/core` accepts v2, v3 and v4 
 legacy bare field array — a declared `version: 1` is refused. v3 adds
 per-breakpoint placement for a single layout slot and changes nothing else, so a v2 document this
 SDK produces is valid input everywhere.
+
+## Known red: the shared corpus test
+
+`readsEveryDocumentInTheSharedCorpus` compares this parser's `ok` with each corpus document's
+verdict, and it fails on 18 documents that the TS reference and the Rust reader both judge
+correctly. No CI job runs Maven, so the failure shows only when the suite is run by hand. Each
+document names a rule this parser does not apply yet:
+
+| Document | Rule | This parser |
+| --- | --- | --- |
+| `v4/a-expression-too-deep` | expression depth ≤ 32 | accepts |
+| `v4/b-expression-without-operands` | `operands` required | accepts |
+| `v4/c-operand-names-two-references` | an operand references exactly one marker | accepts |
+| `v4/d-matches-catastrophic-pattern` | a `matches` pattern passes the cost test (ADR 0050) | accepts |
+| `v4/e-matches-uncompilable-pattern` | a `matches` pattern compiles | accepts |
+| `v2/f-validator-pattern-catastrophic` | `validators.pattern` passes the cost test | accepts |
+| `v2/g-integer-before-v5` | `integer` needs v5 | accepts |
+| `v2/h-slot-placement-in-v2` | slot placement needs v3 | accepts |
+| `v2/i-version-one-envelope` | `version: 1` is refused | accepts |
+| `v4/j-row-condition-reads-undeclared-context` | a condition reads only declared context | accepts |
+| `v2/k-daterange-file-colors-kinds` | kinds `daterange`, `file`, `colors` | refuses |
+| `v2/l-layout-eight-levels` | layout nests up to 32 levels | refuses |
+| `v5/m-flat-v5-envelope` | flat v5 envelope | refuses, with no diagnostic |
+| `v2/n-validation-condition-without-operands` | `validations` conditions are checked | accepts |
+| `v2/o-rule-membership-against-a-string` | a rule's value matches its operator | accepts |
+| `v4/q-condition-reads-a-path-nothing-encloses` | a `{path}` stays inside its group | accepts |
+| `v2/r-validator-pattern-uncompilable` | `validators.pattern` compiles | accepts |
+| `v2/s-validator-pattern-quantified-boundary` | `\b` takes no quantifier | accepts |
+
+These are gaps in this parser. The documents are correct. A gap closes when its document passes,
+and the row comes out of this table in the same change.

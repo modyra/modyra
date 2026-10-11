@@ -1,0 +1,31 @@
+{
+  "version": 4,
+  "schema": {
+    "node": "group",
+    "children": {
+      "code": {
+        "node": "field",
+        "field": {
+          "kind": "text",
+          "label": "Code"
+        }
+      },
+      "note": {
+        "node": "field",
+        "field": {
+          "kind": "text",
+          "label": "Note"
+        },
+        "when": {
+          "op": "matches",
+          "operands": [
+            {
+              "self": true
+            },
+            "^(a+)+$"
+          ]
+        }
+      }
+    }
+  }
+}

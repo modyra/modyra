@@ -1,0 +1,12 @@
+{
+  "version": 5,
+  "fields": [
+    {
+      "name": "seats",
+      "kind": "number",
+      "validators": {
+        "integer": true
+      }
+    }
+  ]
+}

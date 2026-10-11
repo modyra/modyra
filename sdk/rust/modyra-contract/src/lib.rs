@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
+mod pattern_cost;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationMode {
     Lenient,
@@ -177,14 +179,76 @@ pub enum LayoutNode {
     },
 }
 
-/// Depth cap for nested layout, matching MDY_LAYOUT_MAX_DEPTH in the TS parser.
-pub const LAYOUT_MAX_DEPTH: usize = 6;
+/// Depth cap for nested layout, matching MDY_LAYOUT_MAX_DEPTH in the TS parser (ADR 0161).
+pub const LAYOUT_MAX_DEPTH: usize = 32;
 
-/// Collects every field name a layout node places, or returns `None` when the
-/// subtree is unusable — too deep, or a field placed in more than one slot.
-fn layout_refs(node: &LayoutNode, depth: usize, seen: &mut Vec<String>) -> bool {
+/// The most tracks a row may declare at one size, matching the TS parser.
+const LAYOUT_MAX_COLUMNS: u32 = 12;
+
+/// Why a layout subtree is unusable. Each reason is its own diagnostic code, so an author told
+/// "unknown field" about a layout that is merely too deep is not sent looking for a typo.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LayoutRefusal {
+    /// Nested past `LAYOUT_MAX_DEPTH`.
+    Depth,
+    /// A v3 placement in a document whose version precedes it.
+    Version,
+    /// A member that cannot describe a layout: a track count out of range, a placement on a
+    /// section no column holds.
+    Shape,
+    /// A field that does not exist, is placed twice, or is sent to a column the row lacks.
+    Reference,
+}
+
+impl LayoutRefusal {
+    fn diagnostic(self, path: &str) -> Diagnostic {
+        match self {
+            LayoutRefusal::Depth => diag(
+                "MDY_DYNAMIC_INVALID_LAYOUT",
+                path,
+                "layout nests deeper than 32 levels",
+            ),
+            LayoutRefusal::Version => diag(
+                "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+                path,
+                "layout uses a placement this document's version precedes; it needs version 3",
+            ),
+            LayoutRefusal::Shape => diag(
+                "MDY_DYNAMIC_INVALID_LAYOUT",
+                path,
+                "layout node has an invalid shape",
+            ),
+            LayoutRefusal::Reference => diag(
+                "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+                path,
+                "layout references an unknown or already-placed field, or a column the row lacks",
+            ),
+        }
+    }
+}
+
+/// Collects every field name a layout node places, or says why the subtree is unusable.
+///
+/// The first refusal met in document order is the one reported, as the TS parser reports it, so
+/// both readers name the same code for the same document. `allow_slots` is whether the document's
+/// version has v3 placement at all.
+fn layout_refs(
+    node: &LayoutNode,
+    depth: usize,
+    names: &HashSet<String>,
+    seen: &mut Vec<String>,
+    allow_slots: bool,
+) -> Result<(), LayoutRefusal> {
     if depth > LAYOUT_MAX_DEPTH {
-        return false;
+        return Err(LayoutRefusal::Depth);
+    }
+    if let LayoutNode::Columns { at: Some(at), .. } = node {
+        let fits = at.iter().all(|(size, count)| {
+            LAYOUT_BREAKPOINTS.contains(&size.as_str()) && (1..=LAYOUT_MAX_COLUMNS).contains(count)
+        });
+        if !fits {
+            return Err(LayoutRefusal::Shape);
+        }
     }
     // How many tracks this node has, so a slot cannot be sent to a column it does
     // not have. `0` marks a section: placement is refused there, because the
@@ -206,36 +270,44 @@ fn layout_refs(node: &LayoutNode, depth: usize, seen: &mut Vec<String>) -> bool 
         for child in slot {
             match child {
                 LayoutChild::Field(name) => {
-                    if seen.iter().any(|existing| existing == name) {
-                        return false;
+                    if !names.contains(name) || seen.iter().any(|existing| existing == name) {
+                        return Err(LayoutRefusal::Reference);
                     }
                     seen.push(name.clone());
                 }
                 LayoutChild::Slot(placed) => {
-                    if seen.iter().any(|existing| existing == &placed.reference) {
-                        return false;
+                    // Below v3 a slot does not exist; accepting one would make this reader
+                    // disagree with every other reader of the same document.
+                    if !allow_slots {
+                        return Err(LayoutRefusal::Version);
+                    }
+                    if !names.contains(&placed.reference)
+                        || seen.iter().any(|existing| existing == &placed.reference)
+                    {
+                        return Err(LayoutRefusal::Reference);
                     }
                     if !valid_placement(placed.at.as_ref(), tracks) {
-                        return false;
+                        return Err(LayoutRefusal::Reference);
                     }
                     seen.push(placed.reference.clone());
                 }
                 LayoutChild::Node(nested) => {
-                    if !layout_refs(nested, depth + 1, seen) {
-                        return false;
-                    }
+                    layout_refs(nested, depth + 1, names, seen, allow_slots)?;
                     // A section's own `at` describes the column *this* node gives
                     // it, so it is checked here rather than inside its own walk.
-                    if let LayoutNode::Section { at, .. } = nested.as_ref() {
-                        if !valid_placement(at.as_ref(), tracks) {
-                            return false;
+                    if let LayoutNode::Section { at: Some(at), .. } = nested.as_ref() {
+                        if !allow_slots {
+                            return Err(LayoutRefusal::Version);
+                        }
+                        if !valid_placement(Some(at), tracks) {
+                            return Err(LayoutRefusal::Shape);
                         }
                     }
                 }
             }
         }
     }
-    true
+    Ok(())
 }
 
 /// A per-size placement the row can honour. `tracks` of 0 means there is no
@@ -297,69 +369,219 @@ pub struct Expression {
     pub operands: Option<Vec<Value>>,
 }
 
-/// Reports what an expression gets wrong, and collects the context keys it reads.
+/// How deep a predicate tree may nest, mirroring `MDY_MAX_EXPRESSION_DEPTH`.
 ///
-/// An object operand is one of the four the contract names — `{path}`, `{self}`, `{root}`,
-/// `{context}` — or a nested expression. Anything else is a literal only when it is not an object:
-/// an object nobody declared is a reference that reads nothing, which is the shape a hand-written
-/// document gets wrong.
-fn validate_expression(
-    expression: &Expression,
+/// Well under serde_json's own recursion limit of 128, so a document nested past it is reported as
+/// a diagnostic rather than failing to deserialize.
+pub const EXPRESSION_MAX_DEPTH: usize = 32;
+
+/// How long a `matches` pattern may be, in UTF-16 code units as the TS reader counts them,
+/// mirroring `MDY_MAX_EXPRESSION_PATTERN_LENGTH`.
+pub const EXPRESSION_PATTERN_MAX_LENGTH: usize = 256;
+
+/// The members that make an object an operand of one kind.
+const OPERAND_MARKERS: [&str; 4] = ["path", "self", "root", "context"];
+
+/// Whether `value` is an expression: an object with an `op`, whatever the `op` holds.
+fn is_expression(value: &Value) -> bool {
+    value.as_object().is_some_and(|object| object.contains_key("op"))
+}
+
+/// The operands an expression object holds, and whether `operands` is present but not a list.
+///
+/// `operands` wins over `operand` when both are written, as it does in the TS reader.
+fn operands_of(expression: &serde_json::Map<String, Value>) -> (Vec<&Value>, bool) {
+    match expression.get("operands") {
+        Some(Value::Array(list)) => (list.iter().collect(), false),
+        Some(_) => (Vec::new(), true),
+        None => (expression.get("operand").into_iter().collect(), false),
+    }
+}
+
+/// The value of `marker` when `operand` is an object naming that marker and no other (ADR 0092).
+fn names_one_thing<'a>(operand: &'a Value, marker: &str) -> Option<&'a Value> {
+    let object = operand.as_object().filter(|object| !object.contains_key("op"))?;
+    let held = object.get(marker)?;
+    OPERAND_MARKERS
+        .iter()
+        .all(|each| *each == marker || !object.contains_key(*each))
+        .then_some(held)
+}
+
+/// Whether `operand` reaches for more than one of the four things an operand can name.
+fn claims_two_things(operand: &Value) -> bool {
+    operand.as_object().is_some_and(|object| {
+        !object.contains_key("op")
+            && OPERAND_MARKERS.iter().filter(|marker| object.contains_key(**marker)).count() > 1
+    })
+}
+
+fn path_ref(operand: &Value) -> Option<&str> {
+    names_one_thing(operand, "path").and_then(Value::as_str)
+}
+
+fn context_ref(operand: &Value) -> Option<&str> {
+    names_one_thing(operand, "context")
+        .and_then(Value::as_str)
+        .filter(|key| !key.is_empty())
+}
+
+fn is_flag_ref(operand: &Value, marker: &str) -> bool {
+    names_one_thing(operand, marker) == Some(&Value::Bool(true))
+}
+
+/// A path a condition may read: the empty path (the value the clause is read against), or dotted
+/// segments none of which is empty, a prototype key, whitespace-bearing or carrying the `__` id
+/// delimiter — the TS reader's `isSafeFieldPath`.
+fn readable_path(path: &str) -> bool {
+    path.is_empty()
+        || path.split('.').all(|segment| {
+            !matches!(segment, "" | "__proto__" | "prototype" | "constructor")
+                && !segment.contains(['\t', '\n', '\x0c', '\r', ' '])
+                && !segment.contains("__")
+        })
+}
+
+/// Length in UTF-16 code units, the unit every length cap in this contract is written in.
+fn utf16_len(text: &str) -> usize {
+    text.encode_utf16().count()
+}
+
+/// Why `expression` is not a usable expression; empty when it is.
+///
+/// Recursive, and bounded: past `EXPRESSION_MAX_DEPTH` the walk stops with a refusal, so a
+/// document cannot choose how deep this goes.
+fn expression_problems(expression: &Value, at: &str, depth: usize, out: &mut Vec<String>) {
+    let Some(object) = expression.as_object().filter(|object| object.contains_key("op")) else {
+        out.push(format!("{at}: expected an expression object with an \"op\""));
+        return;
+    };
+    if depth > EXPRESSION_MAX_DEPTH {
+        out.push(format!("{at}: nests deeper than {EXPRESSION_MAX_DEPTH} levels"));
+        return;
+    }
+    let op = object.get("op").and_then(Value::as_str);
+    if !op.is_some_and(|op| EXPRESSION_OPS.contains(&op)) {
+        out.push(format!("{at}: unknown operator"));
+    }
+    let (operands, malformed) = operands_of(object);
+    if malformed {
+        out.push(format!("{at}: \"operands\" must be a list of operands"));
+    } else if operands.is_empty() {
+        out.push(format!("{at}: the expression has no operands"));
+    }
+    if op == Some("matches") {
+        match operands.get(1).and_then(|pattern| pattern.as_str()) {
+            None => out.push(format!("{at}: \"matches\" needs a literal string pattern")),
+            Some(pattern) if utf16_len(pattern) > EXPRESSION_PATTERN_MAX_LENGTH => out.push(format!(
+                "{at}: \"matches\" pattern is longer than {EXPRESSION_PATTERN_MAX_LENGTH} characters"
+            )),
+            Some(pattern) => {
+                if !pattern_cost::compiles(pattern) {
+                    out.push(format!("{at}: \"matches\" pattern is not a valid regular expression"));
+                }
+                if let Some(refusal) = pattern_cost::pattern_refusal(pattern) {
+                    out.push(format!("{at}: \"matches\" pattern {refusal}"));
+                }
+            }
+        }
+    }
+    for (index, operand) in operands.iter().enumerate() {
+        let here = format!("{at}.operands[{index}]");
+        if is_expression(operand) {
+            expression_problems(operand, &here, depth + 1, out);
+        } else if claims_two_things(operand) {
+            out.push(format!(
+                "{here}: an operand names one of {{path}}, {{self}}, {{root}}, {{context}}, and this one names more than one"
+            ));
+        } else if let Some(path) = path_ref(operand) {
+            if !readable_path(path) {
+                out.push(format!("{here}: \"{path}\" is not a field path"));
+            }
+        } else if is_flag_ref(operand, "self")
+            || is_flag_ref(operand, "root")
+            || context_ref(operand).is_some()
+        {
+        } else if operand.is_object() || operand.is_array() {
+            // An object nobody declared is a reference that reads nothing, and a list is no operand
+            // the contract has; both are the shapes a hand-written document gets wrong.
+            out.push(format!(
+                "{here}: an object operand must be {{path}}, {{self}}, {{root}}, {{context}} or a nested expression"
+            ));
+        }
+    }
+}
+
+/// Every operand an expression reads that is not itself an expression, outermost first.
+fn expression_leaves(expression: &Value) -> Vec<&Value> {
+    let mut leaves = Vec::new();
+    let mut pending: Vec<(&Value, usize)> = match expression.as_object() {
+        Some(object) => operands_of(object).0.into_iter().map(|operand| (operand, 1)).collect(),
+        None => Vec::new(),
+    };
+    while let Some((operand, depth)) = pending.pop() {
+        if depth > EXPRESSION_MAX_DEPTH {
+            continue;
+        }
+        match operand.as_object().filter(|object| object.contains_key("op")) {
+            Some(object) => pending.extend(
+                operands_of(object).0.into_iter().map(|nested| (nested, depth + 1)),
+            ),
+            None => leaves.push(operand),
+        }
+    }
+    leaves
+}
+
+/// The field paths `expression` reads through `{path}`.
+fn expression_paths(expression: &Value) -> Vec<&str> {
+    expression_leaves(expression)
+        .into_iter()
+        .filter_map(path_ref)
+        .filter(|path| readable_path(path))
+        .collect()
+}
+
+/// The context keys `expression` reads through `{context}`.
+fn expression_context_keys(expression: &Value) -> Vec<&str> {
+    expression_leaves(expression).into_iter().filter_map(context_ref).collect()
+}
+
+/// Checks a condition written on a node and collects the context keys it reads.
+///
+/// An invalid clause is one diagnostic, and nothing further is read from it: what it references is
+/// not a dependency anything will have. A valid one may read `{path}` only from what encloses it —
+/// the enclosing group's children, or a row's own cells — and `{root}` is how it reaches the whole
+/// form.
+fn validate_clause(
+    clause: &Expression,
     path: &str,
+    scope: &HashSet<String>,
     out: &mut Vec<Diagnostic>,
     context_keys: &mut Vec<String>,
 ) {
-    if !EXPRESSION_OPS.contains(&expression.op.as_str()) {
+    let clause = serde_json::to_value(clause).unwrap_or(Value::Null);
+    let mut problems = Vec::new();
+    expression_problems(&clause, path, 0, &mut problems);
+    if !problems.is_empty() {
+        out.push(Diagnostic {
+            code: "MDY_DYNAMIC_INVALID_CONDITION",
+            path: path.into(),
+            message: problems.join("; "),
+        });
+        return;
+    }
+    let unreadable = expression_paths(&clause)
+        .into_iter()
+        .any(|read| !scope.contains(read.split('.').next().unwrap_or(read)));
+    if unreadable {
         out.push(diag(
-            "MDY_DYNAMIC_INVALID_CONDITION",
+            "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
             path,
-            "expression names an operator this contract does not have",
+            "condition reads a path nothing enclosing this clause declares; { \"root\": true } reaches the whole form",
         ));
     }
-    let mut operands: Vec<&Value> = Vec::new();
-    if let Some(operand) = &expression.operand {
-        operands.push(operand);
-    }
-    if let Some(list) = &expression.operands {
-        operands.extend(list.iter());
-    }
-    let mut pending: Vec<&Value> = operands;
-    while let Some(operand) = pending.pop() {
-        let Some(object) = operand.as_object() else { continue };
-        if let Some(op) = object.get("op") {
-            // A nested expression: the same rules, one level down, over the same stack.
-            if !op
-                .as_str()
-                .is_some_and(|op| EXPRESSION_OPS.contains(&op))
-            {
-                out.push(diag(
-                    "MDY_DYNAMIC_INVALID_CONDITION",
-                    path,
-                    "expression names an operator this contract does not have",
-                ));
-            }
-            if let Some(inner) = object.get("operand") {
-                pending.push(inner);
-            }
-            if let Some(list) = object.get("operands").and_then(Value::as_array) {
-                pending.extend(list.iter());
-            }
-            continue;
-        }
-        if let Some(key) = object.get("context").and_then(Value::as_str) {
-            context_keys.push(key.to_string());
-            continue;
-        }
-        if object.contains_key("path") || object.contains_key("self") || object.contains_key("root")
-        {
-            continue;
-        }
-        out.push(diag(
-            "MDY_DYNAMIC_INVALID_CONDITION",
-            path,
-            "an object operand must be {path}, {self}, {root}, {context} or a nested expression",
-        ));
-    }
+    context_keys.extend(expression_context_keys(&clause).into_iter().map(String::from));
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -367,6 +589,18 @@ pub struct Rule {
     pub effect: String,
     pub target: String,
     pub when: Condition,
+}
+
+/// A cross-field check that produces an error message, mirroring `MdyDynamicValidation`.
+///
+/// The form is invalid while `when` holds; `message` is what the user is told, attached to `target`
+/// when one is named and to the form otherwise.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Validation {
+    pub when: Expression,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -454,6 +688,10 @@ pub struct DynamicFormV2 {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rules: Vec<Rule>,
 
+    /// Cross-field checks. Carried so a document read and written back here keeps them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub validations: Vec<Validation>,
+
     /// Contract v4: the context keys this document's conditions read, declared for the host.
     #[serde(
         default,
@@ -484,7 +722,10 @@ const KINDS: &[&str] = &[
     "multiselect",
     "segmented",
     "datepicker",
+    "daterange",
     "timepicker",
+    "file",
+    "colors",
 ];
 const EFFECTS: &[&str] = &["visible", "hidden", "enabled", "disabled"];
 /// The two shapes a multiselect has, mirroring `MdyMultiselectMode`.
@@ -597,32 +838,44 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 "min cannot exceed max",
             ));
         }
-        if field
-            .validators
-            .as_ref()
-            .and_then(|v| v.pattern.as_ref())
-            .is_some_and(|p| p.len() > 256)
-        {
-            d.push(diag(
-                "MDY_DYNAMIC_PATTERN_TOO_LONG",
-                &format!("{path}/validators/pattern"),
-                "pattern exceeds 256 characters",
-            ));
+        if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
+            let at = format!("{path}/validators/pattern");
+            if utf16_len(pattern) > 256 {
+                d.push(diag("MDY_DYNAMIC_PATTERN_TOO_LONG", &at, "pattern exceeds 256 characters"));
+            } else if let Some(refusal) = pattern_cost::pattern_refusal(pattern) {
+                d.push(diag(
+                    "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
+                    &at,
+                    &format!("the pattern has {refusal}"),
+                ));
+            } else if !pattern_cost::compiles(pattern) {
+                // A pattern that does not compile is a rule that never runs; the TS reader names no
+                // code of its own for it, so it falls to the generic one.
+                d.push(diag(
+                    "MDY_DYNAMIC_INVALID_FIELD",
+                    &at,
+                    "pattern is not a regular expression this platform can compile, so the rule never runs",
+                ));
+            }
         }
     }
     let mut placed: Vec<String> = Vec::new();
     for (i, node) in form.layout.iter().enumerate() {
-        let mut refs: Vec<String> = placed.clone();
-        let before = refs.len();
-        if !layout_refs(node, 1, &mut refs) || refs[before..].iter().any(|v| !names.contains(v.as_str())) {
+        let path = format!("/layout/{i}");
+        // A section at the top of the layout sits in no column, so it has nothing to be placed in.
+        if let LayoutNode::Section { at: Some(_), .. } = node {
             d.push(diag(
-                "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
-                &format!("/layout/{i}"),
-                "layout references an unknown or already-placed field, or has an invalid shape",
+                "MDY_DYNAMIC_INVALID_LAYOUT",
+                &path,
+                "a section at the top of the layout occupies no column and cannot be placed",
             ));
             continue;
         }
-        placed = refs;
+        let mut refs: Vec<String> = placed.clone();
+        match layout_refs(node, 1, &names, &mut refs, form.version >= 3) {
+            Ok(()) => placed = refs,
+            Err(refusal) => d.push(refusal.diagnostic(&path)),
+        }
     }
     for (i, rule) in form.rules.iter().enumerate() {
         if !EFFECTS.contains(&rule.effect.as_str())
@@ -635,11 +888,89 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 &format!("/rules/{i}"),
                 "rule is unsupported or references an unknown field",
             ));
+            continue;
+        }
+        let kind = form
+            .fields
+            .iter()
+            .find(|field| field.name == rule.when.field)
+            .map(|field| field.kind.as_str());
+        if let Some(refusal) = rule_value_refusal(&rule.when.operator, rule.when.value.as_ref(), kind) {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_RULE",
+                &format!("/rules/{i}/when/value"),
+                refusal,
+            ));
+        }
+    }
+    for (i, validation) in form.validations.iter().enumerate() {
+        let at = format!("/validations/{i}");
+        if validation.message.trim().is_empty() {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_VALIDATION",
+                &at,
+                "validation needs a non-empty message",
+            ));
+            continue;
+        }
+        // A target names a field, as a rule's does: an unknown one attaches the error to nothing.
+        if validation
+            .target
+            .as_deref()
+            .is_some_and(|target| !validation_path(target, &names))
+        {
+            d.push(diag(
+                "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+                &at,
+                "validation target references an unknown field",
+            ));
+            continue;
+        }
+        let when = serde_json::to_value(&validation.when).unwrap_or(Value::Null);
+        let mut problems = Vec::new();
+        expression_problems(&when, &format!("{at}.when"), 0, &mut problems);
+        if !problems.is_empty() {
+            d.push(Diagnostic {
+                code: "MDY_DYNAMIC_INVALID_VALIDATION",
+                path: at,
+                message: problems.join("; "),
+            });
+            continue;
+        }
+        // A condition about a field the form does not have can never be satisfied. The empty path
+        // is refused here too: `{ "root": true }` is the operand that reads the whole form.
+        if expression_paths(&when)
+            .into_iter()
+            .any(|read| !validation_path(read, &names))
+        {
+            d.push(diag(
+                "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+                &at,
+                "validation condition references an unknown field",
+            ));
         }
     }
     let mut context_keys: Vec<String> = Vec::new();
     if let Some(schema) = &form.schema {
         validate_node(schema, "/schema", &mut d, &mut context_keys);
+    }
+    // A rule the document's version predates: `integer` arrived with v5, and a v2 document carrying
+    // it asks for a constraint no reader of that version emits.
+    if form.version < 5 {
+        let flat = form.fields.iter().map(|field| (field, format!("/fields/{}", field.name)));
+        let mut leaves = Vec::new();
+        if let Some(schema) = &form.schema {
+            collect_fields(schema, "/schema", &mut leaves);
+        }
+        for (field, path) in flat.chain(leaves) {
+            if field.validators.as_ref().is_some_and(|v| v.integer.is_some()) {
+                d.push(diag(
+                    "MDY_DYNAMIC_UNSUPPORTED_VERSION",
+                    &format!("{path}/validators/integer"),
+                    "integer arrived with version 5",
+                ));
+            }
+        }
     }
     // A key a condition reads and the document does not declare. The host is told what to supply by
     // `requiresContext` alone, so a key missing from it is one no host would think to pass — and a
@@ -683,9 +1014,12 @@ fn validate_node(
     out: &mut Vec<Diagnostic>,
     context_keys: &mut Vec<String>,
 ) {
-    let mut pending: Vec<(&DynamicNode, String)> = vec![(node, path.to_string())];
+    // Each node travels with the names a clause written on it may read: the enclosing group's
+    // children. The root and a collection's row start from nothing.
+    let mut pending: Vec<(&DynamicNode, String, HashSet<String>)> =
+        vec![(node, path.to_string(), HashSet::new())];
 
-    while let Some((node, path)) = pending.pop() {
+    while let Some((node, path, scope)) = pending.pop() {
         // A condition written on this node, whichever kind of node it is. Checked as a shape and
         // read for the context keys it names, which is what a document's `requiresContext` is held
         // against.
@@ -699,7 +1033,7 @@ fn validate_node(
         .zip(["when", "asyncWhen"])
         {
             if let Some(clause) = clause {
-                validate_expression(clause, &format!("{path}/{member}"), out, context_keys);
+                validate_clause(clause, &format!("{path}/{member}"), &scope, out, context_keys);
             }
         }
         match node {
@@ -709,6 +1043,7 @@ fn validate_node(
                 }
             }
             DynamicNode::Group { children, .. } => {
+                let here: HashSet<String> = children.keys().cloned().collect();
                 for (name, child) in children {
                     if name.is_empty()
                         || name.contains('.')
@@ -720,7 +1055,7 @@ fn validate_node(
                             "unsafe group child name",
                         ));
                     } else {
-                        pending.push((child, format!("{path}/children/{name}")));
+                        pending.push((child, format!("{path}/children/{name}"), here.clone()));
                     }
                 }
             }
@@ -748,7 +1083,7 @@ fn validate_node(
                         "minItems cannot exceed maxItems",
                     ));
                 }
-                pending.push((item, format!("{path}/item")));
+                pending.push((item, format!("{path}/item"), HashSet::new()));
             }
             DynamicNode::Record {
                 item,
@@ -775,10 +1110,88 @@ fn validate_node(
                         ));
                     }
                 }
-                pending.push((item, format!("{path}/item")));
+                pending.push((item, format!("{path}/item"), HashSet::new()));
             }
         }
     }
+}
+
+/// Every field a schema declares, with its path, over an explicit stack for the reason
+/// `validate_node` gives.
+fn collect_fields<'a>(node: &'a DynamicNode, path: &str, out: &mut Vec<(&'a Field, String)>) {
+    let mut pending: Vec<(&DynamicNode, String)> = vec![(node, path.to_string())];
+    while let Some((node, path)) = pending.pop() {
+        match node {
+            DynamicNode::Field { field, .. } => out.push((field, path)),
+            DynamicNode::Group { children, .. } => pending.extend(
+                children
+                    .iter()
+                    .map(|(name, child)| (child, format!("{path}/children/{name}"))),
+            ),
+            DynamicNode::Array { item, .. } | DynamicNode::Record { item, .. } => {
+                pending.push((item, format!("{path}/item")))
+            }
+        }
+    }
+}
+
+/// Why a rule's `value` cannot be read by its operator, or `None` when it can.
+///
+/// A unary operator reads no value, so one written beside it is ignored. Membership needs a list;
+/// ordering needs a number or a string, and on a date kind the string must be a full ISO date,
+/// because dates are compared as text and only one shape of text sorts as a date.
+fn rule_value_refusal(operator: &str, value: Option<&Value>, kind: Option<&str>) -> Option<&'static str> {
+    match operator {
+        "in" | "notIn" if !value.is_some_and(Value::is_array) => {
+            Some("membership operators test a list, and \"value\" is not one")
+        }
+        "greaterThan" | "greaterThanOrEqual" | "lessThan" | "lessThanOrEqual" => match value {
+            Some(Value::Number(_)) => None,
+            Some(Value::String(text)) => (matches!(kind, Some("datepicker" | "daterange"))
+                && !is_iso_date(text))
+            .then_some("ordering a date kind compares text, so \"value\" must be a full ISO date (yyyy-MM-dd)"),
+            _ => Some("ordering operators compare two numbers or two strings, and \"value\" is neither"),
+        },
+        _ => None,
+    }
+}
+
+/// `yyyy-MM-dd` naming a day the calendar has.
+fn is_iso_date(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    if bytes.len() != 10
+        || bytes[4] != b'-'
+        || bytes[7] != b'-'
+        || !bytes
+            .iter()
+            .enumerate()
+            .all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit())
+    {
+        return false;
+    }
+    let number = |range: std::ops::Range<usize>| text[range].parse::<u32>().unwrap_or(0);
+    let (year, month, day) = (number(0..4), number(5..7), number(8..10));
+    let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return false,
+    };
+    (1..=days).contains(&day)
+}
+
+/// A path a validation may name: a declared field, or a container something declared lives under.
+fn validation_path(path: &str, names: &HashSet<String>) -> bool {
+    if path.is_empty() {
+        return false;
+    }
+    if names.contains(path) {
+        return true;
+    }
+    let prefix = format!("{path}.");
+    names.iter().any(|name| name.starts_with(&prefix))
 }
 
 fn diag(code: &'static str, path: &str, message: &str) -> Diagnostic {

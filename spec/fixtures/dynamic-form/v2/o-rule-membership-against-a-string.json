@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "fields": [
+    {
+      "name": "a",
+      "kind": "text"
+    },
+    {
+      "name": "b",
+      "kind": "text"
+    }
+  ],
+  "rules": [
+    {
+      "effect": "visible",
+      "target": "b",
+      "when": {
+        "field": "a",
+        "operator": "in",
+        "value": "x"
+      }
+    }
+  ]
+}
