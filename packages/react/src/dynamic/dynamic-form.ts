@@ -71,11 +71,20 @@ export function useMdyDynamicForm(
   options?: UseMdyDynamicFormOptions,
 ): MdyTypedForm<MdyFormSchema> {
   const form = useMemo(
-    () => createForm(buildFlatFormSchema(fields), { ...options, autoActivate: false }),
+    () => {
+      const built = createForm(buildFlatFormSchema(fields), { ...options, autoActivate: false });
+      // The document's rules, before the first render reads the form. A server never runs an effect
+      // and a client paints before its effects, so a rule applied only below would be missing from
+      // both: the field not required, the form valid, and the server's markup unlike the client's.
+      applyDynamicValidators(built, fields);
+      return built;
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- schema is intentionally built once, like useMdyForm's own schema thunk
     [],
   );
 
+  // And again when the document's rules change. Applied under one key, so the first run repeats
+  // what the factory already did rather than adding to it.
   useEffect(() => {
     applyDynamicValidators(form, fields);
   }, [fields, form]);

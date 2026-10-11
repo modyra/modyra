@@ -106,6 +106,10 @@ export function createFieldStore(
       handle.valid,
       handle.pending,
       handle.disabled,
+      // Returned for `aria-required` and native bounds on the consumer's control, so a rule that
+      // changes them has to re-render it like any other member the hook reads.
+      handle.required,
+      handle.constraints,
     ],
     getFieldHandleOwner(handle),
   );
