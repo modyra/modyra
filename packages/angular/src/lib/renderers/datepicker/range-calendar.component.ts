@@ -1,5 +1,5 @@
 import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
-import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
+import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths, withinTheGrid } from "../../core/calendar-view-state";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -295,6 +295,8 @@ export class MdyRangeCalendarComponent {
       }
       return;
     }
+    // The day keys are the grid's: a header button's Enter or Space is that button's click.
+    if (event.key !== "Escape" && !withinTheGrid(event)) return;
     const focused = this.focusedDate();
     const next: CalendarDate | null = calendarKeyboardTarget(
       event.key,

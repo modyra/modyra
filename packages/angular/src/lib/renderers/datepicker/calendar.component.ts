@@ -22,7 +22,7 @@ import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
+import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths, withinTheGrid } from "../../core/calendar-view-state";
 
 @Component({
   selector: "mdy-calendar",
@@ -237,6 +237,9 @@ export class MdyCalendarComponent {
       }
       return;
     }
+    // The day keys are the grid's. This listener holds the header too, and a header button's Enter
+    // or Space read as a day key had its click prevented and picked the day instead.
+    if (event.key !== "Escape" && !withinTheGrid(event)) return;
     const focused = this.focusedDate();
 
     switch (event.key) {
