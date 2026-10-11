@@ -505,7 +505,10 @@ function evaluateAt(
       // submit button included. It decides nothing instead.
       // The pattern must be a literal. Allowing a field's value here would let a form's *data*
       // choose the regular expression, which is how a catastrophically backtracking pattern gets in.
-      const source = typeof b === "string" ? b : "";
+      // A pattern that is not text is not a pattern. Read as the empty one it matched every value,
+      // so a malformed condition answered in the direction that opens.
+      if (typeof b !== "string") return false;
+      const source = b;
       // And the same cost gate a document's `validators.pattern` passes (ADR 0050). A condition is
       // the other door a pattern arrives through, and it is read every time the form is read — so a
       // shape that backtracks exponentially does not make a slow form, it makes one that stops

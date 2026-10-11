@@ -82,10 +82,12 @@ test("a form's data cannot choose the regular expression", () => {
   // `matches` takes its pattern from the literal only. Were a path allowed here, a value in the
   // document could supply a catastrophically backtracking pattern.
   //
-  // The proof is that a data-supplied pattern has *no effect*: `^Z` would not match "IT", yet the
-  // result is the empty pattern's, which matches everything. The value was never consulted.
+  // The proof is that a data-supplied pattern has *no effect*: `^I` would match "IT", yet the
+  // answer is `false`, because a pattern that is not a literal is not a pattern and decides nothing.
+  // Read as the empty pattern instead, it matched every value and opened whatever it governed.
   const fromData = { op: "matches", operands: [{ path: "country" }, { path: "attackerControlled" }] };
-  assert.equal(evaluateExpression(fromData, { country: "IT", attackerControlled: "^Z" }), true);
+  assert.equal(evaluateExpression(fromData, { country: "IT", attackerControlled: "^I" }), false);
+  assert.equal(evaluateExpression({ op: "matches", operands: [{ path: "country" }, 7] }, { country: "IT" }), false);
   // And a literal pattern really is applied, so the case above is not passing for want of any regex.
   assert.equal(evaluateExpression({ op: "matches", operands: [{ path: "country" }, "^Z"] }, { country: "IT" }), false);
 });
@@ -620,4 +622,12 @@ test("a document says when, and the clause is read against what encloses it", as
   // A context key the host does not supply refuses the build: a condition that cannot be read
   // decides false, and the field it guards would never appear with nothing said.
   assert.throws(() => buildDynamicFormSchema(document, {}), /reads context "role"/);
+});
+
+test("a condition deeper than the limit is refused where documents enter", () => {
+  // The evaluator answers `true` past the limit (ADR 0218); what keeps a document from reaching it
+  // is this refusal, which the parser applies to every condition a document carries.
+  const nest = (depth) => (depth === 0 ? { op: "isEmpty", operand: { path: "a" } } : { op: "not", operand: nest(depth - 1) });
+  assert.deepEqual(validateExpression(nest(32), "when"), []);
+  assert.match(validateExpression(nest(33), "when").join("\n"), /nests deeper than 32/);
 });
