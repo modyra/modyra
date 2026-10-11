@@ -11,11 +11,11 @@
  */
 import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
 import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
-  keyBindingFor,
-  type MdyWidgetKind, presentationClass,
+  keyBindingFor, partClasses, projectCalendarPeriodCellA11y, projectCalendarViewA11y,
+  type MdyCalendarViewMode, type MdyWidgetKind, presentationClass,
 } from "@modyra/widgets";
 import type { MdyDatepickerFieldCell, MdyDaterangeFieldCell, MdyPartContract } from "@modyra/widgets";
-import type { MdyDateLocale } from "@modyra/core/datetime";
+import { calendarYearRange, isMonthOutOfRange, isYearOutOfRange, type CalendarDate, type MdyDateLocale } from "@modyra/core/datetime";
 import { partProps, type MdyDeclaredPart } from "./part.js";
 
 /** Seven per week, and the calendar hands back six weeks of them. */
@@ -111,6 +111,24 @@ export const drawCalendar = (options: {
     readonly nextLabel: string;
     readonly toggleLabel: string;
   };
+  /**
+   * Which of the three views is showing, and what choosing in the other two asks of the controller.
+   *
+   * The months and the years replace the day grid rather than sitting beside it, so the header's
+   * press lands somewhere a person can see. Both views are drawn whether they are showing or not:
+   * an element that only exists while shown is one no theme and no test can name while it is not.
+   * The year and month are the ones on screen, so a choice lands where the person was looking.
+   */
+  readonly view?: {
+    readonly mode: MdyCalendarViewMode;
+    readonly widgetId: string;
+    readonly year: number;
+    readonly month: number;
+    readonly min: CalendarDate | null;
+    readonly max: CalendarDate | null;
+    readonly onPickMonth: (month: number) => void;
+    readonly onPickYear: (year: number) => void;
+  };
   readonly onPick: (iso: string) => void;
   readonly onPreview?: (iso: string | null) => void;
   /** The id whatever opens this panel points `aria-controls` at, where it names the panel itself. */
@@ -139,6 +157,10 @@ export const drawCalendar = (options: {
   const cls = (part: string): string => calendarClassesOf(kind, part);
   const role = (part: string): string | undefined => calendarRoleOf(kind, part);
   const pres = (name: string): string => presentationOf(kind, name);
+  const mode: MdyCalendarViewMode = options.view?.mode ?? "days";
+  // Paging belongs to the day view: in the other two the arrows would move a month nobody is
+  // looking at.
+  const inDays = mode === "days";
 
   const weeks: VNode[] = [];
   for (let start = 0; start < cells.length; start += DAYS_IN_WEEK) {
@@ -176,7 +198,7 @@ export const drawCalendar = (options: {
     }, [
       ...(options.heading === undefined ? [] : [h("div", { class: cls("dialogHeader") }, [
         h("button", {
-          type: "button", class: `${pres("navButton")} ${pres("navButton")}--previous`,
+          type: "button", class: `${pres("navButton")} ${pres("navButton")}--previous`, hidden: !inDays,
           "aria-label": options.heading.previousLabel, onClick: options.heading.onPreviousMonth,
         }),
         h("button", {
@@ -184,18 +206,75 @@ export const drawCalendar = (options: {
           "aria-label": options.heading.toggleLabel, onClick: options.heading.onToggleView,
         }, [h("span", { class: pres("title"), id: options.heading.headingId }, options.heading.title)]),
         h("button", {
-          type: "button", class: `${pres("navButton")} ${pres("navButton")}--next`,
+          type: "button", class: `${pres("navButton")} ${pres("navButton")}--next`, hidden: !inDays,
           "aria-label": options.heading.nextLabel, onClick: options.heading.onNextMonth,
         }),
       ])]),
-      h("div", partProps(parts.grid, { class: cls("grid") }), [
+      h("div", partProps(parts.grid, { class: cls("grid"), hidden: !inDays }), [
         h("div", { class: cls("weekdays"), role: role("weekdays") },
           weekdayLabels(options.locale).map((name) =>
             h("span", { class: cls("weekday"), role: role("weekday") }, name))),
         ...weeks,
       ]),
+      ...(options.view === undefined ? [] : drawPeriodViews(kind, options.locale, options.view)),
     ]),
   ])]);
+};
+
+/**
+ * The month and year views, drawn from the contract's projection: which cells there are, which is
+ * chosen, which the bounds refuse and what each announces are its answers, not this renderer's.
+ *
+ * Only the view on screen holds cells. The years run to two centuries where no bound narrows them,
+ * and two hundred buttons kept in a hidden view are two hundred buttons rebuilt on every render.
+ */
+const drawPeriodViews = (
+  kind: MdyCalendarKind,
+  locale: MdyDateLocale,
+  view: NonNullable<Parameters<typeof drawCalendar>[0]["view"]>,
+): VNode[] => (["months", "years"] as const).map((own) => {
+  const shown = view.mode === own;
+  const values = !shown ? [] : own === "months"
+    ? Array.from({ length: 12 }, (_, index) => index + 1)
+    : [...calendarYearRange(view.year, view.min, view.max)];
+  const current = own === "months" ? view.month : view.year;
+  return h("div", partProps(projectCalendarViewA11y(own, { kind, widgetId: view.widgetId }) ?? undefined, { hidden: !shown }),
+    values.map((value) => {
+      const label = own === "months" ? (locale.monthNamesShort[value - 1] ?? String(value)) : String(value);
+      return h("button", partProps(projectCalendarPeriodCellA11y(own, {
+        value,
+        label,
+        selected: value === current,
+        disabled: own === "months"
+          ? isMonthOutOfRange(view.year, value, view.min, view.max)
+          : isYearOutOfRange(value, view.min, view.max),
+      }, { kind, widgetId: view.widgetId }), {
+        type: "button",
+        onClick: () => (own === "months" ? view.onPickMonth(value) : view.onPickYear(value)),
+      }), label);
+    }));
+});
+
+/**
+ * The chosen year, brought into sight when the years open.
+ *
+ * The run is two centuries long where nothing bounds it, and it opens scrolled to its top: without
+ * this, a person who pressed the header to change the year meets 1926 and has to hunt for the one
+ * they were on.
+ */
+export const followTheChosenYear = (
+  kind: MdyCalendarKind,
+  widgetId: string,
+  read: () => { readonly open: boolean; readonly mode: MdyCalendarViewMode },
+): void => {
+  watch(() => [read().open, read().mode], async ([open, mode]) => {
+    if (open !== true || mode !== "years") return;
+    await nextTick();
+    const host = document.getElementById(`${widgetId}__years`);
+    // Guarded: a document without layout has no `scrollIntoView`.
+    host?.querySelector<HTMLElement>(`.${partClasses(kind, "yearCell", { selected: true }).join(".")}`)
+      ?.scrollIntoView?.({ block: "center" });
+  });
 };
 
 /**

@@ -24,7 +24,7 @@ import {
 } from "@modyra/widgets";
 import type { MdyDateRangeValue } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
-import { buildDateLocale, formatLocalizedDate } from "@modyra/core/datetime";
+import { buildDateLocale, formatLocalizedDate, parseIsoDate } from "@modyra/core/datetime";
 import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
@@ -36,7 +36,7 @@ import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
 import { useAnchoredPanel } from "./anchored-panel.js";
 import { useLightDismiss } from "./light-dismiss.js";
-import { calendarClassesOf, drawCalendar, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
+import { calendarClassesOf, drawCalendar, followTheChosenYear, followTheReadingPosition, forwardCalendarKeys } from "./calendar.js";
 import { useCommands } from "./commands.js";
 import { useMessages } from "./locale.js";
 import { widgetIdOf } from "./widget-id.js";
@@ -148,6 +148,7 @@ export const MdyDaterangeField = defineComponent({
       open: state.value.open,
       focusedDate: state.value.focusedDate,
     }));
+    followTheChosenYear("daterange", widgetId.value, () => ({ open: state.value.open, mode: state.value.viewMode }));
 
     const onKeydown = forwardCalendarKeys(
       "daterange",
@@ -237,6 +238,16 @@ export const MdyDaterangeField = defineComponent({
           nextLabel: messages.value.datepickerNextMonth,
           toggleLabel: messages.value.datepickerChangeView(
             `${dateLocale.monthNamesLong[state.value.viewMonth - 1]} ${state.value.viewYear}`),
+        },
+        view: {
+          mode: state.value.viewMode,
+          widgetId: widgetId.value,
+          year: state.value.viewYear,
+          month: state.value.viewMonth,
+          min: parseIsoDate(props.minDate ?? null),
+          max: parseIsoDate(props.maxDate ?? null),
+          onPickMonth: (month) => run(controller.dispatch({ type: "select-month", month })),
+          onPickYear: (year) => run(controller.dispatch({ type: "select-year", year })),
         },
         onPick: (iso) => run(controller.dispatch({ type: "select-date", iso })),
         onPreview: (iso) => run(controller.dispatch({ type: "preview", iso })),
