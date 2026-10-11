@@ -19,7 +19,7 @@ import { engageValue, fieldCanBeInvalid } from "./verdict.js";
 import { keyBindingFor } from "../transitions.js";
 import { blocksValueChange } from "../interactivity.js";
 import { closeOverlayWhenOutOfPlay } from "./leaving-play.js";
-import { moveCalendarFocus } from "./calendar-view.js";
+import { moveCalendarFocus, showCalendarMonth } from "./calendar-view.js";
 import { closePickerPanel } from "./picker-close.js";
 import type { MdyReactivity, MdySignal } from "@modyra/core";
 import { observerFor } from "@modyra/core";
@@ -104,6 +104,10 @@ export function createDatepickerFieldController(
 
   function moveFocus(target: CalendarDate): void {
     moveCalendarFocus({ focusedDate, viewYear, viewMonth }, target);
+  }
+
+  function showMonth(year: number, month: number): void {
+    showCalendarMonth({ focusedDate, viewYear, viewMonth }, year, month, [handle.value()]);
   }
 
   const state: MdySignal<MdyDatepickerFieldState> = reactivity.computed(() => {
@@ -280,8 +284,7 @@ export function createDatepickerFieldController(
         return closePicker(intent.restoreFocus ?? false);
       case "navigate-month": {
         const next = addMonths({ year: viewYear(), month: viewMonth(), day: 1 }, intent.delta);
-        viewYear.set(next.year);
-        viewMonth.set(next.month);
+        showMonth(next.year, next.month);
         return [];
       }
       case "set-view-mode": {
@@ -289,13 +292,13 @@ export function createDatepickerFieldController(
         return [];
       }
       case "select-month": {
-        viewMonth.set(intent.month);
+        showMonth(viewYear(), intent.month);
         // Choosing narrows: a month lands on its days, so the funnel ends where the picking is.
         viewMode.set(calendarViewAfterPick("months"));
         return [];
       }
       case "select-year": {
-        viewYear.set(intent.year);
+        showMonth(intent.year, viewMonth());
         viewMode.set(calendarViewAfterPick("years"));
         return [];
       }
