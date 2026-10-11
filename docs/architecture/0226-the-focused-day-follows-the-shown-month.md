@@ -102,6 +102,32 @@ one visible tab stop. All 8 cases pass with the rule and all 8 fail without it. 
 the press is a click. A keyboard press is not asserted, because Enter and Space on these buttons
 already misbehave in Vue, Angular and Lit on the base commit, for reasons unrelated to this rule.
 
+## Amendment, 2026-10-11: the day keys are the grid's
+
+The keyboard cases left out above. In Lit, Vue and Angular the calendar's key listener covers the
+whole panel, header included. Enter or Space on Next was therefore read as a day key: its default (the
+button's click) was prevented, so the page did not turn, and the focused day was committed, so the
+popup closed. Measured on Chromium on the base commit, 12 of the 16 datepicker keyboard cases failed,
+11 of them because the popup closed. Plain passed because it listens on the grid only.
+
+Rule: the keys that move and commit a day (arrows, paging keys, Home/End, Enter, Space) reach the
+controller only when pressed inside the day grid. Elsewhere in the panel a press keeps its native
+meaning, with three exceptions that are unchanged: Escape, Tab (where a renderer already forwarded
+it) and the step between views. This is the rule Vue already applied to the month and year views,
+extended to the header. Lit gates the day section of `calendarGridKey`, Vue `forwardCalendarKeys`,
+and Angular both calendars' `onKeydown` through `withinTheGrid`.
+
+One consequence is visible: an arrow pressed on a header button no longer moves the focused day,
+which matches Plain.
+
+Verification: `a-page-turn-keeps-the-button.spec.ts` presses Enter and Space twice on Next and
+Previous of a datepicker and a daterange on every host. The popup stays open, the page turns, the
+grid keeps one tab stop and the keyboard stays on the button. 32 cases pass with the rule. Reverting
+it in Lit and in Angular's range calendar alone turned exactly those 12 cases red (8 Lit, 4 Angular
+daterange). Chromium only.
+
+Not changed: Tab from a header button. In Lit it is a panel-wide dismissal and closes the popup.
+
 ## Security and privacy
 
 None. This is view state inside a field's popup. No data crosses a boundary, and no value is

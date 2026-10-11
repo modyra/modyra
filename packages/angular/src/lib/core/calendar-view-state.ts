@@ -157,6 +157,17 @@ export function heldOffTheDays(host: HTMLElement): boolean {
 }
 
 /**
+ * Whether a key was pressed on the days, rather than elsewhere in the calendar.
+ *
+ * The calendar's day keys include Enter and Space, which are also every header button's click: read
+ * from a button, they pick the focused day instead of doing what the button says.
+ */
+export function withinTheGrid(event: KeyboardEvent): boolean {
+  const target = event.target;
+  return target instanceof Element && target.closest('[role="grid"]') !== null;
+}
+
+/**
  * Puts the keyboard on the months a chosen year has just narrowed to: the shown month, or the first
  * the bounds allow.
  *

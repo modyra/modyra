@@ -415,6 +415,15 @@ export const forwardCalendarKeys = (
   const inPeriodView = target instanceof Element && (["monthPicker", "yearPicker"] as const)
     .some((part) => target.closest(`.${partClasses(kind, part).join(".")}`) !== null);
   if (inPeriodView && event.key !== "Escape") return;
+  /**
+   * The header's buttons are native buttons as well, and the day keys are the grid's.
+   *
+   * Read as a day key, Enter or Space on Next had its click prevented and committed the day: the
+   * page did not turn and the panel closed. Escape and Tab are the panel's wherever they are pressed.
+   */
+  const outsideTheDays = insidePanel && !inPeriodView && target instanceof Element
+    && target.closest(`.${partClasses(kind, "grid").join(".")}`) === null;
+  if (outsideTheDays && event.key !== "Escape" && event.key !== "Tab") return;
 
   const before = isOpen();
   dispatch({

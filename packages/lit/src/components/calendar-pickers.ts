@@ -171,6 +171,11 @@ export function calendarGridKey(
     return;
   }
   if (viewMode !== "days") return;
+  // The day keys are the grid's. This listener holds the whole panel, and a header button's Enter
+  // or Space read as a day key had its click prevented and picked the day instead: the page did not
+  // turn and the popup closed under a person paging through it.
+  const target = event.target;
+  if (!(target instanceof Element) || target.closest(`.${partClasses(kind, "grid").join(".")}`) === null) return;
   // Only the keys this kind declares on a day, and the part is what makes that answerable: a
   // reading position standing on a cell answers what `gridcell` declares, which is not what the
   // control answers. Everything else is the platform's — typed unprevented, so a person can still
