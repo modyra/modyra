@@ -6,4 +6,6 @@ In `MdyDatepickerField` and `MdyDaterangeField`, Enter and Space on a month or a
 
 Only the view on screen contains its month or year buttons. While the days are showing, the months and years views are present but empty, so a test or a script that looks for year buttons has to open the years view first.
 
+Inside the months and years views the arrow keys do nothing yet: move between months or years with Tab and Shift+Tab, and choose with Enter or Space.
+
 Migration: none.
