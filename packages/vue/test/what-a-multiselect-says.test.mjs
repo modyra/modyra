@@ -107,17 +107,112 @@ test("a quantity that reaches its floor says so", async () => {
   fixture.dispose?.();
 });
 
+const { chipMovedAnnouncement, quantityAnnouncement, MDY_I18N_MESSAGES_DEFAULT: words } = await import("@modyra/widgets");
 
+const chipsOf = (root) => [...root.querySelectorAll(
+  partClasses("multiselect", "chip").map((one) => `.${one}`).join(""),
+)];
+const labelsOf = (root) => chipsOf(root).map((chip) => chip.getAttribute("aria-label") ?? chip.textContent ?? "");
+const press = async (fixture, element, key) => {
+  element.dispatchEvent(new window.KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+  await fixture.settle?.();
+};
 /**
- * The sentence for a chip that moved is **wired and not asserted here**, and that is said rather
- * than left to be discovered.
- *
- * The contract's gesture for it is `ArrowRight` on a chip with the panel closed, and reordering that
- * way needs the roving focus a real page gives — this fixture dispatches a key at an element without
- * it, and nothing moves. A bench that pressed the handle beside the chip instead *passed*, because
- * the sentence for a selection change is already wired and satisfied "something new was said": one
- * door answering for another.
- *
- * So it is left to the browser tier, which drives real focus. Asserting it from here would mean
- * asserting a gesture this fixture cannot perform.
+ * Two values held and the panel shut. The chip's keys are declared `when: "closed"`: with the list
+ * still showing, the arrows are the list's, and a chip test run with it open measures the list.
  */
+const withTwoHeldShut = async (mountedAs) => {
+  const fixture = await withOneHeld(mountedAs);
+  const trigger = fixture.root.querySelector('[aria-haspopup]');
+  assert.ok(trigger, "no trigger to close the panel from");
+  await press(fixture, trigger, "Escape");
+  assert.equal(trigger.getAttribute("aria-expanded"), "false", "the panel did not close, so the chip's keys are not in play");
+  return fixture;
+};
+/** Disposed whatever the outcome: a fixture left mounted keeps its panel in the document for the next test. */
+const using = async (fixture, body) => {
+  try { await body(fixture); } finally { fixture.dispose?.(); }
+};
+
+test("a quantity stepped from the keyboard says which value and how many", async () => {
+  // "Something new was said" is satisfied by any sentence, including one naming the wrong value or a
+  // stale count. Built with the policy and the table the renderer is meant to use, so this asserts
+  // the act was described, not which words a language picks.
+  await using(await withTwoHeldShut({ variant: "multi" }), async (fixture) => {
+  const [chip] = chipsOf(fixture.root);
+  assert.ok(chip, "no chip to step");
+  await press(fixture, chip, "ArrowUp");
+  await press(fixture, chip, "ArrowUp");
+  const expected = quantityAnnouncement("First", 3, {
+    settled: words.quantitySettled, atMinimum: words.quantityAtMinimum,
+  });
+  assert.equal(said(fixture.root), expected);
+  await press(fixture, chipsOf(fixture.root)[0], "ArrowDown");
+  await press(fixture, chipsOf(fixture.root)[0], "ArrowDown");
+  assert.equal(said(fixture.root), quantityAnnouncement("First", 1, {
+    settled: words.quantitySettled, atMinimum: words.quantityAtMinimum,
+  }));
+  });
+});
+
+test("a chip is picked up, carried and put down from the keyboard", async () => {
+  await using(await withTwoHeldShut({ variant: "multi", config: { reorderable: true } }), async (fixture) => {
+  const before = labelsOf(fixture.root);
+  assert.equal(before.length, 2, "two chips are needed to carry one past the other");
+
+  await press(fixture, chipsOf(fixture.root)[0], "Enter");
+  assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionGrabbed, "First", 1, 2));
+  assert.equal(labelsOf(fixture.root).join("|"), before.join("|"), "picking a chip up moved it");
+
+  await press(fixture, chipsOf(fixture.root)[0], "ArrowRight");
+  assert.equal(labelsOf(fixture.root).join("|"), [before[1], before[0]].join("|"), "a held chip did not travel");
+  assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionMoved, "First", 2, 2));
+
+  await press(fixture, chipsOf(fixture.root)[1], "Enter");
+  assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionDropped, "First", 2, 2));
+
+  // Down, the arrows walk the strip again rather than carrying.
+  await press(fixture, chipsOf(fixture.root)[1], "ArrowLeft");
+  assert.equal(labelsOf(fixture.root).join("|"), [before[1], before[0]].join("|"), "a dropped chip still travels");
+  });
+});
+
+test("Escape puts a held chip back where it was picked up", async () => {
+  await using(await withTwoHeldShut({ variant: "multi", config: { reorderable: true } }), async (fixture) => {
+  const before = labelsOf(fixture.root);
+  await press(fixture, chipsOf(fixture.root)[0], "Enter");
+  await press(fixture, chipsOf(fixture.root)[0], "ArrowRight");
+  await press(fixture, chipsOf(fixture.root)[1], "Escape");
+  assert.equal(labelsOf(fixture.root).join("|"), before.join("|"), "Escape left the chip where it was carried");
+  assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionReturned, "First", 1, 2));
+
+  // Nothing held: the same key is not the chip's and must reach whatever else answers it.
+  const free = new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+  chipsOf(fixture.root)[0].dispatchEvent(free);
+  assert.equal(free.defaultPrevented, false, "Escape with nothing held was taken by the chip");
+  });
+});
+
+test("a field that does not reorder holds nothing", async () => {
+  await using(await withTwoHeldShut({ variant: "multi" }), async (fixture) => {
+  const before = labelsOf(fixture.root);
+  const said0 = said(fixture.root);
+  await press(fixture, chipsOf(fixture.root)[0], "Enter");
+  await press(fixture, chipsOf(fixture.root)[0], "ArrowRight");
+  assert.equal(labelsOf(fixture.root).join("|"), before.join("|"), "a chip moved on a field that offers no reordering");
+  assert.equal(said(fixture.root), said0, "a grab was announced on a field that offers no reordering");
+  });
+});
+
+test("a chip moved by its pointer handle is the one the sentence names", async () => {
+  // Two neighbours that swap differ at both places, so a sentence read off the two orders can name
+  // either. Moving the first chip later must name the first chip, not the one it passed.
+  await using(await withTwoHeldShut({ variant: "multi", config: { reorderable: true } }), async (fixture) => {
+    const later = chipsOf(fixture.root)[0].querySelector(`button[aria-label="${words.chipMoveLaterLabel.replace("{value}", "First")}"]`)
+      ?? [...chipsOf(fixture.root)[0].querySelectorAll(partClasses("multiselect", "chipMove").map((one) => `.${one}`).join(""))].at(-1);
+    assert.ok(later, "the first chip offers no way to move it later");
+    later.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
+    await fixture.settle?.();
+    assert.equal(said(fixture.root), chipMovedAnnouncement(words.selectionMoved, "First", 2, 2));
+  });
+});

@@ -25,6 +25,7 @@ import {
   MDY_I18N_MESSAGES_DEFAULT,
   multiselectAnnouncement,
   chipMovedAnnouncement,
+  stateClass,
   quantityAnnouncement,
   chipActionName,
   chosenKeyOrder,
@@ -198,6 +199,14 @@ export const MdyMultiselectField = defineComponent({
     let orderLast = saidLast.join("\u0000");
     let countsLast = new Map(controller.state().counts);
     const announcement = ref("");
+    /**
+     * The sentence the next reorder is told with.
+     *
+     * The watcher sees a reorder only as two orders, and two neighbours that swap differ at both
+     * places: read from the order alone, carrying the first chip later is told as the second one
+     * moving earlier. Whoever moves a chip knows which, and says so here before dispatching.
+     */
+    let reorderSays: string | null = null;
 
     const watching = reactivity.effect(() => {
       state.value = controller.state();
@@ -229,11 +238,12 @@ export const MdyMultiselectField = defineComponent({
         // two policies never speak over each other about one act.
         const moved = chosen.find((key, at) => orderLast.split("\u0000")[at] !== key);
         if (moved !== undefined) {
-          announcement.value = chipMovedAnnouncement(
+          announcement.value = reorderSays ?? chipMovedAnnouncement(
             MDY_I18N_MESSAGES_DEFAULT.selectionMoved,
             labelOf(moved), chosen.indexOf(moved) + 1, chosen.length,
           );
         }
+        reorderSays = null;
         orderLast = chosen.join("\u0000");
       } else {
         // A quantity that settled. Nothing is said for one that reached zero: the value is gone, and
@@ -350,10 +360,32 @@ export const MdyMultiselectField = defineComponent({
     };
 
     /**
+     * The chip a person is carrying, and where they picked it up from.
+     *
+     * A grab is a state and the arrows read it: the same key walks the strip when nothing is held and
+     * carries what is held when something is. `from` is what `Escape` puts back — a person who picks
+     * up the wrong chip has to be able to abandon the move, not undo it afterwards. A ref, because the
+     * held chip is drawn differently.
+     */
+    const grabbed = shallowRef<{ readonly key: string; readonly from: number } | null>(null);
+    const labelOfKey = (key: string): string =>
+      state.value.options.find((option) => keyOf(option) === key)?.label ?? key;
+    /** Move one chip, told as `sentence` or, by default, as that chip moving. */
+    const reorder = (key: string, to: number, sentence?: string): void => {
+      const size = chosenKeyOrder(state.value).length;
+      reorderSays = sentence
+        ?? chipMovedAnnouncement(MDY_I18N_MESSAGES_DEFAULT.selectionMoved, labelOfKey(key), to + 1, size);
+      run(controller.dispatch({ type: "move-selected", optionKey: key, to }));
+      // A refused move reorders nothing, and a sentence left waiting would describe the next one.
+      if (chosenKeyOrder(controller.state()).indexOf(key) !== to) reorderSays = null;
+    };
+
+    /**
      * The chip's own keys, as the contract declares them on the chip.
      *
      * A counter chip's steppers are pointer affordances, so `step` is the only way to its number
-     * without a mouse; `move` walks the strip and `remove` takes the value off with the direction
+     * without a mouse; `move` walks the strip, or carries the chip while it is held; `grab` picks it
+     * up and puts it down and `cancel` puts it back; `remove` takes the value off with the direction
      * every text field gives `Backspace` and `Delete`. Answered here and stopped: left to bubble, the
      * field's own handler read `ArrowDown` as "open" and the chip never heard it. A key pressed on a
      * control inside the chip is that control's.
@@ -363,6 +395,8 @@ export const MdyMultiselectField = defineComponent({
       const binding = keyBindingFor("multiselect", event, state.value.open, "chip");
       if (!binding) return;
       const order = chosenKeyOrder(state.value);
+      const at = order.indexOf(key);
+      const holding = grabbed.value?.key === key;
       switch (binding.intent) {
         case "step":
           // The binding requires a countable field, and the lookup does not filter by capability: a
@@ -374,14 +408,46 @@ export const MdyMultiselectField = defineComponent({
           focusChip((state.value.counts.get(key) ?? 0) > 0 ? key : chipFocusAfterRemoval(order, key));
           break;
         case "move": {
-          const at = order.indexOf(key);
           const to = binding.toEnd
             ? (binding.by === -1 ? 0 : order.length - 1)
             : Math.max(0, Math.min(order.length - 1, at + (binding.by ?? 1)));
+          // Held, the arrows carry the chip and the state watcher says where it landed; free, they
+          // walk the strip.
+          if (holding) {
+            if (to !== at) reorder(key, to);
+            focusChip(key);
+            break;
+          }
           focusChip(order[to] ?? key);
           break;
         }
+        // Announced both ways, because a state nobody is told about is one they cannot know they are
+        // in: the arrows would carry a chip they believe is still walking the strip.
+        case "grab": {
+          // The binding requires a reorderable field, which the lookup does not check.
+          if (!props.reorderable) return;
+          grabbed.value = holding ? null : { key, from: at };
+          announcement.value = chipMovedAnnouncement(
+            holding ? MDY_I18N_MESSAGES_DEFAULT.selectionDropped : MDY_I18N_MESSAGES_DEFAULT.selectionGrabbed,
+            labelOfKey(key), at + 1, order.length,
+          );
+          break;
+        }
+        case "cancel": {
+          // Only while this chip is held; otherwise the key belongs to whatever else answers it.
+          if (!holding || grabbed.value === null) return;
+          const home = grabbed.value.from;
+          grabbed.value = null;
+          const returned = chipMovedAnnouncement(
+            MDY_I18N_MESSAGES_DEFAULT.selectionReturned, labelOfKey(key), home + 1, order.length,
+          );
+          if (home === at) announcement.value = returned;
+          else reorder(key, home, returned);
+          focusChip(key);
+          break;
+        }
         case "remove": {
+          if (holding) grabbed.value = null;
           const next = chipFocusAfterRemoval(order, key, event.key === "Backspace" ? "backward" : "forward");
           run(controller.dispatch({ type: "toggle", optionKey: key }));
           focusChip(next);
@@ -515,7 +581,7 @@ export const MdyMultiselectField = defineComponent({
                   if (at < 0) return;
                   const to = Math.max(0, Math.min(order.length - 1, at + by));
                   if (to === at) return;
-                  run(controller.dispatch({ type: "move-selected", optionKey: key, to }));
+                  reorder(key, to);
                 };
                 const moves: VNode[] = props.reorderable
                   ? [control("chipMove", MDY_I18N_MESSAGES_DEFAULT.chipMoveEarlierLabel, () => moveBy(-1))]
@@ -547,7 +613,10 @@ export const MdyMultiselectField = defineComponent({
                   // chip carrying it is what makes the strip reachable rather than skipped.
                   active: index === 0,
                   named: false,
-                }), { onKeydown: onChipKeydown(key) }), [
+                }), {
+                  onKeydown: onChipKeydown(key),
+                  ...(grabbed.value?.key === key ? { class: stateClass(MDY_CHIP_CLASSES.block, "dragging") } : {}),
+                }), [
                   ...moves, ...steps,
                   // The class the contract declares for it. Drawn bare, the words were a span nothing
                   // could address: the rule that truncates a chip's label on a narrow screen never
