@@ -102,3 +102,29 @@ for hiding it was the one hiding it.
 None directly. The submitted value is unchanged in every case: what changes is whether the user can
 see and correct what they are about to submit — and a form that submits a choice its user cannot see
 is the shape a consent or a permission field must never have.
+
+## Amendment, 2026-10-11: an array is keyed by `String()` only where `String()` distinguishes
+
+The Decision above keeps `String()` for an array because `String(["b"])` is distinct per array. It is
+not, in general: `String()` joins entries with commas and renders each its own way, so `[{a: 1}]` and
+`[{b: 2}]` both key as `[object Object]`, `[null]` and `[""]` both as nothing, `["a,b"]` and
+`["a", "b"]` both as `a,b`, and `[[1, 2]]` as `[1, 2]` does. Those collisions are the index collapse
+this record was written against, reached through an array.
+
+An array keeps its `String()` key when every entry is a number, boolean, bigint or a non-empty string
+holding no `,` and no `[`; any other array is keyed structurally, as an object is. A key a consumer
+already sees for an array of plain entries does not move, and every array whose key moves was
+sharing it with another.
+
+The alternative that lost is keying every array structurally: one rule instead of two, and it moves
+the id of every array option that works today (`a,b` becomes `["a","b"]`), which is a visible change
+paid by consumers who had no defect. Keying a whole list at once, structurally only where two of its
+options collide, loses too: one option's key would depend on which others arrive beside it, so a
+refetch that adds a neighbour would move a selection.
+
+An array and a primitive can still share a key (`["a"]` and `"a"`), as they did before; a list mixing
+the two shapes for one field is not a list this rule distinguishes.
+
+Verification adds `packages/widgets/test/an-array-keyed-apart-from-its-neighbour.spec.mjs`. Security
+and privacy are unchanged in kind: a collision selected the wrong option silently, so removing one
+removes a way to submit a choice the user did not make.

@@ -39,7 +39,13 @@ export function filterOptionsByQuery<TValue>(
  *
  * **A primitive keeps the key it had.** Keys are consumer-visible — they become part ids and land in
  * `aria-activedescendant` — so a value that already keys distinctly is left exactly as it was. An
- * array does too: `String(["b"])` is `"b"`, which is distinct per array and has been working.
+ * array of plain entries does too: `String(["a", "b"])` is `"a,b"`, which no other such array joins
+ * to.
+ *
+ * An array `String()` cannot tell apart is keyed structurally instead: one holding an object (every
+ * object joins as `[object Object]`), a nested array (`[[1, 2]]` joins as `[1, 2]` does), `null` or
+ * `undefined` (both join as nothing, as `""` does), or a string that is empty or holds a `,` or `[`
+ * (a comma reads as a boundary between entries, a bracket as the start of a structural key).
  *
  * An object is keyed by **what it holds**, the same rule `oneOf` uses for an option
  * (ADR 0051): a list rebuilt from fresh objects by a refetch keys the same, which identity would
@@ -50,8 +56,14 @@ export function filterOptionsByQuery<TValue>(
 export function defaultOptionKey(value: unknown): string {
   if (value === null || value === undefined) return String(value);
   if (typeof value !== "object") return String(value);
-  if (Array.isArray(value)) return String(value);
+  if (Array.isArray(value) && value.every(joinsUnmistakably)) return String(value);
   return structuralKey(value, 0);
+}
+
+/** Whether an array entry's `String()` can be read back out of the comma-joined whole. */
+function joinsUnmistakably(entry: unknown): boolean {
+  if (typeof entry === "string") return entry !== "" && !entry.includes(",") && !entry.includes("[");
+  return typeof entry === "number" || typeof entry === "boolean" || typeof entry === "bigint";
 }
 
 /** A plain object as a canonical string: keys sorted, so declaration order does not change a key. */
