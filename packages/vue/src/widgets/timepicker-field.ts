@@ -33,6 +33,7 @@ import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellS
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useFormReset } from "./form-reset.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -298,7 +299,7 @@ export const MdyTimepickerField = defineComponent({
           // The act, from the dictionary; see the datepicker's door for why the caption is not it.
           "aria-label": messages.value.timepickerOpenLabel,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
-        }),
+        }, [iconOf("CLOCK")]),
       ]));
 
       // The panel stays in the document while it is shut: the control names it with `aria-controls`
