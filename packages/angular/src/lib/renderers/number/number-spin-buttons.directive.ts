@@ -1,5 +1,5 @@
 import { Directive, effect, ElementRef, inject, Injector, input, OnInit, Renderer2 } from "@angular/core";
-import { MDY_ICONS } from "@modyra/widgets";
+import { MDY_ICONS, numberEntered, numberStepped } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
 @Directive({
@@ -89,11 +89,12 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
 
   private step(input: HTMLInputElement, dir: 1 | -1): void {
     if (input.disabled || input.readOnly) return; // R11
-    const step = Number(input.step) || 1;
-    const min = input.min !== "" ? Number(input.min) : -Infinity;
-    const max = input.max !== "" ? Number(input.max) : +Infinity;
-    let value = input.value === "" ? 0 : Number(input.value);
-    value = Math.max(min, Math.min(max, value + dir * step));
+    const value = numberStepped(numberEntered(input.value), dir, {
+      min: numberEntered(input.min),
+      max: numberEntered(input.max),
+      step: numberEntered(input.step),
+    });
+    if (value === null) return;
     input.value = String(value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }

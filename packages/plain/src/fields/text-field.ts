@@ -21,7 +21,8 @@ import {
   visibleErrorsOf,
   sliderFillRatio,
 
-  numberEntered,} from "@modyra/widgets";
+  numberEntered,
+  numberStepped,} from "@modyra/widgets";
 import { applyPart, el, setErrors, setIcon, setText } from "../dom.js";
 import { buildFieldShell, insertControl } from "../field-shell.js";
 
@@ -134,13 +135,8 @@ export function renderTextField(
       setIcon(button, direction === 1 ? "SPIN_UP" : "SPIN_DOWN");
       button.addEventListener("click", () => {
         if (blocksValueChange(controller.state().interactivity)) return;
-        const rules = offered();
-        const by = typeof rules.step === "number" && rules.step > 0 ? rules.step : 1;
-        const from = numberIn(input) ?? 0;
-        const next = from + by * direction;
-        const min = typeof rules.min === "number" ? rules.min : -Infinity;
-        const max = typeof rules.max === "number" ? rules.max : Infinity;
-        controller.dispatch({ type: "input", value: Math.min(max, Math.max(min, next)) });
+        const next = numberStepped(numberIn(input), direction, offered());
+        if (next !== null) controller.dispatch({ type: "input", value: next });
       });
       return button;
     };

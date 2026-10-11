@@ -243,4 +243,4 @@ export { fieldIsRequired, inputWasRefused, undoIsOnOffer, valueIsAbsent, valueIs
 
 export { MDY_CLASS_DOORS, answerDoor, type MdyClassDoor } from "./class-doors.js";
 
-export { numberEntered } from "./behavior/number-entry.js";
+export { numberEntered, numberStepped, type MdyNumberStepRules } from "./behavior/number-entry.js";

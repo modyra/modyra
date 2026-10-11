@@ -32,7 +32,8 @@ import {
   type MdyPartContract,
   type MdyTextFieldController,
 
-  numberEntered,} from "@modyra/widgets";
+  numberEntered,
+  numberStepped,} from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
@@ -171,11 +172,9 @@ export const MdyTextField = defineComponent({
         onClick: () => {
           if (blocksValueChange(controller.state().interactivity)) return;
           const rules = narrowConstraints(props.field.constraints(), narrowing());
-          const by = typeof rules.step === "number" && rules.step > 0 ? rules.step : 1;
-          const from = typeof props.field.value() === "number" ? props.field.value() as number : 0;
-          const min = typeof rules.min === "number" ? rules.min : -Infinity;
-          const max = typeof rules.max === "number" ? rules.max : Infinity;
-          controller.dispatch({ type: "input", value: Math.min(max, Math.max(min, from + by * direction)) });
+          const held = props.field.value();
+          const next = numberStepped(typeof held === "number" ? held : null, direction, rules);
+          if (next !== null) controller.dispatch({ type: "input", value: next });
         },
       }, [iconOf(direction === 1 ? "SPIN_UP" : "SPIN_DOWN")]);
 

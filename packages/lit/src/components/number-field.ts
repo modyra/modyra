@@ -3,7 +3,8 @@ import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyFieldConstraints, type MdyFieldHandle } from "@modyra/core";
 import { createTextFieldController, type MdyTextFieldController,
   presentationClass,
- numberEntered,} from "@modyra/widgets";
+ numberEntered,
+ numberStepped,} from "@modyra/widgets";
 import { MdyFieldElement, mdyIcon } from "../base.js";
 
 /**
@@ -66,11 +67,8 @@ export class MdyNumberFieldElement extends MdyFieldElement<number | null> {
   private stepBy(handle: MdyFieldHandle<number | null>, direction: 1 | -1): void {
     if (handle.disabled() || handle.readonly()) return;
     const rules = { ...handle.constraints(), ...this.narrowedConstraints() };
-    const by = typeof rules.step === "number" && rules.step > 0 ? rules.step : 1;
-    const from = handle.value() ?? 0;
-    const min = typeof rules.min === "number" ? rules.min : -Infinity;
-    const max = typeof rules.max === "number" ? rules.max : Infinity;
-    const next = Math.min(max, Math.max(min, from + by * direction));
+    const next = numberStepped(handle.value(), direction, rules);
+    if (next === null) return;
     if (this.fieldController) this.fieldController.dispatch({ type: "input", value: next });
     else { handle.set(next); handle.markAsDirty(); }
   }

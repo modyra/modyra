@@ -125,7 +125,7 @@ function snapToStep(value: number, step: number): number {
 }
 
 /** How many digits a step declares after the point, exponent notation included. */
-function decimalPlaces(step: number): number {
+export function decimalPlaces(step: number): number {
   const text = String(Math.abs(step));
   const exponent = text.indexOf("e-");
   if (exponent !== -1) {
