@@ -122,8 +122,10 @@ paid by consumers who had no defect. Keying a whole list at once, structurally o
 options collide, loses too: one option's key would depend on which others arrive beside it, so a
 refetch that adds a neighbour would move a selection.
 
-An array and a primitive can still share a key (`["a"]` and `"a"`), as they did before; a list mixing
-the two shapes for one field is not a list this rule distinguishes.
+Values whose text is the same can still share a key, as they did before: an array and a primitive
+(`["a"]` and `"a"`, `[]` and `""`), and arrays of numbers or booleans and arrays of their text
+(`[1, 2]` and `["1", "2"]`, `[true]` and `["true"]`) — the limit the primitives `1` and `"1"` have
+always had. A list mixing those shapes for one field is not a list this rule distinguishes.
 
 Verification adds `packages/widgets/test/an-array-keyed-apart-from-its-neighbour.spec.mjs`. Security
 and privacy are unchanged in kind: a collision selected the wrong option silently, so removing one

@@ -39,8 +39,9 @@ export function filterOptionsByQuery<TValue>(
  *
  * **A primitive keeps the key it had.** Keys are consumer-visible — they become part ids and land in
  * `aria-activedescendant` — so a value that already keys distinctly is left exactly as it was. An
- * array of plain entries does too: `String(["a", "b"])` is `"a,b"`, which no other such array joins
- * to.
+ * array of plain entries does too: `String(["a", "b"])` is `"a,b"`. Such an array shares its key
+ * only with values whose text is the same — `[1, 2]` and `["1", "2"]` both key as `"1,2"`, `[]` keys
+ * as `""` does, `["a"]` as `"a"` does — the same limit the primitives `1` and `"1"` already have.
  *
  * An array `String()` cannot tell apart is keyed structurally instead: one holding an object (every
  * object joins as `[object Object]`), a nested array (`[[1, 2]]` joins as `[1, 2]` does), `null` or
