@@ -10,7 +10,7 @@ import {
   MdyTypedForm,
 } from "@modyra/core";
 
-import { getCurrentScope, onScopeDispose } from "@vue/reactivity";
+import { getCurrentScope, onScopeDispose } from "vue";
 
 import { vueReactivity } from "./reactivity.js";
 

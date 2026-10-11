@@ -15,7 +15,7 @@ import {
   onScopeDispose,
   shallowRef,
   triggerRef,
-} from "@vue/reactivity";
+} from "vue";
 
 import { vueReactivity } from "../reactivity.js";
 

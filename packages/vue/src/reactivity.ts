@@ -1,5 +1,5 @@
 /**
- * Modyra's reactive contract on `@vue/reactivity`.
+ * Modyra's reactive contract on Vue's reactivity, imported from "vue".
  *
  * Its own module rather than the package entry: a widget hook needs the binding, the entry
  * re-exports the hooks, and a binding declared in the entry makes the two import each other.
@@ -8,7 +8,7 @@
 /**
  * @modyra/vue — binds the Modyra form engine to Vue's reactivity.
  *
- * Form state becomes @vue/reactivity state (shallowRef/computed), so
+ * Form state becomes Vue reactive state (shallowRef/computed), so
  * templates and watchers react to it natively. `effect()` runs on a real
  * scheduler (same shared-drain design as vanilla's own), so `batch()`/`flush()` are real, not aliases for
  * `Promise.resolve()`; `createScope()` wraps Vue's own `effectScope()`
@@ -32,23 +32,24 @@ import {
   MdySignalOptions,
   MdyWritableSignal,
 } from "@modyra/core";
+// Everything comes from "vue", never from "@vue/reactivity" directly: a second copy of the runtime
+// makes refs created here invisible to the consumer's own computed, watch and watchEffect.
 import {
   effectScope,
   onScopeDispose,
-  pauseTracking,
-  resetTracking,
+  ReactiveEffect,
   shallowRef,
   stop,
   computed as vueComputed,
   effect as vueEffect,
   type EffectScope,
   type ReactiveEffectRunner,
-} from "@vue/reactivity";
+} from "vue";
 // ─── Shared effect scheduler (mirrors vanillaReactivity()'s own Milestone 3
 // design in packages/core/src/reactivity.ts) ────────────────────────────────
 //
 // Vue's own `effect(fn, { scheduler })` hook is what makes this possible:
-// without a scheduler, @vue/reactivity re-runs an effect synchronously on
+// without a scheduler, Vue re-runs an effect synchronously on
 // every dependency write (no batching at all). With one, Vue calls the
 // scheduler instead of re-running directly, so *when* the effect actually
 // re-executes is entirely up to us — same shared pending-set +
@@ -176,7 +177,7 @@ class VueScope implements MdyReactiveScope {
   }
 }
 
-/** Modyra's reactive contract implemented on @vue/reactivity. */
+/** Modyra's reactive contract implemented on Vue's reactivity. */
 export function vueReactivity(): MdyReactivity &
   MdyBatchingCapability &
   MdyFlushCapability &
@@ -198,7 +199,7 @@ export function vueReactivity(): MdyReactivity &
       batching: true,
       deterministicFlush: true,
       directObservation: true,
-      // @vue/reactivity does not refuse a write inside a computed; the rule holds regardless.
+      // Vue does not refuse a write inside a computed; the rule holds regardless.
       pureComputeds: false,
       graphInspection: false,
       serverSnapshots: false,
@@ -245,11 +246,21 @@ export function vueReactivity(): MdyReactivity &
       return ref;
     },
     untracked<T>(fn: () => T): T {
-      pauseTracking();
+      // "vue" does not export pauseTracking. A throwaway effect becomes the active subscriber, so
+      // fn's reads attach to it rather than to the caller, and stopping it drops them. The detached
+      // scope keeps the throwaway out of whatever scope is active, which would otherwise hold it.
+      const isolation = effectScope(true);
       try {
-        return fn();
+        return isolation.run(() => {
+          const reader = new ReactiveEffect(fn);
+          try {
+            return reader.run();
+          } finally {
+            reader.stop();
+          }
+        }) as T;
       } finally {
-        resetTracking();
+        isolation.stop();
       }
     },
     createScope(options?: MdyScopeOptions): MdyReactiveScope {

@@ -2,7 +2,7 @@
 
 Vue binding for the [Modyra](https://github.com/modyra/modyra) form engine:
 `vueReactivity()` implements the core's reactive contract on
-`@vue/reactivity` (shallowRef/computed/effect), so form state participates
+Vue's own reactivity (shallowRef/computed/effect, imported from `vue`), so form state participates
 in Vue reactivity natively.
 
 > **Headless.** This package renders no markup — you bring your own. Modyra's DOM conformance
@@ -30,7 +30,7 @@ tracks automatically — no hooks, no stores.
 
 ## What's included
 
-- **`createVueForm(schema, options?)`** — typed form on `@vue/reactivity`.
+- **`createVueForm(schema, options?)`** — typed form on Vue's reactivity.
 - **`useVueForm(schema, options?)`** — the same, disposed with the
   component setup scope.
 - **The full core API** — `field`, `group`, `array`, `serverValidator`,

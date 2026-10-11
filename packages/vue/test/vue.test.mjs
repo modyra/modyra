@@ -1,4 +1,4 @@
-import { effectScope, computed as vueComputed } from "@vue/reactivity";
+import { effectScope, computed as vueComputed } from "vue";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createVueForm, field, required, useVueForm } from "../dist/index.js";

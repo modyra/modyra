@@ -2,7 +2,7 @@
  * Vue composable for the Modyra headless primitive field controller.
  */
 
-import { getCurrentScope, onScopeDispose, shallowRef, triggerRef } from "@vue/reactivity";
+import { getCurrentScope, onScopeDispose, shallowRef, triggerRef } from "vue";
 import type { MdyFieldHandle } from "@modyra/core";
 import {
   fieldCommandHandlers,

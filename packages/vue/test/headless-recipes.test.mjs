@@ -13,7 +13,7 @@
  * so every recipe is just a computed wrapper — templates track them
  * natively.
  */
-import { computed, effectScope } from "@vue/reactivity";
+import { computed, effectScope } from "vue";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createVueForm, field, minLength, required } from "../dist/index.js";
