@@ -18,12 +18,19 @@ The Rust reader judges conditions, versions and layout by the same rules as the 
 - a `validations` entry with no message, an unknown target, an invalid condition or a condition
   reading an unknown field (`INVALID_VALIDATION`, `UNKNOWN_FIELD_REFERENCE`).
 
+- a `matches` pattern or `validators.pattern` that backtracks exponentially, by the same shape test
+  as ADR 0050 (`INVALID_CONDITION`, `PATTERN_TOO_COSTLY`), and one that `new RegExp` cannot compile
+  (`INVALID_CONDITION`, `INVALID_FIELD`).
+
 It accepts `daterange`, `file` and `colors`, and counts a pattern's length in UTF-16 units, so a
 200-character pattern of accented letters is no longer refused as too long.
+
+The crate gains one runtime dependency, `regress` (MIT OR Apache-2.0), an ECMAScript regular
+expression engine: the compile check and the cost test both need JavaScript's regex grammar.
 
 **Migration (Rust).** `DynamicFormV2` gains a public `validations: Vec<Validation>` member, so a
 struct literal must add `validations: vec![]`. The crate is not published; the two literals in this
 repository are updated.
 
-The shared corpus gains fifteen documents, one per rule, judged by the TypeScript, Rust and eslint
+The shared corpus gains twenty documents, one per rule, judged by the TypeScript, Rust and eslint
 readers alike.

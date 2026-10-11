@@ -514,6 +514,7 @@ dependencies = [
 name = "modyra-contract"
 version = "0.1.0"
 dependencies = [
+ "regress",
  "serde",
  "serde_json",
 ]
@@ -659,6 +660,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
 dependencies = [
  "rand_core",
+]
+
+[[package]]
+name = "regress"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32eef8b209c3c1c15dbad02c1f30f9539f00dc7253e0cbcdaae442a50a09d7c1"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

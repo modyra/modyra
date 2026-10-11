@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
 
+mod pattern_cost;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ValidationMode {
     Lenient,
@@ -474,7 +476,14 @@ fn expression_problems(expression: &Value, at: &str, depth: usize, out: &mut Vec
             Some(pattern) if utf16_len(pattern) > EXPRESSION_PATTERN_MAX_LENGTH => out.push(format!(
                 "{at}: \"matches\" pattern is longer than {EXPRESSION_PATTERN_MAX_LENGTH} characters"
             )),
-            Some(_) => {}
+            Some(pattern) => {
+                if !pattern_cost::compiles(pattern) {
+                    out.push(format!("{at}: \"matches\" pattern is not a valid regular expression"));
+                }
+                if let Some(refusal) = pattern_cost::pattern_refusal(pattern) {
+                    out.push(format!("{at}: \"matches\" pattern {refusal}"));
+                }
+            }
         }
     }
     for (index, operand) in operands.iter().enumerate() {
@@ -829,17 +838,25 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 "min cannot exceed max",
             ));
         }
-        if field
-            .validators
-            .as_ref()
-            .and_then(|v| v.pattern.as_ref())
-            .is_some_and(|p| utf16_len(p) > 256)
-        {
-            d.push(diag(
-                "MDY_DYNAMIC_PATTERN_TOO_LONG",
-                &format!("{path}/validators/pattern"),
-                "pattern exceeds 256 characters",
-            ));
+        if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
+            let at = format!("{path}/validators/pattern");
+            if utf16_len(pattern) > 256 {
+                d.push(diag("MDY_DYNAMIC_PATTERN_TOO_LONG", &at, "pattern exceeds 256 characters"));
+            } else if let Some(refusal) = pattern_cost::pattern_refusal(pattern) {
+                d.push(diag(
+                    "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
+                    &at,
+                    &format!("the pattern has {refusal}"),
+                ));
+            } else if !pattern_cost::compiles(pattern) {
+                // A pattern that does not compile is a rule that never runs; the TS reader names no
+                // code of its own for it, so it falls to the generic one.
+                d.push(diag(
+                    "MDY_DYNAMIC_INVALID_FIELD",
+                    &at,
+                    "pattern is not a regular expression this platform can compile, so the rule never runs",
+                ));
+            }
         }
     }
     let mut placed: Vec<String> = Vec::new();
