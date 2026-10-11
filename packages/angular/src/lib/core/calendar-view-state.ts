@@ -128,3 +128,17 @@ export function calendarViewState(source: () => CalendarViewSource | undefined):
     },
   };
 }
+
+/**
+ * Puts the keyboard on the days a calendar has just shown again: the grid's tab stop, or its first
+ * choosable cell when the grid has none.
+ *
+ * A grid has no tab stop when the day the keyboard stood on is not in the month shown — a year chosen
+ * elsewhere shows a month without the day being read — and a landing that asked only for the stop
+ * would leave the keyboard on a view that has gone.
+ */
+export function landOnTheDays(host: HTMLElement): void {
+  const landing = host.querySelector<HTMLElement>('[role="gridcell"][tabindex="0"]')
+    ?? host.querySelector<HTMLElement>('[role="gridcell"]:not([disabled]):not([aria-disabled="true"])');
+  landing?.focus();
+}

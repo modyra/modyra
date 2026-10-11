@@ -14,6 +14,7 @@ import {
   keyBindingFor,
   type MdyCalendarViewMode,
   calendarViewOnZoom,
+  partClasses,
 } from "@modyra/widgets";
 import { mdyPart } from "../mdy-part.js";
 
@@ -97,6 +98,20 @@ export function calendarRows(year: number, month: number, weekStart: number): Ca
   const rows: CalendarCell[][] = [];
   for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7) as CalendarCell[]);
   return rows;
+}
+
+/**
+ * Puts the keyboard on the days a calendar has just shown again: the cell it stood on, or the first
+ * choosable one when that day is not in the month shown.
+ *
+ * A year chosen elsewhere shows a month without the day being read, and the grid then has no tab
+ * stop; a landing that asked only for the stop would leave the keyboard on a view that has gone.
+ */
+export function landOnTheDays(root: ParentNode, kind: "datepicker" | "daterange"): void {
+  const cells = `.${partClasses(kind, "gridcell").join(".")}`;
+  const landing = root.querySelector<HTMLElement>(`${cells}[tabindex="0"]`)
+    ?? root.querySelector<HTMLElement>(`${cells}:not([disabled]):not([aria-disabled="true"])`);
+  landing?.focus();
 }
 
 /**

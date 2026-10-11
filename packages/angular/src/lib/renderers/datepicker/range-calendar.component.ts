@@ -1,11 +1,12 @@
 import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
-import { calendarViewState } from "../../core/calendar-view-state";
+import { calendarViewState, landOnTheDays } from "../../core/calendar-view-state";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   Injector,
   input,
@@ -137,6 +138,8 @@ export class MdyRangeCalendarComponent {
 
   private readonly grid = viewChild(MdyRangeCalendarGridComponent);
   private readonly injector = inject(Injector);
+  /** The calendar's own element, so a landing is looked for inside this calendar and no other. */
+  private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
     effect(() => {
@@ -270,10 +273,17 @@ export class MdyRangeCalendarComponent {
         // carrying the keyboard to the next field and cancelling it strands the person in a grid
         // being taken away. `restoresFocus` is the field that tells them apart, and no check outside
         // a browser sees the difference because there is no native Tab to prevent. ADR 0168.
-        if (dismissal.restoresFocus === true) event.preventDefault();
+        // Stopped as well as prevented: the overlay answers the same Escape on the document, and a
+        // key that reaches it closes the popup together with the view this one is only leaving.
+        // ADR 0225.
+        if (dismissal.restoresFocus === true) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
         const controller = this.controller();
         if (controller) controller.dispatch({ type: "set-view-mode", mode: "days" });
         else this.viewState.reset(this.focusedDate());
+        afterNextRender(() => landOnTheDays(this.hostRef.nativeElement), { injector: this.injector });
       }
       return;
     }

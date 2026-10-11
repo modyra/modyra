@@ -9,13 +9,14 @@ import { capabilityOf, keyMeans, defaultWidgetIdFactory,
   type MdyDaterangeFieldState,
   projectCalendarViewA11y,
   daterangeFieldPartIds,
+  type MdyCalendarViewMode,
 } from "@modyra/widgets";
 import { html, nothing, type PropertyDeclarations } from "lit";
 import { type MdyDateRange, type MdyFieldHandle, observerFor } from "@modyra/core";
 import { buildDateLocale, calendarYearRange, type MdyDateLocale, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, compareDates, formatIsoDate, formatLocalizedDate, isDateBetween, isDateInRange, orderDates, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
 import { applyWidgetCommands, bindOutsidePointer, closeOverlayOutOfPlay } from "../widget-runtime/overlay-host.js";
 import { MdyFieldElement, mdyIcon } from "../base.js";
-import { calendarGridKey, calendarRows, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
+import { calendarGridKey, calendarRows, landOnTheDays, renderMonthPicker, renderYearPicker } from "./calendar-pickers.js";
 import {
   MdyLitOverlayController,
   POPUP_ANCHOR_STYLE,
@@ -384,13 +385,20 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
     calendarGridKey(e, "daterange", this.view.viewMode, (intent) => this.send(intent), () => this.closePopup(handle));
   }
 
+  /** The view the last render showed, so the render that changes it can be told apart. */
+  private shownView: MdyCalendarViewMode | null = null;
+
   protected override updated(changed: Map<string, unknown>): void {
     // The base names the control and reports an id this page already carries; skipping it left both
     // to whichever kinds happened to call up.
     super.updated(changed);
     if (this._open) {
       if (this.view.viewMode === "days") {
-        this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused")?.focus();
+        const focused = this.querySelector<HTMLElement>(".mdy-datepicker__cell--focused");
+        // The fallback only on the render that brings the days back: every other render keeps the
+        // keyboard where it is, and a landing taken on each would pull it off a header button.
+        if (focused !== null) focused.focus();
+        else if (this.shownView !== "days") landOnTheDays(this, "daterange");
       } else if (this.view.viewMode === "years") {
         this.querySelector<HTMLElement>(
           `.${partClasses("daterange", "yearCell", { selected: true }).join(".")}`,
@@ -400,6 +408,7 @@ export class MdyDaterangeFieldElement extends MdyFieldElement<MdyDateRange | nul
         });
       }
     }
+    this.shownView = this.view.viewMode;
   }
 
   /**

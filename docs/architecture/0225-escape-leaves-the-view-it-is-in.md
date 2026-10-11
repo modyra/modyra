@@ -44,6 +44,18 @@ dismissal and consumes the press, so no other listener closes the panel with the
   `Tab` included. Plain and Vue leave `Tab` to the browser there. This decision does not settle that
   difference.
 
+**Amendment (2026-10-11).** The context's premise that Lit and Angular already answered the view
+first was half true. Angular's calendars only prevented the press, and the overlay's own Escape
+listener on the document still closed the popup from the months or years. Lit and Angular both showed
+the days, but left focus nowhere when the day it stood on was not in the month shown. Both now do
+what the decision states: Angular stops the press as well as preventing it, and both land on the
+grid's tab stop or its first choosable day. The decision is unchanged. The first consequence holds
+from this amendment on, and it is now checked across the four renderers rather than assumed.
+
+Where a year chosen from the keyboard leaves focus is a separate contract that this decision does not
+settle. Lit keeps focus on the months. Plain, Vue and Angular lose it. The cross-renderer spec records
+that as a known red.
+
 ## Alternatives rejected
 
 - **Escape always closes the popup.** Simpler, and one press is enough from any view, but the person
@@ -66,6 +78,10 @@ dismissal and consumes the press, so no other listener closes the panel with the
 - Lit and Angular are guarded by their existing calendar tests. No cross-renderer test compares the
   four renderers' answers to Escape in a wider view, so a drift in one of them is caught only by that
   renderer's own suite.
+- Amended: `battle-tests/browser/a-view-escape-leaves-first.spec.ts` holds all four renderers to
+  Escape from the years, from a year cell and from the months. It checks that the days come back, the
+  popup stays open and focus is in the grid, and that a second Escape closes the popup. It failed on
+  Angular (the popup closed) and on Lit (focus lost after the months) before the amendment's fixes.
 
 ## Security and privacy
 
