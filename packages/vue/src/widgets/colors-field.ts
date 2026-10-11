@@ -23,6 +23,7 @@ import {
 
   fieldDescribedBy,
   visibleErrorsOf,  overlayControlledId,
+  presentationClass,
   projectOverlayOpenerA11y,
   rowRovingIndex,
 } from "@modyra/widgets";
@@ -31,6 +32,7 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -299,10 +301,13 @@ export const MdyColorsField = defineComponent({
         // element that says whether the panel is showing is the opener beside it. Left inert here,
         // the swatch a person aims at did nothing while the same press two pixels away opened the
         // panel.
+        // Hidden from a reader: the opener beside it is the door that is announced. The caret sits
+        // in the part the themes draw it on, nested where the contract nests it.
         h("span", {
           class: classesOf("toggle"),
+          "aria-hidden": "true",
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
-        }),
+        }, [h("span", { class: presentationClass("colors", "arrow"), "aria-hidden": "true" }, [iconOf("CHEVRON_DOWN")])]),
       ]));
 
       // The panel stays in the document while it is shut, so what names it keeps naming something.

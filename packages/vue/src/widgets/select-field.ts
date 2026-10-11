@@ -29,6 +29,7 @@ import type { MdyFieldHandle, MdySelectOption } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -296,7 +297,7 @@ export const MdySelectField = defineComponent({
         // The foundation takes the platform's arrow off every native chooser so a page of them
         // reads as one page, and a kind that removes an affordance owes one back. Beside the
         // control, never inside it: an `<option>` is the only thing a `<select>` may contain.
-        h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
+        h("span", { class: classesOf("arrow"), "aria-hidden": "true" }, [iconOf("CHEVRON_DOWN")]),
       ]));
       children.push(h("p", {
         id: defaultWidgetIdFactory.part(widgetId.value, "description"),
@@ -357,7 +358,7 @@ export const MdySelectField = defineComponent({
         // `inputWrapper` as its parent, and moving it inside the button contradicted a rule the
         // suite guards. The press reaching the button is a matter of geometry instead — the trigger
         // stretches under the caret, and the caret takes no pointer.
-        h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
+        h("span", { class: classesOf("arrow"), "aria-hidden": "true" }, [iconOf("CHEVRON_DOWN")]),
       ]));
 
       {

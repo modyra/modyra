@@ -27,6 +27,7 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -237,7 +238,7 @@ export const MdyDatepickerField = defineComponent({
           // does — and says it in English on a translated page.
           "aria-label": messages.value.datepickerToggleLabel,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
-        }),
+        }, [iconOf("CALENDAR")]),
       ]));
 
       children.push(drawCalendar({

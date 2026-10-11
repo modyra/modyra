@@ -12,7 +12,7 @@
  * for the shape quietly stop applying. That is why this component takes the declared type rather
  * than a string.
  */
-import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
+import { computed, Teleport, defineComponent, h, ref, nextTick, onMounted, onScopeDispose, onUpdated, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import { labelContent } from "./label.js";
 import {
   MDY_WIDGET_CONTRACTS,
@@ -31,12 +31,15 @@ import {
   defaultOptionKey,
   isTypeaheadCharacter,
   wayBackActionName,
+  keepFocusedChipInView,
+  settleHiddenChipCount,
 } from "@modyra/widgets";
 import { observerFor } from "@modyra/core";
 import type { MdyFieldHandle, MdyMultiselectMode, MdySelectOption } from "@modyra/core";
 import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -117,6 +120,31 @@ export const MdyMultiselectField = defineComponent({
     // does not inherit an ancestor's `overflow` or stacking. ADR 0130.
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
+
+    /**
+     * How many chips the strip is hiding, taken from what the browser laid out.
+     *
+     * After the render rather than during it: how many fit depends on the labels, the theme's
+     * spacing and the width the host gave the field, and a count computed before layout is a guess.
+     * Settled against its own mark, because the mark shares the row and drawing it narrows the strip.
+     */
+    const hiddenChips = ref(0);
+    const measureHiddenChips = (): void => {
+      const strip = root.value?.querySelector<HTMLElement>(`.${classesOf("chips").split(" ")[0]}`) ?? null;
+      if (strip === null) {
+        hiddenChips.value = 0;
+        return;
+      }
+      keepFocusedChipInView(strip);
+      settleHiddenChipCount(
+        strip,
+        (hidden) => { if (hidden !== hiddenChips.value) hiddenChips.value = hidden; },
+        // The mark is drawn on Vue's next patch, so the second measurement waits for it.
+        (settle) => { void nextTick(settle); },
+      );
+    };
+    onMounted(measureHiddenChips);
+    onUpdated(measureHiddenChips);
     useKeyboardInPlay(props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
@@ -292,6 +320,22 @@ export const MdyMultiselectField = defineComponent({
       event.preventDefault();
     };
 
+    /**
+     * The field's keys, for whatever in the field they were pressed on.
+     *
+     * A command inside the field — a chip's remove, the clear, the way back — is a button, and a
+     * button answers Enter and Space itself by turning them into a click. Read as the field's keys
+     * they opened the list and were consumed, so the button never heard them. Only the trigger is
+     * the field's own control; on any other button the one key still owed is the way back's, which
+     * answers from wherever in the field a person stands.
+     */
+    const onFieldKeydown = (event: KeyboardEvent): void => {
+      const button = event.target instanceof HTMLElement ? event.target.closest("button") : null;
+      if (button !== null && button.id !== view.value.parts.trigger?.id
+        && keyBindingFor("multiselect", event, state.value.open)?.intent !== "undo") return;
+      onKeydown(event);
+    };
+
     const wayBackName = computed(() => wayBackActionName(
       state.value.wayBack,
       {
@@ -324,14 +368,14 @@ export const MdyMultiselectField = defineComponent({
                   event.stopPropagation();
                   run(controller.dispatch({ type: "decrement", optionKey: key }));
                 },
-              }, "−"),
+              }, [iconOf("MINUS")]),
               h("button", {
                 type: "button", class: classesOf("optionStep"), "aria-label": `One more ${option.label}`,
                 onClick: (event: Event) => {
                   event.stopPropagation();
                   run(controller.dispatch({ type: "increment", optionKey: key }));
                 },
-              }, "+"),
+              }, [iconOf("PLUS")]),
             ]),
           h("span", { class: classesOf("optionLabel") }, option.label),
           ...(props.mode === "multi" ? [h("span", { class: classesOf("optionCount") }, String(count))] : []),
@@ -393,12 +437,14 @@ export const MdyMultiselectField = defineComponent({
                 const key = keyOf(option);
                 const held_ = state.value.counts.get(key) ?? 1;
                 /** One of the chip's own controls, named for the act and the value it acts on. */
-                const control = (part: "chipMove" | "chipStep" | "chipRemove", verb: string, act: () => void): VNode =>
+                // The steppers carry a mark from the shared icon set; the move and remove controls
+                // are drawn by the stylesheets on their own classes.
+                const control = (part: "chipMove" | "chipStep" | "chipRemove", verb: string, act: () => void, icon?: "MINUS" | "PLUS"): VNode =>
                   h("button", {
                     type: "button", class: classesOf(part),
                     "aria-label": chipActionName(verb, option.label),
                     onClick: (event: Event) => { event.stopPropagation(); act(); },
-                  });
+                  }, icon === undefined ? [] : [iconOf(icon)]);
                 // A single press moves the chip one place, which is the path WCAG 2.5.7 asks for
                 // independently of the keyboard: somebody who cannot hold and drag has no other way
                 // to reorder, and the drag the other renderers implement does not discharge it.
@@ -424,11 +470,11 @@ export const MdyMultiselectField = defineComponent({
                 // an element nothing named, so nothing could ask for it.
                 const steps = props.mode === "multi" ? [
                   control("chipStep", MDY_I18N_MESSAGES_DEFAULT.chipDecrementLabel,
-                    () => run(controller.dispatch({ type: "decrement", optionKey: key }))),
+                    () => run(controller.dispatch({ type: "decrement", optionKey: key })), "MINUS"),
                 ] : [];
                 const stepsUp = props.mode === "multi" ? [
                   control("chipStep", MDY_I18N_MESSAGES_DEFAULT.chipIncrementLabel,
-                    () => run(controller.dispatch({ type: "increment", optionKey: key }))),
+                    () => run(controller.dispatch({ type: "increment", optionKey: key })), "PLUS"),
                 ] : [];
                 // Asked of the contract, not assembled here: the name a reader hears, the column
                 // the cell sits in and the strip's tab stop are one answer about one chip. Drawn
@@ -471,6 +517,22 @@ export const MdyMultiselectField = defineComponent({
               ? [h("span", partProps(parts.placeholder, { class: classesOf("placeholder") }), "Choose…")]
               : []),
           ]),
+          // How many chips are out of sight, and the way to all of them: pressing it opens the list,
+          // where every one is. Hidden while nothing is cut, so it never reports a count of zero.
+          h("button", {
+            type: "button", class: classesOf("overflowCount"),
+            hidden: hiddenChips.value === 0,
+            disabled: props.field.disabled() || props.field.readonly(),
+            "aria-label": hiddenChips.value === 0
+              ? undefined
+              : MDY_I18N_MESSAGES_DEFAULT.chipsHidden.replace("{count}", String(hiddenChips.value)),
+            onClick: (event: Event) => {
+              event.stopPropagation();
+              if (!state.value.open) run(controller.dispatch({ type: "open" }));
+            },
+          }, hiddenChips.value === 0
+            ? ""
+            : MDY_I18N_MESSAGES_DEFAULT.chipsHiddenShort.replace("{count}", String(hiddenChips.value))),
           // The way back from a destructive act, and the one control that must exist whether or not
           // there is anything to undo: a button that appears only once something is lost is a
           // button nobody knows is there.
@@ -493,8 +555,8 @@ export const MdyMultiselectField = defineComponent({
             type: "button", class: classesOf("clearAll"), "aria-label": "Clear all",
             "aria-disabled": String(state.value.selectedKeys.size === 0),
             onClick: () => run(controller.dispatch({ type: "clear" })),
-          }),
-          h("span", { class: classesOf("arrow"), "aria-hidden": "true" }),
+          }, [iconOf("CLOSE")]),
+          h("span", { class: classesOf("arrow"), "aria-hidden": "true" }, [iconOf("CHEVRON_DOWN")]),
           h("span", partProps(parts.announcement, { class: classesOf("announcement") }),
             announcement.value),
         ]),
@@ -522,7 +584,7 @@ export const MdyMultiselectField = defineComponent({
       // named an id no element had: a promise of an explanation, kept by nothing.
       if (parts.error !== undefined) children.push(drawErrors(parts.error, props.field, "multiselect"));
 
-      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown }, children);
+      return h("div", { class: rootClasses(CONTRACT, shell), ref: root, onKeydown: onFieldKeydown }, children);
     };
   },
 });
