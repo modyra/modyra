@@ -14,6 +14,7 @@ import {
   popupPlacementClass,
   projectFieldShellA11y,
   fieldAccessibleName,
+  fieldAriaLabel,
   MDY_WIDGET_RELATIONS,
   fieldNameAttributes,
   errorsVisible,
@@ -876,10 +877,11 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const control = (opener === undefined ? null : this.querySelector<HTMLElement>(`.${this.partClass(opener)}`))
       ?? this.querySelector<HTMLElement>("input, select, textarea, [role='combobox'], [role='listbox']");
     if (!control) return;
-    // A label is optional in a document by design, and a control with no accessible name is
-    // announced as its role and nothing else. `fieldAccessibleName` holds the order so this renderer
-    // and the next answer the same; the field's own name is the last thing left to say.
-    const name = fieldAccessibleName({
+    // A caption with words names the control through `for`, and a copy written here would replace
+    // that association rather than add to it, so the answer is `null` there. A declared name is
+    // written as given; with no caption, the field's own name is what is left to say.
+    // `fieldAriaLabel` holds the order so every renderer answers the same. ADR 0214.
+    const name = fieldAriaLabel({
       ariaLabel: this._pendingName,
       label: this.label,
       name: this.field?.path,
@@ -888,10 +890,17 @@ export abstract class MdyFieldElement<T> extends LitElement {
     // that is what a person is choosing *for* — but a button opener is named for the act it performs,
     // from the dictionary, and writing the caption over it produces "T, button": the label repeated,
     // saying nothing about what pressing it does, and in English on a translated page.
-    if (control.hasAttribute("aria-label") && control.getAttribute("aria-label") !== name) return;
+    // What this method wrote last is not such a name: a caption that arrives after the first render
+    // has to clear the field-name fallback written before it, or the copy outlives the caption.
+    const current = control.getAttribute("aria-label");
+    if (current !== null && current !== name && current !== this._writtenControlName.get(control)) return;
     if (name) control.setAttribute("aria-label", name);
     else control.removeAttribute("aria-label");
+    this._writtenControlName.set(control, name);
   }
+
+  /** The `aria-label` this element last wrote on each control, told apart from one the control carries itself. */
+  private readonly _writtenControlName = new WeakMap<HTMLElement, string | null>();
 
   /**
    * The name for a control this element cannot reach imperatively.

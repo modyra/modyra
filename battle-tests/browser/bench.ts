@@ -31,6 +31,29 @@ export const HOSTS: BenchHost[] = [
   { name: "angular", page: "/angular.html", ready: "battleAngularReady", api: "battleAngular" },
 ];
 
+/**
+ * The renderers whose time picker draws no clock face.
+ *
+ * ADR 0213 makes the face optional: a panel of typed hour and minute boxes with confirm and cancel is
+ * a complete picker, and a spec that measures the face has nothing to judge on one. The absence is
+ * still parity debt, so it is named here rather than inferred from the page. A renderer listed here
+ * that starts drawing a face is measured again, and one missing from this list that draws no face is
+ * red, which is what keeps a dropped face from passing for this case.
+ */
+export const HOSTS_WITHOUT_A_CLOCK_FACE: ReadonlySet<string> = new Set(["vue"]);
+
+/**
+ * Whether the open time picker is the complete faceless one ADR 0213 describes: the two typed
+ * boxes and both actions are on screen, and neither a face nor a way to reach one was drawn. A
+ * picker that failed to open is not this case, and neither is one with a toggle that led nowhere.
+ */
+export function aPickerWithoutAFace(page: Page): Promise<boolean> {
+  return page.evaluate(() =>
+    document.querySelector(".mdy-timepicker-dial, .mdy-timepicker-dial__face, .mdy-timepicker-mode-toggle") === null
+    && document.querySelectorAll(".mdy-timepicker-segment-input").length >= 2
+    && document.querySelectorAll(".mdy-timepicker-action-btn").length >= 2);
+}
+
 /** Options with short labels, for a strip that fits, and long ones for a strip that does not. */
 export const SHORT = ["a", "b", "c", "d"].map((value) => ({ value, label: value.toUpperCase() }));
 export const MANY = Array.from({ length: 12 }, (_, index) => ({ value: `v${index}`, label: `Opzione numero ${index}` }));

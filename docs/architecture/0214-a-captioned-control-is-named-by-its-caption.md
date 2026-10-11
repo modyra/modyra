@@ -81,6 +81,20 @@ adapter batch clears the ten. The spec leaves the list, and guards this rule, on
 four are decided as well. No check yet asserts that the required marker is
 outside the name. That check belongs with the adapter batch.
 
+**Amendment, 2026-10-10 (adapter batch).** The rule is one export, `fieldAriaLabel` in
+`@modyra/widgets`. Plain, Lit and Angular call it instead of copying the caption, and its unit test is
+in `packages/widgets/test/form-shell.spec.mjs`. The contract declares the marker hidden: `projectFieldShellA11y` and
+`projectBooleanFieldA11y` return a `requiredMarker` part carrying `aria-hidden="true"`, in the same
+way the boolean's drawn indicator is declared. Every renderer writes the attribute where it draws
+the mark. Lit and Angular already wrote it, and Plain and Vue now do too. The declaration was chosen
+over leaving the rule to each renderer (TypeSafe, 76%), so that the next renderer reads the obligation
+from the contract instead of copying it from a sibling. `battle-tests/browser/a-name-the-required-mark-stays-out-of.spec.ts`
+reads the computed name of a required, captioned control in every renderer and fails if the mark
+enters it. After the batch, the aria spec reports no `aria-label` row that copies a caption. Two
+`aria-label` rows remain, and this decision does not own them. One is the number's step buttons,
+which Vue does not draw. The other is the select's search box: the contract names it through
+`MDY_PART_NAMES`, and only Lit writes that name.
+
 ## Security and privacy
 
 None. The decision changes which attribute carries an accessible name. No data, storage or trust

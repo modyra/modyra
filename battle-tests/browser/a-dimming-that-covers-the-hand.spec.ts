@@ -40,7 +40,7 @@ import { expect, test } from "@playwright/test";
 // **Every renderer, from the shared list.** The local list this replaced was not a scope
 // decision: the angular host published six of the twenty-two doors these specs need, so a
 // spec wanting one it lacked left the renderer out and the next reader copied the list.
-import { HOSTS } from "./bench";
+import { HOSTS, HOSTS_WITHOUT_A_CLOCK_FACE, aPickerWithoutAFace } from "./bench";
 
 /**
  * Opens a picker whose granularity removes most of a 24-hour face — on **both** rings, the case where
@@ -82,6 +82,13 @@ async function openDimmedDial(page: import("@playwright/test").Page, host: (type
     (document.querySelector(".mdy-timepicker-mode-toggle") as HTMLElement | null)?.click();
   });
   await page.waitForTimeout(300);
+
+  // A picker with no face has nothing to dim, and ADR 0213 calls it complete. Only on a renderer that
+  // declares it, and only when the panel really is the typed one rather than a picker that never opened.
+  test.skip(
+    HOSTS_WITHOUT_A_CLOCK_FACE.has(host.name) && await aPickerWithoutAFace(page),
+    `${host.name} draws its time picker without a clock face (ADR 0213)`,
+  );
 }
 
 /** What the face is made of, in the order a browser will paint it. */

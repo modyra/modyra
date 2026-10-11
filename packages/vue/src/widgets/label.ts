@@ -33,11 +33,14 @@ export function labelContent(
  * `null` where none is owed, so a caller appends the answer rather than deciding it: a caption that
  * asked whether the field was required would be a second reading of the rule, free to drift from
  * the one the control announces.
+ *
+ * Hidden from assistive technology: the caption names the control, and a readable mark would make the
+ * name "Email address *" where `aria-required` already says it. ADR 0214.
  */
 export function requiredMark(field: MdyFieldHandle<unknown>): VNode | null {
   const owed = fieldIsRequired({
     required: field.required(),
     interactivity: field.interactivity(),
   });
-  return owed ? h("span", { class: MDY_FIELD_SHELL_CLASSES.requiredMarker }, "*") : null;
+  return owed ? h("span", { class: MDY_FIELD_SHELL_CLASSES.requiredMarker, "aria-hidden": "true" }, "*") : null;
 }

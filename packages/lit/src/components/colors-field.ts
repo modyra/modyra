@@ -1,6 +1,6 @@
 import { mdyPart } from "../mdy-part.js";
 import {
-  fieldAccessibleName,
+  fieldAriaLabel,
   createColorsFieldController,
   type MdyColorsFieldController, capabilityOf, keyMeans,
   keyBindingFor,
@@ -401,7 +401,7 @@ export class MdyColorsFieldElement extends MdyFieldElement<string | null> {
               spellcheck="false"
               .value=${handle.value() ?? ""}
               placeholder="#000000"
-              aria-label=${fieldAccessibleName({ ariaLabel: this.declaredName(), label: this.label })}
+              aria-label=${fieldAriaLabel({ ariaLabel: this.declaredName(), label: this.label, name: this.field?.path }) ?? nothing}
               ${mdyPart(this.controlPart(handle))}
               ?disabled=${handle.disabled()}
               ?readonly=${handle.readonly()}

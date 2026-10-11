@@ -108,6 +108,8 @@ export function projectBooleanFieldA11y(
   readonly submitFalse: MdyPartContract;
   /** The drawn control: a checkbox's box, decorative because the native input carries the state. */
   readonly indicator: MdyPartContract;
+  /** The caption's required mark, decorative because `aria-required` carries the fact. ADR 0214. */
+  readonly requiredMarker: MdyPartContract;
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
@@ -155,6 +157,10 @@ export function projectBooleanFieldA11y(
     indicator: {
       // A switch draws track and thumb instead; the checkbox's box is one element.
       classes: isSwitch ? ["mdy-toggle__track"] : ["mdy-checkbox__indicator"],
+      attributes: { "aria-hidden": "true" },
+    },
+    requiredMarker: {
+      classes: [MDY_FIELD_SHELL_CLASSES.requiredMarker],
       attributes: { "aria-hidden": "true" },
     },
     // Carries `false` under the field's key, **after** the box in the document: a hidden input

@@ -8,7 +8,7 @@
  */
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicBooleanField } from "@modyra/core";
-import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, errorsVisible, fieldAccessibleName, holdsUneditedValue, visibleErrorsOf } from "@modyra/widgets";
+import { MDY_FIELD_STATE_CLASSES, MDY_WIDGET_CONTRACTS, createBooleanFieldController, errorsVisible, fieldAriaLabel, holdsUneditedValue, visibleErrorsOf } from "@modyra/widgets";
 import { applyPart, el, setErrors, setPresent, setText } from "../dom.js";
 
 export function renderBooleanField(
@@ -44,15 +44,17 @@ export function renderBooleanField(
   if (f.label) setText(labelText, f.label);
   const requiredMark = el("span", definition.parts.requiredMarker.classes.join(" "));
   setText(requiredMark, "*");
+  // Decoration, not words: `aria-required` says the box must be ticked. ADR 0214.
+  requiredMark.setAttribute("aria-hidden", "true");
   // Built here and put on the page only where the field is required: the contract says the mark is
   // present *when* the field is, and an element kept and hidden is a part drawn while its condition
   // is false.
 
 
-  // A boolean's visible words sit beside the box rather than in a `<label for>`, so the control is
-  // named here. A label is optional in a document by design, and the field's own name is what is
-  // left to say — `fieldAccessibleName` holds the order, so every renderer answers the same.
-  const accessibleName = fieldAccessibleName({ ariaLabel: f.ariaLabel, label: f.label, name: f.name });
+  // A boolean's visible words are a `<label for>` the box sits inside, so they name the control and
+  // nothing is copied onto it. A declared name is written as given; with no words, the field's own
+  // name is what is left to say. `fieldAriaLabel` holds the order, so every renderer answers the same.
+  const accessibleName = fieldAriaLabel({ ariaLabel: f.ariaLabel, label: f.label, name: f.name });
   if (accessibleName) input.setAttribute("aria-label", accessibleName);
 
   // The false half of the value. HTML leaves an unchecked box out of the payload altogether, so

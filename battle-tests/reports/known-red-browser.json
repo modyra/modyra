@@ -1,35 +1,22 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-10-10T16:46:58Z",
-  "openReds": 23,
+  "recordedAt": "2026-10-11T17:27:21Z",
+  "openReds": 10,
   "bySeverity": {
-    "S1": 15,
-    "S2": 8
+    "S1": 7,
+    "S2": 3
   },
   "knownRed": [
-    "a-command-only-one-key-reaches.spec.ts › every command in the field answers both keys a button answers, vue",
-    "a-control-with-no-mark-on-it.spec.ts › every control inside a chip draws a mark a person can see, vue",
     "a-grid-that-names-a-label-nobody-wrote.spec.ts › every grid a calendar shows is named, vue",
-    "a-hand-that-says-which-ring.spec.ts › the hand is shorter on the inner ring, vue",
-    "a-mark-too-faint-to-find.spec.ts › every mark on a trailing control carries its own contrast, vue",
-    "a-number-that-counts-what-it-cannot-see.spec.ts › the mark reports the number of values it is covering for, vue",
-    "a-quantity-only-a-mouse-can-change.spec.ts › a quantity can be changed without a pointer, vue",
+    "a-name-the-required-mark-stays-out-of.spec.ts › a declared name and a caption, on controls that are not text boxes, vue",
     "a-refusal-in-two-renderers.spec.ts › vue: a refusal that names no field reaches the person too",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "a-state-only-a-reader-is-told-about.spec.ts › a state a person must know about is one they can see, vue",
-    "a-step-that-says-nothing-until-it-deletes.spec.ts › every step of a quantity is announced, vue",
-    "an-affordance-that-was-never-drawn.spec.ts › every kind that declares an affordance draws one, vue",
     "an-aria-promise-that-depends-on-the-adapter.spec.ts › an aria promise that depends on the adapter",
-    "no-reference-that-points-at-nothing.spec.ts › no attribute names an id that is not there, vue",
     "what-a-form-sends-is-what-the-field-holds.spec.ts › a form sends the value each field holds, vue",
-    "a-cancel-two-renderers-answer.spec.ts › pressing Cancel returns the field to what it held, built-in, vue",
-    "a-cancel-two-renderers-answer.spec.ts › pressing Cancel returns the field to what it held, moved-in, vue",
-    "a-dimming-that-covers-the-hand.spec.ts › a face asked to dim its dead stretches has dimmed them, vue",
-    "a-dimming-that-covers-the-hand.spec.ts › the dimmed stretches are painted behind the hand, vue",
     "a-submission-that-fell-over.spec.ts › a submission that fell over leaves a form somebody can use, vue",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it",
-    "the-buttons-at-the-end-of-a-field.spec.ts › a field carries the controls it is declared to have, vue",
     "the-way-down-a-calendar.spec.ts › a calendar goes where the moves say, vue"
   ]
 }

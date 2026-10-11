@@ -29,6 +29,8 @@ import type { MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { useFormReset } from "./form-reset.js";
+import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
 import { useOverlayOpen } from "./overlay-open.js";
@@ -104,6 +106,7 @@ export const MdyDatepickerField = defineComponent({
     // The branch a dismissal starts from; the contract reaches out to the panel itself.
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
+    useFormReset(props.field as object, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
     useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));
@@ -239,7 +242,7 @@ export const MdyDatepickerField = defineComponent({
           // does — and says it in English on a translated page.
           "aria-label": messages.value.datepickerToggleLabel,
           onClick: () => run(controller.dispatch(state.value.open ? { type: "close" } : { type: "open" })),
-        }),
+        }, [iconOf("CALENDAR")]),
       ]));
 
       children.push(drawCalendar({

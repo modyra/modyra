@@ -24,8 +24,12 @@
 import { computed, defineComponent, h, onScopeDispose, ref, shallowRef, triggerRef, type PropType, type VNode } from "vue";
 import { labelContent } from "./label.js";
 import {
+  MDY_I18N_MESSAGES_DEFAULT,
   MDY_WIDGET_CONTRACTS,
+  blocksValueChange,
   createTextFieldController,
+  narrowConstraints,
+  type MdyPartContract,
   type MdyTextFieldController,
 
   numberEntered,} from "@modyra/widgets";
@@ -34,7 +38,11 @@ import type { MdyFieldConstraints, MdyFieldHandle } from "@modyra/core";
 import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses } from "./part.js";
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
+import { useFormReset } from "./form-reset.js";
+import { iconOf } from "./icon.js";
 import { widgetIdOf } from "./widget-id.js";
+
+const NUMBER = MDY_WIDGET_CONTRACTS.number;
 
 /**
  * Which tag a control is, asked of the semantic the part declares.
@@ -134,12 +142,42 @@ export const MdyTextField = defineComponent({
     // The widget's own element, held so the keyboard has a place to be put back to.
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
+    useFormReset(props.field as object, root);
     const view = shallowRef(controller.view());
     const watching = reactivity.effect(() => {
       view.value = controller.view();
       triggerRef(view);
     });
     onScopeDispose(() => { watching.destroy(); controller.destroy(); });
+
+    /**
+     * One of the two controls a number field is declared to have.
+     *
+     * Without them the kind's trailing promise was kept by the platform's own spinner or by nothing,
+     * depending on the browser. A press steps through the same intent typing does, by the field's
+     * step and within its bounds, so a stepped value meets the field's rules on the way in. Out of the
+     * tab order: the box itself takes the arrows, and two more stops per number field would charge a
+     * keyboard user for an affordance the pointer needed.
+     */
+    const stepper = (direction: 1 | -1, part: MdyPartContract, label: string): VNode =>
+      h("button", {
+        type: "button",
+        class: part.classes.join(" "),
+        tabindex: -1,
+        "aria-label": label,
+        // Out of play with the field: a stepper that still answers beside a disabled box is disabled
+        // in appearance only.
+        disabled: blocksValueChange(controller.state().interactivity),
+        onClick: () => {
+          if (blocksValueChange(controller.state().interactivity)) return;
+          const rules = narrowConstraints(props.field.constraints(), narrowing());
+          const by = typeof rules.step === "number" && rules.step > 0 ? rules.step : 1;
+          const from = typeof props.field.value() === "number" ? props.field.value() as number : 0;
+          const min = typeof rules.min === "number" ? rules.min : -Infinity;
+          const max = typeof rules.max === "number" ? rules.max : Infinity;
+          controller.dispatch({ type: "input", value: Math.min(max, Math.max(min, from + by * direction)) });
+        },
+      }, [iconOf(direction === 1 ? "SPIN_UP" : "SPIN_DOWN")]);
 
     return () => {
       const parts = view.value.parts;
@@ -153,8 +191,7 @@ export const MdyTextField = defineComponent({
         children.push(h("label", partProps(parts.label, { class: labelStateClasses(shell) }), labelContent(props.label, props.field)));
       }
 
-      children.push(h("div", { class: wrapperClasses(contract.parts.inputWrapper.classes, shell) }, [
-        h(tag, partProps(parts.input, {
+      const control = h(tag, partProps(parts.input, {
           // The value the model holds, on the control that shows it.
           //
           // Left unbound, the box showed only what a person had typed into it: a value arriving from
@@ -179,7 +216,13 @@ export const MdyTextField = defineComponent({
               ? numberEntered((event.target as HTMLInputElement).value)
               : (event.target as HTMLInputElement).value,
           }),
-        })),
+        }));
+      children.push(h("div", { class: wrapperClasses(contract.parts.inputWrapper.classes, shell) }, [
+        props.kind === "number" ? h("span", { class: NUMBER.presentationClasses.spinner }, [
+          control,
+          stepper(1, NUMBER.parts.increment, MDY_I18N_MESSAGES_DEFAULT.increase),
+          stepper(-1, NUMBER.parts.decrement, MDY_I18N_MESSAGES_DEFAULT.decrease),
+        ]) : control,
       ]));
 
       if (parts.description !== undefined) children.push(h("p", partProps(parts.description), parts.description.content?.text ?? ""));

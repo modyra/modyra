@@ -71,6 +71,13 @@ product debt to close, not as an accepted permanent divergence.
   `a-dimming-that-covers-the-hand.spec.ts`) do not yet skip hosts without a face. Until they do, the
   vue rows in `battle-tests/reports/known-red-browser.json` are the only guard, and nothing keeps a
   renderer that dropped its face from looking like this case.
+- *Amendment, 2026-10-10.* Both dial specs now skip a host only when two conditions hold:
+  `battle-tests/browser/bench.ts` lists it in `HOSTS_WITHOUT_A_CLOCK_FACE`, and the open panel is
+  the complete typed one (`aPickerWithoutAFace`: two segment inputs, two actions, and no face or mode
+  toggle). A renderer that drops its face without being listed is red. A listed renderer whose
+  picker failed to open, or that draws a toggle leading nowhere, is red too. The list is where the
+  parity debt is recorded, so removing a host from it measures that host's face again. Emptying the
+  list turns the three vue rows red, which was checked when the skip was added.
 
 ## Security and privacy
 
