@@ -52,8 +52,9 @@ async function openCalendar(kind) {
   opener.focus();
   opener.click();
   await settle(host);
-  const heading = () => host.querySelector(".mdy-datepicker__header-label")?.textContent?.trim()
-    ?? host.querySelector(".mdy-datepicker__view-toggle")?.textContent?.trim() ?? null;
+  // The title inside the view-toggle button: the month is its own element because the grid is named
+  // by referring to it.
+  const heading = () => host.querySelector(".mdy-datepicker__title")?.textContent?.trim() ?? null;
   assert.ok(heading(), "the calendar drew no heading, so there is nothing that says which month is showing");
   const press = async (key, held = {}) => {
     document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...held }));

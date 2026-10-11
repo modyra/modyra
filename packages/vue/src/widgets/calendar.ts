@@ -12,7 +12,7 @@
 import { Teleport, h, nextTick, watch, type Ref, type VNode } from "vue";
 import { MDY_WIDGET_CONTRACTS, defaultWidgetIdFactory,
   keyBindingFor,
-  type MdyWidgetKind,
+  type MdyWidgetKind, presentationClass,
 } from "@modyra/widgets";
 import type { MdyDatepickerFieldCell, MdyDaterangeFieldCell, MdyPartContract } from "@modyra/widgets";
 import type { MdyDateLocale } from "@modyra/core/datetime";
@@ -31,6 +31,10 @@ const partsOf = (kind: MdyCalendarKind): Readonly<Record<string, MdyDeclaredPart
 
 export const calendarClassesOf = (kind: MdyCalendarKind, part: string): string =>
   partsOf(kind)[part]?.classes.join(" ") ?? "";
+
+/** A presentation class the catalogue names — the header's furniture, drawn from the same table. */
+const presentationOf = (kind: MdyCalendarKind, name: string): string =>
+  presentationClass(kind, name) ?? "";
 
 /**
  * The role the contract gives a part, written where the part is drawn.
@@ -89,6 +93,24 @@ export const drawCalendar = (options: {
   readonly cells: readonly MdyCalendarCell[];
   readonly parts: MdyProjectedParts;
   readonly locale: MdyDateLocale;
+  /**
+   * The month the grid is showing, and the ways out of it.
+   *
+   * The controller has held `viewMonth`, `viewYear` and `viewMode` all along, with the intents that
+   * page a month and switch views. This renderer drew a panel of bare grids and never asked, so a
+   * person saw a month with nothing saying which and could reach another only from the keyboard.
+   * The anatomy is the catalogue's: three siblings, the middle one named for the act it performs.
+   */
+  readonly heading?: {
+    readonly title: string;
+    readonly headingId: string;
+    readonly onPreviousMonth: () => void;
+    readonly onNextMonth: () => void;
+    readonly onToggleView: () => void;
+    readonly previousLabel: string;
+    readonly nextLabel: string;
+    readonly toggleLabel: string;
+  };
   readonly onPick: (iso: string) => void;
   readonly onPreview?: (iso: string | null) => void;
   /** The id whatever opens this panel points `aria-controls` at, where it names the panel itself. */
@@ -116,6 +138,7 @@ export const drawCalendar = (options: {
   const { kind, cells, parts } = options;
   const cls = (part: string): string => calendarClassesOf(kind, part);
   const role = (part: string): string | undefined => calendarRoleOf(kind, part);
+  const pres = (name: string): string => presentationOf(kind, name);
 
   const weeks: VNode[] = [];
   for (let start = 0; start < cells.length; start += DAYS_IN_WEEK) {
@@ -151,6 +174,20 @@ export const drawCalendar = (options: {
       role: role("calendar"),
       ...(options.name === undefined || options.name === "" ? {} : { "aria-label": options.name }),
     }, [
+      ...(options.heading === undefined ? [] : [h("div", { class: cls("dialogHeader") }, [
+        h("button", {
+          type: "button", class: `${pres("navButton")} ${pres("navButton")}--previous`,
+          "aria-label": options.heading.previousLabel, onClick: options.heading.onPreviousMonth,
+        }),
+        h("button", {
+          type: "button", class: pres("viewToggle"),
+          "aria-label": options.heading.toggleLabel, onClick: options.heading.onToggleView,
+        }, [h("span", { class: pres("title"), id: options.heading.headingId }, options.heading.title)]),
+        h("button", {
+          type: "button", class: `${pres("navButton")} ${pres("navButton")}--next`,
+          "aria-label": options.heading.nextLabel, onClick: options.heading.onNextMonth,
+        }),
+      ])]),
       h("div", partProps(parts.grid, { class: cls("grid") }), [
         h("div", { class: cls("weekdays"), role: role("weekdays") },
           weekdayLabels(options.locale).map((name) =>

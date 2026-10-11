@@ -13,7 +13,7 @@
  */
 import { MDY_VALUE_CONTRACTS } from "@modyra/core";
 import { MDY_POPUP_OPENERS, MDY_WIDGET_CONTRACTS, type MdyWidgetKind } from "./catalog.js";
-import { MDY_FIELD_CAPABILITIES } from "./structure.js";
+import { MDY_FIELD_CAPABILITIES, type MdyKeyIntent, type MdyWidgetStructureNode } from "./structure.js";
 
 /** What the user did. */
 export type MdyTransitionTrigger =
@@ -149,7 +149,7 @@ export interface MdyKeyBinding {
   readonly key: string;
   /** Only when the overlay is showing, only when it is not, or either way. */
   readonly when?: MdyOverlayPhase;
-  readonly intent: "move" | "step" | "toggle" | "open" | "commit" | "cancel" | "reorder" | "remove" | "grab" | "undo" | "typeahead" | "view";
+  readonly intent: MdyKeyIntent;
   /**
    * Which way a `reorder` goes: `-1` earlier in the value, `1` later. A `step` reads it the same way,
    * and a `view` reads it as scope: `1` widens — days to months to years — and `-1` narrows again.
@@ -272,6 +272,7 @@ const TOGGLES: readonly string[] = Object.freeze(["checkbox", "toggle", "radio",
 function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
   const overlay = MDY_WIDGET_CONTRACTS[kind].capabilities.overlay;
   const bindings: MdyKeyBinding[] = [];
+  let tabDecidedLast = false;
 
   if (overlay) {
     // Whatever is held with it. Refusing the way out because somebody's hand was on a modifier is a
@@ -303,10 +304,11 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     // arrives; one action per *row* cannot, since a stop that named the row would be one stop per row
     // and Tab would be a scroll. Those are reached by a key on the active row instead, which is a
     // different repair for a different shape.
-    const keepsFocus = popupHoldsAnAction(kind);
-    bindings.push(keepsFocus
-      ? { key: "Tab", when: "open", intent: "move" }
-      : { key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
+    // Decided at the end rather than here, because the answer depends on every binding this kind
+    // declares and only some of them exist yet: asked now, a panel whose header keys are pushed
+    // further down reads as having no key at all, and Tab starts being held by a panel that should
+    // let it go. The placeholder keeps this list's order; the answer replaces it once complete.
+    tabDecidedLast = true;
     // Which part a key opens from, named rather than left to mean "anywhere on this widget". A
     // closed control used to be one thing to press; a multiselect's closed control now holds a strip
     // of chips with keys of their own, and a binding with no part claimed those too — so `Enter`
@@ -587,6 +589,16 @@ function keyboardFor(kind: MdyWidgetKind): readonly MdyKeyBinding[] {
     });
   }
 
+
+  // Now that every binding exists, the panel can be asked whether it holds an act with no key —
+  // which is what decides whether Tab is a way out or a way around.
+  if (tabDecidedLast) {
+    const keepsFocus = popupHoldsAnAction(kind, bindings);
+    bindings.push(keepsFocus
+      ? { key: "Tab", when: "open", intent: "move" }
+      : { key: "Tab", when: "open", intent: "cancel", restoresFocus: false });
+  }
+
   return Object.freeze(bindings);
 }
 
@@ -605,7 +617,16 @@ const CHOICE_ELEMENTS = new Set(["option", "gridcell", "radio"]);
  * different things, the timepicker's inner box and the file field's list of chosen files, and
  * admitting it put a field with no panel at all into the answer.
  */
-export function popupHoldsAnAction(kind: MdyWidgetKind): boolean {
+export function popupHoldsAnAction(
+  kind: MdyWidgetKind,
+  /**
+   * The bindings to judge the exemption against.
+   *
+   * Passed in rather than read from the published table because this is asked *while* that table is
+   * built: reading it here is a module consulting its own half-built self, which fails at load.
+   */
+  bindings: readonly MdyKeyBinding[] = MDY_WIDGET_KEYBOARD[kind] ?? [],
+): boolean {
   const nodes = MDY_WIDGET_CONTRACTS[kind].structure.nodes;
   const byPart = new Map<string, (typeof nodes)[number]>(nodes.map((node) => [String(node.part), node]));
   const insidePopup = (part: string): boolean => {
@@ -622,7 +643,36 @@ export function popupHoldsAnAction(kind: MdyWidgetKind): boolean {
     OPERABLE_ELEMENTS.has(String(node.element))
     && !CHOICE_ELEMENTS.has(String(node.element))
     && node.repeated !== true
+    && !partIsReachedByAKey(node, bindings)
     && insidePopup(String(node.part)));
+}
+
+/**
+ * Whether the act a part performs is one a declared key already performs while the panel is open.
+ *
+ * WCAG asks that an act be reachable from a keyboard, not that it be a Tab stop. A calendar's header
+ * pages the month and switches the view, and the kind declares keys that do both while the panel is
+ * open — so those acts are reachable without the panel swallowing Tab, and Tab keeps meaning
+ * "leave", which is the one thing it means everywhere. A part that performs no act, or whose act no
+ * key covers, answers `false`.
+ *
+ * Derived, not listed: it holds only while a binding covering the act exists, and of the same size —
+ * a part that pages is covered only by a key that pages. Take the key away and the part is operable
+ * with nothing reaching it, the panel holds Tab again, and the exemption dies with its own reason.
+ *
+ * One notion, asked here by the panel deciding Tab and by anything judging a single part: a second
+ * copy of this rule is where the two would come to disagree.
+ */
+export function partIsReachedByAKey(
+  node: Pick<MdyWidgetStructureNode, "performs" | "performsPage">,
+  bindings: readonly MdyKeyBinding[],
+): boolean {
+  return node.performs !== undefined
+    && bindings.some(
+      (binding) =>
+        binding.intent === node.performs
+        && binding.when === "open"
+        && (node.performsPage !== true || binding.page === true));
 }
 
 export const MDY_WIDGET_KEYBOARD: Readonly<Record<MdyWidgetKind, readonly MdyKeyBinding[]>> =

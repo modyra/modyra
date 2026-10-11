@@ -13,7 +13,7 @@ import type { MdyStateName } from "../state.js";
 import {
   dynamicPartsOf, MDY_FIELD_SHELL_CLASSES, MDY_PART_PRESENCE, MDY_PART_REQUIRES, MDY_SHELL_PART_STATES,
 } from "../structure.js";
-import type { MdyWidgetSemanticElement } from "../structure.js";
+import type { MdyWidgetSemanticElement, MdyKeyIntent} from "../structure.js";
 import type { MdyValueSlot, MdyWidgetDefinition, MdyWidgetKind, MdyWidgetVariant } from "./kinds.js";
 import { semanticElement } from "./semantics.js";
 
@@ -74,7 +74,11 @@ export const PARENT_CANDIDATES: Readonly<Record<string, readonly string[]>> = Ob
   container: ["popup"],
   // Same reasoning as `grid` below: the header belongs to the calendar where a renderer draws one
   // and to the popup where it does not. What the contract requires is that it is inside the overlay.
-  dialogHeader: ["calendar", "popup"], header: ["content", "popup"], calendar: ["popup"], clock: ["content", "popup"], actions: ["container", "popup"],
+  dialogHeader: ["calendar", "popup"],
+  headerPrevious: ["dialogHeader"], viewToggle: ["dialogHeader"], headerNext: ["dialogHeader"],
+  // Inside the button, because the grid is named by referring to the text and never to the
+  // control that carries a name of its own. ADR 0212.
+  headerTitle: ["viewToggle"], header: ["content", "popup"], calendar: ["popup"], clock: ["content", "popup"], actions: ["container", "popup"],
   grid: ["calendar", "popup"], weekdays: ["grid"], weekday: ["weekdays"], row: ["grid"], gridcell: ["row", "grid"],
   // The two views that replace the day grid rather than sitting beside it: a calendar showing its
   // months is not also showing its days, which is why they share the calendar as their parent and
@@ -440,6 +444,19 @@ export const MDY_POPUP_OPENERS: Readonly<Partial<Record<MdyWidgetKind, MdyPopupO
  * Listed as the exception rather than declared per kind because that is what it is: two of the six
  * overlay kinds hold a list, and the other four hold a fixed layout.
  */
+/**
+ * The act a part performs, for the parts that perform one, with its size where an intent has two.
+ *
+ * Only what a part *does* belongs here: a choice is not an act in this sense, it is the thing being
+ * chosen. This is what lets a reader ask whether an act has a key of its own.
+ */
+const PERFORMS: Readonly<Record<string, { readonly intent: MdyKeyIntent; readonly page?: boolean }>> =
+  Object.freeze({
+    headerPrevious: { intent: "move", page: true },
+    headerNext: { intent: "move", page: true },
+    viewToggle: { intent: "view" },
+  });
+
 const SCROLLING_OVERLAYS: readonly MdyWidgetKind[] = Object.freeze(["select", "multiselect"]);
 /**
  * The faces each kind can wear — a configuration axis that changes what its parts say, never which
@@ -524,6 +541,8 @@ export function define<const TPart extends string>(kind: MdyWidgetKind, rootClas
       part: name, element: shape.elements?.[name] ?? semanticElement(name), parent: parent as TPart,
       order, optional: !(REQUIRED_PARTS.has(name) || shape.required?.includes(name)),
       repeated: REPEATED_PARTS.has(name),
+      performs: PERFORMS[name]?.intent,
+      performsPage: PERFORMS[name]?.page,
     };
   });
   // What repeats is not a list, it is a consequence: a part drawn inside something that repeats is

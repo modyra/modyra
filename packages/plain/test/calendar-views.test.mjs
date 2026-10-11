@@ -18,12 +18,18 @@ const { PAINT_BEAT } = await import("../conformance.config.mjs");
 /** The beat this renderer declares it paints on, rather than a number guessed here. */
 const settle = () => settleFor(PAINT_BEAT ?? MDY_PAINT_BEATS.task);
 
-async function mount() {
+/**
+ * Both kinds. A range draws the same calendar as the single picker and shares its controller's view
+ * state; a bench that opened only the single picker was blind to a range that offered no view at all.
+ */
+const VALUE = { datepicker: "2026-07-15", daterange: { start: "2026-07-15", end: "2026-07-20" } };
+
+async function mount(kind) {
   const host = document.createElement("div");
   document.body.appendChild(host);
   const { form } = mountMdyForm(
     host,
-    [{ kind: "datepicker", name: "when", label: "When", value: "2026-07-15" }],
+    [{ kind, name: "when", label: "When", value: VALUE[kind] }],
     { submitLabel: null },
   );
   host
@@ -33,13 +39,16 @@ async function mount() {
   return { host, form };
 }
 
-const label = (host) => host.querySelector(".mdy-datepicker__header-label");
+// The button that switches views, named for the act it performs rather than the place it sits: the
+// header's middle child, with the month as its own element inside it.
+const label = (host) => host.querySelector(".mdy-datepicker__view-toggle");
 const monthGrid = (host) => host.querySelector(".mdy-datepicker__month-picker");
 const yearGrid = (host) => host.querySelector(".mdy-datepicker__year-picker");
 const dayGrid = (host) => host.querySelector(".mdy-datepicker__grid");
 
-test("the header opens the years, and closes back to the days", async () => {
-  const { host } = await mount();
+for (const kind of ["datepicker", "daterange"]) {
+test(`${kind}: the header opens the years, and closes back to the days`, async () => {
+  const { host } = await mount(kind);
   assert.equal(dayGrid(host).hidden, false, "a calendar opens on its days");
   assert.equal(yearGrid(host).hidden, true);
 
@@ -56,8 +65,8 @@ test("the header opens the years, and closes back to the days", async () => {
   assert.equal(yearGrid(host).hidden, true);
 });
 
-test("choosing narrows towards the days, and the grid follows", async () => {
-  const { host } = await mount();
+test(`${kind}: choosing narrows towards the days, and the grid follows`, async () => {
+  const { host } = await mount(kind);
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
 
@@ -75,8 +84,8 @@ test("choosing narrows towards the days, and the grid follows", async () => {
   assert.match(label(host).textContent, /2030/, "the calendar is showing the year that was chosen");
 });
 
-test("the views carry the semantics the day grid already had", async () => {
-  const { host } = await mount();
+test(`${kind}: the views carry the semantics the day grid already had`, async () => {
+  const { host } = await mount(kind);
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
 
@@ -86,8 +95,8 @@ test("the views carry the semantics the day grid already had", async () => {
   assert.equal(chosen.textContent.trim().length > 0, true);
 });
 
-test("choosing a month or a year commits no value", async () => {
-  const { host, form } = await mount();
+test(`${kind}: choosing a month or a year commits no value`, async () => {
+  const { host, form } = await mount(kind);
   const before = form.f.when.value();
   label(host).dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
@@ -95,5 +104,6 @@ test("choosing a month or a year commits no value", async () => {
   await settle();
   monthGrid(host).querySelectorAll("button")[4].dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
   await settle();
-  assert.equal(form.f.when.value(), before, "navigating is not picking");
+  assert.deepEqual(form.f.when.value(), before, "navigating is not picking");
 });
+}

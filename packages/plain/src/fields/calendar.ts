@@ -7,9 +7,12 @@
  * each row holding seven `__cell`s. That nesting is not decoration — the shipped themes lay out
  * the seven columns on the row, so a flat list of cells renders as a single column.
  */
-import { buildMonthGrid, type CalendarCell, type MdyDateLocale } from "@modyra/core/datetime";
-import { MDY_WIDGET_CONTRACTS, calendarDayId, type MdyWidgetKind } from "@modyra/widgets";
-import { el, setText } from "../dom.js";
+import { buildMonthGrid, calendarYearRange, isMonthOutOfRange, isYearOutOfRange, type CalendarCell, type CalendarDate, type MdyDateLocale } from "@modyra/core/datetime";
+import {
+  MDY_WIDGET_CONTRACTS, calendarDayId, calendarViewOnZoom, keyBindingFor, partClasses, projectCalendarPeriodCellA11y,
+  projectCalendarViewA11y, type MdyCalendarViewA11yOptions, type MdyCalendarViewMode, type MdyWidgetKind,
+} from "@modyra/widgets";
+import { applyPart, el, setText } from "../dom.js";
 
 export interface CalendarBody {
   readonly grid: HTMLDivElement;
@@ -82,4 +85,114 @@ export function fillCalendar(
     grid.appendChild(row);
   }
   return cells;
+}
+
+/** The two views a calendar's header switches to, replacing the day grid rather than sitting beside it. */
+export interface PeriodViews {
+  readonly monthPicker: HTMLDivElement;
+  readonly yearPicker: HTMLDivElement;
+  /**
+   * Shows the view `mode` names and hides the other; the days are the caller's. The shown view is
+   * drawn from the year and month on screen, so choosing in it lands where the person was looking.
+   */
+  render(mode: MdyCalendarViewMode, year: number, month: number): void;
+}
+
+/** What choosing in a period view asks of the controller: both calendar kinds answer these two. */
+export type PeriodPick = { readonly type: "select-month"; readonly month: number } | { readonly type: "select-year"; readonly year: number };
+
+/**
+ * Builds the month and year views for a calendar of `kind`, drawn from the contract's projection:
+ * which cells there are, which is chosen, which the bounds refuse and what each announces are its
+ * answers, not the renderer's.
+ *
+ * Both views exist from the start, hidden: an element that only gains its classes when it is shown
+ * is an element no test and no theme can name while it is not.
+ */
+export function buildPeriodViews(
+  kind: MdyCalendarViewA11yOptions["kind"],
+  widgetId: string,
+  locale: MdyDateLocale,
+  /** Read at each render rather than once: the bounds a field is given can move after it mounts. */
+  bounds: () => { readonly min: CalendarDate | null; readonly max: CalendarDate | null },
+  onPick: (pick: PeriodPick) => void,
+): PeriodViews {
+  const monthPicker = el("div") as HTMLDivElement;
+  const yearPicker = el("div") as HTMLDivElement;
+  applyPart(monthPicker, projectCalendarViewA11y("months", { kind, widgetId })!);
+  applyPart(yearPicker, projectCalendarViewA11y("years", { kind, widgetId })!);
+  monthPicker.hidden = true;
+  yearPicker.hidden = true;
+
+  function render(mode: MdyCalendarViewMode, year: number, month: number): void {
+    const { min, max } = bounds();
+    for (const [host, own] of [[monthPicker, "months"], [yearPicker, "years"]] as const) {
+      host.hidden = mode !== own;
+      if (mode !== own) continue;
+      const values = own === "months"
+        ? Array.from({ length: 12 }, (_, index) => index + 1)
+        : [...calendarYearRange(year, min, max)];
+      const current = own === "months" ? month : year;
+      host.replaceChildren(...values.map((value) => {
+        const button = el("button") as HTMLButtonElement;
+        button.type = "button";
+        setText(button, own === "months" ? (locale.monthNamesShort[value - 1] ?? String(value)) : String(value));
+        applyPart(button, projectCalendarPeriodCellA11y(own, {
+          value,
+          label: button.textContent ?? String(value),
+          selected: value === current,
+          disabled: own === "months" ? isMonthOutOfRange(year, value, min, max) : isYearOutOfRange(value, min, max),
+        }, { kind, widgetId }));
+        button.addEventListener("click", () =>
+          onPick(own === "months" ? { type: "select-month", month: value } : { type: "select-year", year: value }));
+        return button;
+      }));
+      if (own === "years") {
+        // Guarded: a document without layout has no `scrollIntoView`, and a picker that throws
+        // there takes the whole effect down with it.
+        host
+          .querySelector<HTMLElement>(`.${partClasses(kind, "yearCell", { selected: true }).join(".")}`)
+          ?.scrollIntoView?.({ block: "center" });
+      }
+    }
+  }
+
+  return { monthPicker, yearPicker, render };
+}
+
+/**
+ * Wires the gesture the kind declares for stepping between views — the platform's accelerator held
+ * with a vertical arrow — on every element a press inside the calendar reaches.
+ *
+ * Handled once per press: a press inside the panel reaches each of `listeners`, and a second reading
+ * of the same event would step twice. The keys follow the eye: the view a step came from is hidden,
+ * so focus left there would sit on an element in no accessibility tree at all, and the landing is
+ * the chosen cell of the view reached, or its first choosable one.
+ */
+export function bindViewZoom(
+  kind: MdyCalendarViewA11yOptions["kind"],
+  listeners: readonly HTMLElement[],
+  hosts: { readonly days: HTMLElement; readonly months: HTMLElement; readonly years: HTMLElement },
+  state: () => { readonly open: boolean; readonly viewMode: MdyCalendarViewMode },
+  onZoom: (mode: MdyCalendarViewMode) => void,
+): void {
+  const zoomed = new WeakSet<KeyboardEvent>();
+  const onZoomView = (event: KeyboardEvent): void => {
+    const current = state();
+    if (!current.open || zoomed.has(event)) return;
+    const binding = keyBindingFor(kind, event, current.open);
+    if (binding?.intent !== "view" || binding.by === undefined) return;
+    event.preventDefault();
+    zoomed.add(event);
+    const reached = calendarViewOnZoom(current.viewMode, binding.by);
+    if (reached === current.viewMode) return;
+    onZoom(reached);
+    queueMicrotask(() => {
+      const host = hosts[reached];
+      const landing = host.querySelector<HTMLElement>('[aria-selected="true"], [tabindex="0"]')
+        ?? host.querySelector<HTMLElement>("button:not([disabled])");
+      landing?.focus();
+    });
+  };
+  for (const element of listeners) element.addEventListener("keydown", onZoomView);
 }

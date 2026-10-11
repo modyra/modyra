@@ -588,7 +588,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     datepicker: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "control", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "headerPrevious", "viewToggle", "headerTitle", "headerNext", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "control" },
         { from: "control", attribute: "aria-controls", to: null },
@@ -612,7 +612,7 @@ export const MDY_CANONICAL_AT_REST: Readonly<Partial<Record<MdyWidgetKind, MdyCa
     }),
     daterange: Object.freeze({
       parts: Object.freeze(["root", "label", "inputWrapper", "startControl", "separator", "endControl", "toggle"]),
-      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
+      optional: Object.freeze(["supportingText", "requiredMarker", "popup", "dialogHeader", "headerPrevious", "viewToggle", "headerTitle", "headerNext", "calendar", "grid", "weekdays", "weekday", "row", "gridcell", "actions", "inlineError", "errors", "errorItem"]),
       relationships: Object.freeze([
         { from: "label", attribute: "for", to: "startControl" },
         { from: "toggle", attribute: "aria-controls", to: null },

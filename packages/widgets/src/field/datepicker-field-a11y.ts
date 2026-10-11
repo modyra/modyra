@@ -52,6 +52,13 @@ export function datepickerFieldPartIds(widgetId: string): {
   readonly labelId: string;
   readonly triggerId: string;
   readonly gridId: string;
+  /**
+   * The visible line that says which month the grid is showing.
+   *
+   * The grid is named by referring to it rather than by a caption written a second time: one copy on
+   * the page, so the month a reader hears is the month a reader sees. ADR 0212.
+   */
+  readonly headingId: string;
   readonly descriptionId: string;
   readonly errorId: string;
 } {
@@ -60,6 +67,7 @@ export function datepickerFieldPartIds(widgetId: string): {
     labelId: `${widgetId}__label`,
     triggerId: `${widgetId}__trigger`,
     gridId: `${widgetId}__grid`,
+    headingId: `${widgetId}__heading`,
     descriptionId: `${widgetId}__description`,
     errorId: `${widgetId}__errors`,
   };
@@ -82,7 +90,7 @@ export function projectDatepickerFieldA11y(
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
-  const { labelId, triggerId, gridId, descriptionId, errorId } = datepickerFieldPartIds(options.widgetId);
+  const { labelId, triggerId, gridId, headingId, descriptionId, errorId } = datepickerFieldPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error
   // text renders are four faces of one question, answered once in verdict.ts.
   const hasErrors = shownErrors(state, errors).length > 0;
@@ -152,7 +160,15 @@ export function projectDatepickerFieldA11y(
       classes: ["mdy-datepicker__grid"],
       attributes: {
         role: "grid",
-        "aria-labelledby": labelId,
+        /**
+         * Named by the line that says which month it shows, referred to rather than repeated.
+         *
+         * Named after the field it told a reader what they were filling in and not where they were:
+         * moving to the next month changed everything under the cursor and the name stayed. And
+         * never a written label beside this — a reference wins the name computation always, so a
+         * caption a renderer computed reached nobody while looking correct. ADR 0212.
+         */
+        "aria-labelledby": headingId,
       },
     },
     description: {

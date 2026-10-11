@@ -76,6 +76,13 @@ export function daterangeFieldPartIds(widgetId: string): {
   readonly startId: string;
   readonly endId: string;
   readonly gridId: string;
+  /**
+   * The visible line that says which month the grid is showing.
+   *
+   * The grid is named by referring to it rather than by a caption written a second time: one copy on
+   * the page, so the month a reader hears is the month a reader sees. ADR 0212.
+   */
+  readonly headingId: string;
   readonly descriptionId: string;
   readonly errorId: string;
 } {
@@ -85,6 +92,7 @@ export function daterangeFieldPartIds(widgetId: string): {
     startId: `${widgetId}__start`,
     endId: `${widgetId}__end`,
     gridId: `${widgetId}__grid`,
+    headingId: `${widgetId}__heading`,
     descriptionId: `${widgetId}__description`,
     errorId: `${widgetId}__errors`,
   };
@@ -111,7 +119,7 @@ export function projectDaterangeFieldA11y(
   readonly description: MdyPartContract;
   readonly error: MdyPartContract;
 } {
-  const { labelId, startId, endId, gridId, descriptionId, errorId } =
+  const { labelId, headingId, startId, endId, gridId, descriptionId, errorId } =
     daterangeFieldPartIds(options.widgetId);
   // Out of play, no verdict — the wrapper, the label, `aria-invalid` and whether the error text
   // renders are four faces of one question, answered once in verdict.ts.
@@ -213,7 +221,12 @@ export function projectDaterangeFieldA11y(
     grid: {
       id: gridId,
       classes: [...definition.parts.grid.classes],
-      attributes: { role: "grid", "aria-labelledby": labelId },
+      attributes: {
+        role: "grid",
+        // The month it shows, referred to rather than repeated; a range draws a grid per month and
+        // each says its own. ADR 0212.
+        "aria-labelledby": headingId,
+      },
     },
     description: {
       id: descriptionId,
