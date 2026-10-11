@@ -95,7 +95,6 @@ export interface StudioServerValidator {
   debounceMs?: number;
   timeoutMs?: number;
   skipWhen?: StudioExpression;
-  errorMessage?: string;
 }
 
 export interface StudioArrayValidator {

@@ -337,7 +337,7 @@ test("a server validator inside a record's row is indexed by what it depends on"
     node: "field", id: "nd_rec_code", name: "code", fieldKind: "text", valueType: "string", initialValue: "", validators: [],
     serverValidator: {
       id: "val_rec_server", kind: "server", implementationRef: "impl_validate_coupon",
-      dependencies: [{ nodeId: "nd_country" }], debounceMs: 400, timeoutMs: 5000, errorMessage: "no",
+      dependencies: [{ nodeId: "nd_country" }], debounceMs: 400, timeoutMs: 5000,
     },
   });
   const idx = buildIndexes(project);

@@ -21,7 +21,7 @@ const SERVER_IMPL = { impl_s: { id: "impl_s", role: "serverValidator", displayNa
 function couponProject(skipWhen) {
   return project({
     children: [field("nd_c", "coupon", {
-      serverValidator: { id: "val_s", kind: "server", implementationRef: "impl_s", dependencies: [], skipWhen, errorMessage: "no" },
+      serverValidator: { id: "val_s", kind: "server", implementationRef: "impl_s", dependencies: [], skipWhen },
     })],
     implementations: SERVER_IMPL,
   });

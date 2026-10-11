@@ -235,6 +235,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0218: An expression past the depth limit is a document question](0218-an-expression-past-the-depth-limit-is-a-document-question.md) — the evaluator keeps answering true past the depth cap, which the parser enforces on documents; questions with a polarity-free answer, such as a non-text matches pattern, decide nothing
 - [ADR 0219: A development server answers only its own page and build](0219-a-dev-server-answers-only-its-own.md) — the Studio and plain-preview dev servers serve only the page and dist, follow links to their real place before serving, and refuse a foreign Host
 - [ADR 0220: The Vue adapter runs on the reactivity Vue itself runs on](0220-one-vue-reactivity-runtime.md) — every reactive primitive is imported from `vue` and `@vue/reactivity` is no longer a peer, so a consumer's `computed` and `watchEffect` track form state in every install layout
+- [ADR 0221: A server validator carries no message of its own](0221-a-server-validator-carries-no-message-of-its-own.md) — `StudioServerValidator` has no `errorMessage` and the inspector no message input: a server refusal's text comes from the server, or from the preview mock's configuration
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

@@ -114,8 +114,7 @@ The ids here (`nd_*`, `val_*`, `impl_*`) are illustrative. How ids are really ge
           "dependencies": [{ "nodeId": "nd_country" }],
           "debounceMs": 400,
           "timeoutMs": 5000,
-          "skipWhen": { "op": "isEmpty", "operand": { "nodeId": "nd_coupon" } },
-          "errorMessage": "Coupon not valid for your country"
+          "skipWhen": { "op": "isEmpty", "operand": { "nodeId": "nd_coupon" } }
         }
       }
     ]
