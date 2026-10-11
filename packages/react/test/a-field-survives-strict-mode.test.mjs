@@ -48,7 +48,7 @@ test("a widget controller still answers after Strict Mode's mount, cleanup and r
   const options = [{ value: "rome", label: "Rome" }, { value: "oslo", label: "Oslo" }];
   function Picker() {
     const select = useMdySelectField(form.f.city, { options, widgetId: "city" });
-    return React.createElement("span", null, String(select.state.selectedValue ?? select.state.selectedValue ?? ""));
+    return React.createElement("span", null, String(select.state.selectedValue ?? ""));
   }
   const { host, root } = await mountStrict(React.createElement(Picker));
   await act(async () => form.f.city.set("oslo"));
