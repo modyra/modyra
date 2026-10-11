@@ -16,6 +16,7 @@
 import { computed, Teleport, defineComponent, h, ref, nextTick, onScopeDispose, shallowRef, triggerRef, watch, type PropType, type VNode } from "vue";
 import { labelContent } from "./label.js";
 import {
+  MDY_TIMEPICKER_DEFAULT_FORMAT,
   MDY_WIDGET_CONTRACTS,
   createTimepickerFieldController,
   defaultWidgetIdFactory,
@@ -33,6 +34,7 @@ import { partProps, type MdyDeclaredPart, rootClasses, labelStateClasses, shellS
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useFormReset } from "./form-reset.js";
+import { useNativeSubmission } from "./submission.js";
 import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
@@ -76,7 +78,8 @@ export const MdyTimepickerField = defineComponent({
      */
     supportingText: { type: String, required: false, default: undefined },
     /**
-     * Which clock this field draws and reads. Absent leaves the controller's own default.
+     * Which clock this field draws and reads. Absent draws `MDY_TIMEPICKER_DEFAULT_FORMAT`, the clock
+     * every renderer draws when a document names none.
      *
      * The document carries it because the format is the field's property and not the host's taste:
      * a form that means half past two in the afternoon means it in every renderer. A renderer that
@@ -94,7 +97,7 @@ export const MdyTimepickerField = defineComponent({
       supportingText: () => props.supportingText ?? null,
       handle: props.field,
       widgetId: widgetId.value,
-      ...(props.format === undefined ? {} : { format: props.format }),
+      format: props.format ?? MDY_TIMEPICKER_DEFAULT_FORMAT,
       // The reading is this renderer's; the judgement is the controller's, so a typed entry means
       // the same thing here as in every renderer. Canonical, as the dial commits: a time is `HH:mm`
       // wherever it is held.
@@ -110,6 +113,7 @@ export const MdyTimepickerField = defineComponent({
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
     useFormReset(props.field as object, root);
+    useNativeSubmission("timepicker", props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
     useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close" })));

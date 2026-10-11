@@ -13,6 +13,7 @@ import {
   MdyDatepickerField,
   MdyDaterangeField,
   MdyFileField,
+  MdyFormErrors,
   MdyMultiselectField,
   MdyOptionField,
   MdySelectField,
@@ -108,9 +109,30 @@ function mountOneField({ declared, handle, into, idPrefix }) {
   };
 }
 
+/**
+ * The form's own error region, placed by the host as a Vue application does.
+ *
+ * The shared host hands the form over by assigning `.form` to the element it is given, which is the
+ * custom-element convention. A Vue component takes the form as a prop instead, so the element here is
+ * a plain container whose `form` setter mounts the component with it.
+ */
+function errorSummaryElement() {
+  const container = document.createElement("div");
+  let app = null;
+  Object.defineProperty(container, "form", {
+    set(form) {
+      app?.unmount();
+      app = createApp({ render: () => h(MdyFormErrors, { form }) });
+      app.mount(container);
+    },
+  });
+  return container;
+}
+
 window.battleVue = createBattleHost({
   createForm: createVueForm,
   mountOneField,
+  errorSummaryElement,
 });
 
 window.battleVueReady = true;
