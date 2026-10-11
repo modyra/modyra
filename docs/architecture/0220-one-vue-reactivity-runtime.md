@@ -40,6 +40,10 @@ so the scope that happens to be active does not hold it.
 - `untracked` depends on public `ReactiveEffect` and `EffectScope` behaviour: an effect becomes the
   active subscriber while it runs, and a detached scope is not held by its parent. A Vue release that
   changes either is caught by the tests below.
+- An effect or computed *created* inside `untracked(fn)` belongs to the detached scope and is stopped
+  when `untracked` returns; under `pauseTracking` it would have joined the caller's scope. The
+  reactivity contract does not cover creating effects inside `untracked`, and no core call site does
+  it: they read and write signals only.
 
 ## Alternatives rejected
 
