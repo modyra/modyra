@@ -69,7 +69,8 @@ export const weekdayLabels = (locale: MdyDateLocale): readonly string[] => {
  *
  * Only the day view gives the days the focus. With the months or years on screen the grid is
  * hidden, and a press that moves the tab stop underneath it must not pull the focus off the button
- * a person is on into a cell nobody can see.
+ * a person is on into a cell nobody can see. In the days, a control of the calendar that holds the
+ * keyboard and is still showing keeps it.
  */
 export const followTheReadingPosition = (
   widgetId: string,
@@ -81,7 +82,14 @@ export const followTheReadingPosition = (
     // renderer a beat after the dispatch.
     await nextTick();
     const target = document.getElementById(defaultWidgetIdFactory.item(widgetId, "day", focused));
-    if (target instanceof HTMLElement && target !== document.activeElement) target.focus();
+    if (!(target instanceof HTMLElement) || target === document.activeElement) return;
+    // Paging moves the day under the header's buttons too, and the keyboard stays on the button
+    // that paged: taken into the grid, the next press of Next would pick a day instead.
+    const grid = document.getElementById(`${widgetId}__grid`);
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && grid?.parentElement?.contains(active) === true
+      && !grid.contains(active) && active.getClientRects().length > 0) return;
+    target.focus();
   }, { immediate: true });
 };
 
@@ -265,6 +273,11 @@ const drawPeriodViews = (
  * The run is two centuries long where nothing bounds it, and it opens scrolled to its top: without
  * this, a person who pressed the header to change the year meets 1926 and has to hunt for the one
  * they were on.
+ *
+ * And the keyboard, when a chosen year narrows to its months. The years hold no cells once hidden, so
+ * focus on the pressed year falls to the page; it lands on the shown month, or the first the bounds
+ * allow. Only when the keyboard has left the calendar: a step between views lands on its own, and a
+ * landing taken regardless would pull focus back from wherever it went.
  */
 export const followTheChosenYear = (
   kind: MdyCalendarKind,
@@ -279,6 +292,15 @@ export const followTheChosenYear = (
     host?.querySelector<HTMLElement>(`.${partClasses(kind, "yearCell", { selected: true }).join(".")}`)
       ?.scrollIntoView?.({ block: "center" });
   });
+  watch(() => read().mode, (mode, was) => {
+    if (!read().open || mode !== "months" || was !== "years") return;
+    const host = document.getElementById(`${widgetId}__months`);
+    const panel = host?.parentElement;
+    const active = document.activeElement;
+    if (panel == null || (active !== null && active !== document.body && panel.contains(active))) return;
+    (host?.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+      ?? host?.querySelector<HTMLElement>("button:not([disabled])"))?.focus();
+  }, { flush: "post" });
 };
 
 /**

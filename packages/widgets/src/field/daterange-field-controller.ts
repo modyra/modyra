@@ -34,7 +34,7 @@ import type {
   MdyDaterangeFieldState,
 } from "./daterange-field-types.js";
 import { showsAsInvalid } from "./verdict.js";
-import { calendarViewAfterPick, moveCalendarFocus, type MdyCalendarViewMode } from "./calendar-view.js";
+import { calendarViewAfterPick, moveCalendarFocus, showCalendarMonth, type MdyCalendarViewMode } from "./calendar-view.js";
 
 export interface MdyDaterangeFieldController
   extends MdyWidgetController<MdyDaterangeFieldState, MdyDaterangeFieldIntent> {
@@ -95,6 +95,12 @@ export function createDaterangeFieldController(
 
   function moveFocus(target: CalendarDate): void {
     moveCalendarFocus({ focusedDate, viewYear, viewMonth }, target);
+  }
+
+  /** The range being picked, start first: its ends are the days a returning month lands on. */
+  function showMonth(year: number, month: number): void {
+    const { start, end } = draft();
+    showCalendarMonth({ focusedDate, viewYear, viewMonth }, year, month, [start, end]);
   }
 
   /** Whether the next pick opens a range or closes one. */
@@ -362,8 +368,7 @@ export function createDaterangeFieldController(
       }
       case "navigate-month": {
         const next = addMonths({ year: viewYear(), month: viewMonth(), day: 1 }, intent.delta);
-        viewYear.set(next.year);
-        viewMonth.set(next.month);
+        showMonth(next.year, next.month);
         return [];
       }
       case "preview":
@@ -374,13 +379,13 @@ export function createDaterangeFieldController(
         return [];
       }
       case "select-month": {
-        viewMonth.set(intent.month);
+        showMonth(viewYear(), intent.month);
         // Choosing narrows: a month lands on its days, so the funnel ends where the picking is.
         viewMode.set(calendarViewAfterPick("months"));
         return [];
       }
       case "select-year": {
-        viewYear.set(intent.year);
+        showMonth(intent.year, viewMonth());
         viewMode.set(calendarViewAfterPick("years"));
         return [];
       }

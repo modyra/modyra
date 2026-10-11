@@ -22,7 +22,7 @@ import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-import { calendarViewState, landOnTheDays } from "../../core/calendar-view-state";
+import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths } from "../../core/calendar-view-state";
 
 @Component({
   selector: "mdy-calendar",
@@ -122,7 +122,9 @@ export class MdyCalendarComponent {
   constructor() {
     effect(() => {
       const date = this.focusedDate();
-      afterNextRender(() => this.grid()?.focusDate(date), { injector: this.injector });
+      afterNextRender(() => {
+        if (!heldOffTheDays(this.hostRef.nativeElement)) this.grid()?.focusDate(date);
+      }, { injector: this.injector });
     });
   }
 
@@ -157,7 +159,11 @@ export class MdyCalendarComponent {
   }
 
   protected onYearSelected(year: number): void {
+    const host = this.hostRef.nativeElement;
+    const held = host.contains(host.ownerDocument.activeElement);
     this.viewState.selectYear(year);
+    // After the render: the months do not exist until this component has drawn them.
+    if (held) afterNextRender(() => landOnTheMonths(host), { injector: this.injector });
   }
 
   protected goToPreviousMonth(): void {

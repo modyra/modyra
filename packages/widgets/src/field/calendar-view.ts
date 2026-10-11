@@ -10,7 +10,7 @@
  * the reason the timepicker already demonstrates: it holds `viewMode` and its renderers ask.
  */
 import { given } from "../given.js";
-import { formatIsoDate, type CalendarDate } from "@modyra/core/datetime";
+import { daysInMonth, formatIsoDate, parseIsoDate, type CalendarDate } from "@modyra/core/datetime";
 
 export const MDY_CALENDAR_VIEW_MODES = Object.freeze(["days", "months", "years"] as const);
 
@@ -82,4 +82,32 @@ export function moveCalendarFocus(
     view.viewYear.set(target.year);
     view.viewMonth.set(target.month);
   }
+}
+
+/**
+ * Shows a month, bringing the reading position with it — the converse of {@link moveCalendarFocus}.
+ *
+ * The grid's tab stop is the cell holding the focused date, so a shown month that does not contain it
+ * has no way in from the keyboard. The position lands on the first of `chosen` that falls in the
+ * shown month, and otherwise keeps its day number, clamped to the month's length: the 31st paged into
+ * February is the 28th, not the 3rd of March.
+ */
+export function showCalendarMonth(
+  view: {
+    readonly focusedDate: { (): string; set(value: string): void };
+    readonly viewYear: { set(value: number): void };
+    readonly viewMonth: { set(value: number): void };
+  },
+  year: number,
+  month: number,
+  chosen: ReadonlyArray<string | null> = [],
+): void {
+  given("showCalendarMonth", "{ focusedDate, viewYear, viewMonth }", view, ["focusedDate", "viewYear", "viewMonth"]);
+  view.viewYear.set(year);
+  view.viewMonth.set(month);
+  const inShownMonth = chosen
+    .map((iso) => (iso === null ? null : parseIsoDate(iso)))
+    .find((date) => date !== null && date.year === year && date.month === month);
+  const day = Math.min(parseIsoDate(view.focusedDate())?.day ?? 1, daysInMonth(year, month));
+  view.focusedDate.set(formatIsoDate(inShownMonth ?? { year, month, day }));
 }

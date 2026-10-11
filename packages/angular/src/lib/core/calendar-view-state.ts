@@ -133,12 +133,39 @@ export function calendarViewState(source: () => CalendarViewSource | undefined):
  * Puts the keyboard on the days a calendar has just shown again: the grid's tab stop, or its first
  * choosable cell when the grid has none.
  *
- * A grid has no tab stop when the day the keyboard stood on is not in the month shown — a year chosen
- * elsewhere shows a month without the day being read — and a landing that asked only for the stop
- * would leave the keyboard on a view that has gone.
+ * The controller keeps the focused day inside the shown month, so the stop is normally there; the
+ * fallback keeps the keyboard off a view that has gone if a render ever shows a grid without one.
  */
 export function landOnTheDays(host: HTMLElement): void {
   const landing = host.querySelector<HTMLElement>('[role="gridcell"][tabindex="0"]')
     ?? host.querySelector<HTMLElement>('[role="gridcell"]:not([disabled]):not([aria-disabled="true"])');
+  landing?.focus();
+}
+
+/**
+ * Whether a control of this calendar other than its days holds the keyboard, and is still showing.
+ *
+ * Paging moves the day under the header's buttons too, and the keyboard stays on the button that
+ * paged: taken into the grid, the next press of Next would pick a day instead. A control the render
+ * has hidden holds nothing, so the days may take the keyboard from it.
+ */
+export function heldOffTheDays(host: HTMLElement): boolean {
+  const active = document.activeElement;
+  const grid = host.querySelector('[role="grid"]');
+  return active instanceof HTMLElement && host.contains(active) && !(grid?.contains(active) ?? false)
+    && active.getClientRects().length > 0;
+}
+
+/**
+ * Puts the keyboard on the months a chosen year has just narrowed to: the shown month, or the first
+ * the bounds allow.
+ *
+ * The year view is taken away by the render that shows the months, so focus left on the pressed
+ * year falls to the document and the next key goes nowhere in the calendar.
+ */
+export function landOnTheMonths(host: HTMLElement): void {
+  const months = host.querySelector<HTMLElement>('[id$="__months"]');
+  const landing = months?.querySelector<HTMLElement>('[aria-selected="true"]:not([disabled])')
+    ?? months?.querySelector<HTMLElement>("button:not([disabled])");
   landing?.focus();
 }

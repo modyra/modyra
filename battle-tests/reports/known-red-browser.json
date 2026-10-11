@@ -1,19 +1,16 @@
 {
   "note": "Browser specs that are red because the defect they describe is open. A red listed here does not fail a build; a red that is not listed is a regression. Rewrite with `npm run battle:browser:ci -- --accept`.",
   "order": "Repair in severity order, as the node tier does. A spec's severity is the worst of the claims its header names; `unknown` is a spec that names none, which is most of them.",
-  "recordedAt": "2026-10-11T21:58:16Z",
-  "openReds": 7,
+  "recordedAt": "2026-10-11T22:16:52Z",
+  "openReds": 4,
   "bySeverity": {
     "S1": 3,
-    "S2": 4
+    "S2": 1
   },
   "knownRed": [
     "a-name-the-required-mark-stays-out-of.spec.ts › a declared name and a caption, on controls that are not text boxes, vue",
     "a-row-system-three-renderers-disagree-about.spec.ts › a kind is the same height in every renderer",
     "an-aria-promise-that-depends-on-the-adapter.spec.ts › an aria promise that depends on the adapter",
-    "a-view-escape-leaves-first.spec.ts › choosing a year from the keyboard leaves the keyboard on the months, angular",
-    "a-view-escape-leaves-first.spec.ts › choosing a year from the keyboard leaves the keyboard on the months, plain",
-    "a-view-escape-leaves-first.spec.ts › choosing a year from the keyboard leaves the keyboard on the months, vue",
     "one-document-two-spellings-of-a-date.spec.ts › one document is one date on the screen, whoever drew it"
   ]
 }

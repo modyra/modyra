@@ -140,6 +140,8 @@ export function renderDatepickerField(
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedYear: number | null = null;
   let renderedMonth: number | null = null;
+  /** Whether the last render showed an open calendar's days, so the render that brings them back is told apart. */
+  let showedTheDays = false;
 
   const lookup: MdyElementLookup = (part) => (part === "trigger" ? control : undefined);
   function dispatch(intent: Parameters<typeof controller.dispatch>[0]): void {
@@ -329,13 +331,21 @@ export function renderDatepickerField(
       renderedYear = state.viewYear;
       renderedMonth = state.viewMonth;
     }
+    // Paging moves the day under the header's buttons too, and the keyboard stays on the button that
+    // paged: taken into the grid, the next press of Next would pick a day instead. A control the
+    // render has hidden holds nothing, so the days take the keyboard from it. The render that brings
+    // the days back takes it from the header too: the days are where a person returns to.
+    const active = document.activeElement;
+    const heldElsewhere = showedTheDays && active instanceof HTMLElement && popup.contains(active)
+      && !grid.contains(active) && active.getClientRects().length > 0;
+    showedTheDays = state.open && state.viewMode === "days";
     for (const cell of state.cells) {
       const button = cellEls.get(cell.iso);
       if (!button) continue;
       const part = view.parts[cell.iso];
       if (part) applyPart(button, part);
       button.disabled = cell.disabled;
-      if (cell.focused && state.open && document.activeElement !== button) button.focus();
+      if (cell.focused && state.open && !heldElsewhere && document.activeElement !== button) button.focus();
     }
     /**
      * Anchored by the contract, like every other overlay — and **after the month is in it.**
