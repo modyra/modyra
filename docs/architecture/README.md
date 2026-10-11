@@ -245,7 +245,13 @@ held by a test rather than by prose), [0024](0024-an-author-time-check-calls-the
 refusal to execute a document, at the editor boundary),
 [0025](0025-a-tag-publishes-and-nothing-else-does.md) (the registry credential, and why no publish
 token is stored), [0111](0111-a-selector-cannot-close-the-sheet.md) (the one place a caller's string
-reaches a stylesheet, and which container it is held inside).
+reaches a stylesheet, and which container it is held inside),
+[0216](0216-a-restored-value-is-the-option-it-copies.md) (what a draft read back from storage may
+restore), [0217](0217-a-project-id-cannot-leave-its-quotes.md) (a Studio project file is untrusted,
+and its ids are refused at the door), [0218](0218-an-expression-past-the-depth-limit-is-a-document-question.md)
+(where expression depth is enforced, and what an application owes when it evaluates untrusted
+expressions itself), [0219](0219-a-dev-server-answers-only-its-own.md) (what the development
+servers expose to a page the developer has open).
 
 ## Changing a record
 
