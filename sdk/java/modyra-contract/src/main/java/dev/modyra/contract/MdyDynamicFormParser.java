@@ -161,28 +161,38 @@ public final class MdyDynamicFormParser {
       diagnostics.addAll(schemaDiagnostics);
       accepted = schemaDiagnostics.isEmpty() ? flattenSchema(root.get("schema")) : List.of();
       sourceCount = accepted.size();
-    } else if (root.isObject() && root.has("fields")) {
-      int v = supportedVersion(root.path("version"));
-      if (v == -1) {
-        return new MdyDynamicFormParseResult(false, null, List.of(), List.of(), List.of(), List.of(), 0, 0);
-      }
-      version = v;
+    } else if (root.isObject() && root.has("fields") && !root.has("version")) {
+      // An envelope that declares no version is not read: every entry it lists counts as turned
+      // down, and each member only a versioned document carries is named, so the author learns that
+      // the version is what is missing rather than that the fields are wrong.
       JsonNode itemsNode = root.get("fields");
-      if (!itemsNode.isArray()) {
-        return new MdyDynamicFormParseResult(
-            false, version, List.of(), List.of(), List.of(),
-            List.of(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELDS", MdyDynamicDiagnostic.ERROR, "/fields", "fields must be an array.")),
-            0, 0);
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Unsupported dynamic form config version undefined — this contract has versions 2, 3, 4 and 5."));
+      for (String slot : List.of("layout", "rules", "validations")) {
+        if (!root.has(slot)) continue;
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/" + slot,
+            "Unsupported dynamic form config version for \"" + slot + "\": a document that declares no version "
+                + "reads fields and nothing else. Set \"version\": 2 to use it."));
       }
+      return new MdyDynamicFormParseResult(
+          false, null, List.of(), List.of(), List.of(), List.copyOf(diagnostics),
+          0, itemsNode.isArray() ? itemsNode.size() : 0);
+    } else if (root.isObject() && root.path("fields").isArray()) {
+      version = supportedVersion(root.path("version"));
+      JsonNode itemsNode = root.get("fields");
       FlatResult flat = parseFlatItems(itemsNode);
       accepted = flat.accepted;
       diagnostics.addAll(flat.diagnostics);
       sourceCount = itemsNode.size();
     } else {
-      return new MdyDynamicFormParseResult(
-          false, null, List.of(), List.of(), List.of(),
-          List.of(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_INPUT", MdyDynamicDiagnostic.ERROR, "/", "Input is neither a field array, a schema envelope, nor a {version, fields} envelope.")),
-          0, 0);
+      // No field list to read. A supported version is still the document's version, and the members
+      // it entitles the document to are still read below.
+      int v = root.isObject() ? supportedVersion(root.path("version")) : -1;
+      version = v == -1 ? null : v;
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dynamic form config is neither a field array nor a config envelope."));
+      accepted = List.of();
+      sourceCount = 0;
     }
 
     // A member the document's version predates. `requiresContext` arrived with v4, so a v2 or v3
@@ -218,13 +228,16 @@ public final class MdyDynamicFormParser {
 
     boolean strict = mode == Mode.STRICT;
     boolean blockAll = strict && !diagnostics.isEmpty();
+    // `ok` is false whenever an error was reported, in either mode: a lenient result still carries
+    // what could be read, and `ok` withdraws only the claim that nothing was lost.
+    boolean refused = diagnostics.stream().anyMatch(d -> MdyDynamicDiagnostic.ERROR.equals(d.severity()));
     int rejectedFromLayoutRules = (int) diagnostics.stream()
         .filter(d -> d.path().startsWith("/layout/") || d.path().startsWith("/rules/"))
         .count();
     int rejectedCount = Math.max(0, sourceCount - accepted.size()) + rejectedFromLayoutRules;
 
     return new MdyDynamicFormParseResult(
-        version != null && (!strict || diagnostics.isEmpty()),
+        version != null && !refused && (!strict || diagnostics.isEmpty()),
         version,
         blockAll ? List.of() : List.copyOf(accepted),
         blockAll ? List.of() : List.copyOf(layout),

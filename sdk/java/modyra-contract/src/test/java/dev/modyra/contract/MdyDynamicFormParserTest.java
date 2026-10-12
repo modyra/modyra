@@ -377,6 +377,63 @@ class MdyDynamicFormParserTest {
     }
   }
 
+  /** An envelope that lists fields and declares no version is refused with a reason, in both modes. */
+  @Test
+  void anEnvelopeWithoutAVersionSaysTheVersionIsMissing() {
+    String unversioned = "{\"fields\":[{\"name\":\"a\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],"
+        + "\"schema\":{\"node\":\"group\",\"children\":{}},\"layout\":\"x\",\"validations\":[]}";
+    for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+      MdyDynamicFormParseResult result = parser.parse(unversioned, mode);
+      assertFalse(result.ok(), mode.name());
+      assertEquals(null, result.version());
+      assertEquals(0, result.fields().size());
+      assertEquals(0, result.acceptedCount());
+      assertEquals(2, result.rejectedCount());
+      assertEquals(List.of("/fields", "/layout", "/validations"),
+          result.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+      assertTrue(result.diagnostics().stream().allMatch(d -> d.code().equals("MDY_DYNAMIC_UNSUPPORTED_VERSION")));
+      assertEquals("Unsupported dynamic form config version undefined — this contract has versions 2, 3, 4 and 5.",
+          result.diagnostics().get(0).message());
+      assertEquals("Unsupported dynamic form config version for \"layout\": a document that declares no version "
+          + "reads fields and nothing else. Set \"version\": 2 to use it.", result.diagnostics().get(1).message());
+    }
+    assertEquals(0, parser.parse("{\"fields\":null}", MdyDynamicFormParser.Mode.STRICT).rejectedCount());
+  }
+
+  /** A lenient read keeps what it could read, and an error still withdraws `ok`. */
+  @Test
+  void aLenientErrorIsNotOk() {
+    MdyDynamicFormParseResult result = parser.parse(
+        "{\"version\":2,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}],\"layout\":\"x\"}", MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(result.ok());
+    assertEquals(1, result.fields().size());
+    assertEquals("/layout", result.diagnostics().get(0).path());
+  }
+
+  /** A document with no field list to read gets the one refusal the TypeScript reader gives it. */
+  @Test
+  void aDocumentWithNoFieldListIsRefusedAtFields() {
+    java.util.Map<String, Integer> versions = new java.util.LinkedHashMap<>();
+    for (String document : List.of("null", "5", "\"x\"", "true", "{}", "{\"schema\":{\"node\":\"group\",\"children\":{}}}")) {
+      versions.put(document, null);
+    }
+    versions.put("{\"version\":2}", 2);
+    versions.put("{\"version\":3,\"fields\":\"x\"}", 3);
+    versions.put("{\"version\":2,\"fields\":null}", 2);
+    versions.forEach((document, version) -> {
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse(document, mode);
+        assertFalse(result.ok(), document + " " + mode);
+        assertEquals(version, result.version(), document);
+        assertEquals(1, result.diagnostics().size(), () -> document + ": " + result.diagnostics());
+        MdyDynamicDiagnostic refusal = result.diagnostics().get(0);
+        assertEquals("MDY_DYNAMIC_INVALID_FIELD", refusal.code(), document);
+        assertEquals("/fields", refusal.path(), document);
+        assertEquals("Dynamic form config is neither a field array nor a config envelope.", refusal.message());
+      }
+    });
+  }
+
   /** {@code integer} arrived with v5; an earlier document carrying it is refused at the rule. */
   @Test
   void integerIsGatedByTheVersionItArrivedWith() {
