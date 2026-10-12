@@ -133,8 +133,10 @@ export const MdyOptionField = defineComponent({
             h("input", partProps({ ...parts[key], classes: [], attributes: { ...parts[key]?.attributes, "aria-disabled": null } }, {
               type: "radio",
               class: classesOf("optionControl"),
-              // The shared name is written after the render, when there is an answer to whether a
-              // form owns this set.
+              // The scoped id groups the set before mount, so HTML rendered on the server is already
+              // one choice. Once mounted the submission replaces it with the form's shared name; the
+              // vnode value stays the same across renders, so a re-render does not write it back.
+              name: widgetId.value,
               value: key,
               // Compared by key, not by value: two structurally equal objects are two choices, and
               // `===` between the held value and a fresh option object marks neither.

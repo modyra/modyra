@@ -17,6 +17,7 @@ installDomGlobals();
 const { createApp, h, nextTick } = await import("vue");
 const vue = await import("../dist/index.js");
 const { field } = await import("../../core/dist/index.js");
+const { renderToString } = await import("vue/server-renderer");
 
 const settle = async () => { await nextTick(); await new Promise((resolve) => setTimeout(resolve, 20)); };
 
@@ -161,5 +162,48 @@ test("radio: a set outside any form groups by its scoped id, not by the path", a
   } finally {
     app.unmount();
     host.remove();
+  }
+});
+
+/**
+ * HTML rendered on the server has no mounted set to name by its form, so the radios carry the scoped
+ * id: one choice before hydration, rather than options that can all be checked at once.
+ */
+test("radio: a set rendered on the server is already one group", async () => {
+  const form = vue.createVueForm({ value: field("a") });
+  const html = await renderToString(h("form", [
+    h(vue.MdyOptionField, { field: form.f.value, widgetId: WIDGET_ID, label: "Field", kind: "radio", options: OPTIONS }),
+  ]));
+  const names = [...html.matchAll(/<input[^>]*type="radio"[^>]*>/g)].map(([tag]) => /\bname="([^"]*)"/.exec(tag)?.[1]);
+  assert.equal(names.length, OPTIONS.length);
+  assert.ok(names.every((one) => one !== undefined && one === names[0] && one.includes(WIDGET_ID)), `radios named ${names.join(", ")}`);
+});
+
+/**
+ * A radio drawn after mount, for an option that was not there before, joins the set under the path,
+ * and the radios already named keep the path through the re-render that draws it.
+ */
+test("radio: an option added after mount is sent under the path", async () => {
+  const form = vue.createVueForm({ value: field("a") });
+  const options = (await import("vue")).shallowRef(OPTIONS.slice(0, 2));
+  const element = document.createElement("form");
+  const host = document.createElement("div");
+  element.append(host);
+  document.body.append(element);
+  const app = createApp({
+    render: () => h(vue.MdyOptionField, { field: form.f.value, widgetId: WIDGET_ID, label: "Field", kind: "radio", options: options.value }),
+  });
+  app.mount(host);
+  await settle();
+  try {
+    options.value = OPTIONS;
+    await settle();
+    element.querySelector('input[type="radio"][value="c"]').checked = true;
+    const names = [...element.querySelectorAll('input[type="radio"]')].map((radio) => radio.name);
+    assert.deepEqual(names, OPTIONS.map(() => PATH), `radios named ${names.join(", ")}`);
+    assert.deepEqual(payload(element), [[PATH, "c"]]);
+  } finally {
+    app.unmount();
+    element.remove();
   }
 });
