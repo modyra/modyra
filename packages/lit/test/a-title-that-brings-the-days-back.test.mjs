@@ -21,9 +21,17 @@ const { defineMdyElements } = await import("../dist/ui.js");
 defineMdyElements();
 window.HTMLElement.prototype.getClientRects = function () { return this.closest("[hidden]") === null ? [{}] : []; };
 
-const settle = async (element) => {
-  await element.updateComplete;
-  await new Promise((resolve) => setTimeout(resolve, 80));
+/**
+ * Waits until the render a step causes has happened, then lets the update that follows it finish.
+ *
+ * Each step waits on what it changes on screen — the view or the page — never on the focus the test
+ * goes on to assert, so a focus that moves late still fails the assertion instead of being waited out.
+ */
+const settle = async (element, drawn) => {
+  for (const deadline = Date.now() + 2000; !drawn(); await new Promise((resolve) => setTimeout(resolve, 0))) {
+    if (Date.now() > deadline) assert.fail("the step never drew what it changes");
+    await element.updateComplete;
+  }
   await element.updateComplete;
 };
 
@@ -38,11 +46,12 @@ for (const one of CASES) {
   test(`${one.tag}: the title out to the years keeps the keyboard, the title back puts it on the day`, async () => {
     const form = createLitForm({ d: field(one.held) });
     const element = await mount(one.tag, (host) => { host.field = form.f.d; host.label = "D"; });
-    await settle(element);
+    await settle(element, () => element.querySelector("[aria-haspopup], [aria-expanded]") !== null);
     const opener = element.querySelector("[aria-haspopup]") ?? element.querySelector("[aria-expanded]");
+    const days = () => element.querySelector("[role='grid']") !== null && element.querySelector(".mdy-datepicker__year-grid") === null;
     opener.focus();
     opener.click();
-    await settle(element);
+    await settle(element, days);
     assert.ok(onTheDay(), "the calendar did not open with the keyboard on a day");
 
     const next = element.querySelector("button[class*='--next']");
@@ -51,16 +60,17 @@ for (const one of CASES) {
 
     title.focus();
     title.click();
-    await settle(element);
+    await settle(element, () => !days());
     assert.equal(document.activeElement, title, "the title that opened the years let go of the keyboard");
 
     title.click();
-    await settle(element);
+    await settle(element, days);
     assert.ok(onTheDay(), `the title that brought the days back left the keyboard on .${document.activeElement?.className}`);
 
+    const page = title.textContent;
     next.focus();
     next.click();
-    await settle(element);
+    await settle(element, () => title.textContent !== page);
     assert.equal(document.activeElement, next, "a page turned by Next took the keyboard off Next");
     element.remove();
   });

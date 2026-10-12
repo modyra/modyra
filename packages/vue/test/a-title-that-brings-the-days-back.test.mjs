@@ -21,7 +21,20 @@ const { field } = await import("../../core/dist/index.js");
 
 window.HTMLElement.prototype.getClientRects = function () { return this.closest("[hidden]") === null ? [{}] : []; };
 
-const settle = async () => { await nextTick(); await new Promise((resolve) => setTimeout(resolve, 20)); };
+/**
+ * Waits until the render a step causes has happened, then lets the focus that follows it land.
+ *
+ * Each step waits on what it changes on screen — the view or the page — never on the focus the test
+ * goes on to assert, so a focus that moves late still fails the assertion instead of being waited out.
+ */
+const settle = async (drawn) => {
+  for (const deadline = Date.now() + 2000; !drawn(); await new Promise((resolve) => setTimeout(resolve, 0))) {
+    if (Date.now() > deadline) assert.fail("the step never drew what it changes");
+    await nextTick();
+  }
+  await nextTick();
+  await nextTick();
+};
 const press = (element) => element.dispatchEvent(new window.MouseEvent("click", { bubbles: true }));
 
 const CASES = [
@@ -38,30 +51,29 @@ for (const one of CASES) {
       render: () => h(one.component(), { field: form.f.when, label: "Quando", widgetId: "w" }),
     });
     app.mount(host);
-    await settle();
     try {
+      await settle(() => host.querySelector("button") !== null);
       press(host.querySelector("button"));
-      await settle();
       const grid = document.getElementById("w__grid");
       const onTheDay = () => grid.contains(document.activeElement) && document.activeElement !== grid;
+      await settle(onTheDay);
       const title = document.getElementById("w__heading").closest("button");
       const next = title.nextElementSibling;
       assert.match(next?.className ?? "", /--next/, "no Next button sits after the title");
 
       title.focus();
       press(title);
-      await settle();
-      assert.equal(grid.hidden, true, "the title did not leave the days");
+      await settle(() => grid.hidden);
       assert.equal(document.activeElement, title, "the title that opened the years let go of the keyboard");
 
       press(title);
-      await settle();
-      assert.equal(grid.hidden, false, "the title did not bring the days back");
+      await settle(() => !grid.hidden);
       assert.ok(onTheDay(), `the title that brought the days back left the keyboard on .${document.activeElement?.className}`);
 
+      const page = title.textContent;
       next.focus();
       press(next);
-      await settle();
+      await settle(() => title.textContent !== page);
       assert.equal(document.activeElement, next, "a page turned by Next took the keyboard off Next");
     } finally {
       app.unmount();
