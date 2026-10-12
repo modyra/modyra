@@ -429,8 +429,8 @@
      * every renderer rather than assumed of one — and the opener is already the target, so an
      * overlay there would only steal the press.
      *
-     * The steppers are absent too: two controls stacked inside one 3.5rem field cannot both be
-     * 44px. They take WCAG 2.5.8's 24px, which is the AA level this project ships against.
+     * The steppers are absent too: two controls sharing one field's height cannot both be 44px.
+     * They take WCAG 2.5.8's 24px, which is the AA level this project ships against.
      */
     /* A decoration never intercepts a pointer, wherever a renderer draws it.
 
@@ -2335,7 +2335,7 @@
        back had just been, which is a destructive control taking a remedial one's position under a
        hand that is already there. ADR 0173. */
     /* The box and the two controls the contract declares beside it. The spinner is the positioning
-       context and the buttons stack at the trailing edge; their size and colour are the shared
+       context and the buttons stand at the trailing edge; their size and colour are the shared
        affordance rules above, which is where a trailing control's geometry is named. */
     .mdy-number-spinner {
         position: relative;
@@ -2347,13 +2347,40 @@
 
     .mdy-number-spinner > input { flex: 1; min-width: 0; padding-inline-end: var(--mdy-affordance-inset); }
 
+    /* Stacked, the two steppers need a field at least two targets tall; in a shorter one they
+       overlap, and the press drawn on Increase lands on Decrease. Below that height they stand side
+       by side at their full size, Decrease before Increase, both centred, and the value is kept
+       clear of the pair. DESIGN.md § Trailing affordances.
+
+       `--mdy-spin-side` is that choice as a length: the gap by which the field falls short of two
+       targets, scaled until any shortfall saturates each `clamp()` below, and zero when the field is
+       tall enough. It reads `--mdy-input-height` rather than the rendered box because CSS cannot
+       query a box's height without containing it, and containing the spinner collapses the field
+       its input sizes. The token is the input's `min-height`, so the box is never shorter than it:
+       a field the token calls tall enough to stack is. */
+    .mdy-number-spinner {
+        --mdy-spin-side: calc((2 * var(--mdy-affordance-target-stacked) - var(--mdy-input-height)) * 1000);
+    }
+
+    /* A margin rather than padding: the input's inline padding belongs to whichever container draws
+       the inset, and a margin is the room the pair stands in whoever that is. */
+    .mdy-number-spinner > input {
+        margin-inline-end: clamp(0px, var(--mdy-spin-side), 2 * var(--mdy-affordance-target-stacked));
+    }
+
     .mdy-number-spinner > .mdy-spin-btn {
         position: absolute;
         inset-inline-end: 0;
     }
 
-    .mdy-number-spinner > .mdy-spin-btn-up { top: 0; }
-    .mdy-number-spinner > .mdy-spin-btn-down { bottom: 0; }
+    .mdy-number-spinner > .mdy-spin-btn-up {
+        top: clamp(0px, var(--mdy-spin-side), 50% - var(--mdy-affordance-target-stacked) / 2);
+    }
+
+    .mdy-number-spinner > .mdy-spin-btn-down {
+        bottom: clamp(0px, var(--mdy-spin-side), 50% - var(--mdy-affordance-target-stacked) / 2);
+        inset-inline-end: clamp(0px, var(--mdy-spin-side), var(--mdy-affordance-target-stacked));
+    }
 
     .mdy-multiselect__clear-all {
         display: inline-flex;

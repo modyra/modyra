@@ -80,6 +80,14 @@ the rest stayed 38. The target is an overlay — centred, out of flow, affecting
 **Stacked steppers take WCAG 2.5.8's 24px** (`--mdy-affordance-target-stacked`). Two controls inside
 one 3.5rem field cannot both be 44px; this is an exception with a reason, not an oversight.
 
+**Steppers stack only in a field two targets tall.** Below 48px — a compact theme's 36px field —
+stacked steppers overlap, and the centre of Increase is a press on Decrease: what is drawn is not what
+is pressed. So a field shorter than two stepper targets lays them side by side at their full 24px,
+both centred, Decrease before Increase at the trailing edge. Shrinking them to fit the stack would
+drop below 2.5.8; letting them spill past the field's edges would draw a target outside the control
+it belongs to. The threshold is read from `--mdy-input-height`, the field's minimum height, so a
+field allowed to stack is at least that tall. *Enforced by* `e2e/plain/a-stepper-pressed-where-it-is-drawn.spec.ts`.
+
 **A control's position may depend on the field, never on the value.** The value changes under a
 person's hands; the field does not. A command placed after a variable-length row — a strip of chosen
 values, a wrapping list — moves whenever that row does, and the control that arrives where another
