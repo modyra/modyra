@@ -1,5 +1,5 @@
 import { Directive, effect, ElementRef, inject, Injector, input, OnInit, Renderer2 } from "@angular/core";
-import { MDY_ICONS, numberEntered, numberStepped } from "@modyra/widgets";
+import { MDY_ICONS, numberEntered, numberStepped, presentationClass } from "@modyra/widgets";
 import { MDY_I18N_MESSAGES } from "../../core/i18n";
 
 @Directive({
@@ -22,17 +22,11 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     const enabled = this.mdyNumberSpinButtons();
     if (enabled === false || enabled === "false") return;
     const input = this.el.nativeElement;
+    // The wrapper is the contract's spinner: the positioning context the box and its two steppers
+    // share. Its geometry — the row it takes, where each stepper stands, whether they stack or sit
+    // side by side for the field's height — is the shared stylesheet's, so it is not restated here.
     const wrapper = this.renderer.createElement("span");
-    this.renderer.setStyle(wrapper, "position", "relative");
-    // The wrapper stands where the input stood, so it takes the row the input was taking. A span is
-    // inline and sized by its content, and the steppers inside it are positioned against it — so a
-    // box that stopped after the number put them beside the value instead of on the field's edge,
-    // and the affordance column had one field in it at a different distance from all the others.
-    this.renderer.setStyle(wrapper, "display", "flex");
-    this.renderer.setStyle(wrapper, "align-items", "center");
-    this.renderer.setStyle(wrapper, "flex", "1 1 auto");
-    this.renderer.setStyle(wrapper, "min-width", "0");
-    this.renderer.setStyle(input, "paddingRight", "2.5em");
+    this.renderer.addClass(wrapper, presentationClass("number", "spinner"));
     this.renderer.insertBefore(input.parentNode, wrapper, input);
     this.renderer.appendChild(wrapper, input);
 
@@ -44,14 +38,6 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     upBtn.setAttribute("aria-label", this.i18n.increase);
     const upIcon = MDY_ICONS.SPIN_UP;
     upBtn.innerHTML = `<svg width='1em' height='1em' viewBox='${upIcon.viewBox}' fill='none' xmlns='http://www.w3.org/2000/svg'>${upIcon.content}</svg>`;
-    this.renderer.setStyle(upBtn, "position", "absolute");
-    this.renderer.setStyle(upBtn, "right", "0.25em");
-    this.renderer.setStyle(upBtn, "top", "0.15em");
-    this.renderer.setStyle(upBtn, "background", "none");
-    this.renderer.setStyle(upBtn, "border", "none");
-    this.renderer.setStyle(upBtn, "padding", "0.15em");
-    this.renderer.setStyle(upBtn, "cursor", "pointer");
-    this.renderer.setStyle(upBtn, "z-index", "2");
     this.renderer.appendChild(wrapper, upBtn);
 
     const downBtn = this.renderer.createElement("button");
@@ -62,14 +48,6 @@ export class MdyNumberSpinButtonsDirective implements OnInit {
     downBtn.setAttribute("aria-label", this.i18n.decrease);
     const downIcon = MDY_ICONS.SPIN_DOWN;
     downBtn.innerHTML = `<svg width='1em' height='1em' viewBox='${downIcon.viewBox}' fill='none' xmlns='http://www.w3.org/2000/svg'>${downIcon.content}</svg>`;
-    this.renderer.setStyle(downBtn, "position", "absolute");
-    this.renderer.setStyle(downBtn, "right", "0.25em");
-    this.renderer.setStyle(downBtn, "bottom", "0.15em");
-    this.renderer.setStyle(downBtn, "background", "none");
-    this.renderer.setStyle(downBtn, "border", "none");
-    this.renderer.setStyle(downBtn, "padding", "0.15em");
-    this.renderer.setStyle(downBtn, "cursor", "pointer");
-    this.renderer.setStyle(downBtn, "z-index", "2");
     this.renderer.appendChild(wrapper, downBtn);
 
     upBtn.addEventListener("click", () => this.step(input, +1));
