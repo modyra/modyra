@@ -1,11 +1,10 @@
 import { daterangeFieldPartIds, type MdyDaterangeFieldController , keyBindingFor } from "@modyra/widgets";
-import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths, withinTheGrid } from "../../core/calendar-view-state";
+import { calendarLandings, calendarViewState, landOnTheDays, withinTheGrid } from "../../core/calendar-view-state";
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   ElementRef,
   inject,
   Injector,
@@ -141,15 +140,6 @@ export class MdyRangeCalendarComponent {
   /** The calendar's own element, so a landing is looked for inside this calendar and no other. */
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  constructor() {
-    effect(() => {
-      const date = this.focusedDate();
-      afterNextRender(() => {
-        if (!heldOffTheDays(this.hostRef.nativeElement)) this.grid()?.focusDate(date);
-      }, { injector: this.injector });
-    });
-  }
-
   focusFocusedDate(): void {
     const focused = this.focusedDate();
     this.grid()?.focusDate(focused);
@@ -157,6 +147,7 @@ export class MdyRangeCalendarComponent {
 
   private readonly viewState = calendarViewState(() => this.controller() as never);
   protected readonly view = this.viewState.mode;
+  private readonly landings = calendarLandings(this.viewState, () => this.grid());
   protected readonly viewYear = this.viewState.year;
   protected readonly viewMonth = this.viewState.month;
   protected readonly focusedDate = this.viewState.focused;
@@ -195,15 +186,7 @@ export class MdyRangeCalendarComponent {
 
   /** Where the header goes, answered by the contract rather than by a branch here. */
   protected onToggleView(): void {
-    const host = this.hostRef.nativeElement;
-    const held = host.contains(host.ownerDocument.activeElement);
-    this.viewState.toggleView();
-    // The title stays on screen in every view, so only the days are a reason to move the keyboard
-    // off it: a person going back to them is going back to choose a day. After the render, because
-    // the grid's tab stop is drawn with the days.
-    if (held && this.viewState.mode() === "days") {
-      afterNextRender(() => landOnTheDays(host), { injector: this.injector });
-    }
+    this.landings.toggleView();
   }
 
   protected onMonthSelected(month: number): void {
@@ -211,11 +194,7 @@ export class MdyRangeCalendarComponent {
   }
 
   protected onYearSelected(year: number): void {
-    const host = this.hostRef.nativeElement;
-    const held = host.contains(host.ownerDocument.activeElement);
-    this.viewState.selectYear(year);
-    // After the render: the months do not exist until this component has drawn them.
-    if (held) afterNextRender(() => landOnTheMonths(host), { injector: this.injector });
+    this.landings.selectYear(year);
   }
 
   protected goToPreviousMonth(): void {

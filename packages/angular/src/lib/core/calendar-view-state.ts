@@ -1,4 +1,13 @@
-import { computed, signal, type Signal } from "@angular/core";
+import {
+  afterNextRender,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  type Signal,
+} from "@angular/core";
 import { calendarViewOnToggle, type MdyCalendarViewMode } from "@modyra/widgets";
 import { CalendarDate, daysInMonth, parseIsoDate, today } from "@modyra/core/datetime";
 import { moveCalendarMonth } from "../renderers/renderer-projection";
@@ -125,6 +134,53 @@ export function calendarViewState(source: () => CalendarViewSource | undefined):
         localYear.set(date.year);
         localMonth.set(date.month);
       }
+    },
+  };
+}
+
+/** What a calendar's keyboard does when its view changes under it. */
+export interface MdyCalendarLandings {
+  /** Toggles the view; returning to the days from a held control puts the keyboard on them. */
+  toggleView(): void;
+  /** Narrows to a year; a held control hands the keyboard to the months it narrowed to. */
+  selectYear(year: number): void;
+}
+
+/**
+ * Where a calendar's keyboard goes as the view state moves: onto the focused day as it changes, and
+ * onto the days or months a header press has just shown.
+ *
+ * Runs in an injection context: it reads the calendar's own element and schedules after its render,
+ * because every landing target is drawn by the render the change causes. The grid is read lazily, as
+ * a view child it exists only once the calendar has rendered.
+ */
+export function calendarLandings(
+  view: MdyCalendarViewState,
+  grid: () => { focusDate(date: CalendarDate): void } | undefined,
+): MdyCalendarLandings {
+  const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  const injector = inject(Injector);
+  const holds = (): boolean => host.contains(host.ownerDocument.activeElement);
+
+  effect(() => {
+    const date = view.focused();
+    afterNextRender(() => {
+      if (!heldOffTheDays(host)) grid()?.focusDate(date);
+    }, { injector });
+  });
+
+  return {
+    toggleView(): void {
+      const held = holds();
+      view.toggleView();
+      // The title stays on screen in every view, so only the days are a reason to move the keyboard
+      // off it: a person going back to them is going back to choose a day.
+      if (held && view.mode() === "days") afterNextRender(() => landOnTheDays(host), { injector });
+    },
+    selectYear(year: number): void {
+      const held = holds();
+      view.selectYear(year);
+      if (held) afterNextRender(() => landOnTheMonths(host), { injector });
     },
   };
 }

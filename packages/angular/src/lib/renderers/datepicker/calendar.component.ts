@@ -4,7 +4,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   Injector,
   input,
@@ -22,7 +21,7 @@ import { MdyCalendarHeaderComponent } from "./calendar-header.component";
 import { MdyMonthPickerComponent } from "./month-picker.component";
 import { MdyYearPickerComponent } from "./year-picker.component";
 
-import { calendarViewState, heldOffTheDays, landOnTheDays, landOnTheMonths, withinTheGrid } from "../../core/calendar-view-state";
+import { calendarLandings, calendarViewState, landOnTheDays, withinTheGrid } from "../../core/calendar-view-state";
 
 @Component({
   selector: "mdy-calendar",
@@ -118,15 +117,7 @@ export class MdyCalendarComponent {
   private readonly injector = inject(Injector);
   /** The calendar's own element, so a landing is looked for inside this calendar and no other. */
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
-
-  constructor() {
-    effect(() => {
-      const date = this.focusedDate();
-      afterNextRender(() => {
-        if (!heldOffTheDays(this.hostRef.nativeElement)) this.grid()?.focusDate(date);
-      }, { injector: this.injector });
-    });
-  }
+  private readonly landings = calendarLandings(this.viewState, () => this.grid());
 
   focusFocusedDate(): void {
     const focused = this.focusedDate();
@@ -151,15 +142,7 @@ export class MdyCalendarComponent {
 
   /** Where the header goes, answered by the contract rather than by a branch here. */
   protected onToggleView(): void {
-    const host = this.hostRef.nativeElement;
-    const held = host.contains(host.ownerDocument.activeElement);
-    this.viewState.toggleView();
-    // The title stays on screen in every view, so only the days are a reason to move the keyboard
-    // off it: a person going back to them is going back to choose a day. After the render, because
-    // the grid's tab stop is drawn with the days.
-    if (held && this.viewState.mode() === "days") {
-      afterNextRender(() => landOnTheDays(host), { injector: this.injector });
-    }
+    this.landings.toggleView();
   }
 
   protected onMonthSelected(month: number): void {
@@ -167,11 +150,7 @@ export class MdyCalendarComponent {
   }
 
   protected onYearSelected(year: number): void {
-    const host = this.hostRef.nativeElement;
-    const held = host.contains(host.ownerDocument.activeElement);
-    this.viewState.selectYear(year);
-    // After the render: the months do not exist until this component has drawn them.
-    if (held) afterNextRender(() => landOnTheMonths(host), { injector: this.injector });
+    this.landings.selectYear(year);
   }
 
   protected goToPreviousMonth(): void {

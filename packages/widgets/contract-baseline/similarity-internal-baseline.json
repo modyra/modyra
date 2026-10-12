@@ -3,13 +3,6 @@
   "note": "Bodies a package duplicates within itself. A typed variant of one shape is legitimate; a copy is not, and the list may only get shorter.",
   "pairs": [
     {
-      "id": "angular:constructor@calendar.component.ts \u2261 angular:constructor@range-calendar.component.ts",
-      "score": 1,
-      "left": "packages/angular/src/lib/renderers/datepicker/calendar.component.ts:109",
-      "right": "packages/angular/src/lib/renderers/datepicker/range-calendar.component.ts:126",
-      "reason": "recorded, not yet accounted for"
-    },
-    {
       "id": "lit:weekdayNames@datepicker-field.ts \u2261 lit:weekdayNames@daterange-field.ts",
       "score": 1,
       "left": "packages/lit/src/components/datepicker-field.ts:179",
