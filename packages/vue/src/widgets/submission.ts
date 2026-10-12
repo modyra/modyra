@@ -9,20 +9,30 @@
  * write: the key onto the part the contract names, or hidden inputs carrying the value for a kind
  * whose control is a presentation. A kind that sends its value from a hidden input sends the value
  * the model holds, never the text the box shows, because that text follows the reader's locale.
+ *
+ * A kind whose controls share one name — a set of radios — needs `groupKey`, the scoped id the set
+ * groups by when no form owns it. Inside a form the set groups by its form and the path, and the path
+ * is the key a native submit sends; outside one nothing is submitted and the scoped id keeps two sets
+ * on one page from merging into one choice.
  */
 import { onMounted, onUpdated, type Ref } from "vue";
-import { applySubmissionNames, submissionFor, syncSubmitValues, type MdyWidgetKind } from "@modyra/widgets";
+import { applySubmissionNames, groupSubmitName, submissionFor, syncSubmitValues, type MdyWidgetKind } from "@modyra/widgets";
 import type { MdyFieldHandle } from "@modyra/core";
 
 export function useNativeSubmission(
   kind: MdyWidgetKind,
   field: MdyFieldHandle<unknown>,
   root: Ref<HTMLElement | null>,
+  groupKey?: () => string,
 ): void {
   const apply = (): void => {
     const element = root.value;
     if (element === null) return;
-    if (submissionFor(kind).form === "hidden") {
+    const shape = submissionFor(kind);
+    if (shape.form === "shared") {
+      const name = groupSubmitName(element, field.path, groupKey?.() ?? field.path);
+      for (const radio of Array.from(element.querySelectorAll<HTMLInputElement>('input[type="radio"]'))) radio.name = name;
+    } else if (shape.form === "hidden") {
       const value = field.value();
       const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
       syncSubmitValues(element, field.path, values, field.disabled());

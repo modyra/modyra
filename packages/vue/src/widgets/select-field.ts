@@ -30,6 +30,7 @@ import { partProps, rootClasses, labelStateClasses, shellStateOf, wrapperClasses
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useFormReset } from "./form-reset.js";
+import { useNativeSubmission } from "./submission.js";
 import { iconOf } from "./icon.js";
 import { useCloseWhenFieldLeaves } from "./field-teardown.js";
 import { useDismissOnFocusOutside } from "./dismiss-on-focus-outside.js";
@@ -126,6 +127,7 @@ export const MdySelectField = defineComponent({
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
     useFormReset(props.field as object, root);
+    useNativeSubmission("select", props.field as never, root);
     // And what the field holds open, when the field itself goes. This package draws its panels
     // outside the field, so nothing carries them away with it.
     useCloseWhenFieldLeaves(root, () => run(controller.dispatch({ type: "close", restoreFocus: false })));
@@ -272,8 +274,9 @@ export const MdySelectField = defineComponent({
         }, labelContent(props.label, props.field)));
       }
       children.push(h("div", { class: wrapperClasses([classesOf("inputWrapper")], shell) }, [
+        // Unnamed: the value a native submit sends is the held one, in the hidden input the submission
+        // writes after the render, and a name here would send the option's key a second time.
         h("select", partProps(parts.trigger, {
-          name: widgetId.value,
           onChange: (event: Event) =>
             run(controller.dispatch({ type: "select", optionKey: (event.target as HTMLSelectElement).value })),
         }), [
