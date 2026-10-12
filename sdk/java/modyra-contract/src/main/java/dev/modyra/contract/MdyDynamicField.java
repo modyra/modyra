@@ -6,8 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 /**
  * Mirrors the {@code MdyDynamicField} discriminated union in
  * packages/core/src/dynamic-config.ts — a sealed interface plus one record
- * per structural field family, exactly like the TS union's five member
- * types. Several {@code kind} string values map to the same record (e.g.
+ * per structural field family, one for each member type of the TS union. Several {@code kind} string values map to the same record (e.g.
  * "text"/"textarea"/"email"/"password" all deserialize to
  * {@link MdyDynamicTextField}) — registered as repeated
  * {@code @JsonSubTypes.Type} entries below, one per accepted kind string.
@@ -28,9 +27,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     @JsonSubTypes.Type(value = MdyDynamicOptionsField.class, name = "segmented"),
     @JsonSubTypes.Type(value = MdyDynamicDateField.class, name = "datepicker"),
     @JsonSubTypes.Type(value = MdyDynamicDateField.class, name = "timepicker"),
+    @JsonSubTypes.Type(value = MdyDynamicDaterangeField.class, name = "daterange"),
+    @JsonSubTypes.Type(value = MdyDynamicFileField.class, name = "file"),
+    @JsonSubTypes.Type(value = MdyDynamicColorsField.class, name = "colors"),
 })
 public sealed interface MdyDynamicField
-    permits MdyDynamicTextField, MdyDynamicNumberField, MdyDynamicBooleanField, MdyDynamicOptionsField, MdyDynamicDateField {
+    permits MdyDynamicTextField, MdyDynamicNumberField, MdyDynamicBooleanField, MdyDynamicOptionsField, MdyDynamicDateField,
+        MdyDynamicDaterangeField, MdyDynamicFileField, MdyDynamicColorsField {
   String name();
 
   String kind();

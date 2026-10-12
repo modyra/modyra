@@ -94,7 +94,7 @@ public final class MdyDynamicFormParser {
   /** Property names a field of this kind declares, for the report above. */
   private static final Set<String> KNOWN_FIELD_PROPERTIES = Set.of(
       "name", "kind", "label", "placeholder", "initialValue", "validators", "options", "mode",
-      "min", "max", "step", "rows", "multiple", "accept", "searchable", "loading");
+      "min", "max", "step", "rows", "multiple", "accept", "searchable", "loading", "presets");
 
   public MdyDynamicFormParseResult parse(String json, Mode mode) {
     JsonNode root;
@@ -434,6 +434,15 @@ public final class MdyDynamicFormParser {
     if (field instanceof MdyDynamicDateField f) {
       return new MdyDynamicDateField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());
     }
+    if (field instanceof MdyDynamicDaterangeField f) {
+      return new MdyDynamicDaterangeField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators());
+    }
+    if (field instanceof MdyDynamicFileField f) {
+      return new MdyDynamicFileField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.accept(), f.multiple());
+    }
+    if (field instanceof MdyDynamicColorsField f) {
+      return new MdyDynamicColorsField(name, f.kind(), f.label(), f.placeholder(), initialValue, f.validators(), f.presets());
+    }
     throw new IllegalStateException("Unknown MdyDynamicField implementation: " + field.getClass());
   }
 
@@ -449,8 +458,8 @@ public final class MdyDynamicFormParser {
     return !value.isEmpty() && !value.contains(".") && !FORBIDDEN_NAMES.contains(value);
   }
 
-  /** Depth cap for nested layout, matching the TS and Rust parsers. */
-  private static final int LAYOUT_MAX_DEPTH = 6;
+  /** Depth cap for nested layout: MDY_LAYOUT_MAX_DEPTH in the TS parser, LAYOUT_MAX_DEPTH in Rust. */
+  private static final int LAYOUT_MAX_DEPTH = 32;
 
   /** The sizes a layout is authored against, mirroring MDY_LAYOUT_BREAKPOINTS. */
   private static final Set<String> LAYOUT_BREAKPOINTS = Set.of("base", "sm", "md", "lg");
