@@ -164,6 +164,7 @@ export const ordersPanel = {
     "messagesForLocale",
     "narrowConstraints",
     "nativeConstraintAttributes",
+    "numberStepped",
     "observerFor",
     "projectFieldShellA11y",
     "projectTextFieldA11y",

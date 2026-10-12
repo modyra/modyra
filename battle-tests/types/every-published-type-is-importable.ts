@@ -106,6 +106,7 @@ import type {
   MdyMultiselectValueIntent,
   MdyMultiselectWayBack,
   MdyNativeAttributes,
+  MdyNumberStepRules,
   MdyOpenModality,
   MdyOptionFieldA11yOptions,
   MdyOptionFieldController,
@@ -972,3 +973,6 @@ void held298;
 
 declare const held299: MdyPartContent;
 void held299;
+
+declare const held300: MdyNumberStepRules;
+void held300;

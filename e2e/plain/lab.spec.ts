@@ -280,6 +280,12 @@ test("orders: three keyed levels, and the model owns what the screen hides", asy
   const start = await readout(page);
   expect(JSON.stringify(start.lineErrors)).toContain("allocated 2 of 3");
 
+  // The allocation's increase button steps through the field like typing does: one press covers the
+  // line, and the verdict follows the stepped value.
+  await page.locator('.mdy-number-spinner:has([aria-label="Allocated a1"]) button[aria-label="Increase"]').click();
+  await expect(page.locator('[aria-label="Allocated a1"]')).toHaveValue("3");
+  await expect.poll(async () => (await readout(page)).valid).toBe(true);
+
   // Removing the order and undoing brings the whole subtree back — the batch-H claim, in a browser.
   await page.locator('[data-action="Remove order"]').click();
   await expect.poll(async () => (await readout(page)).orders).toEqual([]);
