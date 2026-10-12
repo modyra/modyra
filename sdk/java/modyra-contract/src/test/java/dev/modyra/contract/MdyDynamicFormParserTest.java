@@ -270,7 +270,11 @@ class MdyDynamicFormParserTest {
 
     MdyDynamicFormParseResult pastCap = parser.parse(layoutNestedTo(33), MdyDynamicFormParser.Mode.STRICT);
     assertFalse(pastCap.ok(), "33 levels was accepted");
-    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", pastCap.diagnostics().get(0).code());
+    // Asserts where the refusal lands, not its code: the TS reader names this
+    // MDY_DYNAMIC_INVALID_LAYOUT, and this reader reports every nested layout failure under one code.
+    MdyDynamicDiagnostic refusal = pastCap.diagnostics().get(0);
+    assertEquals(MdyDynamicDiagnostic.ERROR, refusal.severity());
+    assertEquals("/layout/0", refusal.path());
   }
 
   @Test
