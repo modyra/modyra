@@ -20,6 +20,11 @@ A disabled field sends nothing, and a value set from outside the field is the va
 **Migration.** A server that read a radio, segmented or native select field under its
 scoped widget id reads it under the field's path instead.
 
+**Before hydration.** The names and hidden inputs are applied once the field is mounted, so HTML
+rendered on the server carries no `name` on the radios or the native select and no hidden inputs. A
+form submitted natively before hydration does not send these fields; before this change it sent them
+under the scoped widget id, which no server reading `field.path` received either.
+
 **Not changed.** A date range sends `<path>.start` and `<path>.end` from its two boxes, which show the
 date in the reader's locale, so the values are the localized text rather than ISO dates. That is the
 shared contract's shape for this kind in every renderer, and is not changed here.
