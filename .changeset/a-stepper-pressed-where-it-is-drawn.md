@@ -12,4 +12,5 @@ them as before.
 
 **Migration.** In those short fields the input keeps a 48px trailing margin so the value never runs
 under the pair; a number field sized to its content is 48px wider than before. No change for fields
-48px or taller.
+48px or taller. The threshold is read from `--mdy-input-height`, not from the rendered box: a field
+made shorter without lowering that token still stacks its steppers.
