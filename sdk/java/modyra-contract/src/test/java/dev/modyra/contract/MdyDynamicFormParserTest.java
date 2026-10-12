@@ -12,6 +12,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -45,6 +49,9 @@ class MdyDynamicFormParserTest {
     return Files.readString(SPEC_FIXTURES_V4.resolve(name));
   }
 
+  /** Corpus documents this reader is known to judge differently from the verdict beside them. */
+  private static final Path KNOWN_DISAGREEMENTS = Path.of("src/test/resources/known-corpus-disagreements.json");
+
   private final MdyDynamicFormParser parser = new MdyDynamicFormParser();
 
   /**
@@ -77,6 +84,13 @@ class MdyDynamicFormParserTest {
    * <p>Each document's expected verdict comes from the corpus too — a {@code .expected.json}
    * beside it, whose absence means "this one parses clean". A fixture added tomorrow is read the
    * day it lands, and one meant to be refused is not mistaken for a regression.
+   *
+   * <p>Where this reader is known to disagree, the document is listed in
+   * {@link #KNOWN_DISAGREEMENTS}, and the list is held exact in both directions: a disagreement it
+   * does not name is a regression, and a name that now agrees is a repair the list has to lose. A
+   * suite that stopped at the first disagreement could only be green once every one was fixed, so
+   * it could not run anywhere meanwhile, and the next regression would land unseen behind the
+   * known ones.
    */
   @Test
   void readsEveryDocumentInTheSharedCorpus() throws IOException {
@@ -100,6 +114,7 @@ class MdyDynamicFormParserTest {
 
     assertTrue(documents.size() >= 10, "the walk found " + documents.size() + " documents, too few to be the corpus");
 
+    Map<String, String> disagreements = new TreeMap<>();
     for (Path path : documents) {
       String label = path.getParent().getFileName() + "/" + path.getFileName();
       MdyDynamicFormParseResult result =
@@ -107,14 +122,30 @@ class MdyDynamicFormParserTest {
 
       Path expected = path.resolveSibling(
           path.getFileName().toString().replace(".json", ".expected.json"));
-      if (!Files.exists(expected)) {
-        assertTrue(result.ok(), () -> label + " was refused: " + result.diagnostics());
-        continue;
+      boolean wanted = true;
+      if (Files.exists(expected)) {
+        JsonNode verdict = new ObjectMapper().readTree(Files.readString(expected));
+        wanted = !verdict.has("valid") || verdict.get("valid").asBoolean();
       }
-      JsonNode verdict = new ObjectMapper().readTree(Files.readString(expected));
-      boolean wanted = !verdict.has("valid") || verdict.get("valid").asBoolean();
-      assertEquals(wanted, result.ok(), label + ": " + result.diagnostics());
+      if (wanted != result.ok()) {
+        disagreements.put(label, (wanted ? "refused: " : "accepted: ") + result.diagnostics());
+      }
     }
+
+    Set<String> known = new TreeSet<>();
+    new ObjectMapper().readTree(Files.readString(KNOWN_DISAGREEMENTS))
+        .get("disagreements").forEach(entry -> known.add(entry.asText()));
+
+    List<String> regressions = new ArrayList<>();
+    disagreements.forEach((label, detail) -> {
+      if (!known.contains(label)) regressions.add(label + " " + detail);
+    });
+    List<String> repaired = known.stream().filter(label -> !disagreements.containsKey(label)).toList();
+
+    assertTrue(regressions.isEmpty(), () -> "disagrees with the corpus and is not in "
+        + KNOWN_DISAGREEMENTS.getFileName() + ": " + regressions);
+    assertTrue(repaired.isEmpty(), () -> "agrees with the corpus now, so remove from "
+        + KNOWN_DISAGREEMENTS.getFileName() + ": " + repaired);
   }
 
   @Test

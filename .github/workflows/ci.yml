@@ -76,6 +76,16 @@ jobs:
       - name: The Rust reader agrees with the corpus
         run: cargo test --manifest-path sdk/rust/modyra-contract/Cargo.toml
 
+      # The fourth reader. Its disagreements with the corpus are listed in
+      # `sdk/java/modyra-contract/src/test/resources/known-corpus-disagreements.json`, held exact both
+      # ways (ADR 0228): one not listed is a regression, a listed one that agrees has to leave the list.
+      #
+      # No toolchain step, for the same reason as the Rust one: the runner image ships JDK 17, which is
+      # the release the module compiles for, and the wrapper pins Maven itself.
+      - name: The Java reader agrees with the corpus, or says where it does not
+        working-directory: sdk/java/modyra-contract
+        run: JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}" ./mvnw -B --no-transfer-progress test
+
       - name: Studio and framework-free renderer tests
         run: pnpm run test:studio
 
