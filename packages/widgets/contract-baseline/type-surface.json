@@ -161,7 +161,6 @@
   "angular:MdyCalendarComponent": [
     "ariaLabel: _angular_core.InputSignal<string>",
     "closed: _angular_core.OutputEmitterRef<void>",
-    "constructor-> returns: (inferred)",
     "controller: _angular_core.InputSignal<MdyDatepickerFieldController | undefined>",
     "datePicked: _angular_core.OutputEmitterRef<CalendarDate>",
     "focusFocusedDate-> returns: void",
@@ -923,7 +922,6 @@
   "angular:MdyRangeCalendarComponent": [
     "ariaLabel: _angular_core.InputSignal<string>",
     "closed: _angular_core.OutputEmitterRef<void>",
-    "constructor-> returns: (inferred)",
     "controller: _angular_core.InputSignal<MdyDaterangeFieldController | undefined>",
     "dateFilter: _angular_core.InputSignal<((date: string) => boolean) | null>",
     "focusFocusedDate-> returns: void",
@@ -1379,10 +1377,10 @@
     "validators: ReadonlyArray<ValidatorFn<never>>"
   ],
   "core:MdyAnyRowDescriptor": [
-    "variant of an unnamed shape: MdyAnyArrayDescriptor",
-    "variant of an unnamed shape: MdyAnyFieldDescriptor",
-    "variant of an unnamed shape: MdyAnyGroupDescriptor",
-    "variant of an unnamed shape: MdyAnyRecordDescriptor"
+    "variant MdyAnyArrayDescriptor: MdyAnyArrayDescriptor",
+    "variant MdyAnyFieldDescriptor: MdyAnyFieldDescriptor",
+    "variant MdyAnyGroupDescriptor: MdyAnyGroupDescriptor",
+    "variant MdyAnyRecordDescriptor: MdyAnyRecordDescriptor"
   ],
   "core:MdyArrayDescriptor": [
     "initial: ReadonlyArray<unknown>",
@@ -1566,14 +1564,14 @@
     "severity: \"error\" | \"warning\""
   ],
   "core:MdyDynamicField": [
-    "variant of an unnamed shape: MdyDynamicBooleanField",
-    "variant of an unnamed shape: MdyDynamicColorsField",
-    "variant of an unnamed shape: MdyDynamicDateField",
-    "variant of an unnamed shape: MdyDynamicDaterangeField",
-    "variant of an unnamed shape: MdyDynamicFileField",
-    "variant of an unnamed shape: MdyDynamicNumberField",
-    "variant of an unnamed shape: MdyDynamicOptionsField",
-    "variant of an unnamed shape: MdyDynamicTextField"
+    "variant MdyDynamicBooleanField: MdyDynamicBooleanField",
+    "variant MdyDynamicColorsField: MdyDynamicColorsField",
+    "variant MdyDynamicDateField: MdyDynamicDateField",
+    "variant MdyDynamicDaterangeField: MdyDynamicDaterangeField",
+    "variant MdyDynamicFileField: MdyDynamicFileField",
+    "variant MdyDynamicNumberField: MdyDynamicNumberField",
+    "variant MdyDynamicOptionsField: MdyDynamicOptionsField",
+    "variant MdyDynamicTextField: MdyDynamicTextField"
   ],
   "core:MdyDynamicFieldNode": [
     "asyncWhen?: MdyDynamicCondition",
@@ -1606,10 +1604,10 @@
     "version: 3"
   ],
   "core:MdyDynamicFormDocument": [
-    "variant of an unnamed shape: MdyDynamicFormConfigV2",
-    "variant of an unnamed shape: MdyDynamicFormConfigV3",
-    "variant of an unnamed shape: MdyDynamicFormConfigV4",
-    "variant of an unnamed shape: MdyDynamicFormConfigV5"
+    "variant MdyDynamicFormConfigV2: MdyDynamicFormConfigV2",
+    "variant MdyDynamicFormConfigV3: MdyDynamicFormConfigV3",
+    "variant MdyDynamicFormConfigV4: MdyDynamicFormConfigV4",
+    "variant MdyDynamicFormConfigV5: MdyDynamicFormConfigV5"
   ],
   "core:MdyDynamicFormParseResult": [
     "acceptedCount: number",
@@ -1630,23 +1628,23 @@
     "when?: MdyDynamicCondition"
   ],
   "core:MdyDynamicLayoutChild": [
-    "variant of an unnamed shape: MdyDynamicLayoutNode",
-    "variant of an unnamed shape: MdyDynamicLayoutSlot",
-    "variant of an unnamed shape: string"
+    "variant MdyDynamicLayoutNode: MdyDynamicLayoutNode",
+    "variant MdyDynamicLayoutSlot: MdyDynamicLayoutSlot",
+    "variant string: string"
   ],
   "core:MdyDynamicLayoutNode": [
-    "variant of an unnamed shape: MdyDynamicColumns",
-    "variant of an unnamed shape: MdyDynamicSection"
+    "variant MdyDynamicColumns: MdyDynamicColumns",
+    "variant MdyDynamicSection: MdyDynamicSection"
   ],
   "core:MdyDynamicLayoutSlot": [
     "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>",
     "ref: string"
   ],
   "core:MdyDynamicNode": [
-    "variant of an unnamed shape: MdyDynamicArrayNode",
-    "variant of an unnamed shape: MdyDynamicFieldNode",
-    "variant of an unnamed shape: MdyDynamicGroupNode",
-    "variant of an unnamed shape: MdyDynamicRecordNode"
+    "variant MdyDynamicArrayNode: MdyDynamicArrayNode",
+    "variant MdyDynamicFieldNode: MdyDynamicFieldNode",
+    "variant MdyDynamicGroupNode: MdyDynamicGroupNode",
+    "variant MdyDynamicRecordNode: MdyDynamicRecordNode"
   ],
   "core:MdyDynamicNumberField": [
     "kind: \"number\" | \"slider\"",
@@ -1999,11 +1997,11 @@
     "(opaque)"
   ],
   "core:MdyGranularityProblem": [
-    "variant of index+member+other+reason: { readonly member: \"windows\"; readonly reason: \"overlap\"; readonly index: number; readonly other: number; }",
-    "variant of index+member+reason+unit+value: { readonly member: \"windows\"; readonly reason: \"must-divide\"; readonly index: number; readonly unit: number; readonly value: number; }",
-    "variant of index+member+reason+value: { readonly member: \"windows\"; readonly reason: \"unreadable-time\"; readonly index: number; readonly value: string; }",
-    "variant of index+member+reason: { readonly member: \"windows\"; readonly reason: \"empty-range\"; readonly index: number; }",
-    "variant of member+reason+unit+value: { readonly member: \"hourStep\" | \"minuteStep\"; readonly reason: \"must-divide\"; readonly unit: number; readonly value: number; }"
+    "variant member=\"windows\" reason=\"empty-range\": { readonly member: \"windows\"; readonly reason: \"empty-range\"; readonly index: number; }",
+    "variant member=\"windows\" reason=\"must-divide\": { readonly member: \"windows\"; readonly reason: \"must-divide\"; readonly index: number; readonly unit: number; readonly value: number; }",
+    "variant member=\"windows\" reason=\"overlap\": { readonly member: \"windows\"; readonly reason: \"overlap\"; readonly index: number; readonly other: number; }",
+    "variant member=\"windows\" reason=\"unreadable-time\": { readonly member: \"windows\"; readonly reason: \"unreadable-time\"; readonly index: number; readonly value: string; }",
+    "variant reason=\"must-divide\": { readonly member: \"hourStep\" | \"minuteStep\"; readonly reason: \"must-divide\"; readonly unit: number; readonly value: number; }"
   ],
   "core:MdyGroupDescriptor": [
     "children: TChildren",
@@ -2037,14 +2035,14 @@
   ],
   "core:MdyOperand": [
     "null",
-    "variant of an unnamed shape: MdyContextRef",
-    "variant of an unnamed shape: MdyExpression",
-    "variant of an unnamed shape: MdyPathRef",
-    "variant of an unnamed shape: MdyRootRef",
-    "variant of an unnamed shape: MdySelfRef",
-    "variant of an unnamed shape: boolean",
-    "variant of an unnamed shape: number",
-    "variant of an unnamed shape: string"
+    "variant MdyContextRef: MdyContextRef",
+    "variant MdyExpression: MdyExpression",
+    "variant MdyPathRef: MdyPathRef",
+    "variant MdyRootRef: MdyRootRef",
+    "variant MdySelfRef: MdySelfRef",
+    "variant boolean: boolean",
+    "variant number: number",
+    "variant string: string"
   ],
   "core:MdyPathGate": [
     "isOpen?: boolean",
@@ -2119,7 +2117,7 @@
     "\"text\""
   ],
   "core:MdySanitizer": [
-    "variant of an unnamed shape: MdySanitizeProfile",
+    "variant MdySanitizeProfile: MdySanitizeProfile",
     "variant of value: ((value: unknown) => unknown)"
   ],
   "core:MdyScopeOptions": [
@@ -3876,8 +3874,8 @@
     "key: PropertyKey"
   ],
   "standard-schema:MdyStandardResult": [
-    "variant of an unnamed shape: MdyStandardFailure",
-    "variant of an unnamed shape: MdyStandardSuccess<Output>"
+    "variant MdyStandardFailure: MdyStandardFailure",
+    "variant MdyStandardSuccess<Output>: MdyStandardSuccess<Output>"
   ],
   "standard-schema:MdyStandardSchemaTree": [
     "(opaque)"
@@ -5201,7 +5199,7 @@
   ],
   "widgets:MdyKeyOrPress": [
     "variant of altKey+ctrlKey+key+metaKey+shiftKey: { readonly key: string; readonly ctrlKey?: boolean; readonly metaKey?: boolean; readonly altKey?: boolean; readonly shiftKey?: boolean; }",
-    "variant of an unnamed shape: string"
+    "variant string: string"
   ],
   "widgets:MdyLayoutColumnCounts": [
     "-> Partial"
@@ -5567,8 +5565,8 @@
     "(opaque)"
   ],
   "widgets:MdyReading": [
-    "variant of an unnamed shape: MdyValueRead<T>",
-    "variant of an unnamed shape: MdyValueUnread"
+    "variant MdyValueRead<T>: MdyValueRead<T>",
+    "variant MdyValueUnread: MdyValueUnread"
   ],
   "widgets:MdyReadingHost": [
     "cell: unknown",
@@ -5767,11 +5765,11 @@
     "part: string"
   ],
   "widgets:MdySubmissionShape": [
-    "variant of companion+form+part: { readonly form: \"boolean\"; readonly part: string; readonly companion: string; }",
-    "variant of form+keys+repeats: { readonly form: \"hidden\"; readonly repeats: boolean; readonly keys?: readonly string[]; }",
-    "variant of form+part+parts+suffix: { readonly form: \"split\"; readonly parts: readonly { readonly part: string; readonly suffix: string; }[]; }",
-    "variant of form+part: { readonly form: \"shared\"; readonly part: string; }",
-    "variant of form+part: { readonly form: \"single\"; readonly part: string; }"
+    "variant form=\"boolean\": { readonly form: \"boolean\"; readonly part: string; readonly companion: string; }",
+    "variant form=\"hidden\": { readonly form: \"hidden\"; readonly repeats: boolean; readonly keys?: readonly string[]; }",
+    "variant form=\"shared\": { readonly form: \"shared\"; readonly part: string; }",
+    "variant form=\"single\": { readonly form: \"single\"; readonly part: string; }",
+    "variant form=\"split\": { readonly form: \"split\"; readonly parts: readonly { readonly part: string; readonly suffix: string; }[]; }"
   ],
   "widgets:MdyTestingVocabulary": [
     "door: \"./testing\"",
@@ -6179,8 +6177,8 @@
     "trigger: MdyTransitionTrigger"
   ],
   "widgets:MdyWidgetVariant": [
-    "variant of an unnamed shape: MdyMultiselectMode",
-    "variant of an unnamed shape: MdySelectPresentation"
+    "variant MdyMultiselectMode: MdyMultiselectMode",
+    "variant MdySelectPresentation: MdySelectPresentation"
   ],
   "widgets:MdyWidgetViewContract": [
     "parts: Readonly<Record<TPart, MdyPartContract>>",

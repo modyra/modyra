@@ -411,14 +411,45 @@ function unionMembersOf(type, sourceFile) {
     // arm whose shape changes under the same discriminant is a retype, an arm that disappears is a
     // removal. Where there is none, the member names stand in — stable under reordering, which the
     // text is not.
-    const discriminant = text.match(/\btype\s*:\s*("[^"]*"|'[^']*')/)?.[1];
-    const shape = [...text.matchAll(/(?:readonly\s+)?([A-Za-z_$][\w$]*)\s*\??\s*:/g)].map(([, key]) => key).sort();
-    const key = discriminant !== undefined
-      ? `variant ${discriminant}`
-      : `variant of ${shape.join("+") || "an unnamed shape"}`;
-    members.push(`${key}: ${text}`);
+    members.push({ key: variantKey(member, text), text });
   }
-  return members.sort();
+  // Two arms under one key are one arm to the comparison, which keeps the last and never reports the
+  // other withdrawn. Arms the keying cannot tell apart — `string[] | number[]`, two object shapes with
+  // the same member names — are keyed by their own text instead, with `": "` closed up because the
+  // comparison splits an entry there. Only two arms with the same text can still share a key.
+  const count = (key) => members.filter((arm) => arm.key === key).length;
+  const keyed = members.map((arm) => typeof arm === "string" || count(arm.key) === 1
+    ? arm
+    : { key: `variant ${arm.text.replaceAll(": ", ":")}`, text: arm.text });
+  const keys = keyed.filter((arm) => typeof arm !== "string").map((arm) => arm.key);
+  const repeated = keys.find((key, index) => keys.indexOf(key) !== index);
+  if (repeated !== undefined) {
+    const alias = type.parent?.name?.text ?? "(an unnamed union)";
+    throw new Error(`${alias}: two arms read \`${repeated}\` and cannot be told apart; name one of them with an alias of its own.`);
+  }
+  return keyed.map((arm) => typeof arm === "string" ? arm : `${arm.key}: ${arm.text}`).sort();
+}
+
+/**
+ * What identifies one non-literal arm of a union.
+ *
+ * A named type is its own identity: `MdyDynamicDateField` in `MdyDynamicField` is told apart from its
+ * seven siblings by nothing but its name. An object arm is identified by its top-level members with a
+ * literal type — `type: "step"` keys as `variant "step"`, any other discriminant as
+ * `variant form="single"` — and only an arm with none falls back to its member names.
+ */
+function variantKey(member, text) {
+  if (!text.includes(": ") && (ts.isTypeReferenceNode(member) || ts.isToken(member))) return `variant ${text}`;
+  if (ts.isTypeLiteralNode(member)) {
+    const literals = member.members
+      .filter((property) => ts.isPropertySignature(property) && property.type && ts.isLiteralTypeNode(property.type))
+      .map((property) => [property.name.getText(), property.type.literal.getText()]);
+    const type = literals.find(([name]) => name === "type");
+    if (type) return `variant ${type[1]}`;
+    if (literals.length > 0) return `variant ${literals.map(([name, value]) => `${name}=${value}`).sort().join(" ")}`;
+  }
+  const shape = [...text.matchAll(/(?:readonly\s+)?([A-Za-z_$][\w$]*)\s*\??\s*:/g)].map(([, key]) => key).sort();
+  return `variant of ${shape.join("+") || "an unnamed shape"}`;
 }
 
 /**
