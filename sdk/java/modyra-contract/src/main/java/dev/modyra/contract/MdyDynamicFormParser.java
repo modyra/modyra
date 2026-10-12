@@ -309,6 +309,7 @@ public final class MdyDynamicFormParser {
             "Dropped dynamic field \"" + name + "\": " + e.getOriginalMessage()));
         continue;
       }
+      if (!patternIsUsable(item, name, diagnostics)) continue;
       if (field instanceof MdyDynamicOptionsField opt && (opt.options() == null || opt.options().isEmpty())) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_MISSING_OPTIONS", MdyDynamicDiagnostic.WARNING, path,
             "Dropped dynamic field \"" + name + "\": option-based kinds require a non-empty options list."));
@@ -317,6 +318,45 @@ public final class MdyDynamicFormParser {
       accepted.add(field);
     }
     return new FlatResult(accepted, diagnostics);
+  }
+
+  /**
+   * Whether a field's {@code validators.pattern} lets the field be read, reporting what is wrong
+   * with it either way.
+   *
+   * <p>A pattern that is not a string, or longer than the cap, takes the field with it: there is no
+   * rule to keep. A pattern that would backtrack exponentially (ADR 0050), or that no JavaScript
+   * engine compiles, is reported as an error and the field stays — one rule the engine will not run
+   * is not a reason to take an input away from the person filling the form. Either way the result
+   * is not {@code ok}, so a publishing gate does not approve a rule that will never exist.
+   *
+   * <p>The diagnostics sit at {@code /fields}, where the TypeScript reader puts a validator's
+   * refusal, so a host matching on path sees the same thing from both readers.
+   */
+  private static boolean patternIsUsable(JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode pattern = item.path("validators").path("pattern");
+    if (pattern.isMissingNode()) return true;
+    if (!pattern.isTextual()) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dropped dynamic field \"" + name + "\": validators.pattern must be a string."));
+      return false;
+    }
+    String source = pattern.asText();
+    if (source.length() > MdyDynamicPatterns.MAX_LENGTH) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_PATTERN_TOO_LONG", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dropped dynamic field \"" + name + "\": validators.pattern length exceeds max " + MdyDynamicPatterns.MAX_LENGTH + "."));
+      return false;
+    }
+    String refusal = MdyDynamicPatterns.costRefusal(source);
+    if (refusal != null) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_PATTERN_TOO_COSTLY", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dropped validators.pattern on dynamic field \"" + name + "\": the pattern has " + refusal + "."));
+    } else if (!MdyDynamicPatterns.compiles(source)) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dropped validators.pattern on dynamic field \"" + name + "\": \"" + source
+              + "\" is not a regular expression this platform can compile, so the rule never runs."));
+    }
+    return true;
   }
 
   // ─── v2 recursive schema: validate + flatten (mirrors validateDynamicSchema / flattenDynamicSchema) ───

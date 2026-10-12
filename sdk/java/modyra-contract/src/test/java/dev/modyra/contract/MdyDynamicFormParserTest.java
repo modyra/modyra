@@ -914,6 +914,125 @@ class MdyDynamicFormParserTest {
     assertTrue(refused.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_UNSAFE_NAME".equals(d.code())));
   }
 
+  /**
+   * The three shared-corpus documents about {@code validators.pattern}, answered as the TypeScript
+   * reader answers them: a shape that backtracks exponentially, a source no JavaScript engine
+   * compiles, and a quantified boundary — which {@code java.util.regex} would compile, and which is
+   * refused here all the same because the contract's grammar is JavaScript's. The field stays in
+   * lenient mode and the result is not {@code ok} in either.
+   */
+  @Test
+  void aValidatorPatternIsRefusedAsTheTypeScriptReaderRefusesIt() throws IOException {
+    record Case(String fixture, String code, String message) {
+    }
+    List<Case> cases = List.of(
+        new Case("f-validator-pattern-catastrophic.json", "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
+            "Dropped validators.pattern on dynamic field \"code\": the pattern has a repeated group whose body "
+                + "can be divided several ways, which backtracks exponentially."),
+        new Case("r-validator-pattern-uncompilable.json", "MDY_DYNAMIC_INVALID_FIELD",
+            "Dropped validators.pattern on dynamic field \"code\": \"[\" is not a regular expression this "
+                + "platform can compile, so the rule never runs."),
+        new Case("s-validator-pattern-quantified-boundary.json", "MDY_DYNAMIC_INVALID_FIELD",
+            "Dropped validators.pattern on dynamic field \"code\": \"\\b+\" is not a regular expression this "
+                + "platform can compile, so the rule never runs."));
+    for (Case c : cases) {
+      String json = readFixture(c.fixture());
+      MdyDynamicFormParseResult strict = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+      assertFalse(strict.ok(), c.fixture());
+      assertEquals(0, strict.fields().size(), c.fixture());
+      assertEquals(1, strict.diagnostics().size(), () -> c.fixture() + " " + strict.diagnostics());
+      assertEquals(new MdyDynamicDiagnostic(c.code(), MdyDynamicDiagnostic.ERROR, "/fields", c.message()),
+          strict.diagnostics().get(0), c.fixture());
+
+      MdyDynamicFormParseResult lenient = parser.parse(json, MdyDynamicFormParser.Mode.LENIENT);
+      assertFalse(lenient.ok(), c.fixture());
+      assertEquals(1, lenient.fields().size(), c.fixture() + " keeps the field: the rule is lost, the input is not");
+      assertEquals(1, lenient.acceptedCount(), c.fixture());
+      assertEquals(0, lenient.rejectedCount(), c.fixture());
+      assertEquals(strict.diagnostics(), lenient.diagnostics(), c.fixture());
+    }
+  }
+
+  /**
+   * The pattern cost gate draws its line where the TypeScript one does: a variable body repeated is
+   * refused, a body pinned by a boundary the stretchy part cannot take is not, alternatives that
+   * share a character are refused and ones that cannot be mistaken for each other are not.
+   */
+  @Test
+  void thePatternCostGateDrawsTheTypeScriptLine() {
+    for (String refused : List.of(
+        "^(a*)*$", "^(a|ab)+$", "^([a-z]|a)*$", "^(.|x)+$", "^(a{2,4})+$", "^(a+){15}b$", "(.*a){20}$",
+        "^([A-Za-z]+[0-9]*)+$", "^([^x]+[^y]+)+z$", "^(a|ab)+c$")) {
+      assertTrue(withPattern(refused).diagnostics().stream().anyMatch(d -> d.code().equals("MDY_DYNAMIC_PATTERN_TOO_COSTLY")),
+          () -> refused + " should be refused: " + withPattern(refused).diagnostics());
+    }
+    for (String allowed : List.of(
+        "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$", "^(\\d{1,3}\\.){3}\\d{1,3}$", "^([a-z]+-)*[a-z]+$",
+        "^(\\s*[^,]+,)*\\s*[^,]+$", "^(foo|bar|baz)+$", "^([a-z]|[0-9])+$", "^(.|\\n)*$", "^(?:ab){3}$",
+        "^(\"[^\"]*\",)*\"[^\"]*\"$", "^((a)|b)+$", "^(?<year>\\d{4})-(?<month>\\d{2})$")) {
+      MdyDynamicFormParseResult result = withPattern(allowed);
+      assertTrue(result.ok(), () -> allowed + " should be allowed: " + result.diagnostics());
+    }
+  }
+
+  /**
+   * Whether a pattern compiles is answered by JavaScript's grammar, not {@code java.util.regex}'s.
+   * Each pair here is a source the two engines judge differently, and the verdict is the one a
+   * flagless {@code new RegExp(source)} gives.
+   */
+  @Test
+  void whetherAPatternCompilesIsAJavaScriptQuestion() {
+    // java.util.regex compiles these; JavaScript has nothing to repeat or an unknown group.
+    for (String uncompilable : List.of("\\b+", "^+", "(?<=a)+", "{2}", "a{2}{3}", "(?i)a", "a++", "\\Q[\\E")) {
+      MdyDynamicFormParseResult result = withPattern(uncompilable);
+      assertFalse(result.ok(), uncompilable);
+      assertEquals("MDY_DYNAMIC_INVALID_FIELD", result.diagnostics().get(0).code(), uncompilable);
+      assertTrue(result.diagnostics().get(0).message().contains("is not a regular expression this platform can compile"), uncompilable);
+    }
+    // java.util.regex refuses these; JavaScript reads a literal brace, an empty class, an escape.
+    for (String compilable : List.of("a{,5}", "a{", "[]", "[^]", "\\0", "\\c", "\\u{41}", "[\\b]", "(?<n>a)|(?<n>b)", "\\8", "[\\d-z]")) {
+      MdyDynamicFormParseResult result = withPattern(compilable);
+      assertTrue(result.ok(), () -> compilable + " should compile: " + result.diagnostics());
+    }
+    // And the ones both refuse are refused once, with the JavaScript wording.
+    for (String both : List.of("[", "(", "a)", "*a", "[z-a]", "(?<n>a)\\k<m>", "(?<n>a)(?<n>b)", "a{2,1}")) {
+      MdyDynamicFormParseResult result = withPattern(both);
+      assertEquals(1, result.diagnostics().size(), () -> both + " " + result.diagnostics());
+      assertEquals("MDY_DYNAMIC_INVALID_FIELD", result.diagnostics().get(0).code(), both);
+    }
+  }
+
+  /** A pattern that is not a string, or longer than the cap, takes its field with it. */
+  @Test
+  void aPatternThatIsNotAStringOrIsTooLongDropsTheField() {
+    MdyDynamicFormParseResult number = parser.parse(
+        "{\"version\":2,\"fields\":[{\"name\":\"code\",\"kind\":\"text\",\"validators\":{\"pattern\":5}}]}",
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(number.ok());
+    assertEquals(0, number.fields().size());
+    assertEquals(1, number.rejectedCount());
+    assertEquals(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+        "Dropped dynamic field \"code\": validators.pattern must be a string."), number.diagnostics().get(0));
+
+    MdyDynamicFormParseResult tooLong = withPattern("a".repeat(257));
+    assertFalse(tooLong.ok());
+    assertEquals(0, tooLong.fields().size());
+    assertEquals(new MdyDynamicDiagnostic("MDY_DYNAMIC_PATTERN_TOO_LONG", MdyDynamicDiagnostic.ERROR, "/fields",
+        "Dropped dynamic field \"code\": validators.pattern length exceeds max 256."), tooLong.diagnostics().get(0));
+    assertTrue(withPattern("a".repeat(256)).ok(), "the cap is inclusive");
+  }
+
+  /** A lenient parse of one text field whose {@code validators.pattern} is {@code pattern}. */
+  private MdyDynamicFormParseResult withPattern(String pattern) {
+    com.fasterxml.jackson.databind.node.ObjectNode validators = new ObjectMapper().createObjectNode().put("pattern", pattern);
+    com.fasterxml.jackson.databind.node.ObjectNode field = new ObjectMapper().createObjectNode()
+        .put("name", "code").put("kind", "text");
+    field.set("validators", validators);
+    com.fasterxml.jackson.databind.node.ObjectNode document = new ObjectMapper().createObjectNode().put("version", 2);
+    document.set("fields", new ObjectMapper().createArrayNode().add(field));
+    return parser.parse(document, MdyDynamicFormParser.Mode.LENIENT);
+  }
+
   /** A record's declared rows are named in the flat view, by key rather than by index. */
   @Test
   void namesADeclaredRowByItsKey() {
