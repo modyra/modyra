@@ -206,6 +206,73 @@ class MdyDynamicFormParserTest {
     assertEquals(18.0, age.validators().min());
   }
 
+  /**
+   * The three kinds whose value is not one scalar. Each keeps the members its kind declares, so a
+   * document read and written back still describes the same control.
+   */
+  @Test
+  void readsDaterangeFileAndColorsWithTheirOwnMembers() throws IOException {
+    String json = """
+        [
+          {"name":"stay","kind":"daterange"},
+          {"name":"cv","kind":"file","accept":".pdf","multiple":true},
+          {"name":"brand","kind":"colors","presets":["#4361ee",{"value":"#e63946","label":"Signal red"}]}
+        ]
+        """;
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertTrue(result.ok(), () -> "diagnostics: " + result.diagnostics());
+    assertEquals(0, result.diagnostics().size(), () -> "diagnostics: " + result.diagnostics());
+    assertInstanceOf(MdyDynamicDaterangeField.class, result.fields().get(0));
+    MdyDynamicFileField file = assertInstanceOf(MdyDynamicFileField.class, result.fields().get(1));
+    assertEquals(".pdf", file.accept());
+    assertEquals(Boolean.TRUE, file.multiple());
+    MdyDynamicColorsField colors = assertInstanceOf(MdyDynamicColorsField.class, result.fields().get(2));
+    assertEquals(
+        new ObjectMapper().readTree("[\"#4361ee\",{\"value\":\"#e63946\",\"label\":\"Signal red\"}]"),
+        new ObjectMapper().valueToTree(colors.presets()));
+  }
+
+  /** A schema leaf takes its name from its path, and keeps the members of its kind while doing so. */
+  @Test
+  void schemaLeavesOfTheNewKindsKeepTheirMembers() {
+    String json = """
+        {"version":2,"schema":{"node":"group","children":{
+          "stay":{"node":"field","field":{"kind":"daterange"}},
+          "cv":{"node":"field","field":{"kind":"file","accept":".pdf"}},
+          "brand":{"node":"field","field":{"kind":"colors","presets":["#4361ee"]}}
+        }}}
+        """;
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertTrue(result.ok(), () -> "diagnostics: " + result.diagnostics());
+    Map<String, MdyDynamicField> byName = new TreeMap<>();
+    for (MdyDynamicField field : result.fields()) byName.put(field.name(), field);
+    assertInstanceOf(MdyDynamicDaterangeField.class, byName.get("stay"));
+    assertEquals(".pdf", assertInstanceOf(MdyDynamicFileField.class, byName.get("cv")).accept());
+    assertEquals(List.of("#4361ee"), assertInstanceOf(MdyDynamicColorsField.class, byName.get("brand")).presets());
+  }
+
+  /** A section nested {@code depth} levels deep, its innermost one holding field {@code a}. */
+  private static String layoutNestedTo(int depth) {
+    String node = "\"a\"";
+    for (int level = depth; level >= 1; level--) {
+      node = "{\"kind\":\"section\",\"id\":\"s" + level + "\",\"children\":[" + node + "]}";
+    }
+    return "{\"version\":2,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}],\"layout\":[" + node + "]}";
+  }
+
+  /** The same cap the TS and Rust readers apply, on both sides of it. */
+  @Test
+  void nestsLayoutToThirtyTwoLevelsAndNoFurther() {
+    MdyDynamicFormParseResult atCap = parser.parse(layoutNestedTo(32), MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(atCap.ok(), () -> "32 levels, diagnostics: " + atCap.diagnostics());
+
+    MdyDynamicFormParseResult pastCap = parser.parse(layoutNestedTo(33), MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(pastCap.ok(), "33 levels was accepted");
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", pastCap.diagnostics().get(0).code());
+  }
+
   @Test
   void strictModeRejectsTheWholeDocumentWhenAnyFieldIsDropped() {
     String json = """
