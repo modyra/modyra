@@ -411,17 +411,23 @@ function unionMembersOf(type, sourceFile) {
     // arm whose shape changes under the same discriminant is a retype, an arm that disappears is a
     // removal. Where there is none, the member names stand in — stable under reordering, which the
     // text is not.
-    members.push(`${variantKey(member, text)}: ${text}`);
+    members.push({ key: variantKey(member, text), text });
   }
   // Two arms under one key are one arm to the comparison, which keeps the last and never reports the
-  // other withdrawn. Failing here keeps a union the keying cannot tell apart out of the baseline.
-  const keys = members.map((entry) => entry.slice(0, entry.indexOf(": ")));
-  const repeated = keys.find((key, index) => key.startsWith("variant") && keys.indexOf(key) !== index);
+  // other withdrawn. Arms the keying cannot tell apart — `string[] | number[]`, two object shapes with
+  // the same member names — are keyed by their own text instead, with `": "` closed up because the
+  // comparison splits an entry there. Only two arms with the same text can still share a key.
+  const count = (key) => members.filter((arm) => arm.key === key).length;
+  const keyed = members.map((arm) => typeof arm === "string" || count(arm.key) === 1
+    ? arm
+    : { key: `variant ${arm.text.replaceAll(": ", ":")}`, text: arm.text });
+  const keys = keyed.filter((arm) => typeof arm !== "string").map((arm) => arm.key);
+  const repeated = keys.find((key, index) => keys.indexOf(key) !== index);
   if (repeated !== undefined) {
     const alias = type.parent?.name?.text ?? "(an unnamed union)";
-    throw new Error(`${alias}: two arms share the key \`${repeated}\`, so withdrawing one would go unreported.`);
+    throw new Error(`${alias}: two arms read \`${repeated}\` and cannot be told apart; name one of them with an alias of its own.`);
   }
-  return members.sort();
+  return keyed.map((arm) => typeof arm === "string" ? arm : `${arm.key}: ${arm.text}`).sort();
 }
 
 /**
