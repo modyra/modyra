@@ -801,6 +801,22 @@ public final class MdyDynamicFormParser {
   }
 
   /**
+   * Whether ECMAScript {@code String.prototype.trim} leaves nothing: its whitespace is the Unicode
+   * {@code Zs} spaces, tab, vertical tab, form feed, U+FEFF and the four line terminators.
+   * {@code String.isBlank} differs on both sides (it counts U+001C–U+001F and not U+00A0, U+2007,
+   * U+202F or U+FEFF), so a message of no-break spaces would be read as one a person can read.
+   */
+  private static boolean isJsBlank(String text) {
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      boolean space = c == '\t' || c == '\n' || c == 0x0B || c == '\f' || c == '\r' || c == 0x2028 || c == 0x2029
+          || c == 0xFEFF || Character.getType(c) == Character.SPACE_SEPARATOR;
+      if (!space) return false;
+    }
+    return true;
+  }
+
+  /**
    * A number as ECMAScript {@code Number::toString} writes it: the fewest significant digits that
    * read back as the same double, laid out plainly up to 21 integer digits and down to six leading
    * zeros, in exponent form beyond. A value JSON cannot hold writes {@code null}.
@@ -993,7 +1009,7 @@ public final class MdyDynamicFormParser {
         continue;
       }
       JsonNode message = raw.path("message");
-      if (!message.isTextual() || message.asText().isBlank()) {
+      if (!message.isTextual() || isJsBlank(message.asText())) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, "validation needs a non-empty message."));
         continue;
       }

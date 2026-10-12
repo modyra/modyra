@@ -1119,6 +1119,23 @@ class MdyDynamicFormParserTest {
     assertEquals("MDY_DYNAMIC_INVALID_VALIDATION", silent.code());
     assertEquals("validation needs a non-empty message.", silent.message());
 
+    // A message is empty exactly when JavaScript's trim() empties it: these 25 code units, no others.
+    Set<Integer> jsSpaces = Set.of(0x9, 0xA, 0xB, 0xC, 0xD, 0x20, 0xA0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004,
+        0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000, 0xFEFF);
+    ObjectMapper json = new ObjectMapper();
+    for (int c = 0; c < 0x10000; c++) {
+      String message;
+      try {
+        message = json.writeValueAsString(String.valueOf((char) c) + (char) c);
+      } catch (IOException e) {
+        throw new AssertionError(e);
+      }
+      MdyDynamicFormParseResult said = parser.parse(prefix + "[{\"message\":" + message
+          + ",\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"a\"}]}}]}", MdyDynamicFormParser.Mode.STRICT);
+      int unit = c;
+      assertEquals(jsSpaces.contains(unit), !said.ok(), () -> Integer.toHexString(unit) + ": " + said.diagnostics());
+    }
+
     MdyDynamicDiagnostic notAList = only(parser.parse(prefix + "{}}", MdyDynamicFormParser.Mode.STRICT));
     assertEquals("/validations", notAList.path());
     assertEquals("validations must be an array.", notAList.message());
