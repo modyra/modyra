@@ -16,7 +16,7 @@
  * on one page from merging into one choice.
  */
 import { onMounted, onUpdated, type Ref } from "vue";
-import { applySubmissionNames, groupSubmitName, submissionFor, syncSubmitValues, type MdyWidgetKind } from "@modyra/widgets";
+import { applySubmissionNames, groupSubmitName, submissionFor, syncSubmission, type MdyWidgetKind } from "@modyra/widgets";
 import type { MdyFieldHandle } from "@modyra/core";
 
 export function useNativeSubmission(
@@ -32,12 +32,9 @@ export function useNativeSubmission(
     if (shape.form === "shared") {
       const name = groupSubmitName(element, field.path, groupKey?.() ?? field.path);
       for (const radio of Array.from(element.querySelectorAll<HTMLInputElement>('input[type="radio"]'))) radio.name = name;
-    } else if (shape.form === "hidden") {
-      const value = field.value();
-      const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
-      syncSubmitValues(element, field.path, values, field.disabled());
     } else {
       applySubmissionNames(element, kind, field.path);
+      syncSubmission(element, kind, field.path, field.value(), field.disabled());
     }
   };
   onMounted(apply);

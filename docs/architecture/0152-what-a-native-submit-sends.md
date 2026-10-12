@@ -1,6 +1,7 @@
 # ADR 0152: A form built with these controls submits, and the payload carries the field's own names
 
-Status: Accepted
+Status: Accepted. Amended — the two date kinds submit the value they hold from hidden inputs, not
+their boxes; see [Amendment](#amendment-a-date-travels-as-its-value).
 
 ## Context
 
@@ -146,3 +147,11 @@ nothing a renderer invented.
 
 `password` now serialises like any other text field, which is what a form is for; nothing conceals it
 beyond what the platform already does, and a page that must not send it should not put it in a form.
+
+## Amendment: a date travels as its value
+
+[ADR 0227](0227-a-date-travels-as-the-value-it-holds.md). `datepicker` and `daterange` no longer
+submit from their boxes: both carry the held value in hidden inputs, and a range declares
+`keys: ["start", "end"]` on the `hidden` shape so its keys stay `path.start` and `path.end`. The
+table above records the classes as measured when this decision was taken; the date kinds now sit in
+the hidden-input class.

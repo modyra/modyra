@@ -211,7 +211,7 @@ export { bindDismissOnFocusOutside } from "./dismissal-focus.js";
 export type { MdyFocusDismissalOptions } from "./dismissal-focus.js";
 export { bindFormReset } from "./form-reset-dom.js";
 export { adoptSilentWrites, type MdySilentWriteBinding } from "./silent-writes-dom.js";
-export { submissionFor, submissionNames, submissionDefects, submitFalsePart, groupSubmitName, syncSubmitValues, applySubmissionNames, type MdySubmissionShape } from "./submission.js";
+export { submissionFor, submissionNames, submissionDefects, submitFalsePart, groupSubmitName, syncSubmitValues, syncSubmission, submissionEntries, applySubmissionNames, type MdySubmissionShape } from "./submission.js";
 export type { MdyFormResetBinding } from "./form-reset-dom.js";
 export type { MdyDismissalBindingOptions } from "./dismissal-dom.js";
 export { affordanceClasses, kindsWithAffordances, trailingAffordances } from "./affordance.js";

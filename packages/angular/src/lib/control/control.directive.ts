@@ -25,9 +25,8 @@ import {
   MDY_WIDGET_CONTRACTS,
   applySubmissionNames,
   groupSubmitName,
-  submissionFor,
   submitFalsePart,
-  syncSubmitValues,
+  syncSubmission,
   createValueWidgetController,
   type MdyValueWidgetController,
   defaultWidgetIdFactory,
@@ -715,14 +714,8 @@ export abstract class MdyBaseControl<TValue = unknown> implements OnInit {
    */
   private syncHiddenSubmission(): void {
     const kind = this.widgetKind as MdyWidgetKind;
-    if (!(kind in MDY_WIDGET_CONTRACTS) || submissionFor(kind).form !== "hidden") return;
-    const value = this.fieldState().value();
-    syncSubmitValues(
-      this.hostElement.nativeElement as Element,
-      this.effectiveName(),
-      Array.isArray(value) ? value : value === null || value === undefined ? [] : [value],
-      this.isDisabled(),
-    );
+    if (!(kind in MDY_WIDGET_CONTRACTS)) return;
+    syncSubmission(this.hostElement.nativeElement as Element, kind, this.effectiveName(), this.fieldState().value(), this.isDisabled());
   }
 
   /**

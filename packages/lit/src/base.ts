@@ -1,6 +1,6 @@
 import {
   handleFormOf, MdyFieldHandle, type MdyFieldConstraints, type MdyValueKind, observerFor} from "@modyra/core";
-import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, submissionFor, syncSubmitValues, messagesForLocale, sameChoice, widgetScopeOf, type MdyI18nMessages,
+import { MDY_ICONS, MDY_PART_NAMES, MDY_POPUP_OPENERS, idSafeKey, stateClass, type MdyStateName, adoptSilentWrites, applySubmissionNames, bindFormReset, groupSubmitName, syncSubmission, messagesForLocale, sameChoice, widgetScopeOf, type MdyI18nMessages,
   shellStateClasses,
 } from "@modyra/widgets";
 import { html, LitElement, nothing, PropertyDeclarations } from "lit";
@@ -547,9 +547,8 @@ export abstract class MdyFieldElement<T> extends LitElement {
     const handle = this.field;
     if (!handle) return;
     const kind = this.widgetKind as MdyWidgetKind;
-    if (!(kind in MDY_WIDGET_CONTRACTS) || submissionFor(kind).form !== "hidden") return;
-    const value = handle.value();
-    syncSubmitValues(this, handle.path, Array.isArray(value) ? value : value === null || value === undefined ? [] : [value], handle.disabled());
+    if (!(kind in MDY_WIDGET_CONTRACTS)) return;
+    syncSubmission(this, kind, handle.path, handle.value(), handle.disabled());
   }
 
   /**

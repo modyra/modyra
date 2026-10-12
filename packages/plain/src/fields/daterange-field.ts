@@ -10,7 +10,7 @@ import { applyOpenerPromise } from "../opener-promise.js";
 import { observerFor, type MdyFieldHandle, type MdyReactivity } from "@modyra/core";
 import type { MdyDynamicDaterangeField } from "@modyra/core";
 import { buildDateLocale, formatIsoDate, formatLocalizedDate, parseIsoDate, parseLocalizedDate, today } from "@modyra/core/datetime";
-import { fieldAccessibleName, applySubmissionNames,
+import { fieldAccessibleName, applySubmissionNames, syncSubmission,
   MDY_WIDGET_CONTRACTS,
   createDaterangeFieldController,
   defaultWidgetIdFactory,
@@ -370,10 +370,11 @@ export function renderDaterangeField(
       else input.removeAttribute("aria-readonly");
     }
 
-    // Each end under its own key, after the parts are applied: the shared control projection writes
-    // `name: null` for a field it was not given a name for, and a part that carries `null` removes
-    // the attribute. Ordered rather than merged, so one place decides which element gets which key.
+    // Neither box carries a key, and this runs after the parts are applied so nothing the projection
+    // wrote survives it. A box shows its end the way a person writes a date, and a name on it would
+    // send that spelling; the two dates the range holds travel in inputs of their own instead.
     applySubmissionNames(shell.root, "daterange", f.name);
+    syncSubmission(shell.root, "daterange", f.name, handle.value(), handle.disabled());
     toggle.disabled = handle.disabled();
     toggle.setAttribute("aria-expanded", String(state.open));
     reflectOverlayOpen(popup, state.open, messages);

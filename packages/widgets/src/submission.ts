@@ -14,8 +14,8 @@
  *
  *     one control, and it is the value       text, number, slider, datepicker, file, timepicker…
  *     many controls, one shared name         radio, segmented — this is how HTML groups them
- *     many controls, one value between them  daterange (two dates), colors (a picker and a hex box)
- *     no control at all                      select, multiselect
+ *     many controls, one value between them  colors (a picker and a hex box)
+ *     no control carries the value           select, multiselect, datepicker, daterange
  *
  * Writing the field's path onto every `input` in a kind's subtree gets three of the four wrong: it
  * sends a timepicker's hour and minute alongside the time itself, sends a daterange's two ends under
@@ -72,8 +72,13 @@ export type MdySubmissionShape =
    * `repeats` distinguishes a value from a list of them: a multiselect emits one per selected value,
    * in order, because a single joined key loses both the order and the multiplicity that the field's
    * whole purpose is to carry.
+   *
+   * `keys` is for a value that is a record of named members, such as a range's two ends: one input per
+   * key, sent under the field's path suffixed with that key, in the order listed. Every key is sent
+   * while the field is in play, empty where the member is, so the payload's shape does not depend on
+   * how much of the value has been filled in.
    */
-  | { readonly form: "hidden"; readonly repeats: boolean };
+  | { readonly form: "hidden"; readonly repeats: boolean; readonly keys?: readonly string[] };
 
 /**
  * The part each kind sends its value from.
@@ -105,11 +110,6 @@ const SUBMISSION: Readonly<Record<MdyWidgetKind, MdySubmissionShape>> = Object.f
   radio: { form: "shared", part: "optionControl" },
   segmented: { form: "shared", part: "optionControl" },
 
-  daterange: {
-    form: "split",
-    parts: [{ part: "startControl", suffix: "start" }, { part: "endControl", suffix: "end" }],
-  },
-
   // The value, not the reading of it. A date's control shows a date the way a person writes one, and
   // how a person writes one is a property of where they are — so a control that carries the name
   // sends whichever spelling it happens to be showing. A receiver handed `01/02/2026` cannot tell
@@ -120,6 +120,8 @@ const SUBMISSION: Readonly<Record<MdyWidgetKind, MdySubmissionShape>> = Object.f
   // the value is not, and a name on the presentation sends the presentation the moment anybody
   // formats anything.
   datepicker: { form: "hidden", repeats: false },
+  // A range is the same reading twice, one per end.
+  daterange: { form: "hidden", repeats: false, keys: ["start", "end"] },
   select: { form: "hidden", repeats: false },
   multiselect: { form: "hidden", repeats: true },
 });
@@ -250,10 +252,44 @@ export function groupSubmitName(within: Element | null | undefined, path: string
  * a person can see, but it would churn the document on every keystroke of a filter.
  */
 export function syncSubmitValues(host: Element, path: string, values: readonly unknown[], disabled = false): void {
+  syncSubmitEntries(host, values.map((value) => [path, value] as const), disabled);
+}
+
+/**
+ * The `[key, value]` pairs a field of a hidden-shaped kind sends, in order, given what it holds.
+ *
+ * Empty for every other kind: their controls carry the value, and `applySubmissionNames` names them.
+ */
+export function submissionEntries(kind: MdyWidgetKind, path: string, value: unknown): readonly (readonly [string, string])[] {
+  const shape = SUBMISSION[kind];
+  if (shape.form !== "hidden") return Object.freeze([]);
+  if (shape.keys !== undefined) {
+    const record = typeof value === "object" && value !== null ? value as Readonly<Record<string, unknown>> : {};
+    return Object.freeze(shape.keys.map((key) => Object.freeze([`${path}.${key}`, text(record[key])] as const)));
+  }
+  const values = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+  return Object.freeze(values.map((one) => Object.freeze([path, text(one)] as const)));
+}
+
+/**
+ * Keeps the hidden inputs of a field in step with the value it holds, for whichever kind it is.
+ *
+ * The one call a renderer makes: it does nothing for a kind whose controls carry the value, and for a
+ * hidden-shaped kind it writes exactly `submissionEntries`, so no renderer restates how a value
+ * becomes keys.
+ */
+export function syncSubmission(host: Element, kind: MdyWidgetKind, path: string, value: unknown, disabled = false): void {
+  if (SUBMISSION[kind].form !== "hidden") return;
+  syncSubmitEntries(host, submissionEntries(kind, path, value), disabled);
+}
+
+const text = (value: unknown): string => typeof value === "string" ? value : String(value ?? "");
+
+function syncSubmitEntries(host: Element, entries: readonly (readonly [string, unknown])[], disabled: boolean): void {
   const document = host.ownerDocument;
   const existing = Array.from(host.querySelectorAll<HTMLInputElement>(`input[${SUBMIT_MARK}]`));
 
-  values.forEach((value, index) => {
+  entries.forEach(([name, value], index) => {
     const input = existing[index] ?? document.createElement("input");
     if (existing[index] === undefined) {
       input.setAttribute(SUBMIT_MARK, "");
@@ -264,14 +300,14 @@ export function syncSubmitValues(host: Element, path: string, values: readonly u
     // "the first input" should find this one instead of the control a person can see, and the
     // contract declares it last among the field's parts.
     host.append(input);
-    input.name = path;
-    input.value = typeof value === "string" ? value : String(value ?? "");
+    input.name = name;
+    input.value = text(value);
     // A disabled field is left out of the payload entirely, which is the platform's rule and the
     // right one: it is not a value of nothing, it is a question that was not asked.
     input.disabled = disabled;
   });
 
-  for (const spare of existing.slice(values.length)) spare.remove();
+  for (const spare of existing.slice(entries.length)) spare.remove();
 }
 
 /**
@@ -296,13 +332,14 @@ const SUBMIT_MARK = "data-mdy-submit";
  * elements than the contract permits.
  *
  * The elements not named by the shape are *cleared*, which is the load-bearing half: a colour's
- * native picker and a range's second end both inherit a name from the shared control projection, and
- * two controls under one key send the value twice. `FormData.get` then takes the first and drops the
- * rest without an error, so the loss is silent.
+ * native picker inherits a name from the shared control projection, and two controls under one key
+ * send the value twice. `FormData.get` then takes the first and drops the rest without an error, so
+ * the loss is silent. For a hidden-shaped kind every control is cleared: a date's box would otherwise
+ * send the text it shows beside the value its hidden input carries.
  */
 export function applySubmissionNames(root: Element, kind: MdyWidgetKind, path: string): void {
   const shape = SUBMISSION[kind];
-  if (shape.form === "hidden" || shape.form === "shared") return;
+  if (shape.form === "shared") return;
 
   const names = submissionNames(kind, path);
   const parts = MDY_WIDGET_CONTRACTS[kind].parts;

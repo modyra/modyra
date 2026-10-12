@@ -5768,10 +5768,10 @@
   ],
   "widgets:MdySubmissionShape": [
     "variant of companion+form+part: { readonly form: \"boolean\"; readonly part: string; readonly companion: string; }",
+    "variant of form+keys+repeats: { readonly form: \"hidden\"; readonly repeats: boolean; readonly keys?: readonly string[]; }",
     "variant of form+part+parts+suffix: { readonly form: \"split\"; readonly parts: readonly { readonly part: string; readonly suffix: string; }[]; }",
     "variant of form+part: { readonly form: \"shared\"; readonly part: string; }",
-    "variant of form+part: { readonly form: \"single\"; readonly part: string; }",
-    "variant of form+repeats: { readonly form: \"hidden\"; readonly repeats: boolean; }"
+    "variant of form+part: { readonly form: \"single\"; readonly part: string; }"
   ],
   "widgets:MdyTestingVocabulary": [
     "door: \"./testing\"",
@@ -7320,6 +7320,12 @@
   "widgets:submissionDefects": [
     "-> returns: readonly string[]"
   ],
+  "widgets:submissionEntries": [
+    "(0) kind: MdyWidgetKind",
+    "(1) path: string",
+    "(2) value: unknown",
+    "-> returns: readonly (readonly [string, string])[]"
+  ],
   "widgets:submissionFor": [
     "(0) kind: MdyWidgetKind",
     "-> returns: MdySubmissionShape"
@@ -7343,6 +7349,14 @@
   "widgets:syncOverlayBackdrop": [
     "(0) popup: HTMLElement",
     "(1) wanted: boolean",
+    "-> returns: void"
+  ],
+  "widgets:syncSubmission": [
+    "(0) host: Element",
+    "(1) kind: MdyWidgetKind",
+    "(2) path: string",
+    "(3) value: unknown",
+    "(4) disabled?: boolean",
     "-> returns: void"
   ],
   "widgets:syncSubmitValues": [
