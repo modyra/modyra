@@ -278,11 +278,61 @@ class MdyDynamicFormParserTest {
 
   /** The first diagnostic of a v3 document whose one layout node is {@code node}, over fields a and b. */
   private MdyDynamicDiagnostic layoutRefusal(String node) {
-    String json = "{\"version\":3,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],"
-        + "\"layout\":[" + node + "]}";
-    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+    return layoutRefusal(3, node);
+  }
+
+  /** The first diagnostic of a document of {@code version} whose one layout node is {@code node}. */
+  private MdyDynamicDiagnostic layoutRefusal(int version, String node) {
+    MdyDynamicFormParseResult result = parser.parse(layoutDocument(version, node), MdyDynamicFormParser.Mode.STRICT);
     assertFalse(result.ok(), () -> "accepted: " + node);
     return result.diagnostics().get(0);
+  }
+
+  private static String layoutDocument(int version, String node) {
+    return "{\"version\":" + version + ",\"fields\":[{\"name\":\"a\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],"
+        + "\"layout\":[" + node + "]}";
+  }
+
+  /**
+   * Placement arrived with v3, a row's track counts are bounded, and a top-level section has no
+   * column to be placed in — each refused with the code the TS reader gives it.
+   */
+  @Test
+  void layoutPlacementIsGatedByVersionAndBounded() {
+    String slot = "{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[\"a\"],[{\"ref\":\"b\",\"at\":{\"sm\":{\"column\":2}}}]]}";
+    String placedSection = "{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[\"a\"],"
+        + "[{\"kind\":\"section\",\"id\":\"in\",\"children\":[\"b\"],\"at\":{\"base\":{\"column\":2}}}]]}";
+    // Below v3 a slot and a section's `at` are a version refusal, even when the placement is valid.
+    MdyDynamicDiagnostic v2Slot = layoutRefusal(2, slot);
+    assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", v2Slot.code());
+    assertEquals("layout uses a placement this document's version (2) precedes; it needs version 3.", v2Slot.message());
+    assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", layoutRefusal(2, placedSection).code());
+    // From v3 on, the same nodes are accepted.
+    assertTrue(parser.parse(layoutDocument(3, slot), MdyDynamicFormParser.Mode.STRICT).ok());
+    assertTrue(parser.parse(layoutDocument(4, placedSection), MdyDynamicFormParser.Mode.STRICT).ok());
+
+    // A row's track counts: an object keyed by size, each an integer from 1 to 12, at any version.
+    String shape = "MDY_DYNAMIC_INVALID_LAYOUT";
+    String row = "{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[\"a\"],[\"b\"]],\"at\":";
+    assertEquals(shape, layoutRefusal(2, row + "3}").code());
+    assertEquals(shape, layoutRefusal(row + "{\"xl\":2}}").code());
+    assertEquals(shape, layoutRefusal(row + "{\"md\":0}}").code());
+    assertEquals(shape, layoutRefusal(row + "{\"md\":13}}").code());
+    assertEquals(shape, layoutRefusal(row + "{\"md\":\"4\"}}").code());
+    assertEquals(shape, layoutRefusal(row + "null}").code());
+    assertTrue(parser.parse(layoutDocument(2, row + "{\"md\":12}}"), MdyDynamicFormParser.Mode.STRICT).ok());
+    // The widest count is the ceiling a slot may name.
+    assertTrue(parser.parse(layoutDocument(3, "{\"kind\":\"columns\",\"id\":\"c\",\"at\":{\"md\":4},"
+        + "\"columns\":[[\"a\"],[{\"ref\":\"b\",\"at\":{\"md\":{\"column\":4}}}]]}"), MdyDynamicFormParser.Mode.STRICT).ok());
+
+    // An explicit null placement is written wrong, not left out.
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE",
+        layoutRefusal("{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[{\"ref\":\"a\",\"at\":null}]]}").code());
+
+    // A section at the top of the layout occupies no column, whatever version or value it carries.
+    MdyDynamicDiagnostic top = layoutRefusal(2, "{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"a\"],\"at\":{\"base\":{\"hidden\":true}}}");
+    assertEquals(shape, top.code());
+    assertEquals("a section at the top of the layout occupies no column and cannot be placed.", top.message());
   }
 
   /** Each nested layout refusal carries the code the TS and Rust readers give the same cause. */

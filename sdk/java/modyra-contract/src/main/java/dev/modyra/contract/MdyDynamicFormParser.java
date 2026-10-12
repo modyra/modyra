@@ -178,7 +178,7 @@ public final class MdyDynamicFormParser {
     List<JsonNode> rules = new ArrayList<>();
     // v3 is v2 plus per-slot placement: every envelope member is read the same way.
     if (version != null && isStructuredVersion(version) && root.isObject()) {
-      parseLayout(root.path("layout"), names, layout, diagnostics);
+      parseLayout(root.path("layout"), names, version, layout, diagnostics);
       parseRules(root.path("rules"), names, rules, diagnostics);
     }
 
@@ -464,9 +464,12 @@ public final class MdyDynamicFormParser {
   /** The sizes a layout is authored against, mirroring MDY_LAYOUT_BREAKPOINTS. */
   private static final Set<String> LAYOUT_BREAKPOINTS = Set.of("base", "sm", "md", "lg");
 
+  /** The widest track count a columns row may declare at any size: MDY_MAX_LAYOUT_COLUMNS in the TS parser. */
+  private static final int LAYOUT_MAX_COLUMNS = 12;
+
   // ─── v2/v3 layout / rules: validate against resolved field names, keep raw nodes ───
 
-  private void parseLayout(JsonNode layoutNode, Set<String> names, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
+  private void parseLayout(JsonNode layoutNode, Set<String> names, int version, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
     if (layoutNode.isMissingNode()) return;
     if (!layoutNode.isArray()) {
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, "/layout", "layout must be an array."));
@@ -480,10 +483,17 @@ public final class MdyDynamicFormParser {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, path, "layout node must be an object."));
         continue;
       }
+      // A node at the top of the layout sits in no column, so it has nothing to be placed in. This
+      // is the one place a layout node is visited without a parent to check its `at` against.
+      if ("section".equals(raw.path("kind").asText(null)) && raw.has("at")) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, path,
+            "a section at the top of the layout occupies no column and cannot be placed."));
+        continue;
+      }
       Set<String> candidate = new LinkedHashSet<>(placed);
-      LayoutRefusal refusal = validLayoutNode(raw, names, candidate, 1);
+      LayoutRefusal refusal = validLayoutNode(raw, names, candidate, 1, version >= 3);
       if (refusal != null) {
-        diagnostics.add(refusal.diagnostic(path));
+        diagnostics.add(refusal.diagnostic(path, version));
         continue;
       }
       placed = candidate;
@@ -497,6 +507,7 @@ public final class MdyDynamicFormParser {
    * messages are the ones the TS and Rust readers emit for the same cause.
    */
   private enum LayoutRefusal {
+    VERSION("MDY_DYNAMIC_UNSUPPORTED_VERSION", null),
     DEPTH("MDY_DYNAMIC_INVALID_LAYOUT", "layout nests deeper than " + LAYOUT_MAX_DEPTH + " levels."),
     SHAPE("MDY_DYNAMIC_INVALID_LAYOUT", "layout node has an invalid shape."),
     REFERENCE("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", "layout references an unknown or already-placed field.");
@@ -509,8 +520,11 @@ public final class MdyDynamicFormParser {
       this.message = message;
     }
 
-    MdyDynamicDiagnostic diagnostic(String path) {
-      return new MdyDynamicDiagnostic(code, MdyDynamicDiagnostic.ERROR, path, message);
+    MdyDynamicDiagnostic diagnostic(String path, int version) {
+      String text = this == VERSION
+          ? "layout uses a placement this document's version (" + version + ") precedes; it needs version 3."
+          : message;
+      return new MdyDynamicDiagnostic(code, MdyDynamicDiagnostic.ERROR, path, text);
     }
   }
 
@@ -520,9 +534,14 @@ public final class MdyDynamicFormParser {
    * name a known field, and a field may only be placed once — the same field in two slots
    * would render twice and bind one value to both controls.
    *
+   * <p>Placement — a slot's {@code at} and a nested section's {@code at} — arrived with v3. Below
+   * it the keys do not exist, and accepting them would make this reader disagree with every other
+   * reader of the same document about what the contract says.
+   *
+   * @param allowSlots whether the document's version has placement (v3 and later)
    * @return null when the node is valid, otherwise why it was refused
    */
-  private LayoutRefusal validLayoutNode(JsonNode raw, Set<String> names, Set<String> placed, int depth) {
+  private LayoutRefusal validLayoutNode(JsonNode raw, Set<String> names, Set<String> placed, int depth, boolean allowSlots) {
     if (depth > LAYOUT_MAX_DEPTH) return LayoutRefusal.DEPTH;
     if (!raw.isObject() || !raw.path("id").isTextual()) return LayoutRefusal.SHAPE;
     String kind = raw.path("kind").asText(null);
@@ -545,14 +564,22 @@ public final class MdyDynamicFormParser {
 
     // How many tracks this node has, so a slot cannot be sent to a column it does not have.
     // Zero marks a section: placement is refused there, because the column is the only element
-    // a placement can act on.
+    // a placement can act on. A row's `at` may widen it at a size, so the widest count is the
+    // ceiling; each count must be a small positive integer, because it reaches the renderer as a
+    // track count and anything else draws a grid nobody asked for.
     int tracks = 0;
     if ("columns".equals(kind)) {
       tracks = Math.max(1, raw.path("columns").size());
-      JsonNode at = raw.path("at");
-      if (at.isObject()) {
-        for (JsonNode count : at) {
-          if (count.isInt()) tracks = Math.max(tracks, count.asInt());
+      if (raw.has("at")) {
+        JsonNode at = raw.get("at");
+        if (!at.isObject()) return LayoutRefusal.SHAPE;
+        var sizes = at.fields();
+        while (sizes.hasNext()) {
+          var size = sizes.next();
+          JsonNode count = size.getValue();
+          if (!LAYOUT_BREAKPOINTS.contains(size.getKey())) return LayoutRefusal.SHAPE;
+          if (!count.isInt() || count.asInt() < 1 || count.asInt() > LAYOUT_MAX_COLUMNS) return LayoutRefusal.SHAPE;
+          tracks = Math.max(tracks, count.asInt());
         }
       }
     }
@@ -565,15 +592,20 @@ public final class MdyDynamicFormParser {
         } else if (child.isObject() && child.has("ref")) {
           // Contract v3's slot: a field name that also says where it sits, per size. Every way a
           // slot fails, its placement included, is a reference refusal, as in the TS reader.
+          if (!allowSlots) return LayoutRefusal.VERSION;
           if (!child.path("ref").isTextual()) return LayoutRefusal.REFERENCE;
           String name = child.path("ref").asText();
           if (!names.contains(name) || !validPlacement(child.path("at"), tracks) || !placed.add(name)) return LayoutRefusal.REFERENCE;
         } else {
-          LayoutRefusal nested = validLayoutNode(child, names, placed, depth + 1);
+          LayoutRefusal nested = validLayoutNode(child, names, placed, depth + 1, allowSlots);
           if (nested != null) return nested;
           // A section's own `at` describes the column *this* node gives it, so it is checked
-          // here rather than inside its own validation.
-          if ("section".equals(child.path("kind").asText(null)) && !validPlacement(child.path("at"), tracks)) return LayoutRefusal.SHAPE;
+          // here rather than inside its own validation. A nested row's `at` is a track count and
+          // belongs to that row, which is why only a section is asked.
+          if ("section".equals(child.path("kind").asText(null)) && child.has("at")) {
+            if (!allowSlots) return LayoutRefusal.VERSION;
+            if (!validPlacement(child.path("at"), tracks)) return LayoutRefusal.SHAPE;
+          }
         }
       }
     }
@@ -628,7 +660,8 @@ public final class MdyDynamicFormParser {
    * item, and only the column is one.
    */
   private boolean validPlacement(JsonNode at, int tracks) {
-    if (at.isMissingNode() || at.isNull()) return true;
+    // An explicit null is a placement written wrong, not one left out.
+    if (at.isMissingNode()) return true;
     if (tracks == 0 || !at.isObject()) return false;
     var sizes = at.fieldNames();
     while (sizes.hasNext()) {
