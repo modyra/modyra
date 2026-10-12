@@ -250,7 +250,9 @@ final class MdyExpressions {
     if (value.isNull()) return "null";
     if (value.isBoolean()) return Boolean.toString(value.asBoolean());
     if (value.isNumber()) {
-      return value.canConvertToExactIntegral() && value.canConvertToLong() ? Long.toString(value.asLong()) : value.numberValue().toString();
+      double number = value.doubleValue();
+      if (Double.isInfinite(number)) return number > 0 ? "Infinity" : "-Infinity";
+      return MdyDynamicFormParser.numberText(number);
     }
     if (value.isArray()) {
       StringBuilder joined = new StringBuilder();

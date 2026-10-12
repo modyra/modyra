@@ -988,6 +988,17 @@ class MdyDynamicFormParserTest {
         + "/schema/children/note/when.operands[2]: \"x\" has no operands; "
         + "/schema/children/note/when.operands[3]: \"a__b\" is not a field path; "
         + "/schema/children/note/when.operands[4]: \"a b\" is not a field path", many.message());
+
+    // An operator that is not a string is named as JavaScript's String() writes it.
+    String[][] spelled = {
+        {"1e21", "1e+21"}, {"9007199254740993", "9007199254740992"}, {"1e400", "Infinity"},
+        {"2.5e-7", "2.5e-7"}, {"-0", "0"}, {"[1e21,null,2]", "1e+21,,2"},
+    };
+    for (String[] c : spelled) {
+      MdyDynamicDiagnostic named = only(parser.parse(treeWithCondition(
+          "{\"op\":" + c[0] + ",\"operands\":[{\"self\":true}]}"), MdyDynamicFormParser.Mode.STRICT));
+      assertEquals("/schema/children/note/when: unknown operator \"" + c[1] + "\"", named.message(), c[0]);
+    }
   }
 
   /**

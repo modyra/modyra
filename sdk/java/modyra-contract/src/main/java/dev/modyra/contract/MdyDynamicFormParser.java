@@ -805,7 +805,7 @@ public final class MdyDynamicFormParser {
    * read back as the same double, laid out plainly up to 21 integer digits and down to six leading
    * zeros, in exponent form beyond. A value JSON cannot hold writes {@code null}.
    */
-  private static String numberText(double number) {
+  static String numberText(double number) {
     if (Double.isNaN(number) || Double.isInfinite(number)) return "null";
     if (number == 0) return "0";
     double magnitude = Math.abs(number);
