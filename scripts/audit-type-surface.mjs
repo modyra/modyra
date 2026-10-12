@@ -529,12 +529,15 @@ function classMembersOf(node) {
  * constructor written out: a consumer constructs the class the same way with or without the line, so
  * recording it turns a printer's choice into a major removal. With `extends` the implicit constructor
  * takes the base's parameters, and with `protected` or `private` nobody outside may call it, so in
- * either case the written line is a different constructor and stays recorded.
+ * either case the written line is a different constructor and stays recorded. So does a
+ * parameterless overload beside others: the implicit constructor exists only where no other is
+ * declared, and withdrawing that overload stops `new X()` from compiling.
  */
 function declaresImplicitConstructor(node, member) {
   return member.parameters.length === 0
     && (member.modifiers ?? []).length === 0
-    && extendsNothing(node);
+    && extendsNothing(node)
+    && node.members.filter(ts.isConstructorDeclaration).length === 1;
 }
 
 const extendsNothing = (node) => !(node.heritageClauses ?? [])
@@ -769,7 +772,14 @@ for (const name of Object.keys(baseline)) {
   }
   // A baseline recorded before implicit constructors were skipped still holds them; the same line
   // read from the current declarations is skipped, so it is dropped here too or it reads as removed.
+  // The entry carries no modifier, so a `protected constructor()` or a parameterless overload records
+  // the same line. Only the baseline's sole constructor can be the implicit one: where the current
+  // declarations still record the line, or the baseline records another constructor beside it, the
+  // line is a declared constructor and is kept, or its arrival or withdrawal goes unreported.
+  const implicitOnly = (entries) => entries.filter((entry) => /^constructor[(-]/.test(entry)).length === 1;
   const was = parseMembers(baseFreeClasses.has(name)
+    && !current[name].includes(IMPLICIT_CONSTRUCTOR)
+    && implicitOnly(baseline[name])
     ? baseline[name].filter((entry) => entry !== IMPLICIT_CONSTRUCTOR)
     : baseline[name]);
   const now = parseMembers(current[name]);
