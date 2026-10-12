@@ -33,6 +33,7 @@ import { partProps, rootClasses, labelStateClasses, shellStateOf } from "./part.
 import { drawErrors } from "./errors.js";
 import { useKeyboardInPlay } from "./keyboard-in-play.js";
 import { useFormReset } from "./form-reset.js";
+import { useNativeSubmission } from "./submission.js";
 import { widgetIdOf } from "./widget-id.js";
 
 export const MdyOptionField = defineComponent({
@@ -94,6 +95,7 @@ export const MdyOptionField = defineComponent({
     const root = ref<HTMLElement | null>(null);
     useKeyboardInPlay(props.field as never, root);
     useFormReset(props.field as object, root);
+    useNativeSubmission(props.kind, props.field, root, () => widgetId.value);
     const view = shallowRef(controller.view());
     const state = shallowRef(controller.state());
     const watching = reactivity.effect(() => {
@@ -131,7 +133,8 @@ export const MdyOptionField = defineComponent({
             h("input", partProps({ ...parts[key], classes: [], attributes: { ...parts[key]?.attributes, "aria-disabled": null } }, {
               type: "radio",
               class: classesOf("optionControl"),
-              name: widgetId.value,
+              // The shared name is written after the render, when there is an answer to whether a
+              // form owns this set.
               value: key,
               // Compared by key, not by value: two structurally equal objects are two choices, and
               // `===` between the held value and a fresh option object marks neither.
