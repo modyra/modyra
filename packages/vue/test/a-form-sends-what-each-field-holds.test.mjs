@@ -207,3 +207,42 @@ test("radio: an option added after mount is sent under the path", async () => {
     element.remove();
   }
 });
+
+/**
+ * A new widget id changes the name the render draws, and the same flush that writes it puts the path
+ * back, before any task — a submit, a click — can run: the set is never sent under the scoped id, and
+ * the held choice stays checked.
+ */
+test("radio: a set whose widget id changes is still sent under the path", async () => {
+  const form = vue.createVueForm({ value: field("b") });
+  const widgetId = (await import("vue")).shallowRef(WIDGET_ID);
+  const element = document.createElement("form");
+  const host = document.createElement("div");
+  element.append(host);
+  document.body.append(element);
+  const app = createApp({
+    render: () => h(vue.MdyOptionField, { field: form.f.value, widgetId: widgetId.value, label: "Field", kind: "radio", options: OPTIONS }),
+  });
+  app.mount(host);
+  await settle();
+  try {
+    const written = [];
+    const observer = new document.defaultView.MutationObserver((records) => {
+      for (const record of records) written.push(record.oldValue);
+    });
+    observer.observe(element, { subtree: true, attributeFilter: ["name"], attributeOldValue: true });
+    widgetId.value = "renamed-widget";
+    await nextTick();
+    // Read before yielding to any task: this is what a submit queued behind the flush would see.
+    const names = [...element.querySelectorAll('input[type="radio"]')].map((radio) => radio.name);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    observer.disconnect();
+    assert.ok(written.some((one) => one?.includes("renamed-widget")), `the render wrote the new id as the name: ${written.join(", ")}`);
+    assert.deepEqual(names, OPTIONS.map(() => PATH));
+    assert.ok(element.querySelector('input[type="radio"][value="b"]').checked, "the held choice stays checked");
+    assert.deepEqual(payload(element), [[PATH, "b"]]);
+  } finally {
+    app.unmount();
+    element.remove();
+  }
+});
