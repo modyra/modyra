@@ -78,7 +78,7 @@ test("two presses make a range, and one press does not", async () => {
 test("both ends are named, and the separator is not read out", async () => {
   const fixture = draw();
 
-  const inputs = [...document.querySelectorAll("input")];
+  const inputs = [...document.querySelectorAll('input:not([type="hidden"])')];
   assert.equal(inputs.length, 2, "a range has two boxes");
   for (const input of inputs) {
     const named = input.getAttribute("aria-label") ?? input.getAttribute("aria-labelledby");

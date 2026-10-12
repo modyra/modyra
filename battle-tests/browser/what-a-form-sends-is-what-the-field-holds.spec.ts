@@ -107,4 +107,45 @@ for (const host of HOSTS) {
       + "same submission agree, so the mechanism carrying them is not what differs.",
     ).toEqual([]);
   });
+
+  /**
+   * A range is a date twice over, and its two boxes show each end the way the reader writes a date.
+   * The payload carries each end as the field holds it, under its own key, and nothing else: a box
+   * still carrying a name would send its displayed text alongside, under the same key or another.
+   *
+   * A single date travels beside it and is held to the same rule. The test above reads the payload
+   * into an object, where a repeated key keeps only its last value; this one reads every entry.
+   */
+  test(`a range sends the two dates it holds, ${host.name}`, async ({ page }) => {
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: 1_200, height: 700 });
+    await page.goto(host.page);
+    await page.waitForFunction((flag) => (window as never as Record<string, boolean>)[flag] === true, host.ready);
+
+    await page.evaluate(({ api }) => {
+      (window as never as Api)[api].mountFields("range", [
+        { name: "d", kind: "datepicker", label: "Data", initialValue: "2026-01-02" },
+        { name: "r", kind: "daterange", label: "Periodo", initialValue: { start: "2026-01-02", end: "2026-02-01" } },
+      ] as never);
+    }, { api: host.api });
+    await page.locator('[data-form="range"]').waitFor({ timeout: 5_000 });
+    await page.evaluate(({ api }) => (window as never as Api)[api].settle?.(), { api: host.api }).catch(() => undefined);
+    await page.waitForTimeout(500);
+
+    const sent = await page.evaluate(() => {
+      const root = document.querySelector('[data-form="range"]');
+      if (root === null) return null;
+      let owner = root.closest("form") ?? root.querySelector("form");
+      if (owner === null) {
+        const made = document.createElement("form");
+        root.parentNode?.insertBefore(made, root);
+        made.appendChild(root);
+        owner = made;
+      }
+      return [...new FormData(owner as HTMLFormElement).entries()].map(([key, value]) => [key, String(value)]);
+    });
+
+    expect(sent, `${host.name}: the range sends its ends as the boxes show them, not as the field holds them`)
+      .toEqual([["d", "2026-01-02"], ["r.start", "2026-01-02"], ["r.end", "2026-02-01"]]);
+  });
 }

@@ -79,9 +79,8 @@ for (const [name, component, extra, first, firstSent, second, secondSent] of KIN
 /**
  * A range sends its two ends under two keys, one per end, and only while the field is in play.
  *
- * Its two boxes carry the keys, and a box shows a date the way the reader's locale writes one. So
- * the keys and their order are asserted here, and the *value* under each key is asserted by the
- * test after this one.
+ * The keys and their order are asserted here, and the *value* under each key by the test after
+ * this one.
  */
 test("daterange: a native submit carries one key per end under the field's path", async () => {
   const form = vue.createVueForm({ value: field({ start: "2026-01-01", end: "2026-01-10" }) });
@@ -119,11 +118,10 @@ test("daterange: a native submit carries one key per end under the field's path"
 /**
  * The value under each end's key is the date the range holds, not the text its box shows.
  *
- * The contract sends a range from its two boxes, and a box shows the date spelt for the reader's
- * locale, so the payload carries `January 1, 2026` where the model holds `2026-01-01`. Making the
- * payload carry the held date is a decision of the shared contract, not of this renderer.
+ * A box shows the date spelt for the reader's locale — `January 1, 2026` where the model holds
+ * `2026-01-01` — and a receiver cannot read a spelling back into a date without knowing whose it is.
  */
-test("daterange: each end sends the date it holds, not the text its box shows", { todo: "the contract sends a range from its presentation boxes" }, async () => {
+test("daterange: each end sends the date it holds, not the text its box shows", async () => {
   const form = vue.createVueForm({ value: field({ start: "2026-01-01", end: "2026-01-10" }) });
   const element = document.createElement("form");
   const host = document.createElement("div");
