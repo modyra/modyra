@@ -28,7 +28,6 @@
   ],
   "angular:MdyA11yAnnouncer": [
     "announce(0) message: string,-> returns: void",
-    "constructor-> returns: (inferred)",
     "ngOnDestroy-> returns: void",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyA11yAnnouncer, never>",
     "ɵprov: _angular_core.ɵɵInjectableDeclaration<MdyA11yAnnouncer>"
@@ -84,7 +83,6 @@
     "ariaDisabled: InputSignal<boolean | undefined>",
     "ariaLabel: InputSignal<string | null>",
     "ariaRequired: InputSignal<boolean>",
-    "constructor-> returns: (inferred)",
     "field: InputSignal<MdyFieldHandle<TValue | null> | MdyFieldHandle<TValue> | undefined>",
     "floatingLabel: InputSignal<boolean | undefined>",
     "idScope: InputSignal<string>",
@@ -273,7 +271,6 @@
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyColorsComponent, never>"
   ],
   "angular:MdyConditionalOptionsDirective": [
-    "constructor-> returns: (inferred)",
     "mdyDependsOn: _angular_core.InputSignal<string>",
     "mdyOptionsMap: _angular_core.InputSignal<Record<string | number, readonly MdySelectOption<TValue>[]> | ((val: unknown) => readonly MdySelectOption<TValue>[])>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyConditionalOptionsDirective<any>, \"[mdyDependsOn]\", never, { \"mdyDependsOn\": { \"alias\": \"mdyDependsOn\"; \"required\": true; \"isSignal\": true; }; \"mdyOptionsMap\": { \"alias\": \"mdyOptionsMap\"; \"required\": true; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -309,7 +306,6 @@
     "placeholder?: string"
   ],
   "angular:MdyCvaDirective": [
-    "constructor-> returns: (inferred)",
     "registerOnChange(0) fn: (value: unknown) => void,-> returns: void",
     "registerOnTouched(0) fn: () => void,-> returns: void",
     "setDisabledState(0) isDisabled: boolean,-> returns: void",
@@ -401,19 +397,16 @@
     "-> MdyFormRegistry"
   ],
   "angular:MdyDevtoolsDirective": [
-    "constructor-> returns: (inferred)",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyDevtoolsDirective, \"mdy-form[mdyDevtools]\", never, {}, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDevtoolsDirective, never>"
   ],
   "angular:MdyDisabledDirective": [
-    "constructor-> returns: (inferred)",
     "mdyDisabled: _angular_core.InputSignalWithTransform<boolean, unknown>",
     "name: _angular_core.InputSignal<string>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyDisabledDirective, \"[mdyDisabled]\", never, { \"name\": { \"alias\": \"name\"; \"required\": false; \"isSignal\": true; }; \"mdyDisabled\": { \"alias\": \"mdyDisabled\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyDisabledDirective, never>"
   ],
   "angular:MdyDynamicFormComponent": [
-    "constructor-> returns: (inferred)",
     "diagnostics: _angular_core.OutputEmitterRef<readonly MdyDynamicDiagnostic[]>",
     "document: _angular_core.InputSignal<unknown>",
     "draftKey: _angular_core.InputSignal<string | undefined>",
@@ -510,7 +503,6 @@
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyFileComponent, never>"
   ],
   "angular:MdyFloatingLabelsDirective": [
-    "constructor-> returns: (inferred)",
     "mdyFloatingLabels: _angular_core.InputSignal<boolean>",
     "mdyFloatingLabelsDensity: _angular_core.InputSignal<number>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyFloatingLabelsDirective, \"mdy-form[mdyFloatingLabels], form[mdyFloatingLabels]\", never, { \"mdyFloatingLabels\": { \"alias\": \"mdyFloatingLabels\"; \"required\": false; \"isSignal\": true; }; \"mdyFloatingLabelsDensity\": { \"alias\": \"mdyFloatingLabelsDensity\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -542,7 +534,6 @@
     "addValidators(0) name: string,(1) validators: ReadonlyArray<ValidatorFn<V>>,(2) isRequired?: boolean,-> returns: void",
     "buildSubmitEvent(0) value: TSubmit,-> returns: MdyFormSubmitEvent<T, TSubmit>",
     "claimField(0) name: string,-> returns: void",
-    "constructor-> returns: (inferred)",
     "draftKey: _angular_core.InputSignal<string | undefined>",
     "errorsFor(0) path: keyof T | string,-> returns: Signal<ReadonlyArray<MdyFormError>>",
     "fieldNames: Signal<readonly string[]>",
@@ -603,7 +594,6 @@
   "angular:MdyFormWizardComponent": [
     "activeIndex: Signal<number>",
     "activeStepValid: Signal<boolean>",
-    "constructor-> returns: (inferred)",
     "finished: _angular_core.OutputEmitterRef<void>",
     "goTo(0) index: number,-> returns: void",
     "isLast: Signal<boolean>",
@@ -692,7 +682,6 @@
     "(opaque)"
   ],
   "angular:MdyLoadOptionsDirective": [
-    "constructor-> returns: (inferred)",
     "mdyLoadOptions: _angular_core.InputSignal<MdyOptionsLoader<unknown>>",
     "mdyLoadOptionsDebounce: _angular_core.InputSignal<number>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyLoadOptionsDirective, \"[mdyLoadOptions]\", never, { \"mdyLoadOptions\": { \"alias\": \"mdyLoadOptions\"; \"required\": true; \"isSignal\": true; }; \"mdyLoadOptionsDebounce\": { \"alias\": \"mdyLoadOptionsDebounce\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
@@ -822,7 +811,6 @@
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionDirective, never>"
   ],
   "angular:MdyOptionsAutoLoadingDirective": [
-    "constructor-> returns: (inferred)",
     "mdyOptionsAutoLoadingTimeout: _angular_core.InputSignalWithTransform<number, unknown>",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyOptionsAutoLoadingDirective, \"[mdyOptionsAutoLoading]\", never, { \"mdyOptionsAutoLoadingTimeout\": { \"alias\": \"mdyOptionsAutoLoadingTimeout\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
     "ɵfac: _angular_core.ɵɵFactoryDeclaration<MdyOptionsAutoLoadingDirective, never>"
@@ -1190,7 +1178,6 @@
     "value: Signal<Record<string, unknown>>"
   ],
   "angular:MdyValidatorBaseDirective": [
-    "constructor-> returns: (inferred)",
     "name: _angular_core.InputSignal<string>",
     "protected buildValidators-> returns: { readonly validators: ReadonlyArray<ValidatorFn<never>>; readonly marksRequired?: boolean; }",
     "ɵdir: _angular_core.ɵɵDirectiveDeclaration<MdyValidatorBaseDirective, never, never, { \"name\": { \"alias\": \"name\"; \"required\": false; \"isSignal\": true; }; }, {}, never, never, true, never>",
