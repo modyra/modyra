@@ -284,6 +284,8 @@ export function renderDaterangeField(
 
   let cellEls: ReadonlyMap<string, HTMLButtonElement> = new Map();
   let renderedMonth = "";
+  /** Whether the last render showed an open calendar's days, so the render that brings them back is told apart. */
+  let showedTheDays = false;
 
   const untrack = trackOverlay(popup, shell.wrapper, () => controller.state().open, anchoring);
 
@@ -458,10 +460,16 @@ export function renderDaterangeField(
     // did and this one did not: a grid the keyboard cannot reach is a grid only a mouse can use.
     // The start endpoint is where the range begins, so that is where the user is put; failing that,
     // the first day that can be picked.
+    // The render that brings the days back from the months or years takes the keyboard from the
+    // header as well: the days are where a person returns to, whichever way they came back.
+    const returnedToTheDays = !showedTheDays && state.open && state.viewMode === "days";
+    showedTheDays = state.open && state.viewMode === "days";
     if (state.open) {
       const cursor = state.cells.find((cell) => cell.focused);
       const onCursor = cursor ? cellEls.get(cursor.iso) : undefined;
-      if (!popup.contains(document.activeElement)) {
+      if (returnedToTheDays && onCursor && popup.contains(document.activeElement) && !grid.contains(document.activeElement)) {
+        onCursor.focus();
+      } else if (!popup.contains(document.activeElement)) {
         const target = onCursor
           ?? (value.start ? cellEls.get(value.start) : undefined)
           ?? [...cellEls.values()].find((cell) => !cell.disabled);

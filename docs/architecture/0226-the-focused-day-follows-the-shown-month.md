@@ -128,6 +128,36 @@ daterange). Chromium only.
 
 Not changed: Tab from a header button. In Lit it is a panel-wide dismissal and closes the popup.
 
+## Amendment, 2026-10-12: the title that brings the days back lands on the day
+
+The first amendment left the return from the months or years "as it did before, in the renderers
+that already took it there". That covered choosing a month and Escape, which land on the day in every
+renderer. It did not cover the third way back, the header title. Measured on Chromium on the base
+commit (`battle-tests/browser/the-title-returns-to-the-days.spec.ts`, click and Enter): Lit (datepicker
+and daterange) and the Plain datepicker landed on the day. The Plain daterange, Vue and Angular left
+the keyboard on the title, which failed 10 of 16 cases.
+
+Rule: the render that brings the days back from the months or years puts the keyboard on the grid's
+tab stop, whichever control brought them back, including the title. The title that leaves the days
+for the years keeps the keyboard, as before. Plain's daterange lands in its render, as its datepicker
+already did. Vue's `followTheReadingPosition` lifts the held-control guard on the render whose
+previous view was not the days. Angular's `onToggleView` lands with `afterNextRender(landOnTheDays)`
+when the toggle reaches the days and the calendar held the keyboard.
+
+Why not the opposite: the title is still on screen after the toggle, and the paging rule above keeps
+the keyboard on a visible header control. The paging rule covers presses that stay in the day view,
+where a person pressing Next again means another month. A return from another view is different: the
+person went back to the days to choose one, and the other two ways back already land there. Leaving
+the title holding focus would make it the only way back that costs a Tab. Asked through TypeSafe
+`scegli` with both options stated: it chose landing on the day, 84% to 16%. That is a citation, not
+the rationale above.
+
+Verification: the spec presses the title twice, by click and by Enter, on a datepicker and a daterange
+on every host. After the first press the years show and the keyboard is on the title. After the second
+the days show and the keyboard is on a day. 16 cases pass with the rule. Reverting it in Vue and in
+Angular's range calendar alone turned exactly those 6 cases red (4 Vue, 2 Angular daterange).
+Chromium only.
+
 ## Security and privacy
 
 None. This is view state inside a field's popup. No data crosses a boundary, and no value is
