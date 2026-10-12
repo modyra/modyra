@@ -70,14 +70,16 @@ export const weekdayLabels = (locale: MdyDateLocale): readonly string[] => {
  * Only the day view gives the days the focus. With the months or years on screen the grid is
  * hidden, and a press that moves the tab stop underneath it must not pull the focus off the button
  * a person is on into a cell nobody can see. In the days, a control of the calendar that holds the
- * keyboard and is still showing keeps it.
+ * keyboard and is still showing keeps it — except on the render that brings the days back from the
+ * months or years: the days are where a person returns to, whichever way they came back.
  */
 export const followTheReadingPosition = (
   widgetId: string,
   read: () => { readonly open: boolean; readonly focusedDate: string; readonly mode: MdyCalendarViewMode },
 ): void => {
-  watch(() => [read().open, read().focusedDate, read().mode], async ([open, focused, mode]) => {
+  watch(() => [read().open, read().focusedDate, read().mode], async ([open, focused, mode], previous) => {
     if (open !== true || typeof focused !== "string" || mode !== "days") return;
+    const returned = previous?.[2] !== undefined && previous[2] !== "days";
     // The cell has to be drawn before it can take focus, and the controller's signals reach the
     // renderer a beat after the dispatch.
     await nextTick();
@@ -87,7 +89,7 @@ export const followTheReadingPosition = (
     // that paged: taken into the grid, the next press of Next would pick a day instead.
     const grid = document.getElementById(`${widgetId}__grid`);
     const active = document.activeElement;
-    if (active instanceof HTMLElement && grid?.parentElement?.contains(active) === true
+    if (!returned && active instanceof HTMLElement && grid?.parentElement?.contains(active) === true
       && !grid.contains(active) && active.getClientRects().length > 0) return;
     target.focus();
   }, { immediate: true });
@@ -315,8 +317,8 @@ export const followTheChosenYear = (
  * The keyboard follows the eye. The view a step leaves is hidden, and focus left there sits on an
  * element in no accessibility tree, so focus lands on the chosen cell of the view reached, or its
  * first choosable one, once that view is drawn: a view only holds cells while it is shown. Only a
- * step moves the focus — a header press leaves it on the header, which stays on screen — and the days
- * are `followTheReadingPosition`'s to focus.
+ * step moves the focus into the months or years — a header press leaves it on the header, which
+ * stays on screen — and the days are `followTheReadingPosition`'s to focus.
  */
 export const stepBetweenViews = (
   kind: MdyCalendarKind,
