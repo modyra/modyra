@@ -6,12 +6,13 @@ import { expect, test } from "@playwright/test";
  * the check is the press point, not the drawn size: `elementFromPoint` at each button's centre must
  * be that button, and the two boxes must not intersect. Each keeps WCAG 2.5.8's 24px. The value
  * stands clear of them: the input's content box ends before the nearer stepper begins, stacked or
- * side by side, so a long value is never drawn under a control.
+ * side by side, so a long value is never drawn under a control. "Ends" is the inline end, so in a
+ * right-to-left document the content box begins at or after the right edge of the steppers.
  */
 const THEMES = ["modyra-modern", "modyra-default", "modyra-material", "modyra-ios", "modyra-ionic", "modyra-foundation"];
 
-for (const theme of THEMES) {
-  test(`${theme}: each stepper is pressed where it is drawn, clear of the value`, async ({ page }) => {
+for (const theme of THEMES) for (const dir of ["ltr", "rtl"] as const) {
+  test(`${theme} ${dir}: each stepper is pressed where it is drawn, clear of the value`, async ({ page }) => {
     await page.goto("/lab.html#orders");
     await page.locator(".mdy-number-spinner").first().waitFor();
     await page.evaluate((name) => new Promise<void>((done) => {
@@ -20,6 +21,7 @@ for (const theme of THEMES) {
       link.onload = () => done();
       link.href = `./themes/${name}.css`;
     }), theme);
+    await page.evaluate((d) => { document.documentElement.dir = d; }, dir);
 
     const spinners = await page.locator(".mdy-number-spinner").evaluateAll((els) => els
       .filter((el) => el.getBoundingClientRect().width > 0)
@@ -32,8 +34,10 @@ for (const theme of THEMES) {
         const overlap = Math.max(0, Math.min(u.right, d.right) - Math.max(u.left, d.left))
           * Math.max(0, Math.min(u.bottom, d.bottom) - Math.max(u.top, d.top));
         const input = el.querySelector("input")!;
-        const contentEnd = input.getBoundingClientRect().right - parseFloat(getComputedStyle(input).paddingRight);
-        const clear = contentEnd <= Math.min(u.left, d.left) + 0.5;
+        const box = input.getBoundingClientRect(), style = getComputedStyle(input);
+        const clear = style.direction === "rtl"
+          ? box.left + parseFloat(style.paddingLeft) >= Math.max(u.right, d.right) - 0.5
+          : box.right - parseFloat(style.paddingRight) <= Math.min(u.left, d.left) + 0.5;
         return { name, up: hits(up, u), down: hits(down, d), overlap, clear, smallest: Math.min(u.width, u.height, d.width, d.height) };
       }));
 
