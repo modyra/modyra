@@ -12,7 +12,6 @@ lower-case hex, and object keys follow ECMAScript property order. Code, severity
 documents are refused do not change.
 
 **Migration for Java consumers.** Only the message text of that one diagnostic changes, and only for
-a declared version that is not a whole number within Java `int` range, a boolean, or a string free
-of control characters and lone surrogates. Code that
-matches the code and path is unaffected. The `@modyra/core` header carries the note into a release;
-the npm package itself does not change.
+a declared version that is not a whole number within Java `int` range, a boolean, or a string free of
+control characters and lone surrogates. Code that matches the code and path is unaffected. The
+`@modyra/core` header carries the note into a release; the npm package itself does not change.
