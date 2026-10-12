@@ -503,6 +503,7 @@ function classMembersOf(node) {
     // `#name` is private at the language level and never reaches a declaration a consumer reads.
     if (member.name && ts.isPrivateIdentifier(member.name)) continue;
     if (ts.isConstructorDeclaration(member)) {
+      if (declaresImplicitConstructor(node, member)) continue;
       members.push(`constructor${signatureOf(member)}`);
       continue;
     }
@@ -520,6 +521,27 @@ function classMembersOf(node) {
   }
   return members.sort();
 }
+
+/**
+ * Whether a declared constructor is the one the class would have without it.
+ *
+ * `constructor();` on a class that extends nothing and carries no modifier is the implicit
+ * constructor written out: a consumer constructs the class the same way with or without the line, so
+ * recording it turns a printer's choice into a major removal. With `extends` the implicit constructor
+ * takes the base's parameters, and with `protected` or `private` nobody outside may call it, so in
+ * either case the written line is a different constructor and stays recorded.
+ */
+function declaresImplicitConstructor(node, member) {
+  return member.parameters.length === 0
+    && (member.modifiers ?? []).length === 0
+    && extendsNothing(node);
+}
+
+const extendsNothing = (node) => !(node.heritageClauses ?? [])
+  .some((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword);
+
+/** The entry a parameterless constructor records, which a baseline may still hold for one implicit. */
+const IMPLICIT_CONSTRUCTOR = "constructor-> returns: (inferred)";
 
 /**
  * A recorded entry back into name, optionality and declared type.
@@ -588,6 +610,8 @@ function signatureOf(node) {
 
 const surface = {};
 const classNames = new Set();
+/** Classes with no `extends`, whose parameterless constructor is the implicit one. */
+const baseFreeClasses = new Set();
 for (const { pkg, file: entry } of ENTRIES) {
   const file = resolve(ROOT, entry);
   if (!existsSync(file)) {
@@ -632,6 +656,7 @@ for (const { pkg, file: entry } of ENTRIES) {
     } else if (exported && ts.isClassDeclaration(node) && node.name) {
       surface[`${pkg}:${node.name.text}`] = classMembersOf(node);
       classNames.add(`${pkg}:${node.name.text}`);
+      if (extendsNothing(node)) baseFreeClasses.add(`${pkg}:${node.name.text}`);
     } else if (ts.isVariableStatement(node)
       && node.declarationList.declarations.some((one) => ts.isIdentifier(one.name) && PUBLIC.has(one.name.text))) {
       // **An exported constant is public surface and no index held it.** This scan recorded
@@ -742,7 +767,11 @@ for (const name of Object.keys(baseline)) {
     changes.push(["major", `${name} is no longer exported`]);
     continue;
   }
-  const was = parseMembers(baseline[name]);
+  // A baseline recorded before implicit constructors were skipped still holds them; the same line
+  // read from the current declarations is skipped, so it is dropped here too or it reads as removed.
+  const was = parseMembers(baseFreeClasses.has(name)
+    ? baseline[name].filter((entry) => entry !== IMPLICIT_CONSTRUCTOR)
+    : baseline[name]);
   const now = parseMembers(current[name]);
 
   // A type the baseline recorded as `(opaque)` and this run reads as members has not changed: the
@@ -755,7 +784,21 @@ for (const name of Object.keys(baseline)) {
     continue;
   }
 
+  // A union arm keys by its text only while another arm shares its ordinary key, so a sibling arriving
+  // or leaving moves the key of an arm that did not change. The arm's text is recorded as its type
+  // under either key, so an arm that left one `variant` key and arrived under another with the same
+  // text is the same arm: neither side is reported. The sibling that caused the move is reported on
+  // its own account.
+  const rekeyed = new Set();
   for (const [member, before] of was) {
+    if (!member.startsWith("variant ") || now.has(member)) continue;
+    const moved = [...now].find(([key, after]) => key.startsWith("variant ") && !was.has(key) && !rekeyed.has(key)
+      && after.optional === before.optional && normaliseType(after.type) === normaliseType(before.type));
+    if (moved) { rekeyed.add(member); rekeyed.add(moved[0]); }
+  }
+
+  for (const [member, before] of was) {
+    if (rekeyed.has(member)) continue;
     const after = now.get(member);
     if (!after) {
       changes.push(["major", `${name}.${member} was removed`]);
@@ -802,7 +845,7 @@ for (const name of Object.keys(baseline)) {
     }
   }
   for (const [member, after] of now) {
-    if (was.has(member)) continue;
+    if (was.has(member) || rekeyed.has(member)) continue;
     // A member appearing on a class is additive: nobody implements `MdyFormEngine`, so a new method
     // breaks no caller. On an interface it is not — a consumer implements one, and a required member
     // appearing means their implementation no longer satisfies it.
@@ -810,10 +853,16 @@ for (const name of Object.keys(baseline)) {
     // A method whose signature grew is not this case: the signature is part of the recorded name, so
     // it reads as one member removed and another added, and the removal is already major. That is
     // the half that breaks a caller, and it stays reported as such.
-    const additive = classNames.has(name) || after.optional;
+    //
+    // A constructor is the exception on a class. The implicit one is not recorded, so a written
+    // constructor appearing replaces `new X()` with whatever it now asks for: a required first
+    // parameter, or a `protected` that records no parameters at all, breaks every `new`. Only a
+    // constructor whose first parameter is optional — and so every one after it — keeps them working.
+    const constructs = member.startsWith("constructor");
+    const additive = (classNames.has(name) && !constructs) || after.optional;
     changes.push([
       additive ? "minor" : "major",
-      `${name}.${member} was added${after.optional ? " (optional)" : classNames.has(name) ? "" : " (required)"}`,
+      `${name}.${member} was added${after.optional ? " (optional)" : classNames.has(name) && !constructs ? "" : " (required)"}`,
     ]);
   }
 }
