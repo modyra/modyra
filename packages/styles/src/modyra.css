@@ -2363,9 +2363,11 @@
     }
 
     /* A margin rather than padding: the input's inline padding belongs to whichever container draws
-       the inset, and a margin is the room the pair stands in whoever that is. */
+       the inset, and a margin is the room the pair stands in whoever that is. Stacked, the pair is
+       one target wide and the margin is that target; side by side it is two. Without the floor a
+       long value runs under the column the steppers are drawn over. */
     .mdy-number-spinner > input {
-        margin-inline-end: clamp(0px, var(--mdy-spin-side), 2 * var(--mdy-affordance-target-stacked));
+        margin-inline-end: clamp(var(--mdy-affordance-target-stacked), var(--mdy-spin-side), 2 * var(--mdy-affordance-target-stacked));
     }
 
     .mdy-number-spinner > .mdy-spin-btn {

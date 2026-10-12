@@ -88,6 +88,12 @@ drop below 2.5.8; letting them spill past the field's edges would draw a target 
 it belongs to. The threshold is read from `--mdy-input-height`, the field's minimum height, so a
 field allowed to stack is at least that tall. *Enforced by* `e2e/plain/a-stepper-pressed-where-it-is-drawn.spec.ts`.
 
+**The value ends where the steppers begin.** The steppers are drawn over the field's trailing edge,
+so the input reserves their column: one target wide when stacked, two when side by side. Without it a
+long value runs under the controls, and what a person reads is partly covered by what they press. The
+reservation is the input's inline-end margin, so it follows the writing direction. *Enforced by* the
+same spec.
+
 **A control's position may depend on the field, never on the value.** The value changes under a
 person's hands; the field does not. A command placed after a variable-length row — a strip of chosen
 values, a wrapping list — moves whenever that row does, and the control that arrives where another
