@@ -612,7 +612,7 @@ public final class MdyDynamicFormParser {
           var size = sizes.next();
           JsonNode count = size.getValue();
           if (!LAYOUT_BREAKPOINTS.contains(size.getKey())) return LayoutRefusal.SHAPE;
-          if (!isWholeNumber(count) ||count.asInt() < 1 || count.asInt() > LAYOUT_MAX_COLUMNS) return LayoutRefusal.SHAPE;
+          if (!isWholeNumber(count) || count.asInt() < 1 || count.asInt() > LAYOUT_MAX_COLUMNS) return LayoutRefusal.SHAPE;
           tracks = Math.max(tracks, count.asInt());
         }
       }
@@ -726,7 +726,7 @@ public final class MdyDynamicFormParser {
       JsonNode hidden = placement.path("hidden");
       // A size that states neither is a typo worth refusing, not a no-op to keep.
       if (column.isMissingNode() && hidden.isMissingNode()) return false;
-      if (!column.isMissingNode() && (!isWholeNumber(column) ||column.asInt() < 1 || column.asInt() > tracks)) return false;
+      if (!column.isMissingNode() && (!isWholeNumber(column) || column.asInt() < 1 || column.asInt() > tracks)) return false;
       if (!hidden.isMissingNode() && !hidden.isBoolean()) return false;
     }
     return true;
