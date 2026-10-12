@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -715,9 +718,138 @@ public final class MdyDynamicFormParser {
     return isWholeNumber(version) && isStructuredVersion(version.asInt()) ? version.asInt() : -1;
   }
 
-  /** A declared value as {@code JSON.stringify} writes it, so a whole number reads {@code 7}, not {@code 7.0}. */
+  /**
+   * A declared value as {@code JSON.stringify} writes it, so the refusal quotes the value in the words
+   * the TS reader uses: {@code 7.0} reads {@code 7}, {@code 1e21} reads {@code 1e+21}, a number past
+   * double precision reads the double it parses to, and object keys follow ECMAScript property order.
+   */
   private static String jsonText(JsonNode value) {
-    return isWholeNumber(value) ? Integer.toString(value.asInt()) : value.toString();
+    StringBuilder out = new StringBuilder();
+    writeJson(value, out);
+    return out.toString();
+  }
+
+  private static void writeJson(JsonNode value, StringBuilder out) {
+    if (value.isNumber()) {
+      out.append(numberText(value.doubleValue()));
+    } else if (value.isTextual()) {
+      writeString(value.textValue(), out);
+    } else if (value.isBoolean()) {
+      out.append(value.booleanValue());
+    } else if (value.isArray()) {
+      out.append('[');
+      for (int i = 0; i < value.size(); i++) {
+        if (i > 0) out.append(',');
+        writeJson(value.get(i), out);
+      }
+      out.append(']');
+    } else if (value.isObject()) {
+      // ECMAScript own-key order: array-index keys ascending, then the rest as they arrived.
+      List<String> indices = new ArrayList<>();
+      List<String> others = new ArrayList<>();
+      value.fieldNames().forEachRemaining(key -> (isArrayIndex(key) ? indices : others).add(key));
+      indices.sort((a, b) -> Long.compare(Long.parseLong(a), Long.parseLong(b)));
+      indices.addAll(others);
+      out.append('{');
+      for (int i = 0; i < indices.size(); i++) {
+        if (i > 0) out.append(',');
+        writeString(indices.get(i), out);
+        out.append(':');
+        writeJson(value.get(indices.get(i)), out);
+      }
+      out.append('}');
+    } else {
+      out.append("null");
+    }
+  }
+
+  /** A canonical decimal integer below 2^32 − 1, the keys ECMAScript orders before every other. */
+  private static boolean isArrayIndex(String key) {
+    if (key.isEmpty() || key.length() > 10 || (key.length() > 1 && key.charAt(0) == '0')) return false;
+    for (int i = 0; i < key.length(); i++) {
+      if (key.charAt(i) < '0' || key.charAt(i) > '9') return false;
+    }
+    return Long.parseLong(key) < 4294967295L;
+  }
+
+  /** A string as {@code JSON.stringify} quotes it, a lone surrogate escaped rather than written. */
+  private static void writeString(String text, StringBuilder out) {
+    out.append('"');
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      switch (c) {
+        case '"' -> out.append("\\\"");
+        case '\\' -> out.append("\\\\");
+        case '\b' -> out.append("\\b");
+        case '\f' -> out.append("\\f");
+        case '\n' -> out.append("\\n");
+        case '\r' -> out.append("\\r");
+        case '\t' -> out.append("\\t");
+        default -> {
+          if (Character.isHighSurrogate(c) && i + 1 < text.length() && Character.isLowSurrogate(text.charAt(i + 1))) {
+            out.append(c).append(text.charAt(++i));
+          } else if (c < 0x20 || Character.isSurrogate(c)) {
+            out.append(String.format("\\u%04x", (int) c));
+          } else {
+            out.append(c);
+          }
+        }
+      }
+    }
+    out.append('"');
+  }
+
+  /**
+   * A number as ECMAScript {@code Number::toString} writes it: the fewest significant digits that
+   * read back as the same double, laid out plainly up to 21 integer digits and down to six leading
+   * zeros, in exponent form beyond. A value JSON cannot hold writes {@code null}.
+   */
+  private static String numberText(double number) {
+    if (Double.isNaN(number) || Double.isInfinite(number)) return "null";
+    if (number == 0) return "0";
+    double magnitude = Math.abs(number);
+    BigDecimal shortest = shortestDigits(magnitude).stripTrailingZeros();
+    String digits = shortest.unscaledValue().toString();
+    int k = digits.length();
+    // The value is digits × 10^(n − k).
+    int n = k - shortest.scale();
+    String text;
+    if (k <= n && n <= 21) {
+      text = digits + "0".repeat(n - k);
+    } else if (0 < n && n <= 21) {
+      text = digits.substring(0, n) + "." + digits.substring(n);
+    } else if (-6 < n && n <= 0) {
+      text = "0." + "0".repeat(-n) + digits;
+    } else {
+      int exponent = n - 1;
+      String tail = (exponent < 0 ? "-" : "+") + Math.abs(exponent);
+      text = (k == 1 ? digits : digits.charAt(0) + "." + digits.substring(1)) + "e" + tail;
+    }
+    return number < 0 ? "-" + text : text;
+  }
+
+  /**
+   * The decimal with the fewest significant digits that parses back to {@code magnitude}, the closer
+   * of two candidates when both do and the even one on a tie. Both neighbours at each precision are
+   * tried, because beside a power of two the round-trip interval is lopsided and the nearer
+   * neighbour can miss where the farther one lands.
+   */
+  private static BigDecimal shortestDigits(double magnitude) {
+    BigDecimal exact = new BigDecimal(magnitude);
+    for (int precision = 1; precision < 17; precision++) {
+      BigDecimal below = exact.round(new MathContext(precision, RoundingMode.FLOOR));
+      BigDecimal above = exact.round(new MathContext(precision, RoundingMode.CEILING));
+      boolean belowReads = below.doubleValue() == magnitude;
+      boolean aboveReads = above.doubleValue() == magnitude;
+      if (belowReads && aboveReads) {
+        int closer = exact.subtract(below).compareTo(above.subtract(exact));
+        if (closer != 0) return closer < 0 ? below : above;
+        return exact.round(new MathContext(precision, RoundingMode.HALF_EVEN));
+      }
+      if (belowReads) return below;
+      if (aboveReads) return above;
+    }
+    return exact.round(new MathContext(17, RoundingMode.HALF_EVEN));
   }
 
   /**

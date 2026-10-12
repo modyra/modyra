@@ -377,6 +377,39 @@ class MdyDynamicFormParserTest {
     }
   }
 
+  /**
+   * The refusal quotes an unknown version as {@code JSON.stringify} writes it; every expected text is
+   * what the TS reader's message carries for the same declared value.
+   */
+  @Test
+  void anUnknownVersionIsQuotedAsTheTsReaderQuotesIt() {
+    String[][] cases = {
+        {"1e21", "1e+21"}, {"1e20", "100000000000000000000"}, {"123456789012345678901", "123456789012345680000"},
+        {"12345678901234567890", "12345678901234567000"}, {"9007199254740993", "9007199254740992"},
+        {"4294967298", "4294967298"}, {"2.5e-7", "2.5e-7"}, {"0.000001", "0.000001"}, {"0.0000001", "1e-7"},
+        {"1.5e300", "1.5e+300"}, {"1.7976931348623157e308", "1.7976931348623157e+308"}, {"5e-324", "5e-324"},
+        {"1e400", "null"}, {"-1e400", "null"}, {"-0", "0"}, {"0.0", "0"}, {"0.1", "0.1"}, {"-3.75", "-3.75"},
+        {"100.25e3", "100250"}, {"5.940911144672375e-213", "5.940911144672375e-213"}, {"7.00000000000000001", "7"},
+        {"\"a\\u0001b\"", "\"a\\u0001b\""}, {"\"\\b\\f\\n\\r\\t\"", "\"\\b\\f\\n\\r\\t\""},
+        {"\"\\u001f\\u007f\"", "\"\\u001f\u007f\""}, {"\"q\\\"\\\\/\"", "\"q\\\"\\\\/\""},
+        {"\"\\u2028\\u2029\"", "\"\u2028\u2029\""}, {"\"\\ud800\"", "\"\\ud800\""}, {"\"\\udc00x\"", "\"\\udc00x\""},
+        {"\"\\ud83d\\ude00\"", "\"\ud83d\ude00\""}, {"\"é€\"", "\"é€\""},
+        {"true", "true"}, {"false", "false"}, {"[]", "[]"}, {"{}", "{}"},
+        {"[1.0, 2.5e-7, \"x\"]", "[1,2.5e-7,\"x\"]"},
+        {"{\"b\":1,\"2\":1,\"1\":1,\"a\":[1e21]}", "{\"1\":1,\"2\":1,\"b\":1,\"a\":[1e+21]}"},
+        {"{\"01\":1,\"10\":1,\"9\":1,\"4294967295\":1,\"4294967294\":1,\"-1\":1}",
+            "{\"9\":1,\"10\":1,\"4294967294\":1,\"01\":1,\"4294967295\":1,\"-1\":1}"},
+        {"{\"a\":1,\"a\":2}", "{\"a\":2}"}, {"[[{\"x\":null}]]", "[[{\"x\":null}]]"},
+    };
+    for (String[] c : cases) {
+      MdyDynamicFormParseResult result = parser.parse("{\"version\":" + c[0] + ",\"fields\":[]}", MdyDynamicFormParser.Mode.LENIENT);
+      assertEquals(1, result.diagnostics().size(), c[0]);
+      assertEquals("Unsupported dynamic form config version " + c[1] + " — this contract has versions 2, 3, 4 and 5, "
+          + "and nothing in this document was read. The document is from a publisher this reader does not know.",
+          result.diagnostics().get(0).message(), c[0]);
+    }
+  }
+
   /** An envelope that lists fields and declares no version is refused with a reason, in both modes. */
   @Test
   void anEnvelopeWithoutAVersionSaysTheVersionIsMissing() {
