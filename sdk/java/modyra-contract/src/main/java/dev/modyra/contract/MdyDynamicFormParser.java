@@ -26,7 +26,7 @@ import java.util.Set;
  * matching TS exactly.
  *
  * <p>Handles three envelope shapes: a bare JSON array, {@code {"version":
- * 1|2, "fields": [...]}}, and the v2 recursive {@code {"version": 2,
+ * 2..5, "fields": [...]}}, and the recursive {@code {"version": 2..5,
  * "schema": {...}}} envelope (nested {@code group}/{@code array}/{@code
  * field} nodes, flattened to dotted/indexed paths exactly like {@code
  * flattenDynamicSchema} in TS). {@code layout}/{@code rules} are validated
@@ -62,6 +62,8 @@ public final class MdyDynamicFormParser {
    */
   private static final int SCHEMA_MAX_DEPTH = 100;
   private static final int SCHEMA_MAX_NODES = 500;
+  /** The version {@code validators.integer} arrived with, as {@code MDY_DYNAMIC_MEMBER_ARRIVALS} records it. */
+  private static final int INTEGER_ARRIVED_WITH = 5;
   private static final int SCHEMA_MAX_ARRAY_ROWS = 100;
 
   /**
@@ -115,14 +117,32 @@ public final class MdyDynamicFormParser {
     Integer version;
     int sourceCount;
 
+    // A version this reader does not have is answered as a version, before the envelope's shape is
+    // looked at: read as a malformed field list, a document from a newer publisher sends its host
+    // hunting for a broken field when the answer is that this reader does not have that version.
+    if (root.isObject() && root.has("version") && supportedVersion(root.get("version")) == -1) {
+      JsonNode declared = root.get("version");
+      boolean one = isWholeNumber(declared) && declared.asInt() == 1;
+      return new MdyDynamicFormParseResult(
+          false, null, List.of(), List.of(), List.of(),
+          List.of(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/version",
+              "Unsupported dynamic form config version " + jsonText(declared) + " — this contract has versions "
+                  + "2, 3, 4 and 5, and nothing in this document was read. "
+                  + (one
+                      ? "Version 1 was read by this runtime alone and is no longer supported — set \"version\": 2, "
+                          + "which reads the same fields."
+                      : "The document is from a publisher this reader does not know."))),
+          0, 0);
+    }
+
     if (root.isArray()) {
       version = 1;
       FlatResult flat = parseFlatItems(root);
       accepted = flat.accepted;
       diagnostics.addAll(flat.diagnostics);
       sourceCount = root.size();
-    } else if (root.isObject() && isStructuredVersion(root.path("version").asInt(-1)) && root.has("schema")) {
-      version = root.path("version").asInt();
+    } else if (root.isObject() && supportedVersion(root.path("version")) != -1 && root.has("schema")) {
+      version = supportedVersion(root.path("version"));
       List<MdyDynamicDiagnostic> schemaDiagnostics = new ArrayList<>();
       Set<String> contextKeys = new LinkedHashSet<>();
       validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0}, contextKeys);
@@ -142,8 +162,8 @@ public final class MdyDynamicFormParser {
       accepted = schemaDiagnostics.isEmpty() ? flattenSchema(root.get("schema")) : List.of();
       sourceCount = accepted.size();
     } else if (root.isObject() && root.has("fields")) {
-      int v = root.path("version").isInt() ? root.path("version").asInt() : -1;
-      if (v != 1 && v != 2 && v != 3 && v != 4) {
+      int v = supportedVersion(root.path("version"));
+      if (v == -1) {
         return new MdyDynamicFormParseResult(false, null, List.of(), List.of(), List.of(), List.of(), 0, 0);
       }
       version = v;
@@ -180,6 +200,20 @@ public final class MdyDynamicFormParser {
     if (version != null && isStructuredVersion(version) && root.isObject()) {
       parseLayout(root.path("layout"), names, version, layout, diagnostics);
       parseRules(root.path("rules"), names, rules, diagnostics);
+    }
+    // A rule the document's version predates. `integer` arrived with v5, and a document of an
+    // earlier version carrying it asks for a constraint no reader of that version applies, so the
+    // field would validate one way here and another wherever the declared version is honoured.
+    // A bare array is version 1 and is held to the same arrival.
+    if (version != null && version < INTEGER_ARRIVED_WITH) {
+      for (MdyDynamicField field : accepted) {
+        if (field.validators() == null || field.validators().integer() == null) continue;
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR,
+            "/fields/" + field.name() + "/validators/integer",
+            "Unsupported dynamic form config version for \"integer\": it arrived with version "
+                + INTEGER_ARRIVED_WITH + ", and this document says " + version + ". Set \"version\": "
+                + INTEGER_ARRIVED_WITH + " to use it."));
+      }
     }
 
     boolean strict = mode == Mode.STRICT;
@@ -578,7 +612,7 @@ public final class MdyDynamicFormParser {
           var size = sizes.next();
           JsonNode count = size.getValue();
           if (!LAYOUT_BREAKPOINTS.contains(size.getKey())) return LayoutRefusal.SHAPE;
-          if (!count.isInt() || count.asInt() < 1 || count.asInt() > LAYOUT_MAX_COLUMNS) return LayoutRefusal.SHAPE;
+          if (!isWholeNumber(count) ||count.asInt() < 1 || count.asInt() > LAYOUT_MAX_COLUMNS) return LayoutRefusal.SHAPE;
           tracks = Math.max(tracks, count.asInt());
         }
       }
@@ -655,6 +689,25 @@ public final class MdyDynamicFormParser {
   }
 
   /**
+   * A JSON number with a whole value that fits an int. {@code 2.0} and {@code 1e1} count, as they do
+   * for {@code Number.isInteger}: JSON does not distinguish them from {@code 2} and {@code 10}, so a
+   * reader that does refuses a document the TypeScript reader accepts.
+   */
+  private static boolean isWholeNumber(JsonNode node) {
+    return node.isNumber() && node.canConvertToExactIntegral() && node.canConvertToInt();
+  }
+
+  /** The declared version when it is one this contract has, else -1. */
+  private static int supportedVersion(JsonNode version) {
+    return isWholeNumber(version) && isStructuredVersion(version.asInt()) ? version.asInt() : -1;
+  }
+
+  /** A declared value as {@code JSON.stringify} writes it, so a whole number reads {@code 7}, not {@code 7.0}. */
+  private static String jsonText(JsonNode value) {
+    return isWholeNumber(value) ? Integer.toString(value.asInt()) : value.toString();
+  }
+
+  /**
    * A per-size placement the row can honour. {@code tracks} of 0 means there is no column at
    * all, and any placement is refused: {@code grid-column} and {@code display} belong to a grid
    * item, and only the column is one.
@@ -673,7 +726,7 @@ public final class MdyDynamicFormParser {
       JsonNode hidden = placement.path("hidden");
       // A size that states neither is a typo worth refusing, not a no-op to keep.
       if (column.isMissingNode() && hidden.isMissingNode()) return false;
-      if (!column.isMissingNode() && (!column.isInt() || column.asInt() < 1 || column.asInt() > tracks)) return false;
+      if (!column.isMissingNode() && (!isWholeNumber(column) ||column.asInt() < 1 || column.asInt() > tracks)) return false;
       if (!hidden.isMissingNode() && !hidden.isBoolean()) return false;
     }
     return true;

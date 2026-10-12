@@ -333,6 +333,69 @@ class MdyDynamicFormParserTest {
     MdyDynamicDiagnostic top = layoutRefusal(2, "{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"a\"],\"at\":{\"base\":{\"hidden\":true}}}");
     assertEquals(shape, top.code());
     assertEquals("a section at the top of the layout occupies no column and cannot be placed.", top.message());
+
+    // A whole number written with a fraction is the same JSON number, as for Number.isInteger.
+    assertTrue(parser.parse(layoutDocument(3, "{\"kind\":\"columns\",\"id\":\"c\",\"at\":{\"md\":4.0},"
+        + "\"columns\":[[\"a\"],[{\"ref\":\"b\",\"at\":{\"md\":{\"column\":4.0}}}]]}"), MdyDynamicFormParser.Mode.STRICT).ok());
+    assertEquals(shape, layoutRefusal(row + "{\"md\":2.5}}").code());
+  }
+
+  /** A version this contract does not have is refused as a version, with nothing read. */
+  @Test
+  void anUnsupportedVersionIsRefusedAsAVersion() {
+    String field = "[{\"name\":\"email\",\"kind\":\"email\"}]";
+    MdyDynamicFormParseResult one = parser.parse("{\"version\":1,\"fields\":" + field + "}", MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(one.ok());
+    assertEquals(null, one.version());
+    assertEquals(0, one.fields().size());
+    assertEquals(1, one.diagnostics().size());
+    MdyDynamicDiagnostic refusal = one.diagnostics().get(0);
+    assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", refusal.code());
+    assertEquals("/version", refusal.path());
+    assertEquals("Unsupported dynamic form config version 1 — this contract has versions 2, 3, 4 and 5, and "
+        + "nothing in this document was read. Version 1 was read by this runtime alone and is no longer "
+        + "supported — set \"version\": 2, which reads the same fields.", refusal.message());
+
+    // Any other value, in either envelope and in a document with neither, says it does not know the publisher.
+    for (String version : List.of("6", "6.0", "2.5", "\"2\"", "null")) {
+      for (String rest : List.of(",\"fields\":" + field, ",\"schema\":{\"node\":\"group\",\"children\":{}}", "")) {
+        MdyDynamicFormParseResult result = parser.parse("{\"version\":" + version + rest + "}", MdyDynamicFormParser.Mode.LENIENT);
+        assertEquals(1, result.diagnostics().size(), version + rest);
+        MdyDynamicDiagnostic diagnostic = result.diagnostics().get(0);
+        assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", diagnostic.code(), version + rest);
+        assertEquals("Unsupported dynamic form config version " + ("6.0".equals(version) ? "6" : version)
+            + " — this contract has versions 2, 3, 4 and 5, and nothing in this document was read. "
+            + "The document is from a publisher this reader does not know.", diagnostic.message());
+      }
+    }
+
+    // Every version the contract has reads a flat envelope, and 2.0 is version 2.
+    for (String version : List.of("2", "3", "4", "5", "2.0")) {
+      MdyDynamicFormParseResult result = parser.parse("{\"version\":" + version + ",\"fields\":" + field + "}", MdyDynamicFormParser.Mode.STRICT);
+      assertTrue(result.ok(), () -> version + ": " + result.diagnostics());
+      assertEquals(1, result.fields().size());
+    }
+  }
+
+  /** {@code integer} arrived with v5; an earlier document carrying it is refused at the rule. */
+  @Test
+  void integerIsGatedByTheVersionItArrivedWith() {
+    String seats = "{\"name\":\"seats\",\"kind\":\"number\",\"validators\":{\"integer\":true}}";
+    for (String document : List.of("{\"version\":4,\"fields\":[" + seats + "]}", "[" + seats + "]")) {
+      MdyDynamicFormParseResult result = parser.parse(document, MdyDynamicFormParser.Mode.STRICT);
+      assertFalse(result.ok(), document);
+      MdyDynamicDiagnostic refusal = result.diagnostics().get(0);
+      assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", refusal.code());
+      assertEquals("/fields/seats/validators/integer", refusal.path());
+      assertEquals("Unsupported dynamic form config version for \"integer\": it arrived with version 5, and this "
+          + "document says " + result.version() + ". Set \"version\": 5 to use it.", refusal.message());
+    }
+    String tree = "\"schema\":{\"node\":\"group\",\"children\":{\"seats\":{\"node\":\"field\",\"field\":"
+        + "{\"kind\":\"number\",\"validators\":{\"integer\":false}}}}}}";
+    assertEquals("/fields/seats/validators/integer",
+        parser.parse("{\"version\":3," + tree, MdyDynamicFormParser.Mode.STRICT).diagnostics().get(0).path());
+    assertTrue(parser.parse("{\"version\":5," + tree, MdyDynamicFormParser.Mode.STRICT).ok());
+    assertTrue(parser.parse("{\"version\":5,\"fields\":[" + seats + "]}", MdyDynamicFormParser.Mode.STRICT).ok());
   }
 
   /** Each nested layout refusal carries the code the TS and Rust readers give the same cause. */
@@ -630,10 +693,9 @@ class MdyDynamicFormParserTest {
         + "\"layout\":[{\"kind\":\"columns\",\"id\":\"r\",\"columns\":[[\"a\"],[{\"ref\":\"b\"}]]}]}";
     assertTrue(parser.parse(plainSlot, MdyDynamicFormParser.Mode.STRICT).ok());
 
-    // A version this parser has never heard of is still refused. Four is one it has: v4 is v3 plus a
-    // condition on a node and the context keys a document declares it reads.
-    String v5 = "{\"version\":5,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
-    assertFalse(parser.parse(v5, MdyDynamicFormParser.Mode.STRICT).ok());
+    // A version this parser has never heard of is still refused.
+    String v6 = "{\"version\":6,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}]}";
+    assertFalse(parser.parse(v6, MdyDynamicFormParser.Mode.STRICT).ok());
   }
 
   /**
