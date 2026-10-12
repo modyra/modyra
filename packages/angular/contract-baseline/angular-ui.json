@@ -210,6 +210,7 @@
     "mdy-multiselect__trigger",
     "mdy-multiselect__way-back-action",
     "mdy-multiselect__way-back-action--disabled",
+    "mdy-number-spinner",
     "mdy-overlay-panel",
     "mdy-part",
     "mdy-popup",
@@ -936,6 +937,7 @@
     },
     "packages/angular/src/lib/renderers/number/number-spin-buttons.directive.ts": {
       "classes": [
+        "mdy-number-spinner",
         "mdy-spin-btn",
         "mdy-spin-btn-down",
         "mdy-spin-btn-up"
