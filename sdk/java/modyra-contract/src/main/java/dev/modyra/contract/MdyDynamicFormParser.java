@@ -481,8 +481,9 @@ public final class MdyDynamicFormParser {
         continue;
       }
       Set<String> candidate = new LinkedHashSet<>(placed);
-      if (!validLayoutNode(raw, names, candidate, 1)) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, path, "layout references an unknown or already-placed field, or has an invalid shape."));
+      LayoutRefusal refusal = validLayoutNode(raw, names, candidate, 1);
+      if (refusal != null) {
+        diagnostics.add(refusal.diagnostic(path));
         continue;
       }
       placed = candidate;
@@ -491,29 +492,55 @@ public final class MdyDynamicFormParser {
   }
 
   /**
+   * Why a layout node was refused, so the diagnostic blames what is actually wrong: a document
+   * whose fields are all spelled correctly is not told it references an unknown one. Codes and
+   * messages are the ones the TS and Rust readers emit for the same cause.
+   */
+  private enum LayoutRefusal {
+    DEPTH("MDY_DYNAMIC_INVALID_LAYOUT", "layout nests deeper than " + LAYOUT_MAX_DEPTH + " levels."),
+    SHAPE("MDY_DYNAMIC_INVALID_LAYOUT", "layout node has an invalid shape."),
+    REFERENCE("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", "layout references an unknown or already-placed field.");
+
+    private final String code;
+    private final String message;
+
+    LayoutRefusal(String code, String message) {
+      this.code = code;
+      this.message = message;
+    }
+
+    MdyDynamicDiagnostic diagnostic(String path) {
+      return new MdyDynamicDiagnostic(code, MdyDynamicDiagnostic.ERROR, path, message);
+    }
+  }
+
+  /**
    * Validates one layout node and everything nested under it. A slot holds either a field
    * name or another layout node, so a column row can sit inside a section. Every leaf must
    * name a known field, and a field may only be placed once — the same field in two slots
    * would render twice and bind one value to both controls.
+   *
+   * @return null when the node is valid, otherwise why it was refused
    */
-  private boolean validLayoutNode(JsonNode raw, Set<String> names, Set<String> placed, int depth) {
-    if (depth > LAYOUT_MAX_DEPTH || !raw.isObject() || !raw.path("id").isTextual()) return false;
+  private LayoutRefusal validLayoutNode(JsonNode raw, Set<String> names, Set<String> placed, int depth) {
+    if (depth > LAYOUT_MAX_DEPTH) return LayoutRefusal.DEPTH;
+    if (!raw.isObject() || !raw.path("id").isTextual()) return LayoutRefusal.SHAPE;
     String kind = raw.path("kind").asText(null);
 
     List<JsonNode> slots = new ArrayList<>();
     if ("section".equals(kind)) {
       JsonNode children = raw.path("children");
-      if (!children.isArray()) return false;
+      if (!children.isArray()) return LayoutRefusal.SHAPE;
       slots.add(children);
     } else if ("columns".equals(kind)) {
       JsonNode columns = raw.path("columns");
-      if (!columns.isArray()) return false;
+      if (!columns.isArray()) return LayoutRefusal.SHAPE;
       for (JsonNode column : columns) {
-        if (!column.isArray()) return false;
+        if (!column.isArray()) return LayoutRefusal.SHAPE;
         slots.add(column);
       }
     } else {
-      return false;
+      return LayoutRefusal.SHAPE;
     }
 
     // How many tracks this node has, so a slot cannot be sent to a column it does not have.
@@ -534,21 +561,23 @@ public final class MdyDynamicFormParser {
       for (JsonNode child : slot) {
         if (child.isTextual()) {
           String name = child.asText();
-          if (!names.contains(name) || !placed.add(name)) return false;
+          if (!names.contains(name) || !placed.add(name)) return LayoutRefusal.REFERENCE;
         } else if (child.isObject() && child.has("ref")) {
-          // Contract v3's slot: a field name that also says where it sits, per size.
-          if (!child.path("ref").isTextual()) return false;
+          // Contract v3's slot: a field name that also says where it sits, per size. Every way a
+          // slot fails, its placement included, is a reference refusal, as in the TS reader.
+          if (!child.path("ref").isTextual()) return LayoutRefusal.REFERENCE;
           String name = child.path("ref").asText();
-          if (!names.contains(name) || !validPlacement(child.path("at"), tracks) || !placed.add(name)) return false;
+          if (!names.contains(name) || !validPlacement(child.path("at"), tracks) || !placed.add(name)) return LayoutRefusal.REFERENCE;
         } else {
-          if (!validLayoutNode(child, names, placed, depth + 1)) return false;
+          LayoutRefusal nested = validLayoutNode(child, names, placed, depth + 1);
+          if (nested != null) return nested;
           // A section's own `at` describes the column *this* node gives it, so it is checked
           // here rather than inside its own validation.
-          if ("section".equals(child.path("kind").asText(null)) && !validPlacement(child.path("at"), tracks)) return false;
+          if ("section".equals(child.path("kind").asText(null)) && !validPlacement(child.path("at"), tracks)) return LayoutRefusal.SHAPE;
         }
       }
     }
-    return true;
+    return null;
   }
 
   /**

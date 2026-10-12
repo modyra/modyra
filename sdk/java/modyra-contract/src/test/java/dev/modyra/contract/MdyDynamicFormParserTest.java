@@ -270,11 +270,44 @@ class MdyDynamicFormParserTest {
 
     MdyDynamicFormParseResult pastCap = parser.parse(layoutNestedTo(33), MdyDynamicFormParser.Mode.STRICT);
     assertFalse(pastCap.ok(), "33 levels was accepted");
-    // Asserts where the refusal lands, not its code: the TS reader names this
-    // MDY_DYNAMIC_INVALID_LAYOUT, and this reader reports every nested layout failure under one code.
     MdyDynamicDiagnostic refusal = pastCap.diagnostics().get(0);
-    assertEquals(MdyDynamicDiagnostic.ERROR, refusal.severity());
+    assertEquals("MDY_DYNAMIC_INVALID_LAYOUT", refusal.code());
     assertEquals("/layout/0", refusal.path());
+    assertEquals("layout nests deeper than 32 levels.", refusal.message());
+  }
+
+  /** The first diagnostic of a v3 document whose one layout node is {@code node}, over fields a and b. */
+  private MdyDynamicDiagnostic layoutRefusal(String node) {
+    String json = "{\"version\":3,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],"
+        + "\"layout\":[" + node + "]}";
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(result.ok(), () -> "accepted: " + node);
+    return result.diagnostics().get(0);
+  }
+
+  /** Each nested layout refusal carries the code the TS and Rust readers give the same cause. */
+  @Test
+  void layoutRefusalsNameTheirCause() {
+    String shape = "MDY_DYNAMIC_INVALID_LAYOUT";
+    String reference = "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE";
+    // Shape: an unknown kind, a missing id, children that are not an array, a column that is not
+    // an array, a nested node that is not an object, a section placed outside the columns it has.
+    assertEquals(shape, layoutRefusal("{\"kind\":\"grid\",\"id\":\"g\",\"children\":[\"a\"]}").code());
+    assertEquals(shape, layoutRefusal("{\"kind\":\"section\",\"children\":[\"a\"]}").code());
+    assertEquals(shape, layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":\"a\"}").code());
+    assertEquals(shape, layoutRefusal("{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[\"a\"]}").code());
+    assertEquals(shape, layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":[7]}").code());
+    assertEquals(shape, layoutRefusal("{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[\"a\"],"
+        + "[{\"kind\":\"section\",\"id\":\"in\",\"children\":[\"b\"],\"at\":{\"base\":{\"column\":5}}}]]}").code());
+    assertEquals("layout node has an invalid shape.",
+        layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":[7]}").message());
+    // Reference: an unknown name, a name placed twice, and a slot whose placement the row cannot
+    // honour — the TS reader files every slot failure under reference.
+    assertEquals(reference, layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"z\"]}").code());
+    assertEquals(reference, layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"a\",\"a\"]}").code());
+    assertEquals(reference, layoutRefusal("{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[{\"ref\":\"a\",\"at\":{\"base\":{\"column\":5}}}]]}").code());
+    // A shape failure deep inside a valid parent keeps its own cause rather than the parent's.
+    assertEquals(shape, layoutRefusal("{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"a\",{\"kind\":\"section\",\"id\":\"t\"}]}").code());
   }
 
   @Test
