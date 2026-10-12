@@ -927,4 +927,225 @@ class MdyDynamicFormParserTest {
     assertEquals("Espresso", result.fields().get(0).initialValue());
   }
 
+  /** The one diagnostic a refused document carries, so a test can hold its every member. */
+  private static MdyDynamicDiagnostic only(MdyDynamicFormParseResult result) {
+    assertFalse(result.ok(), () -> "expected a refusal, got ok with " + result.diagnostics());
+    assertEquals(1, result.diagnostics().size(), () -> "expected one diagnostic: " + result.diagnostics());
+    return result.diagnostics().get(0);
+  }
+
+  /** {@code leaf} wrapped in {@code levels} negations, the shape that walks the depth bound. */
+  private static String nested(int levels, String leaf) {
+    StringBuilder open = new StringBuilder();
+    StringBuilder close = new StringBuilder();
+    for (int i = 0; i < levels; i++) {
+      open.append("{\"op\":\"not\",\"operands\":[");
+      close.append("]}");
+    }
+    return open + leaf + close;
+  }
+
+  /** A two-field v4 tree whose second field carries {@code when}. */
+  private static String treeWithCondition(String when) {
+    return "{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"code\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+        + "\"note\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},\"when\":" + when + "}}}}";
+  }
+
+  /**
+   * A condition is judged by the one expression check the TypeScript reader uses, and the corpus
+   * documents it refuses for shape get the TypeScript reader's words: the depth bound, an operator
+   * with no operands, an operand naming two of the four things an operand can name.
+   */
+  @Test
+  void aConditionIsJudgedAsTheTypeScriptReaderJudgesIt() throws IOException {
+    MdyDynamicDiagnostic deep = only(parser.parse(readV4Fixture("a-expression-too-deep.json"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_INVALID_CONDITION", deep.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, deep.severity());
+    assertEquals("/schema/children/note/when", deep.path());
+    assertTrue(deep.message().startsWith("/schema/children/note/when.operands[0]"), deep.message());
+    assertTrue(deep.message().endsWith(": nests deeper than 32 levels"), deep.message());
+    assertEquals(33, deep.message().split("\\.operands\\[0\\]", -1).length - 1, "the refused level is the thirty-third");
+
+    MdyDynamicDiagnostic bare = only(parser.parse(readV4Fixture("b-expression-without-operands.json"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_INVALID_CONDITION", bare.code());
+    assertEquals("/schema/children/note/when", bare.path());
+    assertEquals("/schema/children/note/when: \"isNotEmpty\" has no operands", bare.message());
+
+    MdyDynamicDiagnostic two = only(parser.parse(readV4Fixture("c-operand-names-two-references.json"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_INVALID_CONDITION", two.code());
+    assertEquals("/schema/children/note/when", two.path());
+    assertEquals("/schema/children/note/when.operands[0]: an operand names one of {path}, {self}, {root}, {context}, "
+        + "and this one names more than one", two.message());
+
+    // Every problem a clause has is said in one diagnostic, in reading order.
+    MdyDynamicDiagnostic many = only(parser.parse(treeWithCondition(
+        "{\"op\":\"nope\",\"operands\":[{\"path\":\"__proto__\"},{\"self\":1},{\"op\":\"x\"},{\"path\":\"a__b\"},{\"path\":\"a b\"}]}"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("/schema/children/note/when: unknown operator \"nope\"; "
+        + "/schema/children/note/when.operands[0]: \"__proto__\" is not a field path; "
+        + "/schema/children/note/when.operands[1]: an object operand must be {path}, {self}, {root}, {context} or a nested expression; "
+        + "/schema/children/note/when.operands[2]: unknown operator \"x\"; "
+        + "/schema/children/note/when.operands[2]: \"x\" has no operands; "
+        + "/schema/children/note/when.operands[3]: \"a__b\" is not a field path; "
+        + "/schema/children/note/when.operands[4]: \"a b\" is not a field path", many.message());
+  }
+
+  /**
+   * The depth bound is thirty-two nested expressions, inclusive, and no operator written in a valid
+   * shape is refused: a check that is stricter than the TypeScript reader's turns away a document
+   * the runtime renders, which is the one thing a reader must not do.
+   */
+  @Test
+  void aConditionNestedToTheBoundIsAcceptedAndOneLevelPastItIsNot() {
+    String leaf = "{\"op\":\"isNotEmpty\",\"operands\":[{\"self\":true}]}";
+    MdyDynamicFormParseResult atTheBound = parser.parse(treeWithCondition(nested(32, leaf)), MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(atTheBound.ok(), () -> String.valueOf(atTheBound.diagnostics()));
+    assertEquals(2, atTheBound.fields().size());
+
+    MdyDynamicDiagnostic pastIt = only(parser.parse(treeWithCondition(nested(33, leaf)), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_INVALID_CONDITION", pastIt.code());
+    assertTrue(pastIt.message().endsWith(": nests deeper than 32 levels"), pastIt.message());
+
+    for (String op : new String[] {"equals", "notEquals", "isEmpty", "isNotEmpty", "lengthAtLeast", "lengthAtMost",
+        "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual", "in", "notIn", "matches", "and", "or", "not"}) {
+      String right = op.equals("matches") ? "\"^[a-z]+$\"" : op.equals("in") || op.equals("notIn") ? "{\"root\":true}" : "1";
+      String when = "{\"op\":\"" + op + "\",\"operands\":[{\"path\":\"code\"}," + right + ",{\"context\":\"tier\"}]}";
+      String json = "{\"version\":4,\"requiresContext\":[\"tier\"],\"schema\":{\"node\":\"group\",\"children\":{"
+          + "\"code\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+          + "\"note\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},\"when\":" + when + "}}}}";
+      MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+      assertTrue(result.ok(), () -> op + " was refused: " + result.diagnostics());
+    }
+  }
+
+  /**
+   * A context key a condition reads anywhere in the tree — a collection's row included — is held
+   * against {@code requiresContext}, and the refusal is one diagnostic at the declaration, worded
+   * as the TypeScript reader words it. The fields are still read: the declaration is wrong, not
+   * the tree.
+   */
+  @Test
+  void aRowConditionReadingUndeclaredContextIsRefusedAtTheDeclaration() throws IOException {
+    MdyDynamicDiagnostic row = only(parser.parse(readV4Fixture("j-row-condition-reads-undeclared-context.json"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNDECLARED_CONTEXT", row.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, row.severity());
+    assertEquals("/requiresContext", row.path());
+    assertEquals("conditions read context \"tier\", which this document does not declare in \"requiresContext\" — "
+        + "a host cannot supply what it is not told about.", row.message());
+
+    String two = "{\"version\":4,\"requiresContext\":[\"c\"],\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"code\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+        + "\"note\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"},\"when\":{\"op\":\"and\",\"operands\":["
+        + "{\"op\":\"isEmpty\",\"operands\":[{\"context\":\"b\"}]},{\"op\":\"isEmpty\",\"operands\":[{\"context\":\"a\"}]},"
+        + "{\"op\":\"isEmpty\",\"operands\":[{\"context\":\"b\"}]}]}}}}}";
+    MdyDynamicFormParseResult lenient = parser.parse(two, MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(lenient.ok());
+    assertEquals(2, lenient.fields().size(), "the tree is read; only the declaration is wrong");
+    assertTrue(lenient.diagnostics().get(0).message().startsWith("conditions read context \"b\", \"a\", which"),
+        lenient.diagnostics().get(0).message());
+  }
+
+  /**
+   * A condition is read against what encloses the clause, so the paths it may name are the
+   * enclosing group's children; inside a collection's item that is the row's own cells. A name from
+   * outside is refused, and {@code { "root": true }} is how a clause reaches the whole form.
+   */
+  @Test
+  void aConditionReadingAPathNothingEnclosesIsRefused() throws IOException {
+    MdyDynamicDiagnostic stranger = only(parser.parse(readV4Fixture("q-condition-reads-a-path-nothing-encloses.json"), MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", stranger.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, stranger.severity());
+    assertEquals("/schema/children/note/when", stranger.path());
+    assertEquals("condition reads \"missing\", which nothing encloses this clause declares — a condition is read "
+        + "against what encloses it, and { \"root\": true } is how it reaches the whole form.", stranger.message());
+
+    String rowPrefix = "{\"version\":4,\"requiresContext\":[\"tier\"],\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"code\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+        + "\"lines\":{\"node\":\"array\",\"item\":{\"node\":\"group\",\"children\":{"
+        + "\"sku\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},"
+        + "\"qty\":{\"node\":\"field\",\"field\":{\"kind\":\"number\"},\"when\":";
+    String rowSuffix = "}}}}}}}";
+    String sibling = "{\"op\":\"and\",\"operands\":[{\"op\":\"isNotEmpty\",\"operands\":[{\"path\":\"sku\"}]},"
+        + "{\"op\":\"isNotEmpty\",\"operands\":[{\"root\":true}]},{\"op\":\"equals\",\"operands\":[{\"context\":\"tier\"},\"b\"]}]}";
+    MdyDynamicFormParseResult reads = parser.parse(rowPrefix + sibling + rowSuffix, MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(reads.ok(), () -> String.valueOf(reads.diagnostics()));
+
+    String outer = "{\"op\":\"isNotEmpty\",\"operands\":[{\"path\":\"code\"}]}";
+    MdyDynamicDiagnostic outside = only(parser.parse(rowPrefix + outer + rowSuffix, MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", outside.code());
+    assertEquals("/schema/children/lines/item/children/qty/when", outside.path());
+  }
+
+  /**
+   * The document's cross-field validations are read with the TypeScript reader's codes: the
+   * condition goes through the same expression check a schema clause does, its target and every
+   * path it reads must name something in the form, and a refused validation counts as rejected.
+   */
+  @Test
+  void aValidationIsReadWithTheTypeScriptReadersCodes() throws IOException {
+    MdyDynamicFormParseResult corpus = parser.parse(readFixture("n-validation-condition-without-operands.json"), MdyDynamicFormParser.Mode.STRICT);
+    MdyDynamicDiagnostic bare = only(corpus);
+    assertEquals("MDY_DYNAMIC_INVALID_VALIDATION", bare.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, bare.severity());
+    assertEquals("/validations/0", bare.path());
+    assertEquals("/validations/0.when: \"isEmpty\" has no operands", bare.message());
+    assertEquals(1, corpus.acceptedCount());
+    assertEquals(1, corpus.rejectedCount());
+
+    String prefix = "{\"version\":2,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}],\"validations\":";
+    MdyDynamicDiagnostic unknown = only(parser.parse(prefix + "[{\"message\":\"m\",\"when\":{\"op\":\"and\",\"operands\":["
+        + "{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"zz\"}]},{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"\"}]},"
+        + "{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"a\"}]}]}}]}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", unknown.code());
+    assertEquals("/validations/0", unknown.path());
+    assertEquals("validation condition references unknown field(s): \"zz\", \"\" — the whole form value is { \"root\": true }.", unknown.message());
+
+    MdyDynamicDiagnostic target = only(parser.parse(prefix + "[{\"message\":\"m\",\"target\":\"zz\",\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"a\"}]}}]}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", target.code());
+    assertEquals("validation target references an unknown field.", target.message());
+
+    MdyDynamicDiagnostic silent = only(parser.parse(prefix + "[{\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"a\"}]}}]}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_INVALID_VALIDATION", silent.code());
+    assertEquals("validation needs a non-empty message.", silent.message());
+
+    MdyDynamicDiagnostic notAList = only(parser.parse(prefix + "{}}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("/validations", notAList.path());
+    assertEquals("validations must be an array.", notAList.message());
+
+    MdyDynamicFormParseResult whole = parser.parse(prefix + "[{\"message\":\"m\",\"target\":\"a\",\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"root\":true}]}}]}", MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(whole.ok(), () -> String.valueOf(whole.diagnostics()));
+  }
+
+  /**
+   * The part of a rule its operator actually reads. A membership test against a string and an
+   * ordering against an object parse as rules and then answer false forever, so they are refused
+   * where the value is written, with the TypeScript reader's sentence; a unary operator reads no
+   * value, and one written beside it is ignored.
+   */
+  @Test
+  void aRuleValueIsJudgedAgainstItsOperator() throws IOException {
+    MdyDynamicFormParseResult corpus = parser.parse(readFixture("o-rule-membership-against-a-string.json"), MdyDynamicFormParser.Mode.STRICT);
+    MdyDynamicDiagnostic membership = only(corpus);
+    assertEquals("MDY_DYNAMIC_INVALID_RULE", membership.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, membership.severity());
+    assertEquals("/rules/0/when/value", membership.path());
+    assertEquals("in tests membership of a list, and \"value\" is a string.", membership.message());
+    assertEquals(1, corpus.rejectedCount());
+
+    String prefix = "{\"version\":2,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"},{\"name\":\"n\",\"kind\":\"number\"},"
+        + "{\"name\":\"d\",\"kind\":\"datepicker\"}],\"rules\":[{\"effect\":\"hidden\",\"target\":\"a\",\"when\":";
+    MdyDynamicDiagnostic ordering = only(parser.parse(prefix + "{\"field\":\"n\",\"operator\":\"greaterThan\",\"value\":{}}}]}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("greaterThan orders two numbers or two strings, and \"value\" is a object.", ordering.message());
+
+    MdyDynamicDiagnostic date = only(parser.parse(prefix + "{\"field\":\"d\",\"operator\":\"lessThan\",\"value\":\"2023-2-1\"}}]}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("lessThan on a datepicker compares dates as text, so \"value\" must be a full ISO date (yyyy-MM-dd); "
+        + "\"2023-2-1\" would order wrongly.", date.message());
+
+    MdyDynamicFormParseResult ignored = parser.parse(prefix + "{\"field\":\"n\",\"operator\":\"isEmpty\",\"value\":{\"any\":1}}}]}", MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(ignored.ok(), () -> String.valueOf(ignored.diagnostics()));
+    MdyDynamicFormParseResult list = parser.parse(prefix + "{\"field\":\"a\",\"operator\":\"in\",\"value\":[\"x\"]}}]}", MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(list.ok(), () -> String.valueOf(list.diagnostics()));
+    assertEquals(1, list.rules().size());
+  }
+
 }

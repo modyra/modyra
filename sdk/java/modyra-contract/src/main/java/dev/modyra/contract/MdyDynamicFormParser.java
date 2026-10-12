@@ -10,14 +10,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.ArrayDeque;
+import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Mirrors {@code parseDynamicForm}/{@code parseDynamicFields} in
@@ -43,15 +46,17 @@ public final class MdyDynamicFormParser {
   private static final Set<String> FORBIDDEN_NAMES = Set.of("__proto__", "prototype", "constructor");
 
   private static final Set<String> SCHEMA_NODE_KINDS = Set.of("field", "group", "array", "record");
-  /** The operators an expression may name, mirroring {@code MdyExpressionOp}. */
-  private static final Set<String> EXPRESSION_OPS = Set.of(
-      "equals", "notEquals", "isEmpty", "isNotEmpty", "lengthAtLeast", "lengthAtMost",
-      "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual",
-      "in", "notIn", "matches", "and", "or", "not");
   private static final Set<String> RULE_EFFECTS = Set.of("visible", "hidden", "enabled", "disabled");
   private static final Set<String> RULE_OPERATORS = Set.of(
       "equals", "notEquals", "in", "notIn", "isEmpty", "isNotEmpty",
       "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual");
+  /** The rule operators that order two values, so their {@code value} must be orderable. */
+  private static final Set<String> ORDERING_RULE_OPERATORS = Set.of(
+      "greaterThan", "greaterThanOrEqual", "lessThan", "lessThanOrEqual");
+  /** The kinds whose value is an ISO date, so a comparison against them is a date comparison. */
+  private static final Set<String> DATE_KINDS = Set.of("datepicker", "daterange");
+  /** The one spelling of a date a rule may order against: {@code yyyy-MM-dd}, ASCII digits. */
+  private static final Pattern ISO_DATE = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}$");
   /**
    * How deep a schema may nest before this parser stops walking it.
    *
@@ -148,20 +153,22 @@ public final class MdyDynamicFormParser {
       version = supportedVersion(root.path("version"));
       List<MdyDynamicDiagnostic> schemaDiagnostics = new ArrayList<>();
       Set<String> contextKeys = new LinkedHashSet<>();
-      validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0}, contextKeys);
+      validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, new int[]{0}, contextKeys, Set.of());
+      diagnostics.addAll(schemaDiagnostics);
       // A key a condition reads and the document does not declare. `requiresContext` is the whole of
       // what tells a host which values to supply, so a key missing from it is one no host would think
-      // to pass — and a condition that cannot be read decides false, hiding the fields it guards.
+      // to pass — and a condition that cannot be read decides false, hiding the fields it guards. The
+      // fields are still read: the declaration is wrong, not the tree.
       Set<String> declared = new LinkedHashSet<>();
       JsonNode requires = root.path("requiresContext");
       if (requires.isArray()) for (JsonNode key : requires) if (key.isTextual()) declared.add(key.asText());
-      for (String key : contextKeys) {
-        if (!declared.contains(key)) {
-          schemaDiagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNDECLARED_CONTEXT", MdyDynamicDiagnostic.ERROR, "/schema",
-              "a condition reads context \"" + key + "\", which the document does not declare in requiresContext."));
-        }
+      List<String> undeclared = new ArrayList<>();
+      for (String key : contextKeys) if (!declared.contains(key)) undeclared.add(key);
+      if (!undeclared.isEmpty()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNDECLARED_CONTEXT", MdyDynamicDiagnostic.ERROR, "/requiresContext",
+            "conditions read context " + quoted(undeclared) + ", which this document does not declare in "
+                + "\"requiresContext\" — a host cannot supply what it is not told about."));
       }
-      diagnostics.addAll(schemaDiagnostics);
       accepted = schemaDiagnostics.isEmpty() ? flattenSchema(root.get("schema")) : List.of();
       sourceCount = accepted.size();
     } else if (root.isObject() && root.has("fields") && !root.has("version")) {
@@ -206,13 +213,19 @@ public final class MdyDynamicFormParser {
           "requiresContext arrived with version 4, and this document says " + version + "."));
     }
     Set<String> names = new HashSet<>();
-    for (MdyDynamicField field : accepted) names.add(field.name());
+    // What each declared field holds, so a rule's value can be judged against the field it reads.
+    Map<String, String> kindOf = new HashMap<>();
+    for (MdyDynamicField field : accepted) {
+      names.add(field.name());
+      kindOf.put(field.name(), field.kind());
+    }
     List<JsonNode> layout = new ArrayList<>();
     List<JsonNode> rules = new ArrayList<>();
     // v3 is v2 plus per-slot placement: every envelope member is read the same way.
     if (version != null && isStructuredVersion(version) && root.isObject()) {
       parseLayout(root.path("layout"), names, version, layout, diagnostics);
-      parseRules(root.path("rules"), names, rules, diagnostics);
+      parseRules(root.path("rules"), names, kindOf, rules, diagnostics);
+      parseValidations(root.path("validations"), names, diagnostics);
     }
     // A rule the document's version predates. `integer` arrived with v5, and a document of an
     // earlier version carrying it asks for a constraint no reader of that version applies, so the
@@ -235,7 +248,7 @@ public final class MdyDynamicFormParser {
     // what could be read, and `ok` withdraws only the claim that nothing was lost.
     boolean refused = diagnostics.stream().anyMatch(d -> MdyDynamicDiagnostic.ERROR.equals(d.severity()));
     int rejectedFromLayoutRules = (int) diagnostics.stream()
-        .filter(d -> d.path().startsWith("/layout/") || d.path().startsWith("/rules/"))
+        .filter(d -> d.path().startsWith("/layout/") || d.path().startsWith("/rules/") || d.path().startsWith("/validations/"))
         .count();
     int rejectedCount = Math.max(0, sourceCount - accepted.size()) + rejectedFromLayoutRules;
 
@@ -309,25 +322,21 @@ public final class MdyDynamicFormParser {
   // ─── v2 recursive schema: validate + flatten (mirrors validateDynamicSchema / flattenDynamicSchema) ───
 
   /**
-   * Walks a schema, reporting what it cannot use.
-   *
-   * <p>It used to carry a {@code positional} flag saying an array already enclosed this node, so a
-   * second one could be refused. ADR 0043 removed that rule from the engine and the flag decided
-   * nothing afterwards, so it is gone rather than threaded through inert.
-   */
-  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count) {
-    validateSchema(node, path, depth, out, count, new HashSet<>());
-  }
-
-  /**
    * Walks a schema, reporting what it cannot use, and collecting the context keys its conditions
    * read.
    *
-   * A condition — contract v4's {@code when} and {@code asyncWhen} — is checked as a shape rather
+   * <p>A condition — contract v4's {@code when} and {@code asyncWhen} — is checked as a shape rather
    * than evaluated: this reader says whether a document is a document, and a clause it cannot check
    * is one a host would find out about only when a field failed to appear.
+   *
+   * <p>{@code scope} is the names a clause written on this node may read. A condition is evaluated
+   * against what encloses the clause, so those are the enclosing group's children — inside a
+   * collection's {@code item} that is the row's own cells, which is what lets a template condition
+   * one of them without naming a key that does not exist yet. {@code { "root": true }} is how a
+   * clause reaches the whole form.
    */
-  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count, Set<String> contextKeys) {
+  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out, int[] count,
+      Set<String> contextKeys, Set<String> scope) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path, "schema exceeds depth/node limits."));
@@ -340,7 +349,24 @@ public final class MdyDynamicFormParser {
     }
     for (String member : List.of("when", "asyncWhen")) {
       JsonNode clause = node.path(member);
-      if (!clause.isMissingNode()) validateExpression(clause, path + "/" + member, out, contextKeys);
+      if (clause.isMissingNode()) continue;
+      String at = path + "/" + member;
+      List<String> problems = MdyExpressions.validateExpression(clause, at);
+      if (!problems.isEmpty()) {
+        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, at, String.join("; ", problems)));
+        continue;
+      }
+      List<String> unreadable = new ArrayList<>();
+      for (String read : MdyExpressions.expressionPaths(clause)) {
+        int dot = read.indexOf('.');
+        if (!scope.contains(dot == -1 ? read : read.substring(0, dot))) unreadable.add(read);
+      }
+      if (!unreadable.isEmpty()) {
+        out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, at,
+            "condition reads " + quoted(unreadable) + ", which nothing encloses this clause declares — a condition is "
+                + "read against what encloses it, and { \"root\": true } is how it reaches the whole form."));
+      }
+      contextKeys.addAll(MdyExpressions.expressionContextKeys(clause));
     }
     if (kind.equals("field")) {
       if (!node.path("field").isObject()) {
@@ -354,13 +380,15 @@ public final class MdyDynamicFormParser {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_GROUP", MdyDynamicDiagnostic.ERROR, path, "group requires children."));
         return;
       }
+      Set<String> here = new HashSet<>();
+      children.fieldNames().forEachRemaining(here::add);
       for (var entry : children.properties()) {
         String key = entry.getKey();
         String childPath = path + "/children/" + key;
         if (!isSafeSegment(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, depth + 1, out, count, contextKeys);
+          validateSchema(entry.getValue(), childPath, depth + 1, out, count, contextKeys, here);
         }
       }
       return;
@@ -370,7 +398,7 @@ public final class MdyDynamicFormParser {
       if (!item.isObject()) {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
       } else {
-        validateSchema(item, path + "/item", depth + 1, out, count, contextKeys);
+        validateSchema(item, path + "/item", depth + 1, out, count, contextKeys, Set.of());
       }
       JsonNode rows = node.path("initialValue");
       if (!rows.isMissingNode() && !rows.isObject()) {
@@ -392,7 +420,7 @@ public final class MdyDynamicFormParser {
     if (!item.isObject()) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path, "array requires an item node."));
     } else {
-      validateSchema(item, path + "/item", depth + 1, out, count);
+      validateSchema(item, path + "/item", depth + 1, out, count, contextKeys, Set.of());
     }
     JsonNode initialValue = node.path("initialValue");
     if (!initialValue.isMissingNode() && !initialValue.isArray()) {
@@ -662,41 +690,14 @@ public final class MdyDynamicFormParser {
     return null;
   }
 
-  /**
-   * Reports what an expression gets wrong, and collects the context keys it reads.
-   *
-   * An object operand is one of the four the contract names — {@code path}, {@code self},
-   * {@code root}, {@code context} — or a nested expression. An object that is none of them is a
-   * reference reading nothing, which is what a hand-written document gets wrong.
-   */
-  private void validateExpression(JsonNode expression, String path, List<MdyDynamicDiagnostic> out, Set<String> contextKeys) {
-    if (!expression.isObject() || !expression.path("op").isTextual()) {
-      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path, "expected an expression object with an op."));
-      return;
+  /** Names as a message lists them: each in double quotes, comma-separated. */
+  private static String quoted(List<String> names) {
+    StringBuilder joined = new StringBuilder();
+    for (String name : names) {
+      if (joined.length() > 0) joined.append(", ");
+      joined.append('"').append(name).append('"');
     }
-    Deque<JsonNode> pending = new ArrayDeque<>();
-    pending.push(expression);
-    while (!pending.isEmpty()) {
-      JsonNode operand = pending.pop();
-      if (!operand.isObject()) continue;
-      if (operand.has("op")) {
-        if (!operand.path("op").isTextual() || !EXPRESSION_OPS.contains(operand.path("op").asText())) {
-          out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path, "expression names an operator this contract does not have."));
-        }
-        JsonNode single = operand.path("operand");
-        if (!single.isMissingNode()) pending.push(single);
-        JsonNode list = operand.path("operands");
-        if (list.isArray()) for (JsonNode each : list) pending.push(each);
-        continue;
-      }
-      if (operand.path("context").isTextual()) {
-        contextKeys.add(operand.path("context").asText());
-        continue;
-      }
-      if (operand.has("path") || operand.has("self") || operand.has("root")) continue;
-      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_CONDITION", MdyDynamicDiagnostic.ERROR, path,
-          "an object operand must be {path}, {self}, {root}, {context} or a nested expression."));
-    }
+    return joined.toString();
   }
 
   /** Whether a structured envelope carries a schema and a layout — v2 and everything after it. */
@@ -878,7 +879,7 @@ public final class MdyDynamicFormParser {
     return true;
   }
 
-  private void parseRules(JsonNode rulesNode, Set<String> names, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
+  private void parseRules(JsonNode rulesNode, Set<String> names, Map<String, String> kindOf, List<JsonNode> out, List<MdyDynamicDiagnostic> diagnostics) {
     if (rulesNode.isMissingNode()) return;
     if (!rulesNode.isArray()) {
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RULE", MdyDynamicDiagnostic.ERROR, "/rules", "rules must be an array."));
@@ -905,8 +906,132 @@ public final class MdyDynamicFormParser {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RULE", MdyDynamicDiagnostic.ERROR, path, "rule has an unsupported effect/operator or references an unknown field."));
         continue;
       }
+      // The part the operator actually reads. A membership test against a string or an ordering
+      // against an object parses as a rule and then answers false forever — a rule that cannot fire.
+      String valueRefusal = ruleValueRefusal(operator, when.path("value"), kindOf.get(whenField));
+      if (valueRefusal != null) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RULE", MdyDynamicDiagnostic.ERROR, path + "/when/value", valueRefusal));
+        continue;
+      }
       out.add(raw);
     }
+  }
+
+  /**
+   * Why a rule's {@code value} cannot be read by its operator, or null when it can.
+   *
+   * <p>A unary operator reads no value, so one written beside it is ignored rather than wrong: a
+   * generator that emits the same shape for every operator writes one, and refusing it would make a
+   * document invalid for a member nothing consults.
+   */
+  private static String ruleValueRefusal(String operator, JsonNode value, String kind) {
+    if (operator.equals("isEmpty") || operator.equals("isNotEmpty")) return null;
+    if (operator.equals("in") || operator.equals("notIn")) {
+      return value.isArray() ? null : operator + " tests membership of a list, and \"value\" is " + describeRuleValue(value) + ".";
+    }
+    if (ORDERING_RULE_OPERATORS.contains(operator)) {
+      if (!value.isNumber() && !value.isTextual()) {
+        return operator + " orders two numbers or two strings, and \"value\" is " + describeRuleValue(value) + ".";
+      }
+      if (value.isTextual() && kind != null && DATE_KINDS.contains(kind) && !isIsoDate(value.asText())) {
+        return operator + " on a " + kind + " compares dates as text, so \"value\" must be a full ISO date (yyyy-MM-dd); \""
+            + value.asText() + "\" would order wrongly.";
+      }
+    }
+    return null;
+  }
+
+  /** A rule's value named by what it is, for a message about what it should have been. */
+  private static String describeRuleValue(JsonNode value) {
+    if (value.isMissingNode()) return "missing";
+    if (value.isNull()) return "null";
+    if (value.isArray()) return "an array";
+    if (value.isTextual()) return "a string";
+    if (value.isNumber()) return "a number";
+    if (value.isBoolean()) return "a boolean";
+    // The TypeScript reader spells it `a object`, from `a ${typeof value}`, and the two readers say the same sentence.
+    return "a object";
+  }
+
+  /**
+   * A full calendar date written {@code yyyy-MM-dd}. A year below 100 is not one: the TypeScript
+   * reader builds the date through {@code Date.UTC}, which reads such a year as 19xx and then finds
+   * it does not round-trip, so both readers refuse it.
+   */
+  private static boolean isIsoDate(String value) {
+    if (!ISO_DATE.matcher(value).matches()) return false;
+    int year = Integer.parseInt(value.substring(0, 4));
+    if (year < 100) return false;
+    try {
+      LocalDate.of(year, Integer.parseInt(value.substring(5, 7)), Integer.parseInt(value.substring(8, 10)));
+      return true;
+    } catch (DateTimeException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Reads the document's cross-field validations, reporting each one it cannot use.
+   *
+   * <p>A validation's condition goes through the same expression check a schema clause does, and
+   * every path it reads must name a field or a container in the form: a condition asking about a
+   * field that is not there can never be satisfied, and it fails silently. The empty path is the
+   * whole form value, which a validation may not name that way — {@code { "root": true }} is the
+   * operand that reads the whole form.
+   */
+  private void parseValidations(JsonNode validationsNode, Set<String> names, List<MdyDynamicDiagnostic> diagnostics) {
+    if (validationsNode.isMissingNode()) return;
+    if (!validationsNode.isArray()) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, "/validations", "validations must be an array."));
+      return;
+    }
+    for (int i = 0; i < validationsNode.size(); i++) {
+      JsonNode raw = validationsNode.get(i);
+      String at = "/validations/" + i;
+      if (!raw.isObject()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, "validation must be an object."));
+        continue;
+      }
+      JsonNode message = raw.path("message");
+      if (!message.isTextual() || message.asText().isBlank()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, "validation needs a non-empty message."));
+        continue;
+      }
+      // A target names a field, the same way a rule's does. An unknown one would attach the error to
+      // nothing, and the user would never see why the form will not submit.
+      if (raw.has("target") && !validValidationPath(raw.get("target"), names)) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, at, "validation target references an unknown field."));
+        continue;
+      }
+      JsonNode when = raw.path("when");
+      List<String> problems = MdyExpressions.validateExpression(when, at + ".when");
+      if (!problems.isEmpty()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, String.join("; ", problems)));
+        continue;
+      }
+      List<String> unknown = new ArrayList<>();
+      for (String path : MdyExpressions.expressionPaths(when)) {
+        if (!validValidationPath(path, names)) unknown.add(path);
+      }
+      if (!unknown.isEmpty()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", MdyDynamicDiagnostic.ERROR, at,
+            "validation condition references unknown field(s): " + quoted(unknown)
+                + (unknown.contains("") ? " — the whole form value is { \"root\": true }" : "") + "."));
+      }
+    }
+  }
+
+  private static boolean validValidationPath(JsonNode path, Set<String> names) {
+    return path.isTextual() && validValidationPath(path.asText(), names);
+  }
+
+  /** A field in the form, or a container something in the form lives underneath. */
+  private static boolean validValidationPath(String path, Set<String> names) {
+    if (path.isEmpty()) return false;
+    if (names.contains(path)) return true;
+    String prefix = path + ".";
+    for (String name : names) if (name.startsWith(prefix)) return true;
+    return false;
   }
 
 

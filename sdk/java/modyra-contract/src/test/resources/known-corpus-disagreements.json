@@ -3,16 +3,9 @@
   "recordedAt": "2026-10-12",
   "disagreements": [
     "v2/f-validator-pattern-catastrophic.json",
-    "v2/n-validation-condition-without-operands.json",
-    "v2/o-rule-membership-against-a-string.json",
     "v2/r-validator-pattern-uncompilable.json",
     "v2/s-validator-pattern-quantified-boundary.json",
-    "v4/a-expression-too-deep.json",
-    "v4/b-expression-without-operands.json",
-    "v4/c-operand-names-two-references.json",
     "v4/d-matches-catastrophic-pattern.json",
-    "v4/e-matches-uncompilable-pattern.json",
-    "v4/j-row-condition-reads-undeclared-context.json",
-    "v4/q-condition-reads-a-path-nothing-encloses.json"
+    "v4/e-matches-uncompilable-pattern.json"
   ]
 }
