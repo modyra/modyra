@@ -832,7 +832,8 @@ public final class MdyDynamicFormParser {
    * The decimal with the fewest significant digits that parses back to {@code magnitude}, the closer
    * of two candidates when both do and the even one on a tie. Both neighbours at each precision are
    * tried, because beside a power of two the round-trip interval is lopsided and the nearer
-   * neighbour can miss where the farther one lands.
+   * neighbour can miss where the farther one lands. {@code Double.toString} is not the source: before
+   * JDK 19 it does not always give the shortest digits (JDK-4511638), and this module builds for 17.
    */
   private static BigDecimal shortestDigits(double magnitude) {
     BigDecimal exact = new BigDecimal(magnitude);
