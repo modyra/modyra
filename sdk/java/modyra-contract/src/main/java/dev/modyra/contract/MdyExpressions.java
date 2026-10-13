@@ -116,15 +116,17 @@ final class MdyExpressions {
   }
 
   /**
-   * What a {@code matches} pattern of acceptable length gets wrong.
-   *
-   * <p>The TypeScript reader also refuses a pattern that does not compile as a JavaScript regular
-   * expression, and one whose shape backtracks exponentially — the same gate a field's
-   * {@code validators.pattern} passes. This reader judges neither here, so a condition carrying such
-   * a pattern is accepted by this reader and refused by that one; the corpus ledger names the two
-   * documents where that shows.
+   * What a {@code matches} pattern of acceptable length gets wrong: it does not compile as a
+   * JavaScript regular expression, or its shape backtracks exponentially — the same cost gate a
+   * field's {@code validators.pattern} passes. A condition is read every time the form is read, so
+   * a costly shape stops the form answering. The two are independent and both are said.
    */
   private static void patternProblems(String pattern, String where, List<String> problems) {
+    if (!MdyDynamicPatterns.compiles(pattern)) {
+      problems.add(where + ": \"matches\" pattern is not a valid regular expression");
+    }
+    String refusal = MdyDynamicPatterns.costRefusal(pattern);
+    if (refusal != null) problems.add(where + ": \"matches\" pattern " + refusal);
   }
 
   /**

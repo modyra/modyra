@@ -1,8 +1,5 @@
 {
   "note": "Shared-corpus documents the Java reader judges differently from the verdict recorded beside them. A disagreement not listed here fails the suite, and so does a listed one that has been repaired. See ADR 0228.",
   "recordedAt": "2026-10-12",
-  "disagreements": [
-    "v4/d-matches-catastrophic-pattern.json",
-    "v4/e-matches-uncompilable-pattern.json"
-  ]
+  "disagreements": []
 }

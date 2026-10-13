@@ -1108,6 +1108,26 @@ class MdyDynamicFormParserTest {
         + "/schema/children/note/when.operands[3]: \"a__b\" is not a field path; "
         + "/schema/children/note/when.operands[4]: \"a b\" is not a field path", many.message());
 
+    // A `matches` pattern passes the gate a field's validators.pattern passes; a pattern that fails
+    // both halves says both, compile verdict first. Expected texts are the TS reader's.
+    String where = "/schema/children/note/when: \"matches\" pattern ";
+    String divided = "a repeated group whose body can be divided several ways, which backtracks exponentially";
+    String[][] patterns = {
+        {"(a+)+$", where + divided},
+        {"(", where + "is not a valid regular expression"},
+        {"((a+)+", where + "is not a valid regular expression; " + where + divided},
+        {"(a|a)*", where + "repeated alternatives that can match the same text, which backtracks exponentially"},
+        {"\\\\b+", where + "is not a valid regular expression"},
+    };
+    for (String[] c : patterns) {
+      MdyDynamicDiagnostic refused = only(parser.parse(treeWithCondition(
+          "{\"op\":\"matches\",\"operands\":[{\"self\":true},\"" + c[0] + "\"]}"), MdyDynamicFormParser.Mode.STRICT));
+      assertEquals("MDY_DYNAMIC_INVALID_CONDITION", refused.code(), c[0]);
+      assertEquals(c[1], refused.message(), c[0]);
+    }
+    assertTrue(parser.parse(treeWithCondition(
+        "{\"op\":\"matches\",\"operands\":[{\"self\":true},\"^[a-z]+$\"]}"), MdyDynamicFormParser.Mode.STRICT).ok());
+
     // An operator that is not a string is named as JavaScript's String() writes it.
     String[][] spelled = {
         {"1e21", "1e+21"}, {"9007199254740993", "9007199254740992"}, {"1e400", "Infinity"},
