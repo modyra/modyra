@@ -578,7 +578,8 @@ fn a_finding_points_where_the_field_is_written() {
         paths(r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}},{"name":"n","kind":"number","label":"Again","validators":{"integer":true}}]}"#),
         vec!["/fields/1/validators/integer"]
     );
-    // A null integer is an absent rule, in a list or a tree: there is no constraint to date.
+    // A null integer is no rule the version predates, in a list or a tree: there is no constraint to
+    // date. Whether null is a rule at all is a different finding, which this assertion leaves alone.
     let null_leaf = r#"{"node":"field","field":{"name":"t","kind":"number","label":"T","validators":{"integer":null}}}"#;
     assert_eq!(
         paths(&format!(
