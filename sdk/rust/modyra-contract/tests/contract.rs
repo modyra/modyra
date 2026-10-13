@@ -573,8 +573,9 @@ fn a_finding_points_where_the_field_is_written() {
         )),
         vec!["/schema/children/a~1b/children/x~01/field/validators/integer"]
     );
+    // A later entry with a taken name is the refused duplicate, not a field to hold to the version.
     assert_eq!(
-        paths(r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}}]}"#),
+        paths(r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}},{"name":"n","kind":"number","label":"Again","validators":{"integer":true}}]}"#),
         vec!["/fields/1/validators/integer"]
     );
 }
