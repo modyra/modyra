@@ -27,10 +27,13 @@ distinct members that print the same path cannot be told apart.
 
 - A diagnostic `path` is an RFC 6901 JSON Pointer that resolves in the document as it was given to
   the reader. Every key-built segment is escaped as a pointer token: `~` becomes `~0`, then `/`
-  becomes `~1`, in that order.
+  becomes `~1`, in that order. One exception is kept: a bare array is read as the `fields` list of
+  a version 1 document, and every reader addresses its entries as `/fields/<index>`, so a path into
+  a bare array resolves against `{ "fields": <the array> }`.
 - A finding about a field points where that field was written. In a flat list that is its entry by
   index — the first object carrying the name, since every reader claims a name before any other check
-  and a later entry with it is the refused duplicate. In a tree it is the leaf's declaration,
+  and a later entry with it is the refused duplicate. An accepted field always has that entry; if
+  none were found the finding would fall back to `/fields`, the list itself. In a tree it is the leaf's declaration,
   `…/field`, reached by key through groups and through `item` for a collection.
 - A tree is checked by its declarations, not by the rows it flattens to. A collection's `item` is
   the one template every row is read from, so a finding about it is reported once, at the template,
@@ -81,7 +84,8 @@ distinct members that print the same path cannot be told apart.
 
 ## Security and privacy
 
-A path is reported data: no reader interprets one, and no package in this repository parses a
-diagnostic path beyond matching a prefix. Escaping makes a path harder to forge, not easier — a key
+A path is reported data. Nothing in this repository parses one beyond matching a fixed top-level
+prefix — `/layout/`, `/rules/`, `/validations/`, `/schema` — which escaping a key segment never
+changes. Escaping makes a path harder to forge, not easier — a key
 can no longer produce segments that impersonate a sibling member in a host's error display. No user
 data is involved.
