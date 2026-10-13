@@ -451,6 +451,12 @@ public final class MdyDynamicFormParser {
             "Dropped dynamic field \"" + name + "\": name is reserved or contains forbidden path separators."));
         continue;
       }
+      String unusable = nameRefusal(name, nameNode);
+      if (unusable != null) {
+        String code = unusable.contains("a path may be") ? "MDY_DYNAMIC_PATH_TOO_LONG" : "MDY_DYNAMIC_INVALID_FIELD";
+        diagnostics.add(new MdyDynamicDiagnostic(code, MdyDynamicDiagnostic.ERROR, path, unusable));
+        continue;
+      }
       if (!seenNames.add(name)) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_NAME", MdyDynamicDiagnostic.ERROR, path,
             "Dropped duplicate dynamic field name \"" + name + "\"."));
@@ -741,7 +747,7 @@ public final class MdyDynamicFormParser {
       for (var entry : children.properties()) {
         String key = entry.getKey();
         String childPath = path + "/children/" + key;
-        if (!isSafeSegment(key)) {
+        if (!isSafeDynamicName(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
           validateSchema(entry.getValue(), childPath, depth + 1, out, count, contextKeys, here);
@@ -765,7 +771,7 @@ public final class MdyDynamicFormParser {
         }
         for (var entry : rows.properties()) {
           // A key that cannot be a path segment names a row nothing can address.
-          if (!isSafeSegment(entry.getKey())) {
+          if (!isSafeDynamicName(entry.getKey())) {
             out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, path + "/initialValue/" + entry.getKey(), "unsafe row key."));
           }
         }
@@ -810,7 +816,7 @@ public final class MdyDynamicFormParser {
       JsonNode value = hasValue(initial) && initial.isObject() ? initial : null;
       for (var entry : node.path("children").properties()) {
         String key = entry.getKey();
-        if (!isSafeSegment(key)) continue;
+        if (!isSafeDynamicName(key)) continue;
         JsonNode childInitial = value != null ? value.path(key) : null;
         flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key, childInitial, out, dropped);
       }
@@ -824,7 +830,7 @@ public final class MdyDynamicFormParser {
           : node.path("initialValue").isObject() ? node.path("initialValue") : null;
       if (declared != null) {
         for (var entry : declared.properties()) {
-          if (!isSafeSegment(entry.getKey())) continue;
+          if (!isSafeDynamicName(entry.getKey())) continue;
           String key = entry.getKey();
           flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, entry.getValue(), out, dropped);
         }
@@ -891,6 +897,77 @@ public final class MdyDynamicFormParser {
 
   private Object toObject(JsonNode node) {
     return mapper.convertValue(node, Object.class);
+  }
+
+  /**
+   * Why a name that passes {@link #isSafeSegment} still cannot name a field, or null. In the TS
+   * reader's order: a character that cannot be seen makes two names read the same; past
+   * {@link #MAX_PATH_LENGTH} the path costs at every read, because it is the payload key, the draft key
+   * and the widget id; {@code toString} as a value's property makes every string conversion of the
+   * value throw; {@link #ID_DELIMITER} separates the parts of a generated id; whitespace splits an
+   * id reference such as {@code aria-describedby} into several.
+   */
+  private static String nameRefusal(String name, JsonNode nameNode) {
+    if (hasInvisibleCharacters(name)) {
+      return "Dropped dynamic field " + jsonText(nameNode) + ": the name carries a character that cannot "
+          + "be seen, so two names that read the same would be two different fields.";
+    }
+    if (name.length() > MAX_PATH_LENGTH) {
+      return "Dropped a dynamic field whose path is " + name.length() + " characters, past the "
+          + MAX_PATH_LENGTH + " a path may be: a path is the payload key, the draft key "
+          + "and the widget id, and every read of the value carries it.";
+    }
+    if (breaksValueConversion(name)) {
+      return "Dropped dynamic field \"" + name + "\": a form's value is an object, so this name shadows the "
+          + "method every string conversion of that value goes through, and `${value}` then throws.";
+    }
+    if (name.contains(ID_DELIMITER)) {
+      return "Dropped dynamic field \"" + name + "\": \"" + ID_DELIMITER + "\" separates the segments of a generated id, "
+          + "so this name would collide with another field's parts.";
+    }
+    if (hasJsWhitespace(name)) {
+      return "Dropped dynamic field \"" + name + "\": a widget id is built from this name, and whitespace "
+          + "splits an id reference into several, each resolving to nothing — so the control would "
+          + "have no accessible name.";
+    }
+    return null;
+  }
+
+  /** The names a document may give a field or a child: {@code isSafeDynamicName} in the TS contract. */
+  private static boolean isSafeDynamicName(String name) {
+    return isSafeSegment(name) && !breaksValueConversion(name) && !name.contains(ID_DELIMITER)
+        && !hasJsWhitespace(name) && !hasInvisibleCharacters(name);
+  }
+
+  private static final int MAX_PATH_LENGTH = 512;
+  private static final String ID_DELIMITER = "__";
+
+  private static boolean breaksValueConversion(String name) {
+    for (String part : name.split("\\.", -1)) {
+      if (part.equals("toString")) return true;
+    }
+    return false;
+  }
+
+  /** The class two different names can hide behind: controls, zero-width and bidirectional marks, BOM. */
+  private static boolean hasInvisibleCharacters(String name) {
+    for (int i = 0; i < name.length(); i++) {
+      char c = name.charAt(i);
+      if (c <= 0x08 || c == 0x0B || c == 0x0C || (c >= 0x0E && c <= 0x1F) || (c >= 0x7F && c <= 0x9F)
+          || (c >= 0x200B && c <= 0x200D) || (c >= 0x2028 && c <= 0x202E) || (c >= 0x2066 && c <= 0x2069)
+          || c == 0xFEFF) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Whether the name holds a character JavaScript's {@code \s} matches — the set {@code trim} removes. */
+  private static boolean hasJsWhitespace(String name) {
+    for (int i = 0; i < name.length(); i++) {
+      if (isJsBlank(String.valueOf(name.charAt(i)))) return true;
+    }
+    return false;
   }
 
   private static boolean isSafeSegment(String value) {

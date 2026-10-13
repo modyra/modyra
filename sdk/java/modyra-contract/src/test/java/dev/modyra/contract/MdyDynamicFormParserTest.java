@@ -566,6 +566,51 @@ class MdyDynamicFormParserTest {
     assertEquals(3, result.rejectedCount());
   }
 
+  /**
+   * A name passes the whole of the TS name rule, in its order, with its code and sentence; every
+   * expected text is what the TS reader says for the same document.
+   */
+  @Test
+  void aFieldNameIsHeldToEveryRuleTheTypeScriptReaderHoldsItTo() throws IOException {
+    String[][] cases = {
+        {"a​b", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a​b\": the name carries a character that cannot be seen, so two names that read the same would be two different fields."},
+        {"a\u001Cb", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a\\u001cb\": the name carries a character that cannot be seen, so two names that read the same would be two different fields."},
+        {"x".repeat(513), "MDY_DYNAMIC_PATH_TOO_LONG", "Dropped a dynamic field whose path is 513 characters, past the 512 a path may be: a path is the payload key, the draft key and the widget id, and every read of the value carries it."},
+        {"toString", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"toString\": a form's value is an object, so this name shadows the method every string conversion of that value goes through, and `${value}` then throws."},
+        {"x.toString", "MDY_DYNAMIC_UNSAFE_NAME", "Dropped dynamic field \"x.toString\": name is reserved or contains forbidden path separators."},
+        {"a__b", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a__b\": \"__\" separates the segments of a generated id, so this name would collide with another field's parts."},
+        {"a b", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a b\": a widget id is built from this name, and whitespace splits an id reference into several, each resolving to nothing — so the control would have no accessible name."},
+    };
+    ObjectMapper json = new ObjectMapper();
+    for (String[] c : cases) {
+      String doc = "{\"version\":2,\"fields\":[{\"name\":" + json.writeValueAsString(c[0]) + ",\"kind\":\"text\"},{\"name\":\"keep\",\"kind\":\"text\"}]}";
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse(doc, mode);
+        assertFalse(result.ok(), c[1]);
+        assertEquals(1, result.acceptedCount(), c[1]);
+        assertEquals(1, result.rejectedCount(), c[1]);
+        MdyDynamicDiagnostic refusal = only(result);
+        assertEquals(c[1], refusal.code(), c[2]);
+        assertEquals("/fields/0", refusal.path(), c[2]);
+        assertEquals(c[2], refusal.message());
+      }
+    }
+    // Names that only look close are read: 512 characters, a trailing underscore, `valueOf`.
+    for (String fine : List.of("x".repeat(512), "a_", "valueOf")) {
+      String doc = "{\"version\":2,\"fields\":[{\"name\":" + json.writeValueAsString(fine) + ",\"kind\":\"text\"}]}";
+      assertTrue(parser.parse(doc, MdyDynamicFormParser.Mode.STRICT).ok(), fine);
+    }
+    // A tree's child name and a record's row key are held to the same rule.
+    MdyDynamicDiagnostic child = only(parser.parse("{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{\"a b\":"
+        + "{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNSAFE_NAME", child.code());
+    assertEquals("/schema/children/a b", child.path());
+    MdyDynamicDiagnostic row = only(parser.parse("{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{\"r\":{\"node\":\"record\","
+        + "\"item\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}},\"initialValue\":{\"a__b\":\"v\"}}}}}", MdyDynamicFormParser.Mode.STRICT));
+    assertEquals("MDY_DYNAMIC_UNSAFE_NAME", row.code());
+    assertEquals("/schema/children/r/initialValue/a__b", row.path());
+  }
+
   @Test
   void duplicateNamesAreDropped() {
     String json = """
