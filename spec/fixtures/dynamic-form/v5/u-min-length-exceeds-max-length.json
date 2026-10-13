@@ -1,0 +1,1 @@
+{"version":5,"id":"u-min-length-exceeds-max-length","schema":{"node":"group","children":{"seats":{"node":"field","field":{"kind":"text","label":"Seats","validators":{"minLength":5,"maxLength":2}}}}}}
