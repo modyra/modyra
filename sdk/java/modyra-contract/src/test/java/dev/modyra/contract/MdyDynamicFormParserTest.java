@@ -1708,6 +1708,14 @@ class MdyDynamicFormParserTest {
             0, 10, 10, 1, List.of(new Finding("MDY_DYNAMIC_PATH_TOO_LONG", "/schema",
                 "Dropped a dynamic field whose path is 513 characters, past the 512 a path may be: a path is the payload key, "
                     + "the draft key and the widget id, and every read of the value carries it."))),
+        // A leaf kept despite a member nothing reads still counts each finding as a leaf turned down.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text","bogus":1}},
+              "b":{"node":"field","field":{"kind":"text"}}}}}""", 0, 2, 2, 1, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/schema/children/a/field",
+                "dynamic field \"a\" carries \"bogus\", which this contract does not declare, so nothing reads it."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
+                "dynamic field \"leaf\" carries \"bogus\", which this contract does not declare, so nothing reads it."))),
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"s":{"node":"field","field":{"kind":"select","options":[]}},
               "rows":{"node":"array","item":{"node":"field","field":{"kind":"radio","options":[]}}}}}}""", 1, 1, 2, 0, List.of()));
