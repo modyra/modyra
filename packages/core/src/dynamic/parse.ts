@@ -2032,7 +2032,7 @@ export function parseDynamicForm(
           .filter(({ field }) => isRecordValue(field) && isRecordValue(field["validators"]) && field["validators"]["integer"] != null)
           .map(({ path }) => path)
         : fields
-          .filter((field) => (field.validators as { integer?: unknown } | undefined)?.integer !== undefined)
+          .filter((field) => (field.validators as { integer?: unknown } | undefined)?.integer != null)
           .map((field) => listEntryPath(Array.isArray(input) ? input : envelope?.fields, field.name) ?? "/fields");
       for (const at of paths) {
         const path = `${at}/validators/integer`;
