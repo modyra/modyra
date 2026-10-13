@@ -52,6 +52,17 @@ test("a field list entry is addressed by its index, and a refused earlier duplic
   assert.equal(resolve(document, refusals[0].path), true);
 });
 
+test("a null integer declares no rule, so the version has nothing to refuse, in a list and a tree alike", () => {
+  const field = { name: "n", kind: "number", label: "N", validators: { integer: null } };
+  for (const document of [
+    { version: 4, id: "f", fields: [field] },
+    tree(4, { n: { node: "field", field } }),
+  ]) {
+    const refusals = parseDynamicForm(document).diagnostics.filter((d) => d.code === "MDY_DYNAMIC_UNSUPPORTED_VERSION");
+    assert.deepEqual(refusals, []);
+  }
+});
+
 test("a tree field's finding is at its declaration, with its key escaped", () => {
   const document = tree(4, { "a/b": { node: "group", children: { seats: integerLeaf } } });
   const refusals = parseDynamicForm(document).diagnostics.filter((d) => d.code === "MDY_DYNAMIC_UNSUPPORTED_VERSION");

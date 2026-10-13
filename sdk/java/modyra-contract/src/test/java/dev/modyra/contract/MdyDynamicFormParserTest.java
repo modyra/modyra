@@ -502,6 +502,17 @@ class MdyDynamicFormParserTest {
             + "\"x~1\":{\"node\":\"group\"}}}}", "MDY_DYNAMIC_INVALID_GROUP"));
   }
 
+  /** A null `integer` declares no rule, so the version has nothing to refuse, in a list and a tree alike. */
+  @Test
+  void aNullIntegerIsNotAVersionFinding() {
+    String field = "{\"name\":\"n\",\"kind\":\"number\",\"label\":\"N\",\"validators\":{\"integer\":null}}";
+    for (String document : List.of("{\"version\":4,\"id\":\"f\",\"fields\":[" + field + "]}",
+        "{\"version\":4,\"id\":\"f\",\"schema\":{\"node\":\"group\",\"children\":{\"n\":{\"node\":\"field\",\"field\":"
+            + field + "}}}}")) {
+      assertEquals(List.of(), pathsOf(document, "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+    }
+  }
+
   /** The integer gate points where the field was written: its list index, or its tree declaration. */
   @Test
   void integerGatePointsWhereTheFieldWasWritten() {
