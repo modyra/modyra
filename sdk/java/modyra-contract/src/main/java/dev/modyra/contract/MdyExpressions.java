@@ -246,7 +246,7 @@ final class MdyExpressions {
    * operator reads the same from every reader: a number without a spurious fraction, {@code null}
    * as the word, an object as {@code [object Object]}, an array as its members joined by commas.
    */
-  private static String jsString(JsonNode value) {
+  static String jsString(JsonNode value) {
     if (value == null || value.isMissingNode()) return "undefined";
     if (value.isTextual()) return value.asText();
     if (value.isNull()) return "null";

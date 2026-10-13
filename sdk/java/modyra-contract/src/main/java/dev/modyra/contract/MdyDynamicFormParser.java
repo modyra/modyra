@@ -1,5 +1,6 @@
 package dev.modyra.contract;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,11 +26,12 @@ import java.util.regex.Pattern;
 /**
  * Mirrors {@code parseDynamicForm}/{@code parseDynamicFields} in
  * packages/core/src/dynamic-config.ts: never throws on untrusted input,
- * every field is validated independently (a bad one is dropped with a
- * diagnostic, not a parse failure for the whole document), and
- * {@code STRICT} mode returns no fields/layout/rules at all if any
- * diagnostic exists (never publish/accept a partially-valid document),
- * matching TS exactly.
+ * every field is validated independently (a bad one is dropped with an
+ * {@code error} diagnostic, not a parse failure for the whole document), and
+ * {@code STRICT} mode returns no fields/layout/rules at all if any error was
+ * reported (never publish/accept a partially-valid document), matching TS
+ * exactly. A {@code warning} is worth knowing and refuses nothing, in either
+ * mode.
  *
  * <p>Handles three envelope shapes: a bare JSON array, {@code {"version":
  * 2..5, "fields": [...]}}, and the recursive {@code {"version": 2..5,
@@ -89,22 +91,66 @@ public final class MdyDynamicFormParser {
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   /**
-   * What this SDK did not understand about a field, so the caller can see it rather than discover it
-   * when a re-serialised document behaves differently from the one that was read.
+   * The members of {@code value} its slot does not declare, in the order the document wrote them.
+   *
+   * <p>Anything that is not an object has no members to report: it is refused elsewhere, for being
+   * the wrong shape, and a second finding about the same thing sends a reader to two places for one
+   * fault.
    */
-  private static List<String> unknownProperties(JsonNode item) {
-    if (item == null || !item.isObject()) return List.of();
+  private static List<String> unknownMembers(JsonNode value, Set<String> declared) {
+    if (value == null || !value.isObject()) return List.of();
     List<String> unknown = new ArrayList<>();
-    item.fieldNames().forEachRemaining((name) -> {
-      if (!KNOWN_FIELD_PROPERTIES.contains(name)) unknown.add(name);
+    value.fieldNames().forEachRemaining((name) -> {
+      if (!declared.contains(name)) unknown.add(name);
     });
     return unknown;
   }
 
-  /** Property names a field of this kind declares, for the report above. */
-  private static final Set<String> KNOWN_FIELD_PROPERTIES = Set.of(
-      "name", "kind", "label", "placeholder", "initialValue", "validators", "options", "mode",
-      "min", "max", "step", "rows", "multiple", "accept", "searchable", "loading", "presets");
+  /**
+   * Every member a field of any kind may carry, as {@code MDY_DYNAMIC_MEMBERS.field} lists them:
+   * the members every field has, then the ones a kind adds. A document naming one on the wrong kind
+   * is a document naming a member the contract has, so the list is one list and not one per kind.
+   * Wider than the records here read, because reporting a member is not the same as carrying it.
+   */
+  private static final Set<String> FIELD_MEMBERS = Set.of(
+      "name", "kind", "label", "ariaLabel", "placeholder", "supportingText", "initialValue",
+      "validators", "sensitive", "prefix", "suffix",
+      "min", "max", "step",
+      "options", "mode", "searchable", "reorderable", "loading",
+      "locale", "firstDayOfWeek", "minDate", "maxDate", "format", "viewMode", "granularity",
+      "animateHand", "showUnavailable",
+      "accept", "multiple",
+      "presets");
+
+  /** The members a validator block declares: the record that reads it is the list. */
+  private static final Set<String> VALIDATOR_MEMBERS = recordComponentNames(MdyDynamicValidators.class);
+
+  /** The rules a field declares, and so the only keys {@code validators.messages} may name. */
+  private static final Set<String> VALIDATOR_MESSAGE_KEYS = recordComponentNames(MdyDynamicValidatorMessages.class);
+
+  /** The members an option declares, as {@code MDY_DYNAMIC_MEMBERS.option} lists them. */
+  private static final Set<String> OPTION_MEMBERS = Set.of("value", "label", "disabled");
+
+  /** The kinds a field may declare: the names the field type dispatches on, read from its annotation. */
+  private static final Set<String> FIELD_KINDS = fieldKinds(null);
+
+  /** The kinds a choice is made from, and so the ones that must carry an options list. */
+  private static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
+
+  private static Set<String> recordComponentNames(Class<? extends Record> type) {
+    Set<String> names = new HashSet<>();
+    for (var component : type.getRecordComponents()) names.add(component.getName());
+    return Set.copyOf(names);
+  }
+
+  /** The kind names dispatched to {@code implementation}, or every kind name when it is null. */
+  private static Set<String> fieldKinds(Class<?> implementation) {
+    Set<String> kinds = new HashSet<>();
+    for (var type : MdyDynamicField.class.getAnnotation(JsonSubTypes.class).value()) {
+      if (implementation == null || type.value() == implementation) kinds.add(type.name());
+    }
+    return Set.copyOf(kinds);
+  }
 
   public MdyDynamicFormParseResult parse(String json, Mode mode) {
     JsonNode root;
@@ -175,6 +221,10 @@ public final class MdyDynamicFormParser {
       // An envelope that declares no version is not read: every entry it lists counts as turned
       // down, and each member only a versioned document carries is named, so the author learns that
       // the version is what is missing rather than that the fields are wrong.
+      //
+      // "version undefined" is deliberate: `undefined` is how JavaScript spells a member that is not
+      // there, and the sentence is the TypeScript reader's word for word, so a host matching on the
+      // message meets one sentence from both readers.
       JsonNode itemsNode = root.get("fields");
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/fields",
           "Unsupported dynamic form config version undefined — this contract has versions 2, 3, 4 and 5."));
@@ -243,17 +293,23 @@ public final class MdyDynamicFormParser {
     }
 
     boolean strict = mode == Mode.STRICT;
-    boolean blockAll = strict && !diagnostics.isEmpty();
+    // What strict mode refuses on is an error. A warning is the severity a consumer reads to tell
+    // what must be fixed from what is worth knowing, so refusing the whole document for one would
+    // turn the distinction into a second word for "error".
+    //
     // `ok` is false whenever an error was reported, in either mode: a lenient result still carries
     // what could be read, and `ok` withdraws only the claim that nothing was lost.
     boolean refused = diagnostics.stream().anyMatch(d -> MdyDynamicDiagnostic.ERROR.equals(d.severity()));
+    boolean blockAll = strict && refused;
+    // A refusal of one entry of a list. A finding about the list itself (`/layout` is not an array)
+    // turns down no entry, so it is not counted — the same line the TypeScript reader draws.
     int rejectedFromLayoutRules = (int) diagnostics.stream()
         .filter(d -> d.path().startsWith("/layout/") || d.path().startsWith("/rules/") || d.path().startsWith("/validations/"))
         .count();
     int rejectedCount = Math.max(0, sourceCount - accepted.size()) + rejectedFromLayoutRules;
 
     return new MdyDynamicFormParseResult(
-        version != null && !refused && (!strict || diagnostics.isEmpty()),
+        version != null && !refused,
         version,
         blockAll ? List.of() : List.copyOf(accepted),
         blockAll ? List.of() : List.copyOf(layout),
@@ -272,52 +328,169 @@ public final class MdyDynamicFormParser {
     Set<String> seenNames = new HashSet<>();
     int index = 0;
     for (JsonNode item : itemsNode) {
+      // Where this entry is written, so a finding underlines the entry rather than the array. A
+      // duplicate names the second occurrence: the first is legitimate until the second exists, and
+      // the second is the one a reader has to change.
       String path = "/fields/" + index;
       index++;
 
-      if (!item.isObject()) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.WARNING, path, "Dropped non-object dynamic field."));
+      // Every refusal of a field is an error, in the TypeScript reader's words: a field the document
+      // declared and the form will not have is a loss, whatever mode the caller asked for.
+      //
+      // An array is an object to JavaScript, so it passes this door and is refused at the next for
+      // having no name; the sentence is kept so both readers say the same thing about the same entry.
+      if (!item.isObject() && !item.isArray()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+            "Dropped non-object dynamic field: " + jsonText(item)));
         continue;
       }
       JsonNode nameNode = item.get("name");
-      String name = nameNode != null && nameNode.isTextual() ? nameNode.asText() : null;
-      if (name == null || name.isEmpty()) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_MISSING_NAME", MdyDynamicDiagnostic.WARNING, path, "Dropped dynamic field without a name."));
+      if (nameNode == null || !nameNode.isTextual() || nameNode.asText().isEmpty()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+            "Dropped dynamic field without a name: " + jsonText(item)));
         continue;
       }
-      if (name.contains(".") || FORBIDDEN_NAMES.contains(name)) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_RESERVED_NAME", MdyDynamicDiagnostic.WARNING, path,
+      String name = nameNode.asText();
+      if (!isSafeSegment(name)) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": name is reserved or contains forbidden path separators."));
         continue;
       }
       if (!seenNames.add(name)) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_NAME", MdyDynamicDiagnostic.WARNING, path,
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_NAME", MdyDynamicDiagnostic.ERROR, path,
             "Dropped duplicate dynamic field name \"" + name + "\"."));
         continue;
       }
-
-      for (String unknown : unknownProperties(item)) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_PROPERTY", MdyDynamicDiagnostic.WARNING, path,
-            "Ignored unknown property \"" + unknown + "\" on dynamic field \"" + name + "\"."));
+      // The kind is judged before the mapper sees the entry, so the refusal names the kind the way
+      // JavaScript spells the value — `undefined` for none, `[object Object]` for an object — rather
+      // than the way a deserializer describes a type id it has no subtype for.
+      JsonNode kind = item.get("kind");
+      if (kind == null || !kind.isTextual() || !FIELD_KINDS.contains(kind.asText())) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_KIND", MdyDynamicDiagnostic.ERROR, path,
+            "Dropped dynamic field \"" + name + "\" with unknown kind \"" + MdyExpressions.jsString(kind) + "\"."));
+        continue;
       }
 
+      // The document is judged as written, in the order the TypeScript reader judges it, before the
+      // mapper builds anything from it: the mapper coerces and ignores where the contract refuses,
+      // and a refusal it does produce describes a Java type rather than the document.
+      if (!messagesAreReadable(item, name, diagnostics)) continue;
+      if (!patternIsUsable(item, name, diagnostics)) continue;
+      reportUnknownMembers(item, name, path, diagnostics);
+      if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
+            "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
+        continue;
+      }
       MdyDynamicField field;
       try {
         field = mapper.treeToValue(item, MdyDynamicField.class);
       } catch (JsonProcessingException e) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_KIND", MdyDynamicDiagnostic.WARNING, path,
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": " + e.getOriginalMessage()));
-        continue;
-      }
-      if (!patternIsUsable(item, name, diagnostics)) continue;
-      if (field instanceof MdyDynamicOptionsField opt && (opt.options() == null || opt.options().isEmpty())) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_MISSING_OPTIONS", MdyDynamicDiagnostic.WARNING, path,
-            "Dropped dynamic field \"" + name + "\": option-based kinds require a non-empty options list."));
         continue;
       }
       accepted.add(field);
     }
     return new FlatResult(accepted, diagnostics);
+  }
+
+  /**
+   * Whether the words a field wrote for its own rules can be read, dropping the field otherwise.
+   *
+   * <p>A message is checked like everything else a document declares: a key that names no rule is a
+   * sentence nothing will ever say, and a value that is not a string, or that ECMAScript
+   * {@code trim} leaves empty, is a sentence nobody can read — which is the thing this slot exists
+   * to prevent. The mapper alone would keep both: it ignores the key and reads a number as its
+   * digits.
+   *
+   * <p>Reported at {@code /fields}, where the TypeScript reader puts a validator's refusal.
+   */
+  private static boolean messagesAreReadable(JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode messages = item.path("validators").path("messages");
+    if (messages.isMissingNode()) return true;
+    if (!messages.isObject()) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+          "Dropped dynamic field \"" + name + "\": validators.messages must be an object."));
+      return false;
+    }
+    for (var entry : messages.properties()) {
+      String key = entry.getKey();
+      if (!VALIDATOR_MESSAGE_KEYS.contains(key)) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+            "Dropped dynamic field \"" + name + "\": validators.messages names \"" + key + "\", which is not a rule a field declares."));
+        return false;
+      }
+      JsonNode said = entry.getValue();
+      if (!said.isTextual() || isJsBlank(said.asText())) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+            "Dropped dynamic field \"" + name + "\": validators.messages." + key + " must be a message a person can read."));
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Members nobody declared, on the field and on the objects it carries. The field is kept: a reader
+   * may meet a document written against a contract it predates, and dropping the field would turn a
+   * report into a loss. What is not kept is the silence — and the finding is an error, because a
+   * document reaching for something the contract does not do would otherwise render a form that
+   * quietly does not do it.
+   */
+  private static void reportUnknownMembers(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    List<String> onField = unknownMembers(item, FIELD_MEMBERS);
+    if (!onField.isEmpty()) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path,
+          "dynamic field \"" + name + "\" carries " + jsonQuoted(onField) + ", which this contract does not declare, so nothing reads it."));
+    }
+    List<String> onValidators = unknownMembers(item.path("validators"), VALIDATOR_MEMBERS);
+    if (!onValidators.isEmpty()) {
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path,
+          "the validators of \"" + name + "\" carries " + jsonQuoted(onValidators) + ", which this contract does not declare, so nothing reads it."));
+    }
+    JsonNode options = item.path("options");
+    if (!options.isArray()) return;
+    for (int i = 0; i < options.size(); i++) {
+      List<String> onOption = unknownMembers(options.get(i), OPTION_MEMBERS);
+      if (onOption.isEmpty()) continue;
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path + "/options/" + i,
+          "an option of \"" + name + "\" carries " + jsonQuoted(onOption) + ", which this contract does not declare, so nothing reads it."));
+    }
+  }
+
+  /** Member names as {@code JSON.stringify} quotes each, joined by commas. */
+  private static String jsonQuoted(List<String> names) {
+    StringBuilder joined = new StringBuilder();
+    for (String name : names) {
+      if (joined.length() > 0) joined.append(", ");
+      writeString(name, joined);
+    }
+    return joined.toString();
+  }
+
+  /**
+   * Whether an options list is one a choice can be made from: every option an object with a
+   * {@code value} and a textual {@code label}, and {@code disabled} a boolean when written.
+   *
+   * <p>A value may be a string, a number, a boolean or an object keyed by what it holds (ADR 0051).
+   * {@code null} is refused because it is the empty value of half the kinds — an option meaning
+   * "nothing" cannot be told apart from no choice at all. An array is refused because the schema an
+   * author's editor checks against does not allow one. An empty list has no option to refuse and is
+   * accepted, as the TypeScript reader accepts it.
+   */
+  private static boolean hasValidOptions(JsonNode options) {
+    if (!options.isArray()) return false;
+    for (JsonNode option : options) {
+      if (!option.isObject() || !option.has("value")) return false;
+      JsonNode value = option.get("value");
+      if (value.isNull() || value.isArray()) return false;
+      JsonNode label = option.get("label");
+      if (label == null || !label.isTextual()) return false;
+      JsonNode disabled = option.get("disabled");
+      if (disabled != null && !disabled.isBoolean()) return false;
+    }
+    return true;
   }
 
   /**

@@ -524,11 +524,22 @@ class MdyDynamicFormParserTest {
     MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
 
     assertFalse(result.ok());
-    assertEquals(0, result.fields().size(), "strict mode returns no fields at all when any diagnostic exists");
+    assertEquals(0, result.fields().size(), "strict mode returns no fields at all when a field was refused");
     assertEquals(1, result.diagnostics().size());
-    assertEquals("MDY_DYNAMIC_MISSING_NAME", result.diagnostics().get(0).code());
+    MdyDynamicDiagnostic dropped = result.diagnostics().get(0);
+    assertEquals("MDY_DYNAMIC_INVALID_FIELD", dropped.code());
+    assertEquals(MdyDynamicDiagnostic.ERROR, dropped.severity());
+    assertEquals("/fields/1", dropped.path());
+    assertEquals("Dropped dynamic field without a name: {\"name\":\"\",\"kind\":\"text\"}", dropped.message());
+    assertEquals(1, result.acceptedCount(), "the counts say what the document declared and what was read, even when strict withholds it");
+    assertEquals(1, result.rejectedCount());
   }
 
+  /**
+   * A dropped field is a loss, and the TypeScript reader grades every loss an error: the result is
+   * not {@code ok} in lenient mode either, and what it withdraws is only the claim that nothing was
+   * lost — the fields it could read are still there.
+   */
   @Test
   void lenientModeKeepsValidFieldsAndReportsDroppedOnes() {
     String json = """
@@ -541,10 +552,15 @@ class MdyDynamicFormParserTest {
         """;
     MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.LENIENT);
 
-    assertTrue(result.ok(), "lenient mode's ok does not depend on per-field diagnostics, matching parseDynamicForm() in TS");
+    assertFalse(result.ok(), "a dropped field is an error, so the lenient result is not ok, as parseDynamicForm() answers");
     assertEquals(1, result.fields().size());
     assertEquals("ok", result.fields().get(0).name());
-    assertEquals(3, result.diagnostics().size());
+    assertEquals(
+        List.of(
+            "error MDY_DYNAMIC_UNSAFE_NAME /fields/1",
+            "error MDY_DYNAMIC_UNKNOWN_KIND /fields/2",
+            "error MDY_DYNAMIC_OPTIONS_REQUIRED /fields/3"),
+        result.diagnostics().stream().map(d -> d.severity() + " " + d.code() + " " + d.path()).toList());
     assertEquals(1, result.acceptedCount());
     assertEquals(3, result.rejectedCount());
   }
@@ -560,7 +576,123 @@ class MdyDynamicFormParserTest {
     MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.LENIENT);
 
     assertEquals(1, result.fields().size());
-    assertEquals("MDY_DYNAMIC_DUPLICATE_NAME", result.diagnostics().get(0).code());
+    assertEquals(
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_NAME", MdyDynamicDiagnostic.ERROR, "/fields/1",
+            "Dropped duplicate dynamic field name \"dup\"."),
+        result.diagnostics().get(0));
+  }
+
+  /**
+   * Every refusal of a flat field, in the TypeScript reader's code, severity, path and words. The
+   * value a sentence quotes is spelled as JavaScript spells it — {@code JSON.stringify} for an entry,
+   * {@code String()} for a kind — so a host matching on the message meets one sentence from both.
+   */
+  @Test
+  void aDroppedFieldIsGradedAsTheTypeScriptReaderGradesIt() {
+    record Case(String entry, String code, String path, String message) {}
+    List<Case> cases = List.of(
+        new Case("null", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped non-object dynamic field: null"),
+        new Case("7.0", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped non-object dynamic field: 7"),
+        new Case("\"x\"", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped non-object dynamic field: \"x\""),
+        new Case("[1,{\"a\":2.5}]", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field without a name: [1,{\"a\":2.5}]"),
+        new Case("{\"kind\":\"text\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field without a name: {\"kind\":\"text\"}"),
+        new Case("{\"name\":5,\"kind\":\"text\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field without a name: {\"name\":5,\"kind\":\"text\"}"),
+        new Case("{\"name\":\"a.b\",\"kind\":\"text\"}", "MDY_DYNAMIC_UNSAFE_NAME", "/fields/1", "Dropped dynamic field \"a.b\": name is reserved or contains forbidden path separators."),
+        new Case("{\"name\":\"__proto__\",\"kind\":\"text\"}", "MDY_DYNAMIC_UNSAFE_NAME", "/fields/1", "Dropped dynamic field \"__proto__\": name is reserved or contains forbidden path separators."),
+        new Case("{\"name\":\"k\",\"kind\":\"Text\"}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"Text\"."),
+        new Case("{\"name\":\"k\"}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"undefined\"."),
+        new Case("{\"name\":\"k\",\"kind\":null}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"null\"."),
+        new Case("{\"name\":\"k\",\"kind\":3.0}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"3\"."),
+        new Case("{\"name\":\"k\",\"kind\":[\"a\",null,2]}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"a,,2\"."),
+        new Case("{\"name\":\"k\",\"kind\":{\"a\":1}}", "MDY_DYNAMIC_UNKNOWN_KIND", "/fields/1", "Dropped dynamic field \"k\" with unknown kind \"[object Object]\"."),
+        new Case("{\"name\":\"m\",\"kind\":\"text\",\"validators\":{\"messages\":5}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"m\": validators.messages must be an object."),
+        new Case("{\"name\":\"m\",\"kind\":\"text\",\"validators\":{\"messages\":null}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"m\": validators.messages must be an object."),
+        new Case("{\"name\":\"m\",\"kind\":\"text\",\"validators\":{\"messages\":{\"required\":\"ok\",\"nope\":\"x\"}}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"m\": validators.messages names \"nope\", which is not a rule a field declares."),
+        new Case("{\"name\":\"m\",\"kind\":\"text\",\"validators\":{\"messages\":{\"required\":\"\\u00a0 \\u2007\"}}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"m\": validators.messages.required must be a message a person can read."),
+        new Case("{\"name\":\"m\",\"kind\":\"text\",\"validators\":{\"messages\":{\"min\":4}}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"m\": validators.messages.min must be a message a person can read."),
+        new Case("{\"name\":\"o\",\"kind\":\"select\"}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
+        new Case("{\"name\":\"o\",\"kind\":\"radio\",\"options\":{}}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"radio\" requires a valid options array."),
+        new Case("{\"name\":\"o\",\"kind\":\"multiselect\",\"options\":[\"a\"]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"multiselect\" requires a valid options array."),
+        new Case("{\"name\":\"o\",\"kind\":\"segmented\",\"options\":[{\"value\":\"a\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"segmented\" requires a valid options array."),
+        new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":null,\"label\":\"A\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
+        new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\",\"disabled\":\"yes\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."));
+    for (Case c : cases) {
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse("[{\"name\":\"ok\",\"kind\":\"text\"}," + c.entry() + "]", mode);
+        assertFalse(result.ok(), () -> c.entry() + " in " + mode);
+        assertEquals(
+            List.of(new MdyDynamicDiagnostic(c.code(), MdyDynamicDiagnostic.ERROR, c.path(), c.message())),
+            result.diagnostics(), () -> c.entry() + " in " + mode);
+        assertEquals(1, result.acceptedCount(), () -> c.entry() + " in " + mode);
+        assertEquals(1, result.rejectedCount(), () -> c.entry() + " in " + mode);
+        assertEquals(mode == MdyDynamicFormParser.Mode.STRICT ? 0 : 1, result.fields().size(), () -> c.entry() + " in " + mode);
+      }
+    }
+  }
+
+  /**
+   * A member nobody declared is reported, on the field, on its validators and on each option, and
+   * the field is kept: a reader may meet a document written against a contract it predates, and
+   * dropping the field would turn a report into a loss. The finding is still an error — a document
+   * reaching for something the contract does not do would otherwise render a form that quietly does
+   * not do it — so strict mode withholds the document and neither mode is {@code ok}.
+   */
+  @Test
+  void anUnknownMemberIsAnErrorThatKeepsTheField() {
+    String json = "[{\"name\":\"u\",\"kind\":\"select\",\"somethingNew\":true,\"quo\\\"te\":1,"
+        + "\"validators\":{\"required\":true,\"baz\":3},"
+        + "\"options\":[{\"value\":\"a\",\"label\":\"A\",\"icon\":\"x\"},{\"value\":\"b\",\"label\":\"B\"},{\"value\":\"c\",\"label\":\"C\",\"extra\":1,\"more\":2}]}]";
+
+    MdyDynamicFormParseResult lenient = parser.parse(json, MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(lenient.ok());
+    assertEquals(1, lenient.fields().size(), "the field is kept");
+    assertEquals(1, lenient.acceptedCount());
+    assertEquals(0, lenient.rejectedCount());
+    assertEquals(
+        List.of(
+            new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/0",
+                "dynamic field \"u\" carries \"somethingNew\", \"quo\\\"te\", which this contract does not declare, so nothing reads it."),
+            new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/0",
+                "the validators of \"u\" carries \"baz\", which this contract does not declare, so nothing reads it."),
+            new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/0/options/0",
+                "an option of \"u\" carries \"icon\", which this contract does not declare, so nothing reads it."),
+            new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/0/options/2",
+                "an option of \"u\" carries \"extra\", \"more\", which this contract does not declare, so nothing reads it.")),
+        lenient.diagnostics());
+
+    MdyDynamicFormParseResult strict = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+    assertFalse(strict.ok());
+    assertEquals(0, strict.fields().size(), "strict mode withholds a document with an error in it");
+    assertEquals(lenient.diagnostics(), strict.diagnostics());
+
+    // Members the contract declares for some kind are not unknown on any kind: the list is one list.
+    String declaredElsewhere = "[{\"name\":\"u\",\"kind\":\"text\",\"ariaLabel\":\"a\",\"supportingText\":\"s\",\"sensitive\":true,"
+        + "\"prefix\":\"p\",\"suffix\":\"s\",\"min\":1,\"max\":2,\"step\":1,\"mode\":\"multi\",\"searchable\":true,\"reorderable\":true,"
+        + "\"loading\":false,\"locale\":\"it-IT\",\"firstDayOfWeek\":1,\"minDate\":\"2026-01-01\",\"maxDate\":\"2026-12-31\","
+        + "\"animateHand\":true,\"showUnavailable\":true,\"accept\":\".pdf\",\"multiple\":true,\"presets\":[\"#fff\"]}]";
+    assertTrue(parser.parse(declaredElsewhere, MdyDynamicFormParser.Mode.STRICT).ok());
+  }
+
+  /**
+   * A finding about a list itself turns down no entry of it, so it is not a rejection; a finding
+   * about an entry is one. Both are errors, so neither result is {@code ok}.
+   */
+  @Test
+  void aFindingAboutAListItselfIsNotARejectedEntry() {
+    MdyDynamicFormParseResult list = parser.parse(
+        "{\"version\":3,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"layout\":{},\"rules\":1,\"validations\":\"x\"}",
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(list.ok());
+    assertEquals(List.of("/layout", "/rules", "/validations"), list.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+    assertEquals(1, list.acceptedCount());
+    assertEquals(0, list.rejectedCount());
+
+    MdyDynamicFormParseResult entries = parser.parse(
+        "{\"version\":3,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"},{\"name\":\"k\",\"kind\":\"nope\"}],\"layout\":[5],\"rules\":[null]}",
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("/fields/1", "/layout/0", "/rules/0"), entries.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+    assertEquals(1, entries.acceptedCount());
+    assertEquals(3, entries.rejectedCount());
   }
 
   @Test
@@ -717,15 +849,34 @@ class MdyDynamicFormParserTest {
     assertEquals("MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE", result.diagnostics().get(0).code());
   }
 
+  /**
+   * An options kind needs an options array every entry of which is an option — an object with a
+   * value that is not null or a list, a textual label, and a boolean {@code disabled} when written.
+   * An empty array has no entry to refuse and is accepted, as the TypeScript reader accepts it.
+   */
   @Test
-  void optionsFieldsRequireANonEmptyOptionsList() {
-    String json = """
-        [{"name":"country","kind":"select"}]
-        """;
-    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.LENIENT);
+  void anOptionsKindNeedsAValidOptionsArray() {
+    MdyDynamicFormParseResult missing = parser.parse("[{\"name\":\"country\",\"kind\":\"select\"}]", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(0, missing.fields().size());
+    assertEquals(
+        List.of(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, "/fields/0",
+            "Dropped dynamic field \"country\": kind \"select\" requires a valid options array.")),
+        missing.diagnostics());
 
-    assertEquals(0, result.fields().size());
-    assertEquals("MDY_DYNAMIC_MISSING_OPTIONS", result.diagnostics().get(0).code());
+    MdyDynamicFormParseResult unlabelled = parser.parse(
+        "[{\"name\":\"country\",\"kind\":\"select\",\"options\":[{\"value\":\"it\",\"label\":\"Italy\"},{\"value\":\"fr\"}]}]",
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(0, unlabelled.fields().size());
+    assertEquals("MDY_DYNAMIC_OPTIONS_REQUIRED", unlabelled.diagnostics().get(0).code());
+
+    MdyDynamicFormParseResult empty = parser.parse("[{\"name\":\"country\",\"kind\":\"select\",\"options\":[]}]", MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(empty.ok(), () -> "an empty options array is a valid options array: " + empty.diagnostics());
+    assertEquals(1, empty.fields().size());
+
+    MdyDynamicFormParseResult shapes = parser.parse(
+        "[{\"name\":\"country\",\"kind\":\"select\",\"options\":[{\"value\":true,\"label\":\"A\",\"disabled\":false},{\"value\":2,\"label\":\"B\"},{\"value\":{\"id\":1},\"label\":\"C\"}]}]",
+        MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(shapes.ok(), () -> "a boolean, a number and an object are option values: " + shapes.diagnostics());
   }
 
   /**
@@ -864,9 +1015,12 @@ class MdyDynamicFormParserTest {
         + "\"options\":[{\"value\":\"a\",\"label\":\"A\"}]}]}";
 
     MdyDynamicFormParseResult reported = parser.parse(unknown, MdyDynamicFormParser.Mode.LENIENT);
-    assertTrue(
-        reported.diagnostics().stream().anyMatch((d) -> "MDY_DYNAMIC_UNKNOWN_PROPERTY".equals(d.code())),
-        "an ignored property must be reported, never dropped in silence");
+    assertEquals(
+        List.of(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/0",
+            "dynamic field \"tags\" carries \"somethingNew\", which this contract does not declare, so nothing reads it.")),
+        reported.diagnostics(), "an ignored member must be reported, never dropped in silence");
+    assertEquals(1, reported.fields().size(), "and the field is kept");
+    assertFalse(reported.ok());
   }
 
 
