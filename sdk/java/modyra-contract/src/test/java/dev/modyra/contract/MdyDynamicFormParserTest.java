@@ -1708,6 +1708,18 @@ class MdyDynamicFormParserTest {
             0, 10, 10, 1, List.of(new Finding("MDY_DYNAMIC_PATH_TOO_LONG", "/schema",
                 "Dropped a dynamic field whose path is 513 characters, past the 512 a path may be: a path is the payload key, "
                     + "the draft key and the widget id, and every read of the value carries it."))),
+        // A walk finding the flat reader places on its list as a whole is placed on the schema.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "b":{"node":"field","field":{"kind":"text","validators":{"pattern":12}}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/b/field", "Dropped dynamic field \"b\": validators.pattern must be a string."),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": validators.pattern must be a string."))),
+        // A field is named by its whole key: a key may hold "/", and the path cannot give it back.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a/b":{"node":"field","field":{"kind":"nope"}},
+              "x/":{"node":"field","field":{"kind":"text"}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a/b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."),
+            unknownLeaf)),
         // A leaf kept despite a member nothing reads still counts each finding as a leaf turned down.
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text","bogus":1}},

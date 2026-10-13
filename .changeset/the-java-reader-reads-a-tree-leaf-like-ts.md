@@ -9,7 +9,8 @@ does, with the same codes, paths, sentences and counts:
 
 - a field node a flat list would drop is reported where it is written (`/schema/…/field`, named by
   its key) and again for each time the walk reads it (`/fields/0`, named `"leaf"`) — every declared
-  row, and a collection's row template once even when it has no rows;
+  row, and a collection's row template once even when it has no rows; a walk finding a flat list
+  would place at `/fields` (a `validators.pattern` or `validators.messages` refusal) is at `/schema`;
 - a field whose generated path is longer than 512 UTF-16 units is dropped with
   `MDY_DYNAMIC_PATH_TOO_LONG` at `/schema`;
 - each of those walk findings counts as one rejected field;

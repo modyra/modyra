@@ -228,7 +228,7 @@ public final class MdyDynamicFormParser {
       // so it does not turn the document down whole the way a structural finding does.
       List<MdyDynamicDiagnostic> perField = new ArrayList<>();
       Set<String> contextKeys = new LinkedHashSet<>();
-      validateSchema(root.get("schema"), "/schema", 0, schemaDiagnostics, perField, new int[]{0}, contextKeys, Set.of());
+      validateSchema(root.get("schema"), "/schema", "schema", 0, schemaDiagnostics, perField, new int[]{0}, contextKeys, Set.of());
       diagnostics.addAll(schemaDiagnostics);
       diagnostics.addAll(perField);
       // A key a condition reads and the document does not declare. `requiresContext` is the whole of
@@ -704,7 +704,7 @@ public final class MdyDynamicFormParser {
    * one of them without naming a key that does not exist yet. {@code { "root": true }} is how a
    * clause reaches the whole form.
    */
-  private void validateSchema(JsonNode node, String path, int depth, List<MdyDynamicDiagnostic> out,
+  private void validateSchema(JsonNode node, String path, String name, int depth, List<MdyDynamicDiagnostic> out,
       List<MdyDynamicDiagnostic> perField, int[] count, Set<String> contextKeys, Set<String> scope) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
@@ -744,9 +744,10 @@ public final class MdyDynamicFormParser {
       }
       // Every check a field gets in a flat list, applied wherever the field is, under the key its
       // parent gave it: a field in a tree carries no name of its own, and two bad fields named alike
-      // would read as one sentence said twice.
+      // would read as one sentence said twice. The key is passed rather than read off the path,
+      // because a key may hold "/": "a/b" would read as "b", and "x/" as a field without a name.
       ObjectNode named = node.get("field").deepCopy();
-      named.put("name", path.substring(path.lastIndexOf('/') + 1));
+      named.put("name", name);
       for (MdyDynamicDiagnostic finding : parseFlatItems(mapper.createArrayNode().add(named)).diagnostics) {
         perField.add(new MdyDynamicDiagnostic(finding.code(), MdyDynamicDiagnostic.ERROR, path + "/field", finding.message()));
       }
@@ -766,7 +767,7 @@ public final class MdyDynamicFormParser {
         if (!isSafeDynamicName(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, depth + 1, out, perField, count, contextKeys, here);
+          validateSchema(entry.getValue(), childPath, key, depth + 1, out, perField, count, contextKeys, here);
         }
       }
       return;
@@ -776,7 +777,7 @@ public final class MdyDynamicFormParser {
       if (!item.isObject()) {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
       } else {
-        validateSchema(item, path + "/item", depth + 1, out, perField, count, contextKeys, Set.of());
+        validateSchema(item, path + "/item", "item", depth + 1, out, perField, count, contextKeys, Set.of());
       }
       JsonNode rows = node.path("initialValue");
       if (!rows.isMissingNode() && !rows.isObject()) {
@@ -798,7 +799,7 @@ public final class MdyDynamicFormParser {
     if (!item.isObject()) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path, "array requires an item node."));
     } else {
-      validateSchema(item, path + "/item", depth + 1, out, perField, count, contextKeys, Set.of());
+      validateSchema(item, path + "/item", "item", depth + 1, out, perField, count, contextKeys, Set.of());
     }
     JsonNode initialValue = node.path("initialValue");
     if (!initialValue.isMissingNode() && !initialValue.isArray()) {
@@ -844,12 +845,18 @@ public final class MdyDynamicFormParser {
       }
       // The leaf is read by the flat reader under a placeholder name, because a generated dotted or
       // indexed path is structure the walk built and not a name the flat rule could accept; the path
-      // is restored on what it keeps. Its findings stay where the flat reader puts them.
+      // is restored on what it keeps. A finding the flat reader places at an entry stays there; one
+      // it places on the list as a whole names a list this document does not have, so it is placed
+      // on the schema, as the TypeScript reader places it.
       ObjectNode leaf = node.get("field").deepCopy();
       leaf.put("name", "leaf");
       if (hasValue(initial)) leaf.set("initialValue", initial);
       FlatResult parsed = parseFlatItems(mapper.createArrayNode().add(leaf));
-      diagnostics.addAll(parsed.diagnostics);
+      for (MdyDynamicDiagnostic finding : parsed.diagnostics) {
+        diagnostics.add(finding.path().equals("/fields")
+            ? new MdyDynamicDiagnostic(finding.code(), finding.severity(), "/schema", finding.message())
+            : finding);
+      }
       for (MdyDynamicField field : parsed.accepted) out.add(withNameAndInitial(field, path, field.initialValue()));
       return;
     }
