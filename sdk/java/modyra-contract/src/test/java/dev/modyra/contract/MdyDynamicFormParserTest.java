@@ -580,6 +580,8 @@ class MdyDynamicFormParserTest {
         {"x.toString", "MDY_DYNAMIC_UNSAFE_NAME", "Dropped dynamic field \"x.toString\": name is reserved or contains forbidden path separators."},
         {"a__b", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a__b\": \"__\" separates the segments of a generated id, so this name would collide with another field's parts."},
         {"a b", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a b\": a widget id is built from this name, and whitespace splits an id reference into several, each resolving to nothing — so the control would have no accessible name."},
+        // The sentence quotes the name, so a name that reads like another refusal keeps its own code.
+        {"a path may be", "MDY_DYNAMIC_INVALID_FIELD", "Dropped dynamic field \"a path may be\": a widget id is built from this name, and whitespace splits an id reference into several, each resolving to nothing — so the control would have no accessible name."},
     };
     ObjectMapper json = new ObjectMapper();
     for (String[] c : cases) {

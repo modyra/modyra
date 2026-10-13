@@ -451,10 +451,9 @@ public final class MdyDynamicFormParser {
             "Dropped dynamic field \"" + name + "\": name is reserved or contains forbidden path separators."));
         continue;
       }
-      String unusable = nameRefusal(name, nameNode);
+      MdyDynamicDiagnostic unusable = nameRefusal(name, nameNode, path);
       if (unusable != null) {
-        String code = unusable.contains("a path may be") ? "MDY_DYNAMIC_PATH_TOO_LONG" : "MDY_DYNAMIC_INVALID_FIELD";
-        diagnostics.add(new MdyDynamicDiagnostic(code, MdyDynamicDiagnostic.ERROR, path, unusable));
+        diagnostics.add(unusable);
         continue;
       }
       if (!seenNames.add(name)) {
@@ -905,32 +904,38 @@ public final class MdyDynamicFormParser {
    * {@link #MAX_PATH_LENGTH} the path costs at every read, because it is the payload key, the draft key
    * and the widget id; {@code toString} as a value's property makes every string conversion of the
    * value throw; {@link #ID_DELIMITER} separates the parts of a generated id; whitespace splits an
-   * id reference such as {@code aria-describedby} into several.
+   * id reference such as {@code aria-describedby} into several. The code is decided with the
+   * sentence, because a sentence that quotes the name can contain any text.
    */
-  private static String nameRefusal(String name, JsonNode nameNode) {
+  private static MdyDynamicDiagnostic nameRefusal(String name, JsonNode nameNode, String path) {
     if (hasInvisibleCharacters(name)) {
-      return "Dropped dynamic field " + jsonText(nameNode) + ": the name carries a character that cannot "
-          + "be seen, so two names that read the same would be two different fields.";
+      return invalidField(path, "Dropped dynamic field " + jsonText(nameNode) + ": the name carries a character that cannot "
+          + "be seen, so two names that read the same would be two different fields.");
     }
     if (name.length() > MAX_PATH_LENGTH) {
-      return "Dropped a dynamic field whose path is " + name.length() + " characters, past the "
+      return new MdyDynamicDiagnostic("MDY_DYNAMIC_PATH_TOO_LONG", MdyDynamicDiagnostic.ERROR, path,
+          "Dropped a dynamic field whose path is " + name.length() + " characters, past the "
           + MAX_PATH_LENGTH + " a path may be: a path is the payload key, the draft key "
-          + "and the widget id, and every read of the value carries it.";
+          + "and the widget id, and every read of the value carries it.");
     }
     if (breaksValueConversion(name)) {
-      return "Dropped dynamic field \"" + name + "\": a form's value is an object, so this name shadows the "
-          + "method every string conversion of that value goes through, and `${value}` then throws.";
+      return invalidField(path, "Dropped dynamic field \"" + name + "\": a form's value is an object, so this name shadows the "
+          + "method every string conversion of that value goes through, and `${value}` then throws.");
     }
     if (name.contains(ID_DELIMITER)) {
-      return "Dropped dynamic field \"" + name + "\": \"" + ID_DELIMITER + "\" separates the segments of a generated id, "
-          + "so this name would collide with another field's parts.";
+      return invalidField(path, "Dropped dynamic field \"" + name + "\": \"" + ID_DELIMITER + "\" separates the segments of a generated id, "
+          + "so this name would collide with another field's parts.");
     }
     if (hasJsWhitespace(name)) {
-      return "Dropped dynamic field \"" + name + "\": a widget id is built from this name, and whitespace "
+      return invalidField(path, "Dropped dynamic field \"" + name + "\": a widget id is built from this name, and whitespace "
           + "splits an id reference into several, each resolving to nothing — so the control would "
-          + "have no accessible name.";
+          + "have no accessible name.");
     }
     return null;
+  }
+
+  private static MdyDynamicDiagnostic invalidField(String path, String message) {
+    return new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path, message);
   }
 
   /** The names a document may give a field or a child: {@code isSafeDynamicName} in the TS contract. */
