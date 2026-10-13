@@ -561,35 +561,40 @@ function pointerSegment(key: string): string {
 }
 
 /**
- * Where a flattened field was written in the document, as a diagnostic path.
- *
- * A flat list addresses an entry by index, and the entry is the first object carrying the name: the
- * reader claims a name before any other check, so a later entry with it is the refused duplicate. A
- * tree's flattened name is its keys joined by ".", which no key may contain, so the walk retraces it:
- * a group descends by key, a collection's segment is a row and every row is read from the one `item`
- * template, and a leaf's declaration sits under `field`.
+ * Where a field list entry was written, as a diagnostic path: the first object carrying the name.
+ * The reader claims a name before any other check, so a later entry with it is the refused duplicate.
  */
-function fieldReadPath(source: unknown, name: string): string | undefined {
-  if (Array.isArray(source)) {
-    const index = source.findIndex((item) =>
-      typeof item === "object" && item !== null && (item as { name?: unknown }).name === name);
-    return index < 0 ? undefined : `/fields/${index}`;
-  }
-  let node: unknown = source;
-  let path = "/schema";
-  for (const segment of name.split(".")) {
-    if (!isRecordValue(node)) return undefined;
-    if (node["node"] === "group" && isRecordValue(node["children"])) {
-      node = node["children"][segment];
-      path += `/children/${pointerSegment(segment)}`;
+function listEntryPath(list: unknown, name: string): string | undefined {
+  if (!Array.isArray(list)) return undefined;
+  const index = list.findIndex((item) =>
+    typeof item === "object" && item !== null && (item as { name?: unknown }).name === name);
+  return index < 0 ? undefined : `/fields/${index}`;
+}
+
+/**
+ * Every leaf a tree declares, with the path of its `field` member, in document order.
+ *
+ * A declaration, not a row: a collection's `item` is one template every row is read from, and it is
+ * declared — and so held to the document's version — whether the collection starts with three rows
+ * or none.
+ */
+function fieldDeclarations(schema: unknown): Array<{ field: unknown; path: string }> {
+  const out: Array<{ field: unknown; path: string }> = [];
+  const pending: Array<{ node: unknown; path: string }> = [{ node: schema, path: "/schema" }];
+  while (pending.length > 0) {
+    const { node, path } = pending.pop()!;
+    if (!isRecordValue(node)) continue;
+    if (node["node"] === "field") {
+      out.push({ field: node["field"], path: `${path}/field` });
+    } else if (node["node"] === "group" && isRecordValue(node["children"])) {
+      const children = Object.entries(node["children"]).map(([key, child]) =>
+        ({ node: child, path: `${path}/children/${pointerSegment(key)}` }));
+      pending.push(...children.reverse());
     } else if (node["node"] === "array" || node["node"] === "record") {
-      node = node["item"];
-      path += "/item";
-    } else {
-      return undefined;
+      pending.push({ node: node["item"], path: `${path}/item` });
     }
   }
-  return isRecordValue(node) && node["node"] === "field" ? `${path}/field` : undefined;
+  return out;
 }
 
 /** The fields alone — {@link flattenDynamicForm} also reports the collections they came from. */
@@ -2020,15 +2025,17 @@ export function parseDynamicForm(
   {
     const arrivedWith = MDY_DYNAMIC_MEMBER_ARRIVALS.validators?.integer;
     if (arrivedWith !== undefined && version !== null && version < arrivedWith) {
-      // Every row of a collection is read from one template, so its rows point at the same word.
-      const reported = new Set<string>();
-      const source = structured && envelope?.schema !== undefined ? envelope.schema : Array.isArray(input) ? input : envelope?.fields;
-      for (const field of fields) {
-        if ((field.validators as { integer?: unknown } | undefined)?.integer === undefined) continue;
-        const at = fieldReadPath(source, field.name) ?? (Array.isArray(source) ? "/fields" : "/schema");
+      // A tree is read declaration by declaration rather than from its flattened fields: a collection
+      // with no rows flattens to none, and its template is still what every row it gains is read from.
+      const paths = structured && envelope?.schema !== undefined
+        ? fieldDeclarations(envelope.schema)
+          .filter(({ field }) => isRecordValue(field) && isRecordValue(field["validators"]) && field["validators"]["integer"] != null)
+          .map(({ path }) => path)
+        : fields
+          .filter((field) => (field.validators as { integer?: unknown } | undefined)?.integer !== undefined)
+          .map((field) => listEntryPath(Array.isArray(input) ? input : envelope?.fields, field.name) ?? "/fields");
+      for (const at of paths) {
         const path = `${at}/validators/integer`;
-        if (reported.has(path)) continue;
-        reported.add(path);
         diagnostics.push({
           code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
           severity: "error",

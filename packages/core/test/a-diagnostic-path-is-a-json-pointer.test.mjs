@@ -71,3 +71,17 @@ test("every row of a collection is read from one template, so its finding is rep
   assert.deepEqual(refusals.map((d) => d.path), ["/schema/children/rows/item/children/seats/field/validators/integer"]);
   assert.equal(resolve(document, refusals[0].path), true);
 });
+
+test("a collection with no rows still declares its template, so the template's integer is refused", () => {
+  const document = tree(4, {
+    rows: { node: "array", item: { node: "group", children: { seats: integerLeaf } } },
+    byKey: { node: "record", item: { node: "field", field: { kind: "number", label: "N", validators: { integer: false } } } },
+  });
+  const parsed = parseDynamicForm(document, { mode: "strict" });
+  const refusals = parsed.diagnostics.filter((d) => d.code === "MDY_DYNAMIC_UNSUPPORTED_VERSION");
+  assert.deepEqual(refusals.map((d) => d.path).sort(), [
+    "/schema/children/byKey/item/field/validators/integer",
+    "/schema/children/rows/item/children/seats/field/validators/integer",
+  ]);
+  assert.equal(parsed.ok, false);
+});

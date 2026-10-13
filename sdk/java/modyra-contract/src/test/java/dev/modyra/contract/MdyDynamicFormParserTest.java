@@ -519,6 +519,19 @@ class MdyDynamicFormParserTest {
             "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
   }
 
+  /** A collection with no rows still declares its template, so the template's integer is refused. */
+  @Test
+  void integerGateReadsATemplateWithNoRows() {
+    String leaf = "{\"node\":\"field\",\"field\":{\"kind\":\"number\",\"validators\":{\"integer\":true}}}";
+    String document = "{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{"
+        + "\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"group\",\"children\":{\"seats\":" + leaf + "}}},"
+        + "\"byKey\":{\"node\":\"record\",\"item\":" + leaf + "}}}}";
+    assertEquals(List.of("/schema/children/byKey/item/field/validators/integer",
+        "/schema/children/rows/item/children/seats/field/validators/integer"),
+        pathsOf(document, "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+    assertFalse(parser.parse(document, MdyDynamicFormParser.Mode.STRICT).ok());
+  }
+
   /** Each nested layout refusal carries the code the TS and Rust readers give the same cause. */
   @Test
   void layoutRefusalsNameTheirCause() {

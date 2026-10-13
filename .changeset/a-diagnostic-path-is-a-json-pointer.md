@@ -14,6 +14,11 @@ document as written, in the TypeScript reader, `sdk/java/modyra-contract` and
   `/fields/<index>/validators/integer`, or in a `schema` tree at the leaf,
   `/schema/children/…/field/validators/integer`, reported once per collection template. It used to
   say `/fields/<name>/validators/integer`, which addresses nothing.
+- The same finding now reaches the template of an `array` or `record` that starts with no rows. A
+  v4 or older document with `integer` there used to pass the TypeScript and Java readers; it is
+  refused, as the Rust reader already refused it.
 
 **Migration.** A host matching paths as strings for keys with `/` or `~`, or for the `integer`
-version finding, matches the new spelling. Codes, messages and verdicts are unchanged.
+version finding, matches the new spelling. A v4 or older document with `integer` in an empty
+collection's template is refused: set `"version": 5`, or drop `integer`. Codes and messages are
+unchanged.

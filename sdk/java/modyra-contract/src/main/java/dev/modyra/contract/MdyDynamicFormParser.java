@@ -340,16 +340,24 @@ public final class MdyDynamicFormParser {
     // field would validate one way here and another wherever the declared version is honoured.
     // A bare array is version 1 and is held to the same arrival.
     if (version != null && version < INTEGER_ARRIVED_WITH) {
-      JsonNode source = root.isArray()
-          ? root
-          : root.isObject() && supportedVersion(root.path("version")) != -1 && root.has("schema") ? root.get("schema") : root.path("fields");
-      // Every row of a collection is read from one template, so its rows point at the same word.
-      Set<String> reported = new HashSet<>();
-      for (MdyDynamicField field : accepted) {
-        if (field.validators() == null || field.validators().integer() == null) continue;
-        String at = fieldReadPath(source, field.name());
-        String path = (at != null ? at : source.isArray() ? "/fields" : "/schema") + "/validators/integer";
-        if (!reported.add(path)) continue;
+      // A tree is read declaration by declaration rather than from its accepted fields: a collection
+      // with no rows flattens to none, and its template is still what every row it gains is read from.
+      List<String> paths = new ArrayList<>();
+      if (root.isObject() && supportedVersion(root.path("version")) != -1 && root.has("schema")) {
+        for (Map.Entry<JsonNode, String> declared : fieldDeclarations(root.get("schema"))) {
+          JsonNode integer = declared.getKey().path("validators").path("integer");
+          if (!integer.isMissingNode() && !integer.isNull()) paths.add(declared.getValue());
+        }
+      } else {
+        JsonNode list = root.isArray() ? root : root.path("fields");
+        for (MdyDynamicField field : accepted) {
+          if (field.validators() == null || field.validators().integer() == null) continue;
+          String at = listEntryPath(list, field.name());
+          paths.add(at != null ? at : "/fields");
+        }
+      }
+      for (String at : paths) {
+        String path = at + "/validators/integer";
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR,
             path,
             "Unsupported dynamic form config version for \"integer\": it arrived with version "
@@ -442,39 +450,48 @@ public final class MdyDynamicFormParser {
   }
 
   /**
-   * Where a flattened field was written in the document, as a diagnostic path, or null when the
-   * document does not hold it.
-   *
-   * A flat list addresses an entry by index, and the entry is the first object carrying the name: the
-   * reader claims a name before any other check, so a later entry with it is the refused duplicate. A
-   * tree's flattened name is its keys joined by ".", which no key may contain, so the walk retraces it:
-   * a group descends by key, a collection's segment is a row and every row is read from the one
-   * {@code item} template, and a leaf's declaration sits under {@code field}.
+   * Where a field list entry was written, as a diagnostic path, or null when the list does not hold
+   * it: the first object carrying the name. The reader claims a name before any other check, so a later
+   * entry with it is the refused duplicate.
    */
-  private static String fieldReadPath(JsonNode source, String name) {
-    if (source.isArray()) {
-      for (int i = 0; i < source.size(); i++) {
-        JsonNode item = source.get(i);
-        if (item.isObject() && item.path("name").isTextual() && item.path("name").asText().equals(name)) return "/fields/" + i;
-      }
-      return null;
+  private static String listEntryPath(JsonNode list, String name) {
+    if (!list.isArray()) return null;
+    for (int i = 0; i < list.size(); i++) {
+      JsonNode item = list.get(i);
+      if (item.isObject() && item.path("name").isTextual() && item.path("name").asText().equals(name)) return "/fields/" + i;
     }
-    JsonNode node = source;
-    StringBuilder path = new StringBuilder("/schema");
-    for (String segment : name.split("\\.", -1)) {
-      if (!node.isObject()) return null;
+    return null;
+  }
+
+  /**
+   * Every leaf a tree declares, as its {@code field} member and that member's path, in document order.
+   *
+   * A declaration, not a row: a collection's {@code item} is one template every row is read from, and
+   * it is declared — and so held to the document's version — whether the collection starts with three
+   * rows or none.
+   */
+  private static List<Map.Entry<JsonNode, String>> fieldDeclarations(JsonNode schema) {
+    List<Map.Entry<JsonNode, String>> out = new ArrayList<>();
+    Deque<Map.Entry<JsonNode, String>> pending = new ArrayDeque<>();
+    pending.push(Map.entry(schema, "/schema"));
+    while (!pending.isEmpty()) {
+      Map.Entry<JsonNode, String> next = pending.pop();
+      JsonNode node = next.getKey();
+      String path = next.getValue();
+      if (!node.isObject()) continue;
       String kind = node.path("node").asText("");
-      if (kind.equals("group") && node.path("children").isObject()) {
-        node = node.path("children").path(segment);
-        path.append("/children/").append(pointerSegment(segment));
+      if (kind.equals("field")) {
+        out.add(Map.entry(node.path("field"), path + "/field"));
+      } else if (kind.equals("group") && node.path("children").isObject()) {
+        List<Map.Entry<JsonNode, String>> children = new ArrayList<>();
+        node.path("children").fields().forEachRemaining(child ->
+            children.add(Map.entry(child.getValue(), path + "/children/" + pointerSegment(child.getKey()))));
+        for (int i = children.size() - 1; i >= 0; i--) pending.push(children.get(i));
       } else if (kind.equals("array") || kind.equals("record")) {
-        node = node.path("item");
-        path.append("/item");
-      } else {
-        return null;
+        pending.push(Map.entry(node.path("item"), path + "/item"));
       }
     }
-    return node.isObject() && node.path("node").asText("").equals("field") ? path.append("/field").toString() : null;
+    return out;
   }
 
   private record FlatResult(List<MdyDynamicField> accepted, List<MdyDynamicDiagnostic> diagnostics) {
