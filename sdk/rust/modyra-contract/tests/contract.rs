@@ -552,3 +552,29 @@ fn a_top_level_section_cannot_be_placed() {
     let codes: Vec<_> = result.diagnostics.iter().map(|d| d.code).collect();
     assert_eq!(codes, ["MDY_DYNAMIC_INVALID_LAYOUT"]);
 }
+
+/// A diagnostic path is a JSON Pointer into the document: a child key carrying "/" or "~" is one
+/// escaped segment, and a field's finding points at where the field is written.
+#[test]
+fn a_finding_points_where_the_field_is_written() {
+    let paths = |json: &str| -> Vec<String> {
+        parse_v2(json, ValidationMode::Lenient)
+            .unwrap()
+            .diagnostics
+            .into_iter()
+            .filter(|d| d.code == "MDY_DYNAMIC_UNSUPPORTED_VERSION")
+            .map(|d| d.path)
+            .collect()
+    };
+    let leaf = r#"{"node":"field","field":{"name":"leaf","kind":"number","label":"N","validators":{"integer":true}}}"#;
+    assert_eq!(
+        paths(&format!(
+            r#"{{"version":4,"fields":[],"schema":{{"node":"group","children":{{"a/b":{{"node":"group","children":{{"x~1":{leaf}}}}}}}}}}}"#
+        )),
+        vec!["/schema/children/a~1b/children/x~01/field/validators/integer"]
+    );
+    assert_eq!(
+        paths(r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}}]}"#),
+        vec!["/fields/1/validators/integer"]
+    );
+}

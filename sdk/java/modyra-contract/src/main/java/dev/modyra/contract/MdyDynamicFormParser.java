@@ -340,10 +340,18 @@ public final class MdyDynamicFormParser {
     // field would validate one way here and another wherever the declared version is honoured.
     // A bare array is version 1 and is held to the same arrival.
     if (version != null && version < INTEGER_ARRIVED_WITH) {
+      JsonNode source = root.isArray()
+          ? root
+          : root.isObject() && supportedVersion(root.path("version")) != -1 && root.has("schema") ? root.get("schema") : root.path("fields");
+      // Every row of a collection is read from one template, so its rows point at the same word.
+      Set<String> reported = new HashSet<>();
       for (MdyDynamicField field : accepted) {
         if (field.validators() == null || field.validators().integer() == null) continue;
+        String at = fieldReadPath(source, field.name());
+        String path = (at != null ? at : source.isArray() ? "/fields" : "/schema") + "/validators/integer";
+        if (!reported.add(path)) continue;
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR,
-            "/fields/" + field.name() + "/validators/integer",
+            path,
             "Unsupported dynamic form config version for \"integer\": it arrived with version "
                 + INTEGER_ARRIVED_WITH + ", and this document says " + version + ". Set \"version\": "
                 + INTEGER_ARRIVED_WITH + " to use it."));
@@ -421,6 +429,53 @@ public final class MdyDynamicFormParser {
 
   /** How many declarations the count walks before it stops: {@code MDY_MAX_DECLARATION_WALK} in the TS parser. */
   private static final int MAX_DECLARATION_WALK = 100_000;
+
+  /**
+   * A key as one segment of a diagnostic path, escaped as RFC 6901 escapes a JSON Pointer token.
+   *
+   * "/" and "~" are legal in a name, so a key written raw splits into segments that address something
+   * else: child {@code a/b} would read as child {@code a}, then {@code b}. "~" is escaped first, or the
+   * "~1" written for a "/" would itself be rewritten.
+   */
+  private static String pointerSegment(String key) {
+    return key.replace("~", "~0").replace("/", "~1");
+  }
+
+  /**
+   * Where a flattened field was written in the document, as a diagnostic path, or null when the
+   * document does not hold it.
+   *
+   * A flat list addresses an entry by index, and the entry is the first object carrying the name: the
+   * reader claims a name before any other check, so a later entry with it is the refused duplicate. A
+   * tree's flattened name is its keys joined by ".", which no key may contain, so the walk retraces it:
+   * a group descends by key, a collection's segment is a row and every row is read from the one
+   * {@code item} template, and a leaf's declaration sits under {@code field}.
+   */
+  private static String fieldReadPath(JsonNode source, String name) {
+    if (source.isArray()) {
+      for (int i = 0; i < source.size(); i++) {
+        JsonNode item = source.get(i);
+        if (item.isObject() && item.path("name").isTextual() && item.path("name").asText().equals(name)) return "/fields/" + i;
+      }
+      return null;
+    }
+    JsonNode node = source;
+    StringBuilder path = new StringBuilder("/schema");
+    for (String segment : name.split("\\.", -1)) {
+      if (!node.isObject()) return null;
+      String kind = node.path("node").asText("");
+      if (kind.equals("group") && node.path("children").isObject()) {
+        node = node.path("children").path(segment);
+        path.append("/children/").append(pointerSegment(segment));
+      } else if (kind.equals("array") || kind.equals("record")) {
+        node = node.path("item");
+        path.append("/item");
+      } else {
+        return null;
+      }
+    }
+    return node.isObject() && node.path("node").asText("").equals("field") ? path.append("/field").toString() : null;
+  }
 
   private record FlatResult(List<MdyDynamicField> accepted, List<MdyDynamicDiagnostic> diagnostics) {
   }
@@ -763,7 +818,7 @@ public final class MdyDynamicFormParser {
       children.fieldNames().forEachRemaining(here::add);
       for (var entry : children.properties()) {
         String key = entry.getKey();
-        String childPath = path + "/children/" + key;
+        String childPath = path + "/children/" + pointerSegment(key);
         if (!isSafeDynamicName(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {

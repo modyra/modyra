@@ -477,16 +477,46 @@ class MdyDynamicFormParserTest {
       assertFalse(result.ok(), document);
       MdyDynamicDiagnostic refusal = result.diagnostics().get(0);
       assertEquals("MDY_DYNAMIC_UNSUPPORTED_VERSION", refusal.code());
-      assertEquals("/fields/seats/validators/integer", refusal.path());
+      assertEquals("/fields/0/validators/integer", refusal.path());
       assertEquals("Unsupported dynamic form config version for \"integer\": it arrived with version 5, and this "
           + "document says " + result.version() + ". Set \"version\": 5 to use it.", refusal.message());
     }
     String tree = "\"schema\":{\"node\":\"group\",\"children\":{\"seats\":{\"node\":\"field\",\"field\":"
         + "{\"kind\":\"number\",\"validators\":{\"integer\":false}}}}}}";
-    assertEquals("/fields/seats/validators/integer",
+    assertEquals("/schema/children/seats/field/validators/integer",
         parser.parse("{\"version\":3," + tree, MdyDynamicFormParser.Mode.STRICT).diagnostics().get(0).path());
     assertTrue(parser.parse("{\"version\":5," + tree, MdyDynamicFormParser.Mode.STRICT).ok());
     assertTrue(parser.parse("{\"version\":5,\"fields\":[" + seats + "]}", MdyDynamicFormParser.Mode.STRICT).ok());
+  }
+
+  private List<String> pathsOf(String document, String code) {
+    return parser.parse(document, MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream()
+        .filter(d -> d.code().equals(code)).map(MdyDynamicDiagnostic::path).sorted().toList();
+  }
+
+  /** A child key carrying "/" or "~" is one segment, escaped as an RFC 6901 token, as TS writes it. */
+  @Test
+  void aChildKeyIsOneEscapedPointerSegment() {
+    assertEquals(List.of("/schema/children/a~1b", "/schema/children/x~01"),
+        pathsOf("{\"version\":5,\"schema\":{\"node\":\"group\",\"children\":{\"a/b\":{\"node\":\"group\"},"
+            + "\"x~1\":{\"node\":\"group\"}}}}", "MDY_DYNAMIC_INVALID_GROUP"));
+  }
+
+  /** The integer gate points where the field was written: its list index, or its tree declaration. */
+  @Test
+  void integerGatePointsWhereTheFieldWasWritten() {
+    String n = "{\"name\":\"n\",\"kind\":\"number\",\"validators\":{\"integer\":true}}";
+    assertEquals(List.of("/fields/1/validators/integer"),
+        pathsOf("{\"version\":4,\"fields\":[{\"name\":\"a\",\"kind\":\"text\"}," + n + "," + n + "]}",
+            "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+    String leaf = "{\"node\":\"field\",\"field\":{\"kind\":\"number\",\"validators\":{\"integer\":true}}}";
+    assertEquals(List.of("/schema/children/a~1b/children/seats/field/validators/integer"),
+        pathsOf("{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{\"a/b\":{\"node\":\"group\","
+            + "\"children\":{\"seats\":" + leaf + "}}}}}", "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
+    assertEquals(List.of("/schema/children/rows/item/children/seats/field/validators/integer"),
+        pathsOf("{\"version\":4,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\","
+            + "\"initialValue\":[{},{},{}],\"item\":{\"node\":\"group\",\"children\":{\"seats\":" + leaf + "}}}}}}",
+            "MDY_DYNAMIC_UNSUPPORTED_VERSION"));
   }
 
   /** Each nested layout refusal carries the code the TS and Rust readers give the same cause. */
@@ -1714,11 +1744,11 @@ class MdyDynamicFormParserTest {
               "b":{"node":"field","field":{"kind":"text","validators":{"pattern":12}}}}}}""", 0, 1, 1, 1, List.of(
             new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/b/field", "Dropped dynamic field \"b\": validators.pattern must be a string."),
             new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": validators.pattern must be a string."))),
-        // A field is named by its whole key: a key may hold "/", and the path cannot give it back.
+        // A field is named by its whole key: a key may hold "/", which its path segment escapes as "~1".
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a/b":{"node":"field","field":{"kind":"nope"}},
               "x/":{"node":"field","field":{"kind":"text"}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a/b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a~1b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."),
             unknownLeaf)),
         // A leaf kept despite a member nothing reads still counts each finding as a leaf turned down.
         new Case("""

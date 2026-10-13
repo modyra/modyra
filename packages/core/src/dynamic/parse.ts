@@ -549,6 +549,49 @@ function flattenNode(
   }
 }
 
+/**
+ * A key as one segment of a diagnostic path, escaped as RFC 6901 escapes a JSON Pointer token.
+ *
+ * "/" and "~" are legal in a name, so a key written raw splits into segments that address
+ * something else: child `a/b` would read as child `a`, then `b`. `~` is escaped first, or the `~1`
+ * written for a "/" would itself be rewritten.
+ */
+function pointerSegment(key: string): string {
+  return key.replaceAll("~", "~0").replaceAll("/", "~1");
+}
+
+/**
+ * Where a flattened field was written in the document, as a diagnostic path.
+ *
+ * A flat list addresses an entry by index, and the entry is the first object carrying the name: the
+ * reader claims a name before any other check, so a later entry with it is the refused duplicate. A
+ * tree's flattened name is its keys joined by ".", which no key may contain, so the walk retraces it:
+ * a group descends by key, a collection's segment is a row and every row is read from the one `item`
+ * template, and a leaf's declaration sits under `field`.
+ */
+function fieldReadPath(source: unknown, name: string): string | undefined {
+  if (Array.isArray(source)) {
+    const index = source.findIndex((item) =>
+      typeof item === "object" && item !== null && (item as { name?: unknown }).name === name);
+    return index < 0 ? undefined : `/fields/${index}`;
+  }
+  let node: unknown = source;
+  let path = "/schema";
+  for (const segment of name.split(".")) {
+    if (!isRecordValue(node)) return undefined;
+    if (node["node"] === "group" && isRecordValue(node["children"])) {
+      node = node["children"][segment];
+      path += `/children/${pointerSegment(segment)}`;
+    } else if (node["node"] === "array" || node["node"] === "record") {
+      node = node["item"];
+      path += "/item";
+    } else {
+      return undefined;
+    }
+  }
+  return isRecordValue(node) && node["node"] === "field" ? `${path}/field` : undefined;
+}
+
 /** The fields alone — {@link flattenDynamicForm} also reports the collections they came from. */
 export function flattenDynamicSchema(schema: MdyDynamicGroupNode): MdyDynamicField[] {
   return flattenDynamicForm(schema).fields;
@@ -1535,8 +1578,9 @@ function validateDynamicSchema(input: unknown): {
       const children: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }> = [];
       const here = new Set(Object.keys(raw["children"]));
       for (const [key, child] of Object.entries(raw["children"])) {
-        if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
-        else children.push({ raw: child, path: `${path}/children/${key}`, name: key, scope: here });
+        const at = `${path}/children/${pointerSegment(key)}`;
+        if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: at, message: "unsafe child name." });
+        else children.push({ raw: child, path: at, name: key, scope: here });
       }
       push(children);
       continue;
@@ -1976,12 +2020,19 @@ export function parseDynamicForm(
   {
     const arrivedWith = MDY_DYNAMIC_MEMBER_ARRIVALS.validators?.integer;
     if (arrivedWith !== undefined && version !== null && version < arrivedWith) {
+      // Every row of a collection is read from one template, so its rows point at the same word.
+      const reported = new Set<string>();
+      const source = structured && envelope?.schema !== undefined ? envelope.schema : Array.isArray(input) ? input : envelope?.fields;
       for (const field of fields) {
         if ((field.validators as { integer?: unknown } | undefined)?.integer === undefined) continue;
+        const at = fieldReadPath(source, field.name) ?? (Array.isArray(source) ? "/fields" : "/schema");
+        const path = `${at}/validators/integer`;
+        if (reported.has(path)) continue;
+        reported.add(path);
         diagnostics.push({
           code: "MDY_DYNAMIC_UNSUPPORTED_VERSION",
           severity: "error",
-          path: `/fields/${field.name}/validators/integer`,
+          path,
           message:
             `Unsupported dynamic form config version for "integer": it arrived with version ` +
             `${arrivedWith}, and this document says ${version}. Set "version": ${arrivedWith} to use it.`,
