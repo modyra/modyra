@@ -19,12 +19,17 @@ verdicts, codes and messages:
   than 256 UTF-16 units drops it with `MDY_DYNAMIC_PATTERN_TOO_LONG`, both at `/fields`. A number
   used to be read as its digits, and a long pattern was kept.
 
-The shared-corpus documents `v2/f-validator-pattern-catastrophic.json`,
-`v2/r-validator-pattern-uncompilable.json` and `v2/s-validator-pattern-quantified-boundary.json` now
-get the same verdict from the Java reader as from the TypeScript one, so they leave the Java
-disagreement ledger.
+The same gate now holds for the pattern of a `matches` condition: one that does not compile says
+`"matches" pattern is not a valid regular expression`, a costly one says `"matches" pattern` followed
+by the cost refusal, and a pattern that fails both says both, in the condition's
+`MDY_DYNAMIC_INVALID_CONDITION`. Such a condition used to be accepted.
 
-**Migration for Java consumers.** A document whose `validators.pattern` is refused here was already
+The shared-corpus documents `v2/f-validator-pattern-catastrophic.json`,
+`v2/r-validator-pattern-uncompilable.json`, `v2/s-validator-pattern-quantified-boundary.json`,
+`v4/d-matches-catastrophic-pattern.json` and `v4/e-matches-uncompilable-pattern.json` now get the
+same verdict from the Java reader as from the TypeScript one. The Java disagreement ledger is empty.
+
+**Migration for Java consumers.** A document whose `validators.pattern` or `matches` pattern is refused here was already
 refused by the TypeScript reader and never ran that rule in a browser; what changes is that the Java
 result now says so and is no longer `ok`. Rewrite the pattern with a boundary the repeated part
 cannot itself match (`^(\d{1,3}\.){3}\d{1,3}$` for `^(.*\.){3}.*$`), or without the construct
