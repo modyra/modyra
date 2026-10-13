@@ -13,7 +13,9 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -107,12 +109,23 @@ public final class MdyDynamicFormParser {
   }
 
   /**
-   * Every member a field of any kind may carry, as {@code MDY_DYNAMIC_MEMBERS.field} lists them:
-   * the members every field has, then the ones a kind adds. A document naming one on the wrong kind
-   * is a document naming a member the contract has, so the list is one list and not one per kind.
-   * Wider than the records here read, because reporting a member is not the same as carrying it.
+   * The members each slot of a document declares, as {@code MDY_DYNAMIC_MEMBERS} in
+   * packages/core/src/dynamic/members.ts lists them. The published JSON Schema closes every one of
+   * these objects, so a member outside its list is one nothing reads; it is reported and never
+   * refused, because a reader may meet a document written against a contract it predates.
+   *
+   * <p>Package-private so the test suite can hold each list against the TypeScript source it mirrors.
    */
-  private static final Set<String> FIELD_MEMBERS = Set.of(
+  static final Set<String> DOCUMENT_MEMBERS = Set.of(
+      "version", "id", "fields", "schema", "layout", "rules", "validations", "requiresContext");
+
+  /**
+   * Every member a field of any kind may carry: the members every field has, then the ones a kind
+   * adds. A document naming one on the wrong kind is a document naming a member the contract has, so
+   * the list is one list and not one per kind. Wider than the records here read, because reporting a
+   * member is not the same as carrying it.
+   */
+  static final Set<String> FIELD_MEMBERS = Set.of(
       "name", "kind", "label", "ariaLabel", "placeholder", "supportingText", "initialValue",
       "validators", "sensitive", "prefix", "suffix",
       "min", "max", "step",
@@ -123,19 +136,23 @@ public final class MdyDynamicFormParser {
       "presets");
 
   /** The members a validator block declares: the record that reads it is the list. */
-  private static final Set<String> VALIDATOR_MEMBERS = recordComponentNames(MdyDynamicValidators.class);
+  static final Set<String> VALIDATOR_MEMBERS = recordComponentNames(MdyDynamicValidators.class);
 
   /** The rules a field declares, and so the only keys {@code validators.messages} may name. */
-  private static final Set<String> VALIDATOR_MESSAGE_KEYS = recordComponentNames(MdyDynamicValidatorMessages.class);
+  static final Set<String> VALIDATOR_MESSAGE_KEYS = recordComponentNames(MdyDynamicValidatorMessages.class);
 
-  /** The members an option declares, as {@code MDY_DYNAMIC_MEMBERS.option} lists them. */
-  private static final Set<String> OPTION_MEMBERS = Set.of("value", "label", "disabled");
+  static final Set<String> OPTION_MEMBERS = Set.of("value", "label", "disabled");
+  static final Set<String> RULE_MEMBERS = Set.of("effect", "target", "when");
+  static final Set<String> VALIDATION_MEMBERS = Set.of("when", "message", "target");
+  static final Set<String> LAYOUT_SECTION_MEMBERS = Set.of("kind", "id", "label", "at", "children");
+  static final Set<String> LAYOUT_COLUMNS_MEMBERS = Set.of("kind", "id", "at", "columns");
+  static final Set<String> LAYOUT_SLOT_MEMBERS = Set.of("ref", "at");
 
   /** The kinds a field may declare: the names the field type dispatches on, read from its annotation. */
-  private static final Set<String> FIELD_KINDS = fieldKinds(null);
+  static final Set<String> FIELD_KINDS = fieldKinds(null);
 
   /** The kinds a choice is made from, and so the ones that must carry an options list. */
-  private static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
+  static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
 
   private static Set<String> recordComponentNames(Class<? extends Record> type) {
     Set<String> names = new HashSet<>();
@@ -170,6 +187,14 @@ public final class MdyDynamicFormParser {
     List<MdyDynamicDiagnostic> diagnostics = new ArrayList<>();
     Integer version;
     int sourceCount;
+    /** How many fields a tree document declared, kept or not; null until a tree is walked. */
+    Integer declaredLeaves = null;
+    /**
+     * How many of those the walk turned down. Counted from what was refused rather than from the
+     * difference between declared and kept: a collection's cells are declared and never become flat
+     * fields, so the difference would call every one of them a rejection.
+     */
+    int treeRejected = 0;
 
     // A version this reader does not have is answered as a version, before the envelope's shape is
     // looked at: read as a malformed field list, a document from a newer publisher sends its host
@@ -215,12 +240,26 @@ public final class MdyDynamicFormParser {
             "conditions read context " + quoted(undeclared) + ", which this document does not declare in "
                 + "\"requiresContext\" — a host cannot supply what it is not told about."));
       }
-      accepted = schemaDiagnostics.isEmpty() ? flattenSchema(root.get("schema")) : List.of();
+      // What the document said it had, counted before anything is refused: a schema turned down
+      // whole never reaches the walk, and without the count a document declaring three children
+      // would report none accepted and none rejected — three entered and nothing came out.
+      declaredLeaves = declaredFieldCount(root.get("schema"));
+      if (schemaDiagnostics.isEmpty()) {
+        int[] dropped = {0};
+        accepted = flattenSchema(root.get("schema"), dropped);
+        treeRejected = dropped[0];
+        declaredLeaves = Math.max(declaredLeaves, accepted.size() + treeRejected);
+      } else {
+        // A shape the walk cannot enter turns the document down whole, so everything it declared
+        // was turned down.
+        accepted = List.of();
+        treeRejected = declaredLeaves;
+      }
       sourceCount = accepted.size();
     } else if (root.isObject() && root.has("fields") && !root.has("version")) {
       // An envelope that declares no version is not read: every entry it lists counts as turned
-      // down, and each member only a versioned document carries is named, so the author learns that
-      // the version is what is missing rather than that the fields are wrong.
+      // down, and each member only a versioned document carries is named below, so the author learns
+      // that the version is what is missing rather than that the fields are wrong.
       //
       // "version undefined" is deliberate: `undefined` is how JavaScript spells a member that is not
       // there, and the sentence is the TypeScript reader's word for word, so a host matching on the
@@ -228,15 +267,9 @@ public final class MdyDynamicFormParser {
       JsonNode itemsNode = root.get("fields");
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/fields",
           "Unsupported dynamic form config version undefined — this contract has versions 2, 3, 4 and 5."));
-      for (String slot : List.of("layout", "rules", "validations")) {
-        if (!root.has(slot)) continue;
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/" + slot,
-            "Unsupported dynamic form config version for \"" + slot + "\": a document that declares no version "
-                + "reads fields and nothing else. Set \"version\": 2 to use it."));
-      }
-      return new MdyDynamicFormParseResult(
-          false, null, List.of(), List.of(), List.of(), List.copyOf(diagnostics),
-          0, itemsNode.isArray() ? itemsNode.size() : 0);
+      version = null;
+      accepted = List.of();
+      sourceCount = itemsNode.isArray() ? itemsNode.size() : 0;
     } else if (root.isObject() && root.path("fields").isArray()) {
       version = supportedVersion(root.path("version"));
       JsonNode itemsNode = root.get("fields");
@@ -255,12 +288,29 @@ public final class MdyDynamicFormParser {
       sourceCount = 0;
     }
 
+    // A member no version of this contract has, on the envelope itself. A document reaching for
+    // something the contract does not do — a computation, a slot an author expected to exist — would
+    // otherwise parse clean and render a form that quietly does not do it.
+    if (root.isObject()) {
+      reportUnknownMembers(root, DOCUMENT_MEMBERS, "the document", "/", diagnostics);
+    }
     // A member the document's version predates. `requiresContext` arrived with v4, so a v2 or v3
     // document carrying it declares a need nothing acts on — the answer the TypeScript reader gives,
     // so one contract does not say two things to one author.
     if (version != null && version < 4 && root.isObject() && root.has("requiresContext")) {
       diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/requiresContext",
-          "requiresContext arrived with version 4, and this document says " + version + "."));
+          "Unsupported dynamic form config version for \"requiresContext\": it arrived with version 4, "
+              + "and this document says " + version + ". Set \"version\": 4 to use it."));
+    }
+    // A document that declares no version reads fields and nothing else: each member only a
+    // versioned document carries is named, so the author learns that the version is what is missing.
+    if (version == null && root.isObject()) {
+      for (String slot : List.of("layout", "rules", "validations")) {
+        if (!root.has(slot)) continue;
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR, "/" + slot,
+            "Unsupported dynamic form config version for \"" + slot + "\": a document that declares no version "
+                + "reads fields and nothing else. Set \"version\": 2 to use it."));
+      }
     }
     Set<String> names = new HashSet<>();
     // What each declared field holds, so a rule's value can be judged against the field it reads.
@@ -301,12 +351,18 @@ public final class MdyDynamicFormParser {
     // what could be read, and `ok` withdraws only the claim that nothing was lost.
     boolean refused = diagnostics.stream().anyMatch(d -> MdyDynamicDiagnostic.ERROR.equals(d.severity()));
     boolean blockAll = strict && refused;
-    // A refusal of one entry of a list. A finding about the list itself (`/layout` is not an array)
-    // turns down no entry, so it is not counted — the same line the TypeScript reader draws.
+    // A finding about one entry of a list, wherever under the entry it sits. A finding about the list
+    // itself (`/layout` is not an array) turns down no entry, so it is not counted — the same line
+    // the TypeScript reader draws.
     int rejectedFromLayoutRules = (int) diagnostics.stream()
         .filter(d -> d.path().startsWith("/layout/") || d.path().startsWith("/rules/") || d.path().startsWith("/validations/"))
         .count();
-    int rejectedCount = Math.max(0, sourceCount - accepted.size()) + rejectedFromLayoutRules;
+    int rejectedCount = (declaredLeaves == null ? Math.max(0, sourceCount - accepted.size()) : treeRejected)
+        + rejectedFromLayoutRules;
+    // What the document declared and the parser understood. For a tree that is every field node it
+    // declares, collections included, minus what was refused — `accepted` cannot answer it, because a
+    // collection's cells are not flat fields until rows exist.
+    int acceptedCount = declaredLeaves == null ? accepted.size() : Math.max(0, declaredLeaves - rejectedCount);
 
     return new MdyDynamicFormParseResult(
         version != null && !refused,
@@ -315,9 +371,48 @@ public final class MdyDynamicFormParser {
         blockAll ? List.of() : List.copyOf(layout),
         blockAll ? List.of() : List.copyOf(rules),
         List.copyOf(diagnostics),
-        accepted.size(),
+        acceptedCount,
         rejectedCount);
   }
+
+  /**
+   * How many fields a schema says it has, counted without trusting it.
+   *
+   * <p>Read off the raw tree over an explicit stack, because this runs on a document the validator
+   * may have already refused: it must not assume any node is well formed. A node that is neither a
+   * field nor a container the walk can descend counts as one declaration — something was written
+   * there, and it did not become a field. A collection is descended and counts as neither: its cells
+   * are declared, and they legitimately never become flat fields because a document cannot name rows
+   * that do not exist yet.
+   *
+   * <p>The walk stops after {@link #MAX_DECLARATION_WALK} steps, so a shape nothing has validated
+   * cannot make it run without end; the count is then a floor rather than a total.
+   */
+  private static int declaredFieldCount(JsonNode schema) {
+    int count = 0;
+    Deque<JsonNode> stack = new ArrayDeque<>();
+    stack.push(schema);
+    for (int steps = 0; !stack.isEmpty() && steps < MAX_DECLARATION_WALK; steps++) {
+      JsonNode node = stack.pop();
+      if (!node.isObject()) continue;
+      String kind = node.path("node").isTextual() ? node.path("node").asText() : null;
+      if ("field".equals(kind)) {
+        count++;
+      } else if ("group".equals(kind)) {
+        JsonNode children = node.path("children");
+        if (children.isObject()) children.forEach(stack::push);
+        else count++;
+      } else if ("array".equals(kind) || "record".equals(kind)) {
+        stack.push(node.path("item"));
+      } else {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /** How many declarations the count walks before it stops: {@code MDY_MAX_DECLARATION_WALK} in the TS parser. */
+  private static final int MAX_DECLARATION_WALK = 100_000;
 
   private record FlatResult(List<MdyDynamicField> accepted, List<MdyDynamicDiagnostic> diagnostics) {
   }
@@ -376,7 +471,7 @@ public final class MdyDynamicFormParser {
       // and a refusal it does produce describes a Java type rather than the document.
       if (!messagesAreReadable(item, name, diagnostics)) continue;
       if (!patternIsUsable(item, name, diagnostics)) continue;
-      reportUnknownMembers(item, name, path, diagnostics);
+      reportUnknownFieldMembers(item, name, path, diagnostics);
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
@@ -438,24 +533,72 @@ public final class MdyDynamicFormParser {
    * document reaching for something the contract does not do would otherwise render a form that
    * quietly does not do it.
    */
-  private static void reportUnknownMembers(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
-    List<String> onField = unknownMembers(item, FIELD_MEMBERS);
-    if (!onField.isEmpty()) {
-      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path,
-          "dynamic field \"" + name + "\" carries " + jsonQuoted(onField) + ", which this contract does not declare, so nothing reads it."));
-    }
-    List<String> onValidators = unknownMembers(item.path("validators"), VALIDATOR_MEMBERS);
-    if (!onValidators.isEmpty()) {
-      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path,
-          "the validators of \"" + name + "\" carries " + jsonQuoted(onValidators) + ", which this contract does not declare, so nothing reads it."));
-    }
+  private static void reportUnknownFieldMembers(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    reportUnknownMembers(item, FIELD_MEMBERS, "dynamic field \"" + name + "\"", path, diagnostics);
+    reportUnknownMembers(item.path("validators"), VALIDATOR_MEMBERS, "the validators of \"" + name + "\"", path, diagnostics);
     JsonNode options = item.path("options");
     if (!options.isArray()) return;
     for (int i = 0; i < options.size(); i++) {
-      List<String> onOption = unknownMembers(options.get(i), OPTION_MEMBERS);
-      if (onOption.isEmpty()) continue;
-      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, path + "/options/" + i,
-          "an option of \"" + name + "\" carries " + jsonQuoted(onOption) + ", which this contract does not declare, so nothing reads it."));
+      reportUnknownMembers(options.get(i), OPTION_MEMBERS, "an option of \"" + name + "\"", path + "/options/" + i, diagnostics);
+    }
+  }
+
+  /**
+   * One error naming every member of {@code value} that {@code declared} does not list, at the path
+   * where the value is written, or nothing when there is none. {@code what} is the subject of the
+   * sentence — "a rule", "the document" — as the TypeScript reader words it.
+   */
+  private static void reportUnknownMembers(JsonNode value, Set<String> declared, String what, String at,
+      List<MdyDynamicDiagnostic> diagnostics) {
+    List<String> unknown = unknownMembers(value, declared);
+    if (unknown.isEmpty()) return;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, at,
+        what + " carries " + jsonQuoted(unknown) + ", which this contract does not declare, so nothing reads it."));
+  }
+
+  /**
+   * Every layout node and every slot under one, each held to its own published list.
+   *
+   * <p>Reported at every depth, not only at the top: a document's layout nests, and a member outside
+   * the list is a member nothing reads wherever it is written. A slot is where it costs the most —
+   * {@code at} is how a field says which column it takes at which size, so {@code att} is a
+   * placement that never happens, and the node parses clean with the misspelling kept.
+   *
+   * <p>Over a stack rather than by recursion, in the order the TypeScript reader walks it: a node,
+   * then its children last-first. The walk stops at the depth the validator refuses, so a layout
+   * deeper than the contract allows is refused there rather than walked here.
+   */
+  private static void reportLayoutMembers(JsonNode root, String rootPath, List<MdyDynamicDiagnostic> diagnostics) {
+    record Pending(JsonNode node, String at, int depth) {}
+    Deque<Pending> pending = new ArrayDeque<>();
+    pending.push(new Pending(root, rootPath, 1));
+    while (!pending.isEmpty()) {
+      Pending next = pending.pop();
+      JsonNode node = next.node();
+      if (!node.isObject() || next.depth() > LAYOUT_MAX_DEPTH) continue;
+      // A slot is the third shape a layout position can take, beside the two node kinds: it names a
+      // field and says where it sits. `ref` is what separates it from a node, which always has a
+      // `kind`.
+      Set<String> members = "columns".equals(node.path("kind").asText(null))
+          ? LAYOUT_COLUMNS_MEMBERS
+          : !node.has("kind") && node.has("ref") ? LAYOUT_SLOT_MEMBERS : LAYOUT_SECTION_MEMBERS;
+      reportUnknownMembers(node, members, node.has("kind") ? "a layout node" : "a layout slot", next.at(), diagnostics);
+      JsonNode children = node.path("children");
+      if (children.isArray()) {
+        for (int i = 0; i < children.size(); i++) {
+          pending.push(new Pending(children.get(i), next.at() + "/children/" + i, next.depth() + 1));
+        }
+        continue;
+      }
+      JsonNode columns = node.path("columns");
+      if (!columns.isArray()) continue;
+      for (int track = 0; track < columns.size(); track++) {
+        JsonNode column = columns.get(track);
+        if (!column.isArray()) continue;
+        for (int i = 0; i < column.size(); i++) {
+          pending.push(new Pending(column.get(i), next.at() + "/columns/" + track + "/" + i, next.depth() + 1));
+        }
+      }
     }
   }
 
@@ -643,19 +786,24 @@ public final class MdyDynamicFormParser {
     }
   }
 
-  private List<MdyDynamicField> flattenSchema(JsonNode schema) {
+  /** The flat fields of a validated schema; {@code dropped[0]} counts the leaves the walk turned down. */
+  private List<MdyDynamicField> flattenSchema(JsonNode schema, int[] dropped) {
     List<MdyDynamicField> out = new ArrayList<>();
-    flattenSchemaInto(schema, "", null, out);
+    flattenSchemaInto(schema, "", null, out, dropped);
     return out;
   }
 
-  private void flattenSchemaInto(JsonNode node, String path, JsonNode initial, List<MdyDynamicField> out) {
+  private void flattenSchemaInto(JsonNode node, String path, JsonNode initial, List<MdyDynamicField> out, int[] dropped) {
     String kind = node.path("node").asText("");
     if (kind.equals("field")) {
-      parseSingleField(node.get("field")).ifPresent(field -> {
-        Object finalInitial = hasValue(initial) ? toObject(initial) : field.initialValue();
-        out.add(withNameAndInitial(field, path, finalInitial));
-      });
+      Optional<MdyDynamicField> parsed = parseSingleField(node.get("field"));
+      if (parsed.isEmpty()) {
+        dropped[0]++;
+        return;
+      }
+      MdyDynamicField field = parsed.get();
+      Object finalInitial = hasValue(initial) ? toObject(initial) : field.initialValue();
+      out.add(withNameAndInitial(field, path, finalInitial));
       return;
     }
     if (kind.equals("group")) {
@@ -664,7 +812,7 @@ public final class MdyDynamicFormParser {
         String key = entry.getKey();
         if (!isSafeSegment(key)) continue;
         JsonNode childInitial = value != null ? value.path(key) : null;
-        flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key, childInitial, out);
+        flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key, childInitial, out, dropped);
       }
       return;
     }
@@ -678,7 +826,7 @@ public final class MdyDynamicFormParser {
         for (var entry : declared.properties()) {
           if (!isSafeSegment(entry.getKey())) continue;
           String key = entry.getKey();
-          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, entry.getValue(), out);
+          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, entry.getValue(), out, dropped);
         }
       }
       return;
@@ -688,7 +836,7 @@ public final class MdyDynamicFormParser {
         : node.path("initialValue").isArray() ? node.path("initialValue") : null;
     if (rows != null) {
       for (int i = 0; i < rows.size(); i++) {
-        flattenSchemaInto(item, path + "." + i, rows.get(i), out);
+        flattenSchemaInto(item, path + "." + i, rows.get(i), out, dropped);
       }
     }
   }
@@ -770,7 +918,9 @@ public final class MdyDynamicFormParser {
     for (int i = 0; i < layoutNode.size(); i++) {
       JsonNode raw = layoutNode.get(i);
       String path = "/layout/" + i;
-      if (!raw.isObject()) {
+      // An array is an object to JavaScript, so it passes this door and is refused at the next for
+      // its shape; the sentence is kept so both readers say the same thing about the same entry.
+      if (!raw.isObject() && !raw.isArray()) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_LAYOUT", MdyDynamicDiagnostic.ERROR, path, "layout node must be an object."));
         continue;
       }
@@ -781,6 +931,7 @@ public final class MdyDynamicFormParser {
             "a section at the top of the layout occupies no column and cannot be placed."));
         continue;
       }
+      reportLayoutMembers(raw, path, diagnostics);
       Set<String> candidate = new LinkedHashSet<>(placed);
       LayoutRefusal refusal = validLayoutNode(raw, names, candidate, 1, version >= 3);
       if (refusal != null) {
@@ -1117,10 +1268,13 @@ public final class MdyDynamicFormParser {
     for (int i = 0; i < rulesNode.size(); i++) {
       JsonNode raw = rulesNode.get(i);
       String path = "/rules/" + i;
-      if (!raw.isObject()) {
+      // An array is an object to JavaScript, so it passes this door and is refused at the next for
+      // having no effect; the sentence is kept so both readers say the same thing about the same entry.
+      if (!raw.isObject() && !raw.isArray()) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RULE", MdyDynamicDiagnostic.ERROR, path, "rule must be an object."));
         continue;
       }
+      reportUnknownMembers(raw, RULE_MEMBERS, "a rule", path, diagnostics);
       String effect = raw.path("effect").asText(null);
       String target = raw.path("target").isTextual() ? raw.path("target").asText() : null;
       JsonNode when = raw.path("when");
@@ -1217,10 +1371,13 @@ public final class MdyDynamicFormParser {
     for (int i = 0; i < validationsNode.size(); i++) {
       JsonNode raw = validationsNode.get(i);
       String at = "/validations/" + i;
-      if (!raw.isObject()) {
+      // An array is an object to JavaScript, so it passes this door and is refused at the next for
+      // having no message; the sentence is kept so both readers say the same thing about the same entry.
+      if (!raw.isObject() && !raw.isArray()) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, "validation must be an object."));
         continue;
       }
+      reportUnknownMembers(raw, VALIDATION_MEMBERS, "a validation", at, diagnostics);
       JsonNode message = raw.path("message");
       if (!message.isTextual() || isJsBlank(message.asText())) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_VALIDATION", MdyDynamicDiagnostic.ERROR, at, "validation needs a non-empty message."));

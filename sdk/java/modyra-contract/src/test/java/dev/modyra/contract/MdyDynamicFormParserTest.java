@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1477,4 +1478,217 @@ class MdyDynamicFormParserTest {
     assertEquals(1, list.rules().size());
   }
 
+  /**
+   * A member nobody declared is reported on every object the published schema closes — the document,
+   * each layout node and slot at any depth, each rule, each validation — in the TypeScript reader's
+   * code, path, sentence and order, and each such finding under a list entry counts as a rejection of
+   * that entry. The subject is kept: a reader may meet a document written against a contract it
+   * predates, and what is not kept is the silence.
+   */
+  @Test
+  void anUnknownMemberIsReportedOnEverySurfaceTheContractCloses() {
+    String everySurface = "{\"version\":3,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\",\"extra\":1}],\"extra\":1,"
+        + "\"layout\":[{\"kind\":\"section\",\"id\":\"s\",\"children\":[{\"ref\":\"ok\",\"u\":1}],\"v\":1}],"
+        + "\"rules\":[{\"effect\":\"visible\",\"target\":\"b\",\"when\":{\"field\":\"ok\",\"operator\":\"isEmpty\"},\"w\":1}],"
+        + "\"validations\":[{\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"ok\"}]},\"message\":\"m\",\"x\":1}]}";
+    List<MdyDynamicDiagnostic> expected = List.of(
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/fields/1",
+            "dynamic field \"b\" carries \"extra\", which this contract does not declare, so nothing reads it."),
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/",
+            "the document carries \"extra\", which this contract does not declare, so nothing reads it."),
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/layout/0",
+            "a layout node carries \"v\", which this contract does not declare, so nothing reads it."),
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/layout/0/children/0",
+            "a layout slot carries \"u\", which this contract does not declare, so nothing reads it."),
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/rules/0",
+            "a rule carries \"w\", which this contract does not declare, so nothing reads it."),
+        new MdyDynamicDiagnostic("MDY_DYNAMIC_UNKNOWN_MEMBER", MdyDynamicDiagnostic.ERROR, "/validations/0",
+            "a validation carries \"x\", which this contract does not declare, so nothing reads it."));
+    for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+      MdyDynamicFormParseResult result = parser.parse(everySurface, mode);
+      assertFalse(result.ok(), mode.name());
+      assertEquals(expected, result.diagnostics(), mode.name());
+      assertEquals(2, result.acceptedCount(), mode.name());
+      assertEquals(4, result.rejectedCount(), "one finding per list entry: the slot's counts against its layout entry");
+      boolean strict = mode == MdyDynamicFormParser.Mode.STRICT;
+      assertEquals(strict ? 0 : 2, result.fields().size(), mode.name());
+      assertEquals(strict ? 0 : 1, result.layout().size(), mode.name());
+      assertEquals(strict ? 0 : 1, result.rules().size(), mode.name());
+    }
+
+    // A nested layout is walked node first, then its children last-first, and every depth is held to
+    // the list of its own shape: a columns row, a slot, a section.
+    String nested = "{\"version\":3,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"},{\"name\":\"c\",\"kind\":\"text\"},{\"name\":\"d\",\"kind\":\"text\"}],"
+        + "\"layout\":[{\"kind\":\"section\",\"id\":\"s\",\"children\":["
+        + "{\"kind\":\"columns\",\"id\":\"c1\",\"columns\":[[{\"ref\":\"ok\",\"u1\":1}],[{\"ref\":\"b\",\"u2\":1},{\"kind\":\"section\",\"id\":\"in\",\"children\":[\"c\"],\"u3\":1}]],\"u4\":1},"
+        + "{\"kind\":\"section\",\"id\":\"s2\",\"children\":[{\"ref\":\"d\",\"u5\":1}],\"u6\":1}],\"u7\":1},"
+        + "{\"kind\":\"section\",\"id\":\"s3\",\"children\":[],\"u8\":1}]}";
+    MdyDynamicFormParseResult walked = parser.parse(nested, MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(
+        List.of("/layout/0 u7", "/layout/0/children/1 u6", "/layout/0/children/1/children/0 u5", "/layout/0/children/0 u4",
+            "/layout/0/children/0/columns/1/1 u3", "/layout/0/children/0/columns/1/0 u2", "/layout/0/children/0/columns/0/0 u1", "/layout/1 u8"),
+        walked.diagnostics().stream().map(d -> d.path() + " " + d.message().replaceAll(".*carries \"(\\w+)\".*", "$1")).toList());
+    assertTrue(walked.diagnostics().stream().allMatch(d -> d.code().equals("MDY_DYNAMIC_UNKNOWN_MEMBER")));
+    assertEquals(List.of("a layout node", "a layout node", "a layout slot", "a layout node", "a layout node", "a layout slot", "a layout slot", "a layout node"),
+        walked.diagnostics().stream().map(d -> d.message().substring(0, d.message().indexOf(" carries"))).toList());
+    assertEquals(2, walked.layout().size(), "the members are reported and the layout is kept");
+    assertEquals(8, walked.rejectedCount());
+
+    // The list is chosen by the shape the position declares, not by whether the node is then usable.
+    String prefix = "{\"version\":3,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],\"layout\":[";
+    MdyDynamicFormParseResult kindNull = parser.parse(prefix + "{\"kind\":null,\"id\":\"s\",\"children\":[\"ok\"],\"extra\":1}]}", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("a layout node carries \"extra\", which this contract does not declare, so nothing reads it.", "layout node has an invalid shape."),
+        kindNull.diagnostics().stream().map(MdyDynamicDiagnostic::message).toList());
+    MdyDynamicFormParseResult topSlot = parser.parse(prefix + "{\"ref\":\"ok\",\"extra\":1}]}", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("a layout slot carries \"extra\", which this contract does not declare, so nothing reads it.", "layout node has an invalid shape."),
+        topSlot.diagnostics().stream().map(MdyDynamicDiagnostic::message).toList());
+    assertEquals(2, topSlot.rejectedCount());
+    MdyDynamicDiagnostic columns = only(parser.parse(prefix + "{\"kind\":\"columns\",\"id\":\"c\",\"columns\":[[\"ok\"],[\"b\"]],\"gap\":2,\"children\":[]}]}", MdyDynamicFormParser.Mode.LENIENT));
+    assertEquals("a layout node carries \"gap\", \"children\", which this contract does not declare, so nothing reads it.", columns.message());
+    // A section placed at the top of the layout is refused before its members are read.
+    MdyDynamicDiagnostic placedAtTop = only(parser.parse(prefix + "{\"kind\":\"section\",\"id\":\"s\",\"children\":[\"ok\"],\"at\":{\"sm\":{\"column\":1}},\"extra\":1}]}", MdyDynamicFormParser.Mode.LENIENT));
+    assertEquals("MDY_DYNAMIC_INVALID_LAYOUT", placedAtTop.code());
+    // An array entry is an object to JavaScript: on each list it passes the door and is refused by
+    // the check after it, while a scalar is refused at the door.
+    assertEquals(List.of("layout node has an invalid shape.", "layout node must be an object."),
+        parser.parse(prefix + "[\"ok\"],5]}", MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream().map(MdyDynamicDiagnostic::message).toList());
+    String lists = "{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"rules\":[[\"x\"],5],\"validations\":[[\"x\"],null]}";
+    assertEquals(List.of("rule has an unsupported effect/operator or references an unknown field.", "rule must be an object.",
+            "validation needs a non-empty message.", "validation must be an object."),
+        parser.parse(lists, MdyDynamicFormParser.Mode.LENIENT).diagnostics().stream().map(MdyDynamicDiagnostic::message).toList());
+
+    // The document's own members, wherever the document stands: after what its fields said, before
+    // what its version is told about, and on an envelope that declares no version or no field list.
+    MdyDynamicFormParseResult early = parser.parse("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"extra\":1,\"requiresContext\":[\"t\"]}", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("/", "/requiresContext"), early.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+    assertEquals("Unsupported dynamic form config version for \"requiresContext\": it arrived with version 4, and this document says 2. "
+        + "Set \"version\": 4 to use it.", early.diagnostics().get(1).message());
+    MdyDynamicFormParseResult unversioned = parser.parse("{\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"extra\":1,\"layout\":[],\"rules\":1}", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("/fields", "/", "/layout", "/rules"), unversioned.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+    assertEquals(null, unversioned.version());
+    assertEquals(1, unversioned.rejectedCount());
+    MdyDynamicFormParseResult noList = parser.parse("{\"layout\":[],\"extra\":1}", MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("MDY_DYNAMIC_INVALID_FIELD /fields", "MDY_DYNAMIC_UNKNOWN_MEMBER /", "MDY_DYNAMIC_UNSUPPORTED_VERSION /layout"),
+        noList.diagnostics().stream().map(d -> d.code() + " " + d.path()).toList());
+
+    // Every member the contract declares, on every surface, is not a finding.
+    assertTrue(parser.parse("{\"version\":4,\"id\":\"x\",\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"},{\"name\":\"b\",\"kind\":\"text\"}],\"requiresContext\":[],"
+        + "\"layout\":[{\"kind\":\"section\",\"id\":\"s\",\"label\":\"L\",\"children\":[\"ok\",{\"kind\":\"columns\",\"id\":\"c\",\"at\":{\"sm\":2},\"columns\":[[{\"ref\":\"b\",\"at\":{\"sm\":{\"column\":1}}}]]}]}],"
+        + "\"rules\":[{\"effect\":\"visible\",\"target\":\"b\",\"when\":{\"field\":\"ok\",\"operator\":\"isEmpty\"}}],"
+        + "\"validations\":[{\"when\":{\"op\":\"isEmpty\",\"operands\":[{\"path\":\"ok\"}]},\"message\":\"m\",\"target\":\"b\"}]}",
+        MdyDynamicFormParser.Mode.STRICT).ok());
+  }
+
+  /**
+   * A tree document's counts are about what the document declared, not about what survived it. A
+   * declaration is a field node wherever it sits — inside a collection's row template too, where it
+   * never becomes a flat field — or a node that is neither a field nor a container the walk can
+   * descend; a schema turned down whole turned down every one of them; a leaf the walk refuses is one
+   * rejection; and a row-template field read once per declared row is counted as many times as it
+   * was read.
+   */
+  @Test
+  void aTreeDocumentCountsWhatItDeclared() throws IOException {
+    record Case(String document, boolean ok, int fields, int accepted, int rejected) {}
+    String leaf = "{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}";
+    List<Case> cases = List.of(
+        new Case("{\"version\":3,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"group\",\"children\":{\"b\":" + leaf
+            + ",\"inner\":{\"node\":\"record\",\"item\":" + leaf + "}}}},\"keyed\":{\"node\":\"record\",\"item\":" + leaf + "}}}}", true, 1, 4, 0),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\",\"initialValue\":[{\"b\":1},{\"b\":2},{}],"
+            + "\"item\":{\"node\":\"group\",\"children\":{\"b\":{\"node\":\"field\",\"field\":{\"kind\":\"number\"}},\"c\":" + leaf + "}}}}}}", true, 6, 6, 0),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"},\"c\":" + leaf + "}}}", false, 0, 0, 3),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"children\":{}},\"worse\":5,\"s\":\"x\"}}}", false, 0, 0, 2),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"group\",\"children\":[" + leaf + "," + leaf + "]}}}}", false, 0, 0, 2),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"nope\"}},\"a\":" + leaf + "}}}", false, 0, 0, 2),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}},\"layout\":[5],\"rules\":[null],\"validations\":[1]}", false, 0, 0, 5),
+        new Case("{\"version\":2,\"schema\":[" + leaf + "," + leaf + "]}", false, 0, 0, 0),
+        new Case("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}}}", false, 0, 0, 2),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"field\",\"field\":{\"kind\":\"nope\"}}}}}", true, 1, 1, 1));
+    for (Case c : cases) {
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse(c.document(), mode);
+        assertEquals(c.ok(), result.ok(), () -> c.document() + " in " + mode + ": " + result.diagnostics());
+        assertEquals(c.fields(), result.fields().size(), () -> c.document() + " in " + mode);
+        assertEquals(c.accepted(), result.acceptedCount(), () -> c.document() + " in " + mode);
+        assertEquals(c.rejected(), result.rejectedCount(), () -> c.document() + " in " + mode);
+      }
+    }
+
+    MdyDynamicFormParseResult templates = parser.parse(readV3Fixture("nested-collections.json"), MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(templates.ok(), () -> String.valueOf(templates.diagnostics()));
+    assertEquals(0, templates.fields().size());
+    assertEquals(5, templates.acceptedCount(), "every cell a row template declares");
+    assertEquals(0, templates.rejectedCount());
+
+    MdyDynamicFormParseResult refused = parser.parse(readV4Fixture("a-expression-too-deep.json"), MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(refused.ok());
+    assertEquals(0, refused.acceptedCount());
+    assertEquals(2, refused.rejectedCount(), "a tree turned down whole turned down what it declared");
+  }
+
+  /**
+   * The member lists and kind sets this reader holds a document to are the ones the TypeScript
+   * contract declares, read from its source in the same checkout. The lists are spelled twice because
+   * one is TypeScript and one is Java; this is what keeps a member added to one from being a document
+   * one reader reports and the other accepts.
+   */
+  @Test
+  void theMemberListsAreTheOnesTheTypeScriptContractDeclares() {
+    Path core = Path.of("../../../packages/core/src");
+    Path members = core.resolve("dynamic/members.ts");
+    assertEquals(tsList(members, "document: Object.freeze(["), MdyDynamicFormParser.DOCUMENT_MEMBERS, "document");
+    assertEquals(tsList(members, "field: Object.freeze(["), MdyDynamicFormParser.FIELD_MEMBERS, "field");
+    assertEquals(tsList(members, "validators: Object.freeze(["), MdyDynamicFormParser.VALIDATOR_MEMBERS, "validators");
+    assertEquals(tsList(members, "option: Object.freeze(["), MdyDynamicFormParser.OPTION_MEMBERS, "option");
+    assertEquals(tsList(members, "rule: Object.freeze(["), MdyDynamicFormParser.RULE_MEMBERS, "rule");
+    assertEquals(tsList(members, "validation: Object.freeze(["), MdyDynamicFormParser.VALIDATION_MEMBERS, "validation");
+    assertEquals(tsList(members, "layoutSection: Object.freeze(["), MdyDynamicFormParser.LAYOUT_SECTION_MEMBERS, "layoutSection");
+    assertEquals(tsList(members, "layoutColumns: Object.freeze(["), MdyDynamicFormParser.LAYOUT_COLUMNS_MEMBERS, "layoutColumns");
+    assertEquals(tsList(members, "layoutSlot: Object.freeze(["), MdyDynamicFormParser.LAYOUT_SLOT_MEMBERS, "layoutSlot");
+
+    Path parse = core.resolve("dynamic/parse.ts");
+    assertEquals(tsList(parse, "const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set(["), MdyDynamicFormParser.VALIDATOR_MESSAGE_KEYS, "messages");
+    assertEquals(tsList(parse, "const needsOptions = ["), MdyDynamicFormParser.OPTIONS_KINDS, "the kinds that need options");
+    assertEquals(tsList(core.resolve("field-kinds.ts"), "export const MDY_FIELD_KINDS = Object.freeze(["), MdyDynamicFormParser.FIELD_KINDS, "kinds");
+  }
+
+  /**
+   * The string literals of a list a TypeScript source declares, found by the text that opens it,
+   * with {@code ...NAME} spreads resolved against {@code const NAME = [} in the same file.
+   *
+   * <p>Anything it cannot read is a failure, never an empty list: the opening text missing or
+   * ambiguous, a list without a closing bracket, an entry that is neither a plain string literal nor
+   * a resolvable spread, a duplicate, or nothing at all — because a check that compares against
+   * nothing passes for the wrong reason.
+   */
+  private static Set<String> tsList(Path file, String opening) {
+    String source;
+    try {
+      source = Files.readString(file);
+    } catch (IOException e) {
+      throw new AssertionError("cannot read " + file + ": " + e.getMessage(), e);
+    }
+    source = source.replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("//[^\n]*", "");
+    int start = source.indexOf(opening);
+    assertTrue(start >= 0, () -> file + " does not declare `" + opening + "`");
+    assertEquals(start, source.lastIndexOf(opening), () -> file + " declares `" + opening + "` more than once");
+    int open = start + opening.length();
+    int close = source.indexOf(']', open);
+    assertTrue(close > open, () -> "`" + opening + "` in " + file + " is not closed");
+    Set<String> out = new LinkedHashSet<>();
+    for (String entry : source.substring(open, close).split(",")) {
+      String token = entry.trim();
+      if (token.isEmpty()) continue;
+      if (token.startsWith("...")) {
+        out.addAll(tsList(file, "const " + token.substring(3) + " = ["));
+        continue;
+      }
+      assertTrue(token.length() > 2 && token.startsWith("\"") && token.endsWith("\"") && token.indexOf('"', 1) == token.length() - 1,
+          () -> "cannot read `" + token + "` in `" + opening + "` of " + file);
+      String name = token.substring(1, token.length() - 1);
+      assertTrue(out.add(name), () -> "`" + opening + "` in " + file + " lists " + name + " twice");
+    }
+    assertFalse(out.isEmpty(), () -> "`" + opening + "` in " + file + " lists nothing");
+    return out;
+  }
 }
