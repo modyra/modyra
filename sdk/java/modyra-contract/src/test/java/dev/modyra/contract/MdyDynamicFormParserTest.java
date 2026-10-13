@@ -1000,6 +1000,14 @@ class MdyDynamicFormParserTest {
       assertEquals(1, result.diagnostics().size(), () -> both + " " + result.diagnostics());
       assertEquals("MDY_DYNAMIC_INVALID_FIELD", result.diagnostics().get(0).code(), both);
     }
+    // A name declared twice where both groups can take part in one match is a syntax error in the
+    // ECMAScript grammar (MightBothParticipate). Node 24 compiles these nested shapes; the verdict
+    // here is the specification's, so on this one shape the two readers differ.
+    for (String nested : List.of("(?<g1>(?<g1>a)|b)", "(?<g1>a)(?:x|(?<g1>b))")) {
+      MdyDynamicFormParseResult result = withPattern(nested);
+      assertFalse(result.ok(), nested);
+      assertEquals("MDY_DYNAMIC_INVALID_FIELD", result.diagnostics().get(0).code(), nested);
+    }
   }
 
   /** A pattern that is not a string, or longer than the cap, takes its field with it. */
