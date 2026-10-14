@@ -2,6 +2,7 @@ package dev.modyra.contract;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -111,6 +112,29 @@ class MdyDynamicExpansionLimitTest {
     assertEquals(10_000, ((List<?>) first).size());
     for (MdyDynamicField field : cells) {
       assertTrue(first == field.initialValue(), () -> field.name() + " holds its own copy of the lent cell");
+    }
+  }
+
+  @Test
+  void aSharedValueCannotBeChangedThroughOneOfItsFields() {
+    // One instance serves every row that takes it, the lent cell and the declared default alike: a
+    // write through one field would reach the others.
+    String tags = "{\"node\":\"field\",\"field\":{\"kind\":\"multiselect\",\"label\":\"Tags\","
+        + "\"options\":[{\"value\":\"a\",\"label\":\"A\"}],\"initialValue\":[\"a\"]}}";
+    String inner = "{\"node\":\"array\",\"initialValue\":[{\"lent\":[\"a\"]}],"
+        + "\"item\":{\"node\":\"group\",\"children\":{\"lent\":" + tags + ",\"declared\":" + tags + "}}}";
+    MdyDynamicFormParseResult result = parser.parse(
+        "{\"version\":5,\"schema\":{\"node\":\"group\",\"children\":{\"outer\":" + rowsOf(2, "\"inner\":" + inner) + "}}}",
+        MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(result.ok(), () -> "diagnostics: " + result.diagnostics());
+    for (String suffix : List.of(".lent", ".declared")) {
+      List<MdyDynamicField> shared = result.fields().stream().filter(field -> field.name().endsWith(suffix)).toList();
+      assertEquals(2, shared.size(), suffix);
+      assertTrue(shared.get(0).initialValue() == shared.get(1).initialValue(), suffix + " is one instance");
+      @SuppressWarnings("unchecked")
+      List<Object> value = (List<Object>) shared.get(0).initialValue();
+      assertThrows(UnsupportedOperationException.class, () -> value.add("b"), suffix);
+      assertEquals(List.of("a"), shared.get(1).initialValue(), suffix);
     }
   }
 

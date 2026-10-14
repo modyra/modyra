@@ -58,7 +58,9 @@ did not pay for.
   as what it declares is never refused for its size: 30,000 flat fields parse.
 - The bound is on visits, not bytes. A lent cell is shared by reference in TS (a 100,000-item
   multiselect cell lent to 2,400 rows: 60 ms, 12 MB heap); a reader that copies a cell per row must
-  share it instead, or bytes multiply under a visit count that looks small.
+  share it instead, or bytes multiply under a visit count that looks small. A shared value is one
+  instance for every field that takes it, so Java hands it out unmodifiable: a write through one
+  field cannot reach the others.
 - `MdyDynamicSchemaLimitError` is a new export (`minor`), and a parser that refused nothing here
   now refuses: a document past the bound that parsed before is `ok: false`.
 - The TS reader does not yet refuse more than 100 written rows per collection, which Java and Rust

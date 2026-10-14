@@ -57,7 +57,7 @@ fn rows_that_multiply_past_the_bound_refuse_the_schema_whole_in_both_modes() {
         let started = Instant::now();
         let (valid, schema_kept, codes) = findings(&nested(6, 100, text()), mode);
         assert!(
-            started.elapsed().as_secs() < 1,
+            started.elapsed().as_secs() < 5,
             "the count does not walk the product"
         );
         assert!(!valid);

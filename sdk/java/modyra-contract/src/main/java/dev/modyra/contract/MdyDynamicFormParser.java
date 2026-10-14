@@ -20,6 +20,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -1310,7 +1311,8 @@ public final class MdyDynamicFormParser {
       Optional<MdyDynamicField> declared = walk.leaves.computeIfAbsent(node, declaration -> {
         ObjectNode leaf = declaration.get("field").deepCopy();
         leaf.put("name", "leaf");
-        return parseFlatItems(mapper.createArrayNode().add(leaf)).accepted.stream().findFirst();
+        return parseFlatItems(mapper.createArrayNode().add(leaf)).accepted.stream().findFirst()
+            .map(parsed -> withNameAndInitial(parsed, parsed.name(), readOnly(parsed.initialValue())));
       });
       if (declared.isEmpty()) return;
       MdyDynamicField field = declared.get();
@@ -1323,7 +1325,7 @@ public final class MdyDynamicFormParser {
       // same node read under another kind is another verdict.
       Cell cell = walk.cells.computeIfAbsent(node, declaration -> new IdentityHashMap<>()).computeIfAbsent(initial, value -> {
         String mismatch = MdyValueContracts.explainMismatch(field.kind(), value);
-        return mismatch != null ? new Cell(mismatch, null) : new Cell(null, toObject(value));
+        return mismatch != null ? new Cell(mismatch, null) : new Cell(null, readOnly(toObject(value)));
       });
       if (cell.mismatch() != null) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, at + "/field",
@@ -1412,6 +1414,24 @@ public final class MdyDynamicFormParser {
 
   private Object toObject(JsonNode node) {
     return mapper.convertValue(node, Object.class);
+  }
+
+  /**
+   * {@code value} with every map and list in it made unmodifiable. A tree field's initial value is
+   * one instance for every row that takes it, so a write through one field would change them all.
+   */
+  private static Object readOnly(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      Map<Object, Object> copy = new LinkedHashMap<>();
+      map.forEach((key, entry) -> copy.put(key, readOnly(entry)));
+      return Collections.unmodifiableMap(copy);
+    }
+    if (value instanceof List<?> list) {
+      List<Object> copy = new ArrayList<>(list.size());
+      for (Object entry : list) copy.add(readOnly(entry));
+      return Collections.unmodifiableList(copy);
+    }
+    return value;
   }
 
   /**
