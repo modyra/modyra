@@ -659,3 +659,43 @@ fn an_initial_value_is_held_to_its_kind() {
         }
     }
 }
+
+/// A number or slider field's range is two numbers in order and a step that moves the value. The
+/// field is refused at the field as written, flat or in a tree; a kind with no range does not read
+/// these members at all.
+#[test]
+fn a_number_field_has_a_range_it_can_draw() {
+    for (kind, range) in [
+        ("number", serde_json::json!({ "min": "3" })),
+        ("number", serde_json::json!({ "max": null })),
+        ("slider", serde_json::json!({ "min": 5, "max": 4 })),
+        ("number", serde_json::json!({ "step": "1" })),
+        ("slider", serde_json::json!({ "step": 0 })),
+        ("number", serde_json::json!({ "step": -0.5 })),
+    ] {
+        let mut field = serde_json::json!({ "kind": kind, "label": "F" });
+        field
+            .as_object_mut()
+            .unwrap()
+            .extend(range.as_object().unwrap().clone());
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for field in [
+        serde_json::json!({ "kind": "number", "label": "F", "min": 4, "max": 4, "step": 0.5 }),
+        serde_json::json!({ "kind": "text", "label": "F", "min": "3", "max": null, "step": 0 }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}

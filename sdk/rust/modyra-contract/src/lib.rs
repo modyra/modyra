@@ -899,6 +899,36 @@ fn is_hex_colour(text: &str) -> bool {
     })
 }
 
+/// Why a number or slider field's range cannot be drawn, or `None` when it can.
+///
+/// A bound or a step is a number, the lower bound is not above the upper, and a step moves the
+/// value. Other kinds have no range, so their `min`, `max` and `step` are not read.
+fn range_refusal(field: &Value, kind: &str) -> Option<&'static str> {
+    if !matches!(kind, "number" | "slider") {
+        return None;
+    }
+    let member = |key: &str| field.get(key).map(Value::as_f64);
+    let (min, max, step) = (member("min"), member("max"), member("step"));
+    if min == Some(None) {
+        return Some("min must be a finite number.");
+    }
+    if max == Some(None) {
+        return Some("max must be a finite number.");
+    }
+    if min
+        .flatten()
+        .zip(max.flatten())
+        .is_some_and(|(min, max)| min > max)
+    {
+        return Some("min cannot exceed max.");
+    }
+    match step {
+        Some(None) => Some("step must be a finite number."),
+        Some(Some(step)) if step <= 0.0 => Some("step must be greater than zero."),
+        _ => None,
+    }
+}
+
 /// A finding about a field as written: its code, the member it points into (empty for the field
 /// itself), and what it says.
 type FieldFinding = (&'static str, String, String);
@@ -920,6 +950,9 @@ fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
         .get("kind")
         .and_then(Value::as_str)
         .unwrap_or_default();
+    if let Some(refusal) = range_refusal(field, kind) {
+        return refuse(refusal.into());
+    }
     if let Some(mismatch) = field
         .get("initialValue")
         .and_then(|value| value_mismatch(kind, value))
@@ -961,13 +994,25 @@ fn judge_field(field: &mut Value, at: Option<&str>, in_tree: bool, d: &mut Vec<D
             d.push(diag(code, &format!("{at}{member}"), &message));
         }
     }
+    let Some(field) = field.as_object_mut() else {
+        return;
+    };
     if refused {
-        if let Some(field) = field.as_object_mut() {
-            for key in ["label", "sensitive", "placeholder", "validators"] {
-                field.remove(key);
-            }
+        for key in [
+            "label",
+            "sensitive",
+            "placeholder",
+            "validators",
+            "min",
+            "max",
+            "step",
+        ] {
+            field.remove(key);
         }
     }
+    // A kind with no range does not read these, so one that is not a number is no finding and is
+    // not carried either.
+    field.retain(|key, value| !matches!(key.as_str(), "min" | "max" | "step") || value.is_number());
 }
 
 /// Judges every field as written, flat or in a tree, before anything is deserialized.
@@ -1108,20 +1153,6 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 "MDY_DYNAMIC_OPTIONS_REQUIRED",
                 &format!("{path}/options"),
                 "option field requires options",
-            ));
-        }
-        if field.step.is_some_and(|v| !v.is_finite() || v <= 0.0) {
-            d.push(diag(
-                "MDY_DYNAMIC_INVALID_FIELD",
-                &format!("{path}/step"),
-                "step must be finite and greater than zero",
-            ));
-        }
-        if field.min.zip(field.max).is_some_and(|(a, b)| a > b) {
-            d.push(diag(
-                "MDY_DYNAMIC_INVALID_FIELD",
-                path.as_str(),
-                "min cannot exceed max",
             ));
         }
         if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
