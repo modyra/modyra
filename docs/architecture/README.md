@@ -245,6 +245,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0228: The Java reader runs on every push, against a ledger of where it disagrees with the corpus](0228-the-java-reader-runs-with-a-ledger-of-its-disagreements.md) — CI runs the Java suite; its corpus disagreements are a ledger held exact both ways, so a new one fails and a repaired one must leave the list
 - [ADR 0229: A diagnostic path is a JSON Pointer into the document as written](0229-a-diagnostic-path-is-a-json-pointer.md) — key segments are escaped per RFC 6901, and a field's finding points at its list entry by index or its tree declaration, once per collection template
 - [ADR 0230: A malformed child is that child's problem](0230-a-malformed-child-is-that-childs-problem.md) — a group's child that is not a node is refused alone and counted once; its siblings survive in lenient, and a rejection counts declarations, not findings
+- [ADR 0231: A document costs what it writes, not what its rows expand to](0231-a-document-costs-what-it-writes.md) — a flatten may visit at most 10,000 nodes beyond those the schema declares; past it the schema is refused whole with `MDY_DYNAMIC_SCHEMA_LIMIT` at `/schema`
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

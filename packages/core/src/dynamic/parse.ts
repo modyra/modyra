@@ -447,6 +447,62 @@ function declaredFieldCount(schema: unknown): { count: number; complete: boolean
  */
 const MDY_MAX_DECLARATION_WALK = 100_000;
 
+/**
+ * How many visits one flatten may make beyond the nodes the schema declares.
+ *
+ * A row that does not write a nested collection takes that collection's declared rows, so what a
+ * flatten visits is the product of the row counts down each branch and not the size of the document:
+ * a few kilobytes can name more nodes than a request can hold. Every visit counts — a group, a
+ * collection, a leaf, a row template's nodes, a leaf refused on the walk — because a branch that ends
+ * in no field costs the same walk as one that ends in a field.
+ *
+ * Measured beyond the declared nodes rather than as a total, so a document the size of what it
+ * declares is never refused for its size: what is bounded is what rows multiply, and the walk stays
+ * within a constant of the document. The number is ten times the largest form the scale benchmark
+ * measures, and room for a hundred rows of a couple of dozen cells each.
+ */
+const MDY_MAX_DYNAMIC_SCHEMA_VISITS = 10_000;
+
+/**
+ * Every node object a schema declares, through `children` and `item`, without reading any row.
+ *
+ * An upper bound on the first visit of each node, which is what the flatten budget is measured
+ * beyond. It counts what the walk would skip as well — a child under an unsafe key, a member that is
+ * not a node — because the bound only has to be no smaller than what the document wrote.
+ */
+function declaredNodeCount(schema: MdyDynamicNode): number {
+  let count = 0;
+  const pending: unknown[] = [schema];
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (!isRecordValue(node)) continue;
+    count += 1;
+    if (node["node"] === "group" && isRecordValue(node["children"])) pending.push(...Object.values(node["children"]));
+    else if (node["node"] === "array" || node["node"] === "record") pending.push(node["item"]);
+  }
+  return count;
+}
+
+/**
+ * A document whose flatten visits more nodes than a reader carries.
+ *
+ * Thrown rather than truncated: the part of a tree a walk happens to reach first is not a form the
+ * document declared, so there is no partial answer to give. `parseDynamicForm` reports it as the
+ * `MDY_DYNAMIC_SCHEMA_LIMIT` diagnostic at `/schema` and accepts nothing from the schema.
+ */
+export class MdyDynamicSchemaLimitError extends Error {
+  readonly code: "MDY_DYNAMIC_SCHEMA_LIMIT" = "MDY_DYNAMIC_SCHEMA_LIMIT";
+  readonly path: "/schema" = "/schema";
+  constructor(readonly limit: number) {
+    super(schemaLimitMessage(limit));
+    this.name = "MdyDynamicSchemaLimitError";
+  }
+}
+
+function schemaLimitMessage(limit: number): string {
+  return `the schema's rows expand it by more than ${limit} nodes beyond those it declares, more than a reader carries.`;
+}
+
 export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   readonly fields: MdyDynamicField[];
   readonly collections: MdyDynamicCollection[];
@@ -491,11 +547,14 @@ function flattenTree(schema: MdyDynamicGroupNode, judgeDeclarations: boolean): {
     return fresh;
   };
 
-  flattenNode(schema, "/schema", fields, collections, templateOf, judgeDeclarations);
+  // One budget for the whole flatten, templates included: the bound is on the work a document can
+  // cause, and a template walked separately is work all the same.
+  const budget = { left: declaredNodeCount(schema) + MDY_MAX_DYNAMIC_SCHEMA_VISITS };
+  flattenNode(schema, "/schema", fields, collections, templateOf, judgeDeclarations, budget);
   while (queue.length > 0) {
     const { item, at } = queue.pop()!;
     const held = templates.get(item)!;
-    flattenNode(item, at, held.fields, held.collections, templateOf, judgeDeclarations);
+    flattenNode(item, at, held.fields, held.collections, templateOf, judgeDeclarations, budget);
   }
   return { fields, collections };
 }
@@ -513,6 +572,7 @@ function flattenNode(
   collections: MdyDynamicCollection[],
   templateOf: (item: MdyDynamicNode, at: string) => MdyDynamicFlatForm,
   judgeDeclarations: boolean,
+  budget: { left: number },
 ): void {
   /**
    * An explicit stack, for the reason the validator has one: a document is untrusted and its nesting
@@ -528,6 +588,8 @@ function flattenNode(
   ];
   while (pending.length > 0) {
     const { node, path, at, initial } = pending.pop()!;
+    if (budget.left === 0) throw new MdyDynamicSchemaLimitError(MDY_MAX_DYNAMIC_SCHEMA_VISITS);
+    budget.left -= 1;
     if (node.node === "field") {
       if (path.length > MDY_MAX_DYNAMIC_PATH_LENGTH) {
         warnDev(
@@ -1948,16 +2010,30 @@ export function parseDynamicForm(
       // leaf dropped. `declaredLeaves` is what a document said it had, so the counts a consumer
       // reports with are about the document and not about what survived it.
       const before = diagnostics.length;
-      const walked = collectingDiagnostics(
+      const walked: ReturnType<typeof flattenTree> | MdyDynamicSchemaLimitError = collectingDiagnostics(
         (message, path, code) => diagnostics.push({
           code: diagnosticCode(message, code), severity: "error", path: path ?? "/schema", message,
         }),
-        () => flattenTree(envelope.schema as MdyDynamicGroupNode, false),
+        () => {
+          try {
+            return flattenTree(envelope.schema as MdyDynamicGroupNode, false);
+          } catch (error) {
+            if (error instanceof MdyDynamicSchemaLimitError) return error;
+            throw error;
+          }
+        },
       );
-      fields = walked.fields;
-      collections = walked.collections;
-      treeRejected = rejected + diagnostics.length - before;
-      declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + treeRejected);
+      if (walked instanceof MdyDynamicSchemaLimitError) {
+        // What the walk said before it stopped is about a part of the tree, not the document.
+        diagnostics.length = before;
+        diagnostics.push({ code: walked.code, severity: "error", path: walked.path, message: walked.message });
+        treeRejected = declaredLeaves;
+      } else {
+        fields = walked.fields;
+        collections = walked.collections;
+        treeRejected = rejected + diagnostics.length - before;
+        declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + treeRejected);
+      }
     }
   }
   const names = new Set(fields.map((field) => field.name));

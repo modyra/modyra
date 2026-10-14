@@ -1674,6 +1674,12 @@
     "\"notEquals\"",
     "\"notIn\""
   ],
+  "core:MdyDynamicSchemaLimitError": [
+    "code: \"MDY_DYNAMIC_SCHEMA_LIMIT\"",
+    "constructor(0) limit: number,-> returns: (inferred)",
+    "limit: number",
+    "path: \"/schema\""
+  ],
   "core:MdyDynamicSection": [
     "at?: Partial<Readonly<Record<MdyDynamicBreakpoint, MdyDynamicSlotPlacement>>>",
     "children: ReadonlyArray<MdyDynamicLayoutChild>",
