@@ -802,6 +802,57 @@ fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>)
     named_badly || !kind.is_some_and(|kind| KINDS.contains(&kind))
 }
 
+/// The members a field declares, whatever its kind, mirroring `MDY_DYNAMIC_MEMBERS.field`.
+const FIELD_MEMBERS: &[&str] = &[
+    "name",
+    "kind",
+    "label",
+    "ariaLabel",
+    "placeholder",
+    "supportingText",
+    "initialValue",
+    "validators",
+    "sensitive",
+    "prefix",
+    "suffix",
+    "min",
+    "max",
+    "step",
+    "options",
+    "mode",
+    "searchable",
+    "reorderable",
+    "loading",
+    "locale",
+    "firstDayOfWeek",
+    "minDate",
+    "maxDate",
+    "format",
+    "viewMode",
+    "granularity",
+    "animateHand",
+    "showUnavailable",
+    "accept",
+    "multiple",
+    "presets",
+];
+
+/// The members a field's validators declare, mirroring `MDY_DYNAMIC_MEMBERS.validators`.
+const VALIDATOR_MEMBERS: &[&str] = &[
+    "required",
+    "email",
+    "integer",
+    "min",
+    "max",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "messages",
+];
+
+/// The members an option declares, mirroring `MDY_DYNAMIC_MEMBERS.option`.
+const OPTION_MEMBERS: &[&str] = &["value", "label", "disabled"];
+
 /// What a field of each kind holds, mirroring `MDY_VALUE_CONTRACTS`: the shape of its value, and
 /// whether `null` is one of its values.
 fn value_contract(kind: &str) -> Option<(&'static str, bool)> {
@@ -1111,30 +1162,77 @@ type FieldFinding = (&'static str, String, String);
 /// The first refusal ends the judgement, so a refused field carries one reason; a finding that does
 /// not refuse the field is collected on the way.
 fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
-    let mut refuse = |message: String| {
+    fn refuse(out: &mut Vec<FieldFinding>, message: String) -> bool {
         out.push(("MDY_DYNAMIC_INVALID_FIELD", String::new(), message));
         true
-    };
+    }
     if let Some(refusal) = member_type_refusal(field) {
-        return refuse(refusal);
+        return refuse(out, refusal);
+    }
+    // A member nobody declared is reported and the field kept: a document may be written against a
+    // contract this reader predates.
+    let options = field.get("options").and_then(Value::as_array);
+    for (owner, member, declared) in [(Some(field), String::new(), FIELD_MEMBERS)]
+        .into_iter()
+        .chain([(field.get("validators"), String::new(), VALIDATOR_MEMBERS)])
+        .chain(
+            options
+                .into_iter()
+                .flatten()
+                .enumerate()
+                .map(|(i, option)| (Some(option), format!("/options/{i}"), OPTION_MEMBERS)),
+        )
+    {
+        let unknown: Vec<String> = owner
+            .and_then(Value::as_object)
+            .into_iter()
+            .flat_map(|object| object.keys())
+            .filter(|key| !declared.contains(&key.as_str()))
+            .map(|key| Value::from(key.as_str()).to_string())
+            .collect();
+        if !unknown.is_empty() {
+            out.push((
+                "MDY_DYNAMIC_UNKNOWN_MEMBER",
+                member,
+                format!(
+                    "carries {}, which this contract does not declare, so nothing reads it.",
+                    unknown.join(", ")
+                ),
+            ));
+        }
     }
     let kind = field
         .get("kind")
         .and_then(Value::as_str)
         .unwrap_or_default();
     if let Some(refusal) = range_refusal(field, kind) {
-        return refuse(refusal.into());
+        return refuse(out, refusal.into());
     }
     if let Some(refusal) = calendar_refusal(field, kind) {
-        return refuse(refusal.into());
+        return refuse(out, refusal.into());
     }
     if let Some(mismatch) = field
         .get("initialValue")
         .and_then(|value| value_mismatch(kind, value))
     {
-        return refuse(format!(
-            "initialValue does not match the kind — {mismatch}."
-        ));
+        return refuse(
+            out,
+            format!("initialValue does not match the kind — {mismatch}."),
+        );
+    }
+    // A rule written one level too high: the contract's own name for a rule, on the field, where
+    // nothing reads it, so the field has no such rule while its author believes it has. `min` and
+    // `max` are not among them, being a number field's range.
+    for misplaced in ["required", "email", "minLength", "maxLength", "pattern"] {
+        if field.get(misplaced).is_some() {
+            out.push((
+                "MDY_DYNAMIC_MISPLACED_VALIDATOR",
+                String::new(),
+                format!(
+                    "\"{misplaced}\" belongs in \"validators\"; nothing reads it on the field."
+                ),
+            ));
+        }
     }
     if matches!(kind, "select" | "radio" | "multiselect" | "segmented") {
         let Some(options) = field

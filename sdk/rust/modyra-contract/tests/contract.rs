@@ -822,3 +822,60 @@ fn an_option_field_has_options_it_can_offer() {
         assert_eq!(findings(document), vec![]);
     }
 }
+
+/// A rule written on the field rather than in `validators` is reported where it is written, with the
+/// member nobody declares; so is any member a field, its validators or an option does not declare.
+/// Neither refuses the field, so a field refused for another reason still carries the first and not
+/// the second.
+#[test]
+fn a_member_nobody_reads_is_reported() {
+    let [leaf, entry] =
+        as_leaf_and_entry(serde_json::json!({ "kind": "text", "label": "F", "required": true }));
+    assert_eq!(
+        findings(leaf),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", LEAF.to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", LEAF.to_string()),
+        ]
+    );
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+        ]
+    );
+    let [_, entry] = as_leaf_and_entry(serde_json::json!({
+        "kind": "select", "label": "F", "email": null, "pattern": "x", "validators": { "requird": true },
+        "options": [{ "value": 1, "label": "A", "color": "red" }]
+    }));
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            (
+                "MDY_DYNAMIC_UNKNOWN_MEMBER",
+                "/fields/0/options/0".to_string()
+            ),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+        ]
+    );
+    let [_, entry] = as_leaf_and_entry(
+        serde_json::json!({ "kind": "number", "label": "F", "required": true, "min": "3" }),
+    );
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string()),
+        ]
+    );
+    // A number field's range is its own, not a misplaced rule.
+    for document in
+        as_leaf_and_entry(serde_json::json!({ "kind": "number", "label": "F", "min": 1, "max": 2 }))
+    {
+        assert_eq!(findings(document), vec![]);
+    }
+}
