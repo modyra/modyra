@@ -771,6 +771,49 @@ class MdyDynamicFormParserTest {
   }
 
   /**
+   * A finding about part of a flat field that keeps the field, in the TypeScript reader's code, path
+   * and words. Each is an error, so neither mode is {@code ok} and strict mode withholds the document;
+   * the lenient field carries what the reader kept — an option whose value an earlier one holds is
+   * left out, compared by value rather than by spelling.
+   */
+  @Test
+  void aFindingThatKeepsTheFieldIsGradedAsTheTypeScriptReaderGradesIt() {
+    record Finding(String code, String message) {}
+    record Case(String entry, List<Finding> findings, List<String> keptLabels) {}
+    String duplicate = "an option's value is its identity, so two options sharing one leave a value naming both and a control able to reach only the first.";
+    List<Case> cases = List.of(
+        new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\"},{\"value\":\"a\",\"label\":\"B\"},"
+            + "{\"value\":1,\"label\":\"C\"},{\"value\":\"1\",\"label\":\"D\"},{\"value\":1.0,\"label\":\"E\"}]}", List.of(
+            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "Dropped a duplicate option value \"a\" on \"o\": " + duplicate),
+            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "Dropped a duplicate option value 1 on \"o\": " + duplicate)),
+            List.of("A", "C", "D")),
+        new Case("{\"name\":\"o\",\"kind\":\"radio\",\"options\":[{\"value\":{\"a\":1,\"b\":[2,3]},\"label\":\"A\"},"
+            + "{\"value\":{\"b\":{\"0\":2,\"1\":3},\"a\":1},\"label\":\"B\"}]}", List.of(
+            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "Dropped a duplicate option value {\"a\":1,\"b\":{\"0\":2,\"1\":3}} on \"o\": " + duplicate)),
+            List.of("A")));
+    for (Case c : cases) {
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse("[" + c.entry() + "]", mode);
+        assertFalse(result.ok(), () -> c.entry() + " in " + mode);
+        assertEquals(
+            c.findings().stream().map(f -> new MdyDynamicDiagnostic(f.code(), MdyDynamicDiagnostic.ERROR, "/fields/0", f.message())).toList(),
+            result.diagnostics(), () -> c.entry() + " in " + mode);
+        assertEquals(1, result.acceptedCount(), () -> c.entry() + " in " + mode);
+        assertEquals(0, result.rejectedCount(), () -> c.entry() + " in " + mode);
+        if (mode == MdyDynamicFormParser.Mode.STRICT) {
+          assertEquals(0, result.fields().size(), () -> c.entry() + " in " + mode);
+        } else {
+          assertEquals(1, result.fields().size(), () -> c.entry() + " in " + mode);
+          if (c.keptLabels() != null) {
+            MdyDynamicOptionsField kept = assertInstanceOf(MdyDynamicOptionsField.class, result.fields().get(0));
+            assertEquals(c.keptLabels(), kept.options().stream().map(MdySelectOption::label).toList(), c.entry());
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * A member nobody declared is reported, on the field, on its validators and on each option, and
    * the field is kept: a reader may meet a document written against a contract it predates, and
    * dropping the field would turn a report into a loss. The finding is still an error — a document
@@ -1834,6 +1877,13 @@ class MdyDynamicFormParserTest {
               "rows":{"node":"array","initialValue":[{"t":5}],"item":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text"}}}}}}}}""",
             0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0",
                 "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"o":{"node":"field","field":{"kind":"segmented",
+              "options":[{"value":true,"label":"A"},{"value":true,"label":"B"}]}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "/schema/children/o/field", "Dropped a duplicate option value true on \"o\": an option's value "
+                + "is its identity, so two options sharing one leave a value naming both and a control able to reach only the first."),
+            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "/fields/0", "Dropped a duplicate option value true on \"leaf\": an option's value "
+                + "is its identity, so two options sharing one leave a value naming both and a control able to reach only the first."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "d":{"node":"field","field":{"kind":"datepicker","locale":"en_US"}}}}}""", 0, 1, 1, 1, List.of(

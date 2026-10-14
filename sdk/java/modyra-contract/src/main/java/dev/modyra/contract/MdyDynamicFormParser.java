@@ -574,9 +574,10 @@ public final class MdyDynamicFormParser {
             "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
         continue;
       }
+      JsonNode read = OPTIONS_KINDS.contains(kind.asText()) ? withoutDuplicateOptions(item, name, path, diagnostics) : item;
       MdyDynamicField field;
       try {
-        field = mapper.treeToValue(item, MdyDynamicField.class);
+        field = mapper.treeToValue(read, MdyDynamicField.class);
       } catch (JsonProcessingException e) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": " + e.getOriginalMessage()));
@@ -883,6 +884,58 @@ public final class MdyDynamicFormParser {
       if (disabled != null && !disabled.isBoolean()) return false;
     }
     return true;
+  }
+
+  /**
+   * The field with every option whose value an earlier option already holds left out, each one
+   * reported. An option's value is its identity — it builds the option's id and names the choice in
+   * the submission — so a second option holding it is unreachable and the value names two things.
+   * The field is kept, as the first of two fields sharing a name is. The document is not edited: a
+   * copy is returned when anything is left out.
+   */
+  private static JsonNode withoutDuplicateOptions(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode options = item.path("options");
+    Set<String> seen = new HashSet<>();
+    ArrayNode kept = JsonNodeFactory.instance.arrayNode();
+    for (JsonNode option : options) {
+      String key = optionValueKey(option.get("value"));
+      if (seen.add(key)) {
+        kept.add(option);
+        continue;
+      }
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_OPTION", MdyDynamicDiagnostic.ERROR, path,
+          "Dropped a duplicate option value " + key + " on \"" + name + "\": an option's value is its identity, "
+              + "so two options sharing one leave a value naming both and a control able to reach only the first."));
+    }
+    if (kept.size() == options.size()) return item;
+    ObjectNode copy = item.deepCopy();
+    copy.set("options", kept);
+    return copy;
+  }
+
+  /**
+   * A comparable spelling of an option's value: {@code optionValueKey} in the TypeScript reader. A
+   * scalar is its JSON text, so {@code 1} and {@code 1.0} are one value and {@code 1} and {@code "1"}
+   * are two. An object is its members sorted by name, so two objects declaring the same members are
+   * the same option however they were written; an array is the object JavaScript sees, keyed by
+   * index.
+   */
+  static String optionValueKey(JsonNode value) {
+    if (!value.isObject() && !value.isArray()) return jsonText(value);
+    List<Map.Entry<String, JsonNode>> entries = new ArrayList<>();
+    if (value.isArray()) {
+      for (int i = 0; i < value.size(); i++) entries.add(Map.entry(String.valueOf(i), value.get(i)));
+    } else {
+      value.properties().forEach(entries::add);
+    }
+    entries.sort(Map.Entry.comparingByKey());
+    StringBuilder out = new StringBuilder("{");
+    for (Map.Entry<String, JsonNode> entry : entries) {
+      if (out.length() > 1) out.append(',');
+      writeString(entry.getKey(), out);
+      out.append(':').append(optionValueKey(entry.getValue()));
+    }
+    return out.append('}').toString();
   }
 
   /**
