@@ -16,7 +16,9 @@ A tree document's malformed child is refused alone, and the counts count declara
   that dropped a duplicate option, used to be counted as rejected. A bare value used to count as
   nothing, so a document holding only one reported nothing entered and nothing refused.
 - **A refused tree field is reported once**, at its declaration and under its own name. A second
-  copy used to follow it, naming the field `"leaf"` at `/fields/0` or `/schema`.
+  copy used to follow it, naming the field `"leaf"` at `/fields/0` or `/schema`. A refused cell in a
+  collection template is counted once, not once per row, so `rejectedCount` on such a document is
+  smaller than it was.
 - **A node is named by a string.** `node: ["field"]` converted to `"field"` and was read as a node,
   walked as whichever branch its other members fitted. It is now a malformed child like any other.
 - **A row value its cell cannot hold** is reported at the cell's declaration under

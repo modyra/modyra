@@ -87,6 +87,13 @@ size of defect is the inconsistency ADR 0071 exists to remove.
 for its rows. Dropping only the item would leave a collection that is declared and holds nothing,
 and the counts would have to invent a rule for what that collection is.
 
+**Refuse a malformed collection or group alone, as a group's child.** This was not weighed. A
+child `{ "node": "array" }` with no `item`, or `{ "node": "group", "children": [] }`, is one
+declaration the reader cannot use, the same size of defect as a bare value. It still refuses the
+document whole, because this decision draws its line at a child that is not a node at all, not at a
+node whose container shape is broken. Whether a broken container is that child's problem too is open
+and needs its own decision.
+
 ## Verification
 
 - `packages/core/test/a-tree-answers-each-declaration-once.test.mjs`: a bare value and an unknown
