@@ -344,6 +344,14 @@ function missingContextKeys(
   return [...missing];
 }
 
+/**
+ * Builds the form schema a parsed dynamic document describes.
+ *
+ * Expects the `schema` of a document `parseDynamicForm` accepted; the parser is the trust boundary.
+ * The builder does not re-apply the parser's document limits: the hundred rows a collection may
+ * write in its `initialValue` and the bound on what a document costs to flatten are both checked
+ * there, so a tree that skips the parser is built whatever its size.
+ */
 export function buildDynamicFormSchema(
   schema: MdyDynamicGroupNode,
   options: MdyDynamicBuildOptions = {},
