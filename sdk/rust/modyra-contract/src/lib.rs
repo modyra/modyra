@@ -775,7 +775,10 @@ fn member_type_refusal(field: &Value) -> Option<String> {
         }
     }
     let length = |key: &str| validators.get(key).and_then(Value::as_f64);
-    if length("minLength").zip(length("maxLength")).is_some_and(|(min, max)| min > max) {
+    if length("minLength")
+        .zip(length("maxLength"))
+        .is_some_and(|(min, max)| min > max)
+    {
         return Some("validators.minLength cannot exceed validators.maxLength.".into());
     }
     None
@@ -790,17 +793,25 @@ fn member_type_refusal(field: &Value) -> Option<String> {
 fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
     let mut pending: Vec<(&mut Value, String)> = Vec::new();
     let mut nodes: Vec<(&mut Value, String)> = Vec::new();
-    let Value::Object(members) = document else { return };
+    let Value::Object(members) = document else {
+        return;
+    };
     for (key, value) in members.iter_mut() {
         match (key.as_str(), value) {
-            ("fields", Value::Array(fields)) => pending
-                .extend(fields.iter_mut().enumerate().map(|(i, f)| (f, format!("/fields/{i}")))),
+            ("fields", Value::Array(fields)) => pending.extend(
+                fields
+                    .iter_mut()
+                    .enumerate()
+                    .map(|(i, f)| (f, format!("/fields/{i}"))),
+            ),
             ("schema", schema) => nodes.push((schema, "/schema".to_string())),
             _ => {}
         }
     }
     while let Some((node, path)) = nodes.pop() {
-        let Some(node) = node.as_object_mut() else { continue };
+        let Some(node) = node.as_object_mut() else {
+            continue;
+        };
         match node.get("node").and_then(Value::as_str) {
             Some("field") => {
                 if let Some(field) = node.get_mut("field") {
