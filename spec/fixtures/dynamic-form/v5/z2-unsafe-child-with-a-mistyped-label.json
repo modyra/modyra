@@ -1,0 +1,1 @@
+{"version":5,"id":"z2-unsafe-child-with-a-mistyped-label","schema":{"node":"group","children":{"a.b":{"node":"field","field":{"kind":"text","label":5}}}}}

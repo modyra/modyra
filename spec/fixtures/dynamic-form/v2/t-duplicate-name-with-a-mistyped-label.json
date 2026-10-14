@@ -1,0 +1,1 @@
+{"version":2,"id":"t-duplicate-name-with-a-mistyped-label","fields":[{"name":"city","kind":"text"},{"name":"city","kind":"text","label":5}]}

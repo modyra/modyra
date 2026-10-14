@@ -1,0 +1,1 @@
+{"version":5,"id":"z-unknown-kind-with-a-mistyped-label","schema":{"node":"group","children":{"seats":{"node":"field","field":{"kind":"nonsense","label":5}}}}}
