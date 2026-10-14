@@ -11,6 +11,15 @@
  * Only reads: it never deletes, relinks or repairs. A path that does not exist passes.
  * `MODYRA_ALLOW_SHARED_NODE_MODULES=1` skips the check for an install that means to share.
  *
+ * Only the checkout's root `node_modules` is checked. The `node_modules` entries inside each
+ * workspace package are symlinks into the root's `.pnpm` by design, and refusing them would refuse
+ * every install.
+ *
+ * What it does not cover: pnpm decides whether to purge `node_modules` (after a store or layout
+ * change) before it runs `devPreinstall`, so a purge prompt can appear before this check does, and
+ * accepting it empties the directory the symlink points at — the other tree's install. Answer no.
+ * `setup` runs this script before calling pnpm at all, which covers that path when it is the entry.
+ *
  *   node scripts/guard-own-node-modules.mjs [<checkout dir>]
  *
  * With no argument it checks the checkout this script belongs to.

@@ -36,6 +36,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Install guard tests
+        run: pnpm run test:guard-node-modules
+
       - name: Build packages
         id: build_packages
         run: pnpm run build:packages

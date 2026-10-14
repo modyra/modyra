@@ -5,7 +5,8 @@
   "description": "Modyra monorepo — a typed form engine: one form contract, every framework, any backend.",
   "scripts": {
     "pnpm:devPreinstall": "node scripts/guard-own-node-modules.mjs",
-    "setup": "pnpm install && pnpm run build:packages && pnpm run build:angular",
+    "test:guard-node-modules": "node --test scripts/guard-own-node-modules.test.mjs",
+    "setup": "node scripts/guard-own-node-modules.mjs && pnpm install && pnpm run build:packages && pnpm run build:angular",
     "start": "npm run demo:angular",
     "start:lib": "npm run build:angular && npm --prefix examples/angular run start",
     "build:angular": "npm run build:core && node scripts/tsc7.mjs packages/widgets/tsconfig.json packages/zod/tsconfig.json && ng-packagr -p packages/angular/ng-package.json -c packages/angular/tsconfig.lib.json && node scripts/prepare-angular-dist.mjs",
@@ -13,7 +14,7 @@
     "pack:analyze": "node scripts/pack-analyze.mjs",
     "build:demo": "npm run build:angular && npm --prefix examples/angular run build",
     "watch:lib": "ng-packagr -p packages/angular/ng-package.json -c packages/angular/tsconfig.lib.json --watch",
-    "test": "npm run test:core && npm run test:adapters && npm run test:widgets && npm run test:styles && npm run test:contracts && npm run test:angular && npm run test:guides",
+    "test": "npm run test:guard-node-modules && npm run test:core && npm run test:adapters && npm run test:widgets && npm run test:styles && npm run test:contracts && npm run test:angular && npm run test:guides",
     "test:angular": "npm run build:core && node scripts/tsc7.mjs packages/zod/tsconfig.json && jest -c packages/angular/jest.config.cjs",
     "test:perf": "jest -c packages/angular/jest.perf.cjs",
     "lint": "eslint .",
