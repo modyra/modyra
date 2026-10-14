@@ -852,10 +852,34 @@ fn has_invisible_character(name: &str) -> bool {
     })
 }
 
-/// Whether `name` is refused as a group child key: unsafe, or carrying whitespace or a character
-/// that cannot be seen.
+/// The longest path a field may have, in UTF-16 code units as JavaScript measures a string's
+/// length. A path is the payload key, the draft key and the widget id, and every read of the value
+/// carries it.
+const MAX_PATH_LENGTH: usize = 512;
+
+/// Whether `name` is longer than [`MAX_PATH_LENGTH`].
+fn is_too_long_for_a_path(name: &str) -> bool {
+    name.encode_utf16().count() > MAX_PATH_LENGTH
+}
+
+/// Whether a dotted part of `name` is `toString`. A form's value is an object, and a field so named
+/// shadows the method every string conversion of that value goes through, so `${value}` throws.
+fn breaks_value_conversion(name: &str) -> bool {
+    name.split('.').any(|part| part == "toString")
+}
+
+/// The separator between the segments of a generated widget id: a name holding it would collide
+/// with another field's parts.
+const ID_DELIMITER: &str = "__";
+
+/// Whether `name` is refused as a group child key: unsafe, or carrying whitespace, a character that
+/// cannot be seen, the id delimiter, or a `toString` part.
 fn is_unsafe_child_name(name: &str) -> bool {
-    is_unsafe_name(name) || has_js_whitespace(name) || has_invisible_character(name)
+    is_unsafe_name(name)
+        || breaks_value_conversion(name)
+        || name.contains(ID_DELIMITER)
+        || has_js_whitespace(name)
+        || has_invisible_character(name)
 }
 
 /// Whether a field is refused for its name or kind, which the TypeScript reader judges before its
@@ -866,6 +890,9 @@ fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>)
         Some(name) => {
             is_unsafe_name(name)
                 || has_invisible_character(name)
+                || is_too_long_for_a_path(name)
+                || breaks_value_conversion(name)
+                || name.contains(ID_DELIMITER)
                 || has_js_whitespace(name)
                 || !names.insert(name.to_string())
         }
@@ -1641,6 +1668,38 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                     "Dropped dynamic field {}: the name carries a character that cannot be seen, \
                      so two names that read the same would be two different fields.",
                     serde_json::Value::String(field.name.clone())
+                ),
+            ));
+        } else if is_too_long_for_a_path(&field.name) {
+            d.push(diag(
+                "MDY_DYNAMIC_PATH_TOO_LONG",
+                &path,
+                &format!(
+                    "Dropped a dynamic field whose path is {} characters, past the \
+                     {MAX_PATH_LENGTH} a path may be: a path is the payload key, the draft key and \
+                     the widget id, and every read of the value carries it.",
+                    field.name.encode_utf16().count()
+                ),
+            ));
+        } else if breaks_value_conversion(&field.name) {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &path,
+                &format!(
+                    "Dropped dynamic field \"{}\": a form's value is an object, so this name \
+                     shadows the method every string conversion of that value goes through, and \
+                     `${{value}}` then throws.",
+                    field.name
+                ),
+            ));
+        } else if field.name.contains(ID_DELIMITER) {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &path,
+                &format!(
+                    "Dropped dynamic field \"{}\": \"{ID_DELIMITER}\" separates the segments of a \
+                     generated id, so this name would collide with another field's parts.",
+                    field.name
                 ),
             ));
         } else if has_js_whitespace(&field.name) {

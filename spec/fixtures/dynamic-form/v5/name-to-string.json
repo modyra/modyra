@@ -1,0 +1,1 @@
+{"version":5,"id":"name-to-string","schema":{"node":"group","children":{"toString":{"node":"field","field":{"label":"F","kind":"text"}}}}}
