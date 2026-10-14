@@ -560,6 +560,7 @@ public final class MdyDynamicFormParser {
       if (!lengthsAreOrdered(item, name, diagnostics)) continue;
       if (!patternIsUsable(item, name, diagnostics)) continue;
       reportUnknownFieldMembers(item, name, path, diagnostics);
+      if (!initialValueFitsTheKind(item, name, kind.asText(), path, diagnostics)) continue;
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
@@ -651,6 +652,23 @@ public final class MdyDynamicFormParser {
     if (minLength == null || maxLength == null || minLength.asDouble() <= maxLength.asDouble()) return true;
     diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
         "Dropped dynamic field \"" + name + "\": validators.minLength cannot exceed validators.maxLength."));
+    return false;
+  }
+
+  /**
+   * Whether the initial value the field declares is one its kind can hold, dropping the field
+   * otherwise. A declared initial is the value the form starts from, so one its kind cannot hold is a
+   * form invalid before anybody touches it. JSON {@code null} is judged: it is a value the author
+   * wrote, and only a nullable kind may hold it.
+   */
+  private static boolean initialValueFitsTheKind(
+      JsonNode item, String name, String kind, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode initial = item.get("initialValue");
+    if (initial == null) return true;
+    String mismatch = MdyValueContracts.explainMismatch(kind, initial);
+    if (mismatch == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": initialValue does not match the kind — " + mismatch + "."));
     return false;
   }
 
@@ -901,6 +919,17 @@ public final class MdyDynamicFormParser {
       named.put("name", name);
       for (MdyDynamicDiagnostic finding : parseFlatItems(mapper.createArrayNode().add(named)).diagnostics) {
         perField.add(new MdyDynamicDiagnostic(finding.code(), MdyDynamicDiagnostic.ERROR, path + "/field", finding.message()));
+      }
+      // The declared initial is also a statement about the tree, as a collection's initial is: a
+      // value the leaf's kind cannot hold is refused where it is written, and the document with it.
+      JsonNode declaredKind = node.get("field").path("kind");
+      JsonNode initial = node.get("field").get("initialValue");
+      if (initial != null && declaredKind.isTextual()) {
+        String mismatch = MdyValueContracts.explainMismatch(declaredKind.asText(), initial);
+        if (mismatch != null) {
+          out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path + "/field/initialValue",
+              "field initialValue does not match the kind — " + mismatch + "."));
+        }
       }
       return;
     }
@@ -1355,7 +1384,7 @@ public final class MdyDynamicFormParser {
    * the TS reader uses: {@code 7.0} reads {@code 7}, {@code 1e21} reads {@code 1e+21}, a number past
    * double precision reads the double it parses to, and object keys follow ECMAScript property order.
    */
-  private static String jsonText(JsonNode value) {
+  static String jsonText(JsonNode value) {
     StringBuilder out = new StringBuilder();
     writeJson(value, out);
     return out.toString();
@@ -1608,7 +1637,7 @@ public final class MdyDynamicFormParser {
    * reader builds the date through {@code Date.UTC}, which reads such a year as 19xx and then finds
    * it does not round-trip, so both readers refuse it.
    */
-  private static boolean isIsoDate(String value) {
+  static boolean isIsoDate(String value) {
     if (!ISO_DATE.matcher(value).matches()) return false;
     int year = Integer.parseInt(value.substring(0, 4));
     if (year < 100) return false;

@@ -731,7 +731,19 @@ class MdyDynamicFormParserTest {
         new Case("{\"name\":\"o\",\"kind\":\"multiselect\",\"options\":[\"a\"]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"multiselect\" requires a valid options array."),
         new Case("{\"name\":\"o\",\"kind\":\"segmented\",\"options\":[{\"value\":\"a\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"segmented\" requires a valid options array."),
         new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":null,\"label\":\"A\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
-        new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\",\"disabled\":\"yes\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."));
+        new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\",\"disabled\":\"yes\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
+        new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":42}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text holds string, got number."),
+        new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text cannot hold null."),
+        new Case("{\"name\":\"c\",\"kind\":\"checkbox\",\"initialValue\":\"yes\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"c\": initialValue does not match the kind — checkbox holds boolean, got string."),
+        new Case("{\"name\":\"m\",\"kind\":\"multiselect\",\"options\":[],\"initialValue\":{\"b\":1,\"1\":2}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"m\": initialValue does not match the kind — multiselect holds option[], got {\"1\":2,\"b\":1}."),
+        new Case("{\"name\":\"d\",\"kind\":\"datepicker\",\"initialValue\":\"2026-02-30\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — datepicker holds an ISO date (yyyy-MM-dd), got \"2026-02-30\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"timepicker\",\"initialValue\":\"25:00\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — timepicker holds a time (HH:mm), got \"25:00\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"timepicker\",\"initialValue\":\"09:30\\n\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — timepicker holds a time (HH:mm), got \"09:30\\n\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"colors\",\"initialValue\":\"banana\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — colors holds a hex colour (#rgb or #rrggbb), got \"banana\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"daterange\",\"initialValue\":{\"start\":\"\",\"end\":null}}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — daterange holds ISO dates, and start is \"\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"daterange\",\"initialValue\":\"x\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — daterange holds dateRange, got string."),
+        new Case("{\"name\":\"d\",\"kind\":\"number\",\"initialValue\":1e400}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — number holds number, got number."),
+        new Case("{\"name\":\"d\",\"kind\":\"slider\",\"initialValue\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"d\": initialValue does not match the kind — slider cannot hold null."));
     for (Case c : cases) {
       for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
         MdyDynamicFormParseResult result = parser.parse("[{\"name\":\"ok\",\"kind\":\"text\"}," + c.entry() + "]", mode);
@@ -1796,6 +1808,20 @@ class MdyDynamicFormParserTest {
                 "dynamic field \"a\" carries \"bogus\", which this contract does not declare, so nothing reads it."),
             new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
                 "dynamic field \"leaf\" carries \"bogus\", which this contract does not declare, so nothing reads it."))),
+        // A declared initial the kind cannot hold is refused where it is written, which turns the
+        // tree down whole; a row's value is the leaf's initial, and the walk judges it there.
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "t":{"node":"field","field":{"kind":"text","initialValue":42}}}}}""", 0, 0, 0, 2, List.of(
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/t/field/initialValue",
+                "field initialValue does not match the kind — text holds string, got number."),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/t/field",
+                "Dropped dynamic field \"t\": initialValue does not match the kind — text holds string, got number."))),
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "rows":{"node":"array","initialValue":[{"t":5}],"item":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text"}}}}}}}}""",
+            0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0",
+                "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"s":{"node":"field","field":{"kind":"select","options":[]}},
               "rows":{"node":"array","item":{"node":"field","field":{"kind":"radio","options":[]}}}}}}""", 1, 1, 2, 0, List.of()));
@@ -1838,6 +1864,55 @@ class MdyDynamicFormParserTest {
     assertEquals(tsList(parse, "const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set(["), MdyDynamicFormParser.VALIDATOR_MESSAGE_KEYS, "messages");
     assertEquals(tsList(parse, "const needsOptions = ["), MdyDynamicFormParser.OPTIONS_KINDS, "the kinds that need options");
     assertEquals(tsList(core.resolve("field-kinds.ts"), "export const MDY_FIELD_KINDS = Object.freeze(["), MdyDynamicFormParser.FIELD_KINDS, "kinds");
+  }
+
+  /**
+   * The value each kind holds is the one {@code MDY_VALUE_CONTRACTS} declares, read from its source:
+   * every entry's shape and nullability, and the same kinds as the field kinds both readers dispatch
+   * on — so a kind added to the TypeScript contract without its value here fails, rather than holding
+   * anything. Each kind then refuses a value of another shape and accepts its empty value.
+   */
+  @Test
+  void theValueEachKindHoldsIsTheOneTheTypeScriptContractDeclares() throws IOException {
+    String source = Files.readString(Path.of("../../../packages/core/src/value-contracts.ts"))
+        .replaceAll("(?s)/\\*.*?\\*/", "").replaceAll("//[^\n]*", "");
+    String opening = "MDY_VALUE_CONTRACTS: Readonly<Record<MdyValueKind, MdyValueContract>> = Object.freeze({";
+    int start = source.indexOf(opening);
+    assertTrue(start >= 0, "value-contracts.ts does not declare MDY_VALUE_CONTRACTS as expected");
+    int close = source.indexOf("\n});", start);
+    assertTrue(close > start, "MDY_VALUE_CONTRACTS is not closed");
+    java.util.regex.Pattern entry = java.util.regex.Pattern.compile("^\\s*(\\w+): (.*)$");
+    java.util.regex.Pattern live = java.util.regex.Pattern.compile("live\\(\"([^\"]+)\", (true|false)\\)");
+    java.util.regex.Pattern frozen = java.util.regex.Pattern.compile("shape: \"([^\"]+)\".*nullable: (true|false)");
+    Map<String, MdyValueContracts.Contract> declared = new TreeMap<>();
+    for (String line : source.substring(start + opening.length(), close).split("\n")) {
+      if (line.isBlank()) continue;
+      var e = entry.matcher(line);
+      assertTrue(e.matches(), () -> "cannot read `" + line + "` in MDY_VALUE_CONTRACTS");
+      var shape = live.matcher(e.group(2));
+      if (!shape.find()) {
+        shape = frozen.matcher(e.group(2));
+        assertTrue(shape.find(), () -> "cannot read the shape of `" + line + "`");
+      }
+      assertFalse(declared.containsKey(e.group(1)), () -> line + " declares a kind twice");
+      declared.put(e.group(1), new MdyValueContracts.Contract(shape.group(1), Boolean.parseBoolean(shape.group(2))));
+    }
+    assertEquals(declared, new TreeMap<>(MdyValueContracts.CONTRACTS));
+    assertEquals(MdyDynamicFormParser.FIELD_KINDS, MdyValueContracts.CONTRACTS.keySet());
+
+    ObjectMapper json = new ObjectMapper();
+    Map<String, String> empty = Map.of("string", "\"\"", "number", "0", "boolean", "false", "option", "\"a\"",
+        "option[]", "[]", "file[]", "[]", "dateRange", "{\"start\":null,\"end\":null}");
+    for (var kind : MdyValueContracts.CONTRACTS.entrySet()) {
+      String shape = kind.getValue().shape();
+      assertEquals(null, MdyValueContracts.explainMismatch(kind.getKey(), json.readTree(empty.get(shape))), kind.getKey());
+      assertEquals(kind.getValue().nullable(), MdyValueContracts.explainMismatch(kind.getKey(), json.readTree("null")) == null, kind.getKey());
+      // An option holds anything that is not null, so only the other shapes have a value to refuse.
+      if (!shape.equals("option")) {
+        String other = shape.equals("boolean") ? "7" : "true";
+        assertTrue(MdyValueContracts.explainMismatch(kind.getKey(), json.readTree(other)) != null, kind.getKey());
+      }
+    }
   }
 
   /**
