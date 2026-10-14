@@ -39,6 +39,12 @@ refuses the document, as it refuses any document carrying an error.
 `children`, and a collection whose `item` is not a node still turn the document down whole: without
 them there is no tree, or no row shape, to read the rest against.
 
+**A child key the reader will not use as a name is not covered.** A key such as `__proto__`, or one
+holding whitespace, is still refused as `MDY_DYNAMIC_UNSAFE_NAME` together with the whole document.
+The defect there is in what the group writes, not in the child, and a key that addresses the
+prototype or splits a widget id is a hostile or broken name rather than one unreadable declaration.
+Whether it too should be refused alone is a separate decision, not taken here.
+
 **A rejection is a declaration, not a finding.** `rejectedCount` counts declarations refused. A field
 kept with a finding, such as a select that loses a duplicate option, is accepted. A field refused for
 one reason is reported once, at its declaration and under its own name.
