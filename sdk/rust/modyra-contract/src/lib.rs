@@ -1136,7 +1136,86 @@ fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
             "initialValue does not match the kind — {mismatch}."
         ));
     }
+    if matches!(kind, "select" | "radio" | "multiselect" | "segmented") {
+        let Some(options) = field
+            .get("options")
+            .filter(|options| has_valid_options(options))
+        else {
+            out.push((
+                "MDY_DYNAMIC_OPTIONS_REQUIRED",
+                String::new(),
+                format!("kind \"{kind}\" requires a valid options array."),
+            ));
+            return true;
+        };
+        for key in repeated_option_values(options) {
+            out.push((
+                "MDY_DYNAMIC_DUPLICATE_OPTION",
+                String::new(),
+                format!("duplicate option value {key}: an option's value is its identity."),
+            ));
+        }
+    }
     false
+}
+
+/// Whether `options` is a list of options as the contract writes one: each an object with a `value`
+/// that is neither `null` — the empty value of half the kinds — nor a list, a string `label`, and a
+/// `disabled` that is a boolean when present.
+fn has_valid_options(options: &Value) -> bool {
+    options.as_array().is_some_and(|options| {
+        options.iter().all(|option| {
+            option
+                .get("value")
+                .is_some_and(|value| !value.is_null() && !value.is_array())
+                && option.get("label").is_some_and(Value::is_string)
+                && option.get("disabled").is_none_or(Value::is_boolean)
+        })
+    })
+}
+
+/// The comparable spelling of each option value written after an earlier option with the same
+/// value, in order; an option's value is its identity, so the later of two is unreachable.
+fn repeated_option_values(options: &Value) -> Vec<String> {
+    let mut seen = HashSet::new();
+    options
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|option| option_value_key(&option["value"]))
+        .filter(|key| !seen.insert(key.clone()))
+        .collect()
+}
+
+/// A comparable spelling of an option's value, the TypeScript reader's `optionValueKey`.
+///
+/// Two objects declaring the same members are the same value however they were written, so an
+/// object's members are spelled in key order. A number is spelled by the double it reads as, so
+/// `1` and `1.0` are one value as they are in JavaScript, and `-0` is `0`. A list inside an object
+/// is spelled as JavaScript enumerates it, as an object keyed by index.
+fn option_value_key(value: &Value) -> String {
+    let mut members: Vec<(String, &Value)> = match value {
+        Value::Object(object) => object
+            .iter()
+            .map(|(key, held)| (key.clone(), held))
+            .collect(),
+        Value::Array(list) => list
+            .iter()
+            .enumerate()
+            .map(|(i, held)| (i.to_string(), held))
+            .collect(),
+        Value::Number(number) => {
+            let number = number.as_f64().unwrap_or_default();
+            return format!("{:?}", if number == 0.0 { 0.0 } else { number });
+        }
+        _ => return value.to_string(),
+    };
+    members.sort_by(|(left, _), (right, _)| left.cmp(right));
+    let spelled: Vec<String> = members
+        .into_iter()
+        .map(|(key, held)| format!("{}:{}", Value::from(key), option_value_key(held)))
+        .collect();
+    format!("{{{}}}", spelled.join(","))
 }
 
 /// Reports what `field_findings` finds at `at`, and removes from the field what deserialization
@@ -1181,9 +1260,22 @@ fn judge_field(field: &mut Value, at: Option<&str>, in_tree: bool, d: &mut Vec<D
             "min",
             "max",
             "step",
+            "options",
         ] {
             field.remove(key);
         }
+    }
+    // A kind with no options does not read them, so a list that is not one is not carried either.
+    if field
+        .get("options")
+        .is_some_and(|options| !has_valid_options(options))
+    {
+        field.remove("options");
+    }
+    // The later of two options with one value is unreachable, so it is not carried.
+    if let Some(Value::Array(options)) = field.get_mut("options") {
+        let mut seen = HashSet::new();
+        options.retain(|option| seen.insert(option_value_key(&option["value"])));
     }
     // A kind with no range does not read these, so one that is not a number is no finding and is
     // not carried either.
@@ -1318,17 +1410,6 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                     "mode is meaningful only on multiselect",
                 ));
             }
-        }
-        if matches!(
-            field.kind.as_str(),
-            "select" | "radio" | "multiselect" | "segmented"
-        ) && field.options.is_none()
-        {
-            d.push(diag(
-                "MDY_DYNAMIC_OPTIONS_REQUIRED",
-                &format!("{path}/options"),
-                "option field requires options",
-            ));
         }
         if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
             let at = format!("{path}/validators/pattern");

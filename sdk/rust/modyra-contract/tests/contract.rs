@@ -753,3 +753,72 @@ fn a_calendar_field_has_a_calendar_it_can_draw() {
         }
     }
 }
+
+/// An option field needs a list of options as the contract writes one, and an option's value is
+/// its identity: the later of two options with one value is a finding, and is not carried.
+#[test]
+fn an_option_field_has_options_it_can_offer() {
+    let option = |value: serde_json::Value| serde_json::json!({ "value": value, "label": "L" });
+    for options in [
+        None,
+        Some(serde_json::json!("a")),
+        Some(serde_json::json!([option(serde_json::Value::Null)])),
+        Some(serde_json::json!([option(serde_json::json!([1]))])),
+        Some(serde_json::json!([{ "value": "a" }])),
+        Some(serde_json::json!([{ "value": "a", "label": "A", "disabled": "yes" }])),
+        Some(serde_json::json!(["a"])),
+    ] {
+        let mut field = serde_json::json!({ "kind": "radio", "label": "F" });
+        if let Some(options) = options {
+            field["options"] = options;
+        }
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_OPTIONS_REQUIRED", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for (values, repeats) in [
+        (serde_json::json!(["x", "x", "x"]), 2),
+        (serde_json::json!([1, 1.0]), 1),
+        (serde_json::json!([0, -0]), 1),
+        (
+            serde_json::json!([{ "a": 1, "b": 2 }, { "b": 2, "a": 1 }]),
+            1,
+        ),
+        (serde_json::json!(["1", 1, true, "true"]), 0),
+    ] {
+        let options: Vec<_> = values
+            .as_array()
+            .unwrap()
+            .iter()
+            .cloned()
+            .map(option)
+            .collect();
+        let field = serde_json::json!({ "kind": "select", "label": "F", "options": options });
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_DUPLICATE_OPTION", LEAF.to_string()); repeats],
+            "{field}"
+        );
+        let result = parse_v2(&entry.to_string(), ValidationMode::Lenient).unwrap();
+        let kept = result.form.unwrap().fields[0]
+            .options
+            .as_ref()
+            .unwrap()
+            .len();
+        assert_eq!(kept, options.len() - repeats, "{field}");
+    }
+    // A kind that offers no options does not read them.
+    let field = serde_json::json!({ "kind": "text", "label": "F", "options": [{ "value": null }] });
+    for document in as_leaf_and_entry(field) {
+        assert_eq!(findings(document), vec![]);
+    }
+}
