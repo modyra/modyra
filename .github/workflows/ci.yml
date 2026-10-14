@@ -76,6 +76,12 @@ jobs:
       - name: The Rust reader agrees with the corpus
         run: cargo test --manifest-path sdk/rust/modyra-contract/Cargo.toml
 
+      # The whole Rust workspace, examples included, is held to rustfmt's default layout, so a
+      # change to it shows only the lines it means to change. rustfmt ships with the same runner
+      # toolchain as cargo.
+      - name: The Rust workspace is in rustfmt layout
+        run: cargo fmt --all --check --manifest-path sdk/rust/Cargo.toml
+
       # The fourth reader. Its disagreements with the corpus are listed in
       # `sdk/java/modyra-contract/src/test/resources/known-corpus-disagreements.json`, held exact both
       # ways (ADR 0228): one not listed is a regression, a listed one that agrees has to leave the list.

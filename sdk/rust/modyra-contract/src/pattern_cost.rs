@@ -77,7 +77,11 @@ fn text(slice: &[u16]) -> String {
 }
 
 fn index_of(source: &[u16], unit: u16, from: usize) -> Option<usize> {
-    source.get(from..)?.iter().position(|&u| u == unit).map(|i| i + from)
+    source
+        .get(from..)?
+        .iter()
+        .position(|&u| u == unit)
+        .map(|i| i + from)
 }
 
 fn is_digit(unit: u16) -> bool {
@@ -89,7 +93,9 @@ fn is_letter(unit: u16) -> bool {
 }
 
 fn is_class_escape(unit: u16) -> bool {
-    [b'd', b'D', b'w', b'W', b's', b'S'].iter().any(|&c| c as u16 == unit)
+    [b'd', b'D', b'w', b'W', b's', b'S']
+        .iter()
+        .any(|&c| c as u16 == unit)
 }
 
 /// What `\s` matches in ECMAScript: white space and line terminators.
@@ -122,9 +128,27 @@ fn number(digits: &[u16]) -> f64 {
 fn repetition_at(source: &[u16], at: usize) -> Option<Repetition> {
     let character = *source.get(at)?;
     match character {
-        STAR => return Some(Repetition { min: 0.0, max: f64::INFINITY, end: at }),
-        PLUS => return Some(Repetition { min: 1.0, max: f64::INFINITY, end: at }),
-        QUESTION => return Some(Repetition { min: 0.0, max: 1.0, end: at }),
+        STAR => {
+            return Some(Repetition {
+                min: 0.0,
+                max: f64::INFINITY,
+                end: at,
+            })
+        }
+        PLUS => {
+            return Some(Repetition {
+                min: 1.0,
+                max: f64::INFINITY,
+                end: at,
+            })
+        }
+        QUESTION => {
+            return Some(Repetition {
+                min: 0.0,
+                max: 1.0,
+                end: at,
+            })
+        }
         OPEN_BRACE => {}
         _ => return None,
     }
@@ -136,19 +160,31 @@ fn repetition_at(source: &[u16], at: usize) -> Option<Repetition> {
     }
     let min = number(&body[..lead]);
     if lead == body.len() {
-        return Some(Repetition { min, max: min, end: close });
+        return Some(Repetition {
+            min,
+            max: min,
+            end: close,
+        });
     }
     if body[lead] != COMMA {
         return None;
     }
     let rest = &body[lead + 1..];
     if rest.iter().all(|&u| is_js_space(u)) {
-        return Some(Repetition { min, max: f64::INFINITY, end: close });
+        return Some(Repetition {
+            min,
+            max: f64::INFINITY,
+            end: close,
+        });
     }
     let spaces = rest.iter().take_while(|&&u| is_js_space(u)).count();
     let tail = &rest[spaces..];
     if !tail.is_empty() && tail.iter().all(|&u| is_digit(u)) {
-        return Some(Repetition { min, max: number(tail), end: close });
+        return Some(Repetition {
+            min,
+            max: number(tail),
+            end: close,
+        });
     }
     None
 }
@@ -157,7 +193,11 @@ fn repetition_at(source: &[u16], at: usize) -> Option<Repetition> {
 /// whitespace and non-Latin letters that keep `.` from `\n` and `\w` from a letter outside ASCII.
 fn alphabet() -> Vec<String> {
     let mut out: Vec<String> = (0x20u8..=0x7E).map(|b| (b as char).to_string()).collect();
-    out.extend(["\n", "\t", "\r", "é", "ß", "中"].iter().map(|s| s.to_string()));
+    out.extend(
+        ["\n", "\t", "\r", "é", "ß", "中"]
+            .iter()
+            .map(|s| s.to_string()),
+    );
     out
 }
 
@@ -225,27 +265,51 @@ fn first_matcher(branch: &[u16]) -> Option<Regex> {
     if head == BACKSLASH {
         let escaped = *branch.get(1)?;
         if is_class_escape(escaped) {
-            return if optional_after(branch, 2) { None } else { safe_matcher(&[BACKSLASH, escaped]) };
+            return if optional_after(branch, 2) {
+                None
+            } else {
+                safe_matcher(&[BACKSLASH, escaped])
+            };
         }
         if escaped == b'b' as u16 || escaped == b'B' as u16 || is_digit(escaped) {
             return None;
         }
         if let Some(literal) = literal_escape(escaped) {
-            return if optional_after(branch, 2) { None } else { safe_matcher(&escape_literal(literal)) };
+            return if optional_after(branch, 2) {
+                None
+            } else {
+                safe_matcher(&escape_literal(literal))
+            };
         }
         if is_letter(escaped) {
             return None;
         }
-        return if optional_after(branch, 2) { None } else { safe_matcher(&escape_literal(escaped)) };
+        return if optional_after(branch, 2) {
+            None
+        } else {
+            safe_matcher(&escape_literal(escaped))
+        };
     }
     if head == OPEN_BRACKET {
         let close = class_end(branch, 0)?;
-        return if optional_after(branch, close + 1) { None } else { safe_matcher(&branch[..=close]) };
+        return if optional_after(branch, close + 1) {
+            None
+        } else {
+            safe_matcher(&branch[..=close])
+        };
     }
     if head == DOT {
-        return if optional_after(branch, 1) { None } else { safe_matcher(&[DOT]) };
+        return if optional_after(branch, 1) {
+            None
+        } else {
+            safe_matcher(&[DOT])
+        };
     }
-    if [OPEN_PAREN, CARET, DOLLAR, STAR, PLUS, QUESTION, OPEN_BRACE, BAR].contains(&head) {
+    if [
+        OPEN_PAREN, CARET, DOLLAR, STAR, PLUS, QUESTION, OPEN_BRACE, BAR,
+    ]
+    .contains(&head)
+    {
         return None;
     }
     if optional_after(branch, 1) {
@@ -263,9 +327,17 @@ fn alternatives_of(source: &[u16], group: &Group, end: usize) -> Vec<Vec<u16>> {
     (0..bounds.len() - 1)
         .map(|index| {
             let from = bounds[index].min(source.len());
-            let to = if index + 2 < bounds.len() { bounds[index + 1].saturating_sub(1) } else { bounds[index + 1] };
+            let to = if index + 2 < bounds.len() {
+                bounds[index + 1].saturating_sub(1)
+            } else {
+                bounds[index + 1]
+            };
             let to = to.min(source.len());
-            if to > from { source[from..to].to_vec() } else { Vec::new() }
+            if to > from {
+                source[from..to].to_vec()
+            } else {
+                Vec::new()
+            }
         })
         .collect()
 }
@@ -293,7 +365,11 @@ fn plain_word(branch: &[u16]) -> Option<Vec<u16>> {
         word.push(character);
         at += 1;
     }
-    if word.is_empty() { None } else { Some(word) }
+    if word.is_empty() {
+        None
+    } else {
+        Some(word)
+    }
 }
 
 /// Whether two alternatives can both match at the same position: plain words compared whole for a
@@ -303,7 +379,10 @@ fn overlap(branches: &[Vec<u16>], alphabet: &[String]) -> bool {
     if words.iter().all(Option::is_some) {
         let words: Vec<&Vec<u16>> = words.iter().flatten().collect();
         return words.iter().enumerate().any(|(index, word)| {
-            words.iter().enumerate().any(|(at, other)| at != index && other.starts_with(word))
+            words
+                .iter()
+                .enumerate()
+                .any(|(at, other)| at != index && other.starts_with(word))
         });
     }
     let matchers: Vec<Option<Regex>> = branches.iter().map(|b| first_matcher(b)).collect();
@@ -471,14 +550,20 @@ fn group_end(source: &[u16], at: usize) -> Option<usize> {
 
 /// Whether everything `inner` accepts, the stretchy `outer` accepts too. Undecidable counts as yes.
 fn contained_in(inner: &Atom, outer: &Atom, alphabet: &[String]) -> bool {
-    let (Some(inner), Some(outer)) = (&inner.matcher, &outer.matcher) else { return true };
-    alphabet.iter().all(|c| !accepts(inner, c) || accepts(outer, c))
+    let (Some(inner), Some(outer)) = (&inner.matcher, &outer.matcher) else {
+        return true;
+    };
+    alphabet
+        .iter()
+        .all(|c| !accepts(inner, c) || accepts(outer, c))
 }
 
 /// Whether repeating this body gives the engine more than one way to divide the same input: a
 /// variable element with no forced boundary at the seam between one repetition and the next.
 fn body_is_ambiguous(branch: &[u16], alphabet: &[String]) -> bool {
-    let Some(atoms) = atoms_of(branch) else { return false };
+    let Some(atoms) = atoms_of(branch) else {
+        return false;
+    };
     if atoms.is_empty() || !atoms.iter().any(|a| a.min != a.max) {
         return false;
     }
@@ -497,15 +582,21 @@ fn body_is_ambiguous(branch: &[u16], alphabet: &[String]) -> bool {
             if a.min == a.max || b.min == b.max {
                 continue;
             }
-            let (Some(am), Some(bm)) = (&a.matcher, &b.matcher) else { return true };
+            let (Some(am), Some(bm)) = (&a.matcher, &b.matcher) else {
+                return true;
+            };
             if alphabet.iter().any(|c| accepts(am, c) && accepts(bm, c)) {
                 return true;
             }
         }
         return false;
     }
-    let Some(stretchy) = atoms[..=end].iter().rposition(|a| a.min != a.max) else { return false };
-    atoms[stretchy + 1..=end].iter().all(|atom| contained_in(atom, &atoms[stretchy], alphabet))
+    let Some(stretchy) = atoms[..=end].iter().rposition(|a| a.min != a.max) else {
+        return false;
+    };
+    atoms[stretchy + 1..=end]
+        .iter()
+        .all(|atom| contained_in(atom, &atoms[stretchy], alphabet))
 }
 
 pub(crate) const REFUSED_DIVISIBLE: &str =
@@ -547,7 +638,10 @@ pub(crate) fn pattern_refusal(pattern: &str) -> Option<&'static str> {
                     body += 1;
                 }
             }
-            groups.push(Group { variable: false, alternatives: vec![body] });
+            groups.push(Group {
+                variable: false,
+                alternatives: vec![body],
+            });
             at = body;
             continue;
         }
@@ -669,8 +763,17 @@ mod tests {
     #[test]
     fn refuses_the_shapes_that_backtrack_exponentially() {
         for source in [
-            "(a+)+$", "^(a*)*$", "^(a|ab)+$", "^([a-z]|[a-z])*$", "^(\\w|[a-z])*$", "^(.|x)+$",
-            "^(a{2,4})+$", "^(a+){15}b$", "(.*a){20}$", "^([A-Za-z]+[0-9]*)+$", "^([^x]+[^y]+)+z$",
+            "(a+)+$",
+            "^(a*)*$",
+            "^(a|ab)+$",
+            "^([a-z]|[a-z])*$",
+            "^(\\w|[a-z])*$",
+            "^(.|x)+$",
+            "^(a{2,4})+$",
+            "^(a+){15}b$",
+            "(.*a){20}$",
+            "^([A-Za-z]+[0-9]*)+$",
+            "^([^x]+[^y]+)+z$",
         ] {
             assert!(pattern_refusal(source).is_some(), "{source} was allowed");
         }
@@ -681,10 +784,17 @@ mod tests {
     #[test]
     fn leaves_the_patterns_forms_are_written_with() {
         for source in [
-            "^\\d{5}$", "^(foo|bar|baz)+$", "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
-            "^(\\d{1,3}\\.){3}\\d{1,3}$", "^([a-z]+-)*[a-z]+$", "^(\\s*[^,]+,)*\\s*[^,]+$",
-            "^(\"[^\"]*\",)*\"[^\"]*\"$", "^(?:ab){3}$", "^(?<year>\\d{4})-(?<month>\\d{2})$",
-            "(?<!x)(\\d{2}){4}", "^(.|\\n)*$",
+            "^\\d{5}$",
+            "^(foo|bar|baz)+$",
+            "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+            "^(\\d{1,3}\\.){3}\\d{1,3}$",
+            "^([a-z]+-)*[a-z]+$",
+            "^(\\s*[^,]+,)*\\s*[^,]+$",
+            "^(\"[^\"]*\",)*\"[^\"]*\"$",
+            "^(?:ab){3}$",
+            "^(?<year>\\d{4})-(?<month>\\d{2})$",
+            "(?<!x)(\\d{2}){4}",
+            "^(.|\\n)*$",
         ] {
             assert_eq!(pattern_refusal(source), None, "{source} was refused");
         }
@@ -692,7 +802,9 @@ mod tests {
 
     #[test]
     fn compiles_as_a_flagless_regexp_does() {
-        for source in ["\\-", "a{", "\\1", "(?=a)*", "[\\b]+", "\\b{,3}", "\\b{2, }"] {
+        for source in [
+            "\\-", "a{", "\\1", "(?=a)*", "[\\b]+", "\\b{,3}", "\\b{2, }",
+        ] {
             assert!(compiles(source), "{source} was refused");
         }
         for source in ["[", "a**", "x{2,1}", "\\b+", "\\B*", "\\b{2}", "(?<=a)+"] {
