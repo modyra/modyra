@@ -14,7 +14,10 @@ fn rejects_unknown_references_in_strict_mode() {
     let result = parse_v2(json, ValidationMode::Strict).unwrap();
     assert!(!result.valid);
     assert!(result.form.is_none());
-    assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
 }
 
 #[test]
@@ -82,7 +85,9 @@ fn accepts_shared_nested_layout_fixture() {
         LayoutNode::Section { id, children, .. } => {
             assert_eq!(id, "address");
             assert!(matches!(&children[0], LayoutChild::Field(name) if name == "street"));
-            assert!(matches!(&children[1], LayoutChild::Node(nested) if matches!(**nested, LayoutNode::Columns { .. })));
+            assert!(
+                matches!(&children[1], LayoutChild::Node(nested) if matches!(**nested, LayoutNode::Columns { .. }))
+            );
         }
         other => panic!("expected a section, got {other:?}"),
     }
@@ -91,10 +96,14 @@ fn accepts_shared_nested_layout_fixture() {
 #[test]
 fn rejects_shared_duplicate_layout_reference_fixture() {
     // A field placed in two slots would render twice and bind one value to both.
-    let json = include_str!("../../../../spec/fixtures/dynamic-form/v2/duplicate-layout-reference.json");
+    let json =
+        include_str!("../../../../spec/fixtures/dynamic-form/v2/duplicate-layout-reference.json");
     let result = parse_v2(json, ValidationMode::Strict).unwrap();
     assert!(!result.valid);
-    assert!(result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"));
 }
 
 #[test]
@@ -156,7 +165,10 @@ fn refuses_placement_where_no_column_can_honour_it() {
     let past_the_end = r#"{"version":3,"fields":[{"name":"a","kind":"text"},{"name":"b","kind":"text"}],
         "layout":[{"kind":"columns","id":"r","columns":[["a"],[{"ref":"b","at":{"sm":{"column":5}}}]]}]}"#;
     let result = parse_v2(past_the_end, ValidationMode::Strict).unwrap();
-    assert!(!result.valid, "a column the row does not have must be refused");
+    assert!(
+        !result.valid,
+        "a column the row does not have must be refused"
+    );
 
     // And a version this SDK has never heard of is still refused. Which number that is depends on
     // how far the language has grown, so it is found rather than named: a literal here becomes a
@@ -164,9 +176,8 @@ fn refuses_placement_where_no_column_can_honour_it() {
     // happened to the `5` that used to be written here.
     let first_unknown = (2..=32)
         .find(|version| {
-            let document = format!(
-                r#"{{"version":{version},"fields":[{{"name":"a","kind":"text"}}]}}"#
-            );
+            let document =
+                format!(r#"{{"version":{version},"fields":[{{"name":"a","kind":"text"}}]}}"#);
             parse_v2(&document, ValidationMode::Strict)
                 .unwrap()
                 .diagnostics
@@ -193,7 +204,11 @@ fn reads_a_v4_document_and_the_context_it_declares() {
           "vat":{"node":"field","field":{"kind":"text"},
                  "when":{"op":"equals","operands":[{"context":"tier"},"business"]}}}}}"#;
     let result = parse_v2(declared, ValidationMode::Strict).unwrap();
-    assert!(result.valid, "a v4 document was refused: {:?}", result.diagnostics);
+    assert!(
+        result.valid,
+        "a v4 document was refused: {:?}",
+        result.diagnostics
+    );
 
     // A key read and not declared: the host is told what to supply by `requiresContext` alone, so a
     // key missing from it is one no host would think to pass.
@@ -254,7 +269,10 @@ fn multiselect_mode_survives_a_round_trip() {
         "the mode must survive re-serialisation, got {round_tripped}"
     );
     assert!(
-        result.diagnostics.iter().all(|d| d.code != "MDY_DYNAMIC_UNKNOWN_MODE"),
+        result
+            .diagnostics
+            .iter()
+            .all(|d| d.code != "MDY_DYNAMIC_UNKNOWN_MODE"),
         "a declared mode is not an unknown one"
     );
 }
@@ -272,7 +290,10 @@ fn an_unrecognised_mode_is_reported() {
     }"#;
     let result = parse_v2(json, ValidationMode::Lenient).expect("parses");
     assert!(
-        result.diagnostics.iter().any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_MODE"),
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "MDY_DYNAMIC_UNKNOWN_MODE"),
         "a mode the contract does not describe leaves the field checked against no anatomy"
     );
 }
@@ -308,13 +329,21 @@ fn a_collection_nests_without_a_limit() {
     let array_in_array = r#"{"version":3,"schema":{"node":"array","item":
         {"node":"array","item":{"node":"field","field":{"kind":"text","name":"leaf"}}}}}"#;
     let result = parse_v2(array_in_array, ValidationMode::Strict).unwrap();
-    assert!(result.valid, "an array of arrays was refused: {:?}", result.diagnostics);
+    assert!(
+        result.valid,
+        "an array of arrays was refused: {:?}",
+        result.diagnostics
+    );
 
     let array_under_a_rows_record = r#"{"version":3,"schema":{"node":"array","item":
         {"node":"record","item":{"node":"array","item":
         {"node":"field","field":{"kind":"text","name":"leaf"}}}}}}"#;
     let nested = parse_v2(array_under_a_rows_record, ValidationMode::Strict).unwrap();
-    assert!(nested.valid, "an array below a row's record was refused: {:?}", nested.diagnostics);
+    assert!(
+        nested.valid,
+        "an array below a row's record was refused: {:?}",
+        nested.diagnostics
+    );
 
     // Deeper than the eight levels this SDK used to cap at, since that limit went with the rule.
     let mut deep = String::from(r#"{"version":3,"schema":"#);
@@ -327,7 +356,11 @@ fn a_collection_nests_without_a_limit() {
     }
     deep.push('}');
     let forty = parse_v2(&deep, ValidationMode::Strict).unwrap();
-    assert!(forty.valid, "forty positional levels were refused: {:?}", forty.diagnostics);
+    assert!(
+        forty.valid,
+        "forty positional levels were refused: {:?}",
+        forty.diagnostics
+    );
 
     // The known-good refusal in the same test: what the walk still reports, it still reports.
     let unsafe_key = r#"{"version":3,"schema":{"node":"record","item":
@@ -376,7 +409,11 @@ fn reads_every_document_in_the_shared_corpus() {
             .collect();
         entries.sort();
         for path in entries {
-            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default()
+                .to_string();
             // A document is a file whose name carries no second suffix. `.expected.json` states a
             // verdict and `.context.json` supplies host facts; neither is a document, and a rule
             // about suffixes covers the next kind of companion without being edited for it.
@@ -385,7 +422,10 @@ fn reads_every_document_in_the_shared_corpus() {
             }
             let label = format!(
                 "{}/{name}",
-                version.file_name().and_then(|n| n.to_str()).unwrap_or_default()
+                version
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or_default()
             );
             documents.push((label, path));
         }
@@ -403,28 +443,36 @@ fn reads_every_document_in_the_shared_corpus() {
             .unwrap_or_else(|error| panic!("{label} is not JSON this reader can take: {error}"));
 
         let expected_path = path.with_extension("expected.json");
-        let expected: Option<serde_json::Value> = fs::read_to_string(&expected_path)
-            .ok()
-            .map(|text| serde_json::from_str(&text).expect("an expected-verdict sidecar is not JSON"));
+        let expected: Option<serde_json::Value> =
+            fs::read_to_string(&expected_path).ok().map(|text| {
+                serde_json::from_str(&text).expect("an expected-verdict sidecar is not JSON")
+            });
 
         match expected {
             // No sidecar is itself a statement: this document parses clean.
-            None => assert!(result.valid, "{label} was refused: {:?}", result.diagnostics),
+            None => assert!(
+                result.valid,
+                "{label} was refused: {:?}",
+                result.diagnostics
+            ),
             Some(verdict) => {
                 let wanted = verdict["valid"].as_bool().unwrap_or(true);
                 assert_eq!(result.valid, wanted, "{label}: {:?}", result.diagnostics);
 
                 if let Some(codes) = verdict["diagnostics"].as_array() {
-                    let wanted: BTreeSet<&str> = codes.iter().filter_map(|code| code.as_str()).collect();
+                    let wanted: BTreeSet<&str> =
+                        codes.iter().filter_map(|code| code.as_str()).collect();
                     let said: BTreeSet<&str> =
                         result.diagnostics.iter().map(|d| &*d.code).collect();
-                    assert_eq!(said, wanted, "{label} reported different codes than the corpus declares");
+                    assert_eq!(
+                        said, wanted,
+                        "{label} reported different codes than the corpus declares"
+                    );
                 }
             }
         }
     }
 }
-
 
 /// The codes a v4 document gets when one field carries `when`.
 fn codes_for_clause(when: serde_json::Value) -> Vec<&'static str> {
@@ -466,7 +514,8 @@ fn an_operand_names_one_thing_of_the_right_type() {
         json!(null),
     ] {
         assert!(
-            codes_for_clause(json!({ "op": "equals", "operands": [operand.clone(), "x"] })).is_empty(),
+            codes_for_clause(json!({ "op": "equals", "operands": [operand.clone(), "x"] }))
+                .is_empty(),
             "{operand}"
         );
     }
@@ -475,12 +524,16 @@ fn an_operand_names_one_thing_of_the_right_type() {
 #[test]
 fn an_expression_nests_thirty_two_levels_and_no_further() {
     let nested = |levels: usize| {
-        (0..levels).fold(serde_json::json!({ "op": "isEmpty", "operand": { "self": true } }), |inner, _| {
-            serde_json::json!({ "op": "not", "operand": inner })
-        })
+        (0..levels).fold(
+            serde_json::json!({ "op": "isEmpty", "operand": { "self": true } }),
+            |inner, _| serde_json::json!({ "op": "not", "operand": inner }),
+        )
     };
     assert!(codes_for_clause(nested(32)).is_empty());
-    assert_eq!(codes_for_clause(nested(33)), ["MDY_DYNAMIC_INVALID_CONDITION"]);
+    assert_eq!(
+        codes_for_clause(nested(33)),
+        ["MDY_DYNAMIC_INVALID_CONDITION"]
+    );
 }
 
 #[test]
@@ -491,8 +544,14 @@ fn a_matches_pattern_is_a_short_literal_string() {
     };
     assert!(matching(json!("^[a-z]+$")).is_empty());
     assert!(matching(json!("é".repeat(256))).is_empty());
-    assert_eq!(matching(json!("a".repeat(257))), ["MDY_DYNAMIC_INVALID_CONDITION"]);
-    assert_eq!(matching(json!({ "self": true })), ["MDY_DYNAMIC_INVALID_CONDITION"]);
+    assert_eq!(
+        matching(json!("a".repeat(257))),
+        ["MDY_DYNAMIC_INVALID_CONDITION"]
+    );
+    assert_eq!(
+        matching(json!({ "self": true })),
+        ["MDY_DYNAMIC_INVALID_CONDITION"]
+    );
 }
 
 #[test]
@@ -504,10 +563,17 @@ fn a_validation_needs_words_a_known_target_and_a_readable_condition() {
             "validations": [validation]
         });
         let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
-        result.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+        result
+            .diagnostics
+            .iter()
+            .map(|d| d.code)
+            .collect::<Vec<_>>()
     };
     let when = serde_json::json!({ "op": "isEmpty", "operand": { "path": "a" } });
-    assert!(codes(serde_json::json!({ "message": "Say something", "target": "a", "when": when })).is_empty());
+    assert!(
+        codes(serde_json::json!({ "message": "Say something", "target": "a", "when": when }))
+            .is_empty()
+    );
     assert_eq!(
         codes(serde_json::json!({ "message": "  ", "when": when })),
         ["MDY_DYNAMIC_INVALID_VALIDATION"]
@@ -518,7 +584,9 @@ fn a_validation_needs_words_a_known_target_and_a_readable_condition() {
     );
     // The empty path is the whole form, which a validation reaches through `{ "root": true }`.
     assert_eq!(
-        codes(serde_json::json!({ "message": "x", "when": { "op": "isEmpty", "operand": { "path": "" } } })),
+        codes(
+            serde_json::json!({ "message": "x", "when": { "op": "isEmpty", "operand": { "path": "" } } })
+        ),
         ["MDY_DYNAMIC_UNKNOWN_FIELD_REFERENCE"]
     );
 }
@@ -533,12 +601,25 @@ fn ordering_a_date_needs_a_full_iso_date() {
                         "when": { "field": "from", "operator": "greaterThan", "value": value } }]
         });
         let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
-        result.diagnostics.iter().map(|d| d.code).collect::<Vec<_>>()
+        result
+            .diagnostics
+            .iter()
+            .map(|d| d.code)
+            .collect::<Vec<_>>()
     };
     assert!(codes(serde_json::json!("2024-02-29")).is_empty());
-    assert_eq!(codes(serde_json::json!("2023-02-29")), ["MDY_DYNAMIC_INVALID_RULE"]);
-    assert_eq!(codes(serde_json::json!("2026-2-01")), ["MDY_DYNAMIC_INVALID_RULE"]);
-    assert_eq!(codes(serde_json::json!({ "at": 1 })), ["MDY_DYNAMIC_INVALID_RULE"]);
+    assert_eq!(
+        codes(serde_json::json!("2023-02-29")),
+        ["MDY_DYNAMIC_INVALID_RULE"]
+    );
+    assert_eq!(
+        codes(serde_json::json!("2026-2-01")),
+        ["MDY_DYNAMIC_INVALID_RULE"]
+    );
+    assert_eq!(
+        codes(serde_json::json!({ "at": 1 })),
+        ["MDY_DYNAMIC_INVALID_RULE"]
+    );
 }
 
 #[test]
@@ -575,7 +656,9 @@ fn a_finding_points_where_the_field_is_written() {
     );
     // A later entry with a taken name is the refused duplicate, not a field to hold to the version.
     assert_eq!(
-        paths(r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}},{"name":"n","kind":"number","label":"Again","validators":{"integer":true}}]}"#),
+        paths(
+            r#"{"version":4,"fields":[{"name":"a","kind":"text","label":"A"},{"name":"n","kind":"number","label":"N","validators":{"integer":true}},{"name":"n","kind":"number","label":"Again","validators":{"integer":true}}]}"#
+        ),
         vec!["/fields/1/validators/integer"]
     );
     // A null integer is no rule the version predates, in a list or a tree: there is no constraint to

@@ -384,7 +384,9 @@ const OPERAND_MARKERS: [&str; 4] = ["path", "self", "root", "context"];
 
 /// Whether `value` is an expression: an object with an `op`, whatever the `op` holds.
 fn is_expression(value: &Value) -> bool {
-    value.as_object().is_some_and(|object| object.contains_key("op"))
+    value
+        .as_object()
+        .is_some_and(|object| object.contains_key("op"))
 }
 
 /// The operands an expression object holds, and whether `operands` is present but not a list.
@@ -400,7 +402,9 @@ fn operands_of(expression: &serde_json::Map<String, Value>) -> (Vec<&Value>, boo
 
 /// The value of `marker` when `operand` is an object naming that marker and no other (ADR 0092).
 fn names_one_thing<'a>(operand: &'a Value, marker: &str) -> Option<&'a Value> {
-    let object = operand.as_object().filter(|object| !object.contains_key("op"))?;
+    let object = operand
+        .as_object()
+        .filter(|object| !object.contains_key("op"))?;
     let held = object.get(marker)?;
     OPERAND_MARKERS
         .iter()
@@ -412,7 +416,11 @@ fn names_one_thing<'a>(operand: &'a Value, marker: &str) -> Option<&'a Value> {
 fn claims_two_things(operand: &Value) -> bool {
     operand.as_object().is_some_and(|object| {
         !object.contains_key("op")
-            && OPERAND_MARKERS.iter().filter(|marker| object.contains_key(**marker)).count() > 1
+            && OPERAND_MARKERS
+                .iter()
+                .filter(|marker| object.contains_key(**marker))
+                .count()
+                > 1
     })
 }
 
@@ -452,12 +460,19 @@ fn utf16_len(text: &str) -> usize {
 /// Recursive, and bounded: past `EXPRESSION_MAX_DEPTH` the walk stops with a refusal, so a
 /// document cannot choose how deep this goes.
 fn expression_problems(expression: &Value, at: &str, depth: usize, out: &mut Vec<String>) {
-    let Some(object) = expression.as_object().filter(|object| object.contains_key("op")) else {
-        out.push(format!("{at}: expected an expression object with an \"op\""));
+    let Some(object) = expression
+        .as_object()
+        .filter(|object| object.contains_key("op"))
+    else {
+        out.push(format!(
+            "{at}: expected an expression object with an \"op\""
+        ));
         return;
     };
     if depth > EXPRESSION_MAX_DEPTH {
-        out.push(format!("{at}: nests deeper than {EXPRESSION_MAX_DEPTH} levels"));
+        out.push(format!(
+            "{at}: nests deeper than {EXPRESSION_MAX_DEPTH} levels"
+        ));
         return;
     }
     let op = object.get("op").and_then(Value::as_str);
@@ -516,16 +531,26 @@ fn expression_problems(expression: &Value, at: &str, depth: usize, out: &mut Vec
 fn expression_leaves(expression: &Value) -> Vec<&Value> {
     let mut leaves = Vec::new();
     let mut pending: Vec<(&Value, usize)> = match expression.as_object() {
-        Some(object) => operands_of(object).0.into_iter().map(|operand| (operand, 1)).collect(),
+        Some(object) => operands_of(object)
+            .0
+            .into_iter()
+            .map(|operand| (operand, 1))
+            .collect(),
         None => Vec::new(),
     };
     while let Some((operand, depth)) = pending.pop() {
         if depth > EXPRESSION_MAX_DEPTH {
             continue;
         }
-        match operand.as_object().filter(|object| object.contains_key("op")) {
+        match operand
+            .as_object()
+            .filter(|object| object.contains_key("op"))
+        {
             Some(object) => pending.extend(
-                operands_of(object).0.into_iter().map(|nested| (nested, depth + 1)),
+                operands_of(object)
+                    .0
+                    .into_iter()
+                    .map(|nested| (nested, depth + 1)),
             ),
             None => leaves.push(operand),
         }
@@ -544,7 +569,10 @@ fn expression_paths(expression: &Value) -> Vec<&str> {
 
 /// The context keys `expression` reads through `{context}`.
 fn expression_context_keys(expression: &Value) -> Vec<&str> {
-    expression_leaves(expression).into_iter().filter_map(context_ref).collect()
+    expression_leaves(expression)
+        .into_iter()
+        .filter_map(context_ref)
+        .collect()
 }
 
 /// Checks a condition written on a node and collects the context keys it reads.
@@ -581,7 +609,11 @@ fn validate_clause(
             "condition reads a path nothing enclosing this clause declares; { \"root\": true } reaches the whole form",
         ));
     }
-    context_keys.extend(expression_context_keys(&clause).into_iter().map(String::from));
+    context_keys.extend(
+        expression_context_keys(&clause)
+            .into_iter()
+            .map(String::from),
+    );
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -969,7 +1001,11 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
         if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
             let at = format!("{path}/validators/pattern");
             if utf16_len(pattern) > 256 {
-                d.push(diag("MDY_DYNAMIC_PATTERN_TOO_LONG", &at, "pattern exceeds 256 characters"));
+                d.push(diag(
+                    "MDY_DYNAMIC_PATTERN_TOO_LONG",
+                    &at,
+                    "pattern exceeds 256 characters",
+                ));
             } else if let Some(refusal) = pattern_cost::pattern_refusal(pattern) {
                 d.push(diag(
                     "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
@@ -1023,7 +1059,9 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
             .iter()
             .find(|field| field.name == rule.when.field)
             .map(|field| field.kind.as_str());
-        if let Some(refusal) = rule_value_refusal(&rule.when.operator, rule.when.value.as_ref(), kind) {
+        if let Some(refusal) =
+            rule_value_refusal(&rule.when.operator, rule.when.value.as_ref(), kind)
+        {
             d.push(diag(
                 "MDY_DYNAMIC_INVALID_RULE",
                 &format!("/rules/{i}/when/value"),
@@ -1099,7 +1137,11 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
             collect_fields(schema, "/schema", &mut leaves);
         }
         for (field, path) in flat.chain(leaves) {
-            if field.validators.as_ref().is_some_and(|v| v.integer.is_some()) {
+            if field
+                .validators
+                .as_ref()
+                .is_some_and(|v| v.integer.is_some())
+            {
                 d.push(diag(
                     "MDY_DYNAMIC_UNSUPPORTED_VERSION",
                     &format!("{path}/validators/integer"),
@@ -1160,7 +1202,9 @@ fn validate_node(
         // read for the context keys it names, which is what a document's `requiresContext` is held
         // against.
         for (clause, member) in match node {
-            DynamicNode::Field { when, async_when, .. } => [when.as_ref(), async_when.as_ref()],
+            DynamicNode::Field {
+                when, async_when, ..
+            } => [when.as_ref(), async_when.as_ref()],
             DynamicNode::Group { when, .. }
             | DynamicNode::Array { when, .. }
             | DynamicNode::Record { when, .. } => [when.as_ref(), None],
@@ -1169,13 +1213,23 @@ fn validate_node(
         .zip(["when", "asyncWhen"])
         {
             if let Some(clause) = clause {
-                validate_clause(clause, &format!("{path}/{member}"), &scope, out, context_keys);
+                validate_clause(
+                    clause,
+                    &format!("{path}/{member}"),
+                    &scope,
+                    out,
+                    context_keys,
+                );
             }
         }
         match node {
             DynamicNode::Field { field, .. } => {
                 if !KINDS.contains(&field.kind.as_str()) {
-                    out.push(diag("MDY_DYNAMIC_UNKNOWN_KIND", &path, "unknown field kind"));
+                    out.push(diag(
+                        "MDY_DYNAMIC_UNKNOWN_KIND",
+                        &path,
+                        "unknown field kind",
+                    ));
                 }
             }
             DynamicNode::Group { children, .. } => {
@@ -1188,7 +1242,11 @@ fn validate_node(
                             "unsafe group child name",
                         ));
                     } else {
-                        pending.push((child, format!("{path}/children/{}", pointer_segment(name)), here.clone()));
+                        pending.push((
+                            child,
+                            format!("{path}/children/{}", pointer_segment(name)),
+                            here.clone(),
+                        ));
                     }
                 }
             }
@@ -1265,11 +1323,11 @@ fn collect_fields<'a>(node: &'a DynamicNode, path: &str, out: &mut Vec<(&'a Fiel
     while let Some((node, path)) = pending.pop() {
         match node {
             DynamicNode::Field { field, .. } => out.push((field, format!("{path}/field"))),
-            DynamicNode::Group { children, .. } => pending.extend(
-                children
-                    .iter()
-                    .map(|(name, child)| (child, format!("{path}/children/{}", pointer_segment(name)))),
-            ),
+            DynamicNode::Group { children, .. } => {
+                pending.extend(children.iter().map(|(name, child)| {
+                    (child, format!("{path}/children/{}", pointer_segment(name)))
+                }))
+            }
             DynamicNode::Array { item, .. } | DynamicNode::Record { item, .. } => {
                 pending.push((item, format!("{path}/item")))
             }
@@ -1282,7 +1340,11 @@ fn collect_fields<'a>(node: &'a DynamicNode, path: &str, out: &mut Vec<(&'a Fiel
 /// A unary operator reads no value, so one written beside it is ignored. Membership needs a list;
 /// ordering needs a number or a string, and on a date kind the string must be a full ISO date,
 /// because dates are compared as text and only one shape of text sorts as a date.
-fn rule_value_refusal(operator: &str, value: Option<&Value>, kind: Option<&str>) -> Option<&'static str> {
+fn rule_value_refusal(
+    operator: &str,
+    value: Option<&Value>,
+    kind: Option<&str>,
+) -> Option<&'static str> {
     match operator {
         "in" | "notIn" if !value.is_some_and(Value::is_array) => {
             Some("membership operators test a list, and \"value\" is not one")

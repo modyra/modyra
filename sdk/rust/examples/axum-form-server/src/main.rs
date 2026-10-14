@@ -1,16 +1,16 @@
+use axum::extract::State;
 use axum::{
     extract::Json,
     http::{HeaderValue, Method, StatusCode},
     routing::{get, post},
     Router,
 };
-use axum::extract::State;
-use modyra_contract::{DynamicFormV2, Expression, DynamicNode, Field, OptionItem, Validators};
+use modyra_contract::{DynamicFormV2, DynamicNode, Expression, Field, OptionItem, Validators};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use tower_http::cors::CorsLayer;
 
 #[derive(Debug, Clone)]
@@ -31,9 +31,18 @@ impl Default for CheckoutConfiguration {
     fn default() -> Self {
         Self {
             countries: vec![
-                Country { code: "IT".into(), label: "Italy".into() },
-                Country { code: "DE".into(), label: "Germany".into() },
-                Country { code: "US".into(), label: "United States".into() },
+                Country {
+                    code: "IT".into(),
+                    label: "Italy".into(),
+                },
+                Country {
+                    code: "DE".into(),
+                    label: "Germany".into(),
+                },
+                Country {
+                    code: "US".into(),
+                    label: "United States".into(),
+                },
             ],
             default_country: "IT".into(),
             default_sku: "TSHIRT-BLK-M".into(),
@@ -44,89 +53,185 @@ impl Default for CheckoutConfiguration {
 
 fn validators(required: bool) -> Validators {
     Validators {
-        required: Some(required), email: None, integer: None, min: None, max: None,
-        min_length: None, max_length: None, pattern: None, messages: None,
+        required: Some(required),
+        email: None,
+        integer: None,
+        min: None,
+        max: None,
+        min_length: None,
+        max_length: None,
+        pattern: None,
+        messages: None,
     }
 }
 
-fn field(kind: &str, label: &str, initial: Option<Value>, validators: Option<Validators>) -> DynamicNode {
-    DynamicNode::Field { when: None, async_when: None, field: Field {
-        name: "leaf".into(), kind: kind.into(), label: Some(label.into()),
-        placeholder: None, initial_value: initial, validators,
-        min: None, max: None, step: None, options: None,
-        mode: None, searchable: None,
-    }}
+fn field(
+    kind: &str,
+    label: &str,
+    initial: Option<Value>,
+    validators: Option<Validators>,
+) -> DynamicNode {
+    DynamicNode::Field {
+        when: None,
+        async_when: None,
+        field: Field {
+            name: "leaf".into(),
+            kind: kind.into(),
+            label: Some(label.into()),
+            placeholder: None,
+            initial_value: initial,
+            validators,
+            min: None,
+            max: None,
+            step: None,
+            options: None,
+            mode: None,
+            searchable: None,
+        },
+    }
 }
 
 fn checkout_form(config: &CheckoutConfiguration) -> DynamicFormV2 {
-    let country_options = config.countries.iter().map(|country| OptionItem {
-        value: json!(country.code), label: country.label.clone(), disabled: None,
-    }).collect();
-    let mut country = match field("select", "Country", Some(json!(config.default_country)), Some(validators(true))) {
+    let country_options = config
+        .countries
+        .iter()
+        .map(|country| OptionItem {
+            value: json!(country.code),
+            label: country.label.clone(),
+            disabled: None,
+        })
+        .collect();
+    let mut country = match field(
+        "select",
+        "Country",
+        Some(json!(config.default_country)),
+        Some(validators(true)),
+    ) {
         DynamicNode::Field { field, .. } => field,
         _ => unreachable!(),
     };
     country.options = Some(country_options);
 
-    let mut qty = match field("number", "Quantity", Some(json!(1)), Some(Validators { min: Some(1.0), integer: Some(true), ..validators(true) })) {
+    let mut qty = match field(
+        "number",
+        "Quantity",
+        Some(json!(1)),
+        Some(Validators {
+            min: Some(1.0),
+            integer: Some(true),
+            ..validators(true)
+        }),
+    ) {
         DynamicNode::Field { field, .. } => field,
         _ => unreachable!(),
     };
-    qty.min = Some(1.0); qty.max = Some(100.0); qty.step = Some(1.0);
+    qty.min = Some(1.0);
+    qty.max = Some(100.0);
+    qty.step = Some(1.0);
 
     let shipping = DynamicNode::Group {
         label: Some("Shipping address".into()),
         when: None,
         children: BTreeMap::from([
-            ("city".into(), field("text", "City", None, Some(validators(true)))),
-            ("zip".into(), field("text", "ZIP", None, Some(Validators { pattern: Some("^\\d{5}$".into()), ..validators(true) }))),
+            (
+                "city".into(),
+                field("text", "City", None, Some(validators(true))),
+            ),
+            (
+                "zip".into(),
+                field(
+                    "text",
+                    "ZIP",
+                    None,
+                    Some(Validators {
+                        pattern: Some("^\\d{5}$".into()),
+                        ..validators(true)
+                    }),
+                ),
+            ),
         ]),
     };
     let item = DynamicNode::Group {
         label: None,
         when: None,
         children: BTreeMap::from([
-            ("sku".into(), field("text", "SKU", None, Some(validators(true)))),
-            ("qty".into(), DynamicNode::Field { field: qty, when: None, async_when: None }),
+            (
+                "sku".into(),
+                field("text", "SKU", None, Some(validators(true))),
+            ),
+            (
+                "qty".into(),
+                DynamicNode::Field {
+                    field: qty,
+                    when: None,
+                    async_when: None,
+                },
+            ),
         ]),
     };
     let schema = DynamicNode::Group {
         label: Some("Checkout".into()),
         when: None,
         children: BTreeMap::from([
-            ("country".into(), DynamicNode::Field { field: country, when: None, async_when: None }),
+            (
+                "country".into(),
+                DynamicNode::Field {
+                    field: country,
+                    when: None,
+                    async_when: None,
+                },
+            ),
             ("shipping".into(), shipping),
-            ("items".into(), DynamicNode::Array {
-                label: Some("Items".into()),
-                when: None,
-                item: Box::new(item),
-                initial_value: vec![json!({ "sku": config.default_sku, "qty": config.default_quantity })],
-                min_items: Some(1), max_items: Some(20),
-            }),
+            (
+                "items".into(),
+                DynamicNode::Array {
+                    label: Some("Items".into()),
+                    when: None,
+                    item: Box::new(item),
+                    initial_value: vec![
+                        json!({ "sku": config.default_sku, "qty": config.default_quantity }),
+                    ],
+                    min_items: Some(1),
+                    max_items: Some(20),
+                },
+            ),
             ("coupon".into(), field("text", "Coupon", None, None)),
             // Asked for only where it applies, and the condition travels with the document: the
             // page does not know that Italy is the country with a VAT number, and does not need to.
-            ("vat".into(), DynamicNode::Field {
-                field: match field("text", "VAT number", None, Some(Validators {
-                    pattern: Some("^[A-Za-z]{2}[0-9]{11}$".into()),
-                    ..validators(true)
-                })) {
-                    DynamicNode::Field { field, .. } => field,
-                    _ => unreachable!(),
+            (
+                "vat".into(),
+                DynamicNode::Field {
+                    field: match field(
+                        "text",
+                        "VAT number",
+                        None,
+                        Some(Validators {
+                            pattern: Some("^[A-Za-z]{2}[0-9]{11}$".into()),
+                            ..validators(true)
+                        }),
+                    ) {
+                        DynamicNode::Field { field, .. } => field,
+                        _ => unreachable!(),
+                    },
+                    when: Some(Expression {
+                        op: "equals".into(),
+                        operand: None,
+                        operands: Some(vec![json!({ "path": "country" }), json!("IT")]),
+                    }),
+                    async_when: None,
                 },
-                when: Some(Expression {
-                    op: "equals".into(),
-                    operand: None,
-                    operands: Some(vec![json!({ "path": "country" }), json!("IT")]),
-                }),
-                async_when: None,
-            }),
+            ),
         ]),
     };
 
     DynamicFormV2 {
-        version: 5, id: Some("checkout".into()), fields: vec![],
-        schema: Some(schema), layout: vec![], rules: vec![], validations: vec![],
+        version: 5,
+        id: Some("checkout".into()),
+        fields: vec![],
+        schema: Some(schema),
+        layout: vec![],
+        rules: vec![],
+        validations: vec![],
         requires_context: vec![],
     }
 }
@@ -137,10 +242,17 @@ async fn get_checkout_form() -> Json<DynamicFormV2> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CheckoutSubmission { form_revision: u32, values: Value }
+struct CheckoutSubmission {
+    form_revision: u32,
+    values: Value,
+}
 
 #[derive(Debug, Serialize)]
-struct FormError { path: Option<String>, kind: String, message: String }
+struct FormError {
+    path: Option<String>,
+    kind: String,
+    message: String,
+}
 
 #[derive(Debug, Serialize)]
 struct SubmissionResponse {
@@ -151,38 +263,93 @@ struct SubmissionResponse {
 }
 
 fn value_at<'a>(values: &'a Value, dotted: &str) -> Option<&'a Value> {
-    if let Some(value) = values.get(dotted) { return Some(value); }
+    if let Some(value) = values.get(dotted) {
+        return Some(value);
+    }
     dotted.split('.').try_fold(values, |current, part| {
-        if let Ok(index) = part.parse::<usize>() { current.as_array()?.get(index) }
-        else { current.as_object()?.get(part) }
+        if let Ok(index) = part.parse::<usize>() {
+            current.as_array()?.get(index)
+        } else {
+            current.as_object()?.get(part)
+        }
     })
 }
 
-async fn submit_checkout(Json(payload): Json<CheckoutSubmission>) -> (StatusCode, Json<SubmissionResponse>) {
-    println!("checkout revision {}: {:#}", payload.form_revision, payload.values);
+async fn submit_checkout(
+    Json(payload): Json<CheckoutSubmission>,
+) -> (StatusCode, Json<SubmissionResponse>) {
+    println!(
+        "checkout revision {}: {:#}",
+        payload.form_revision, payload.values
+    );
     let mut errors = Vec::new();
-    for field in ["country", "shipping.city", "shipping.zip", "items.0.sku", "items.0.qty"] {
+    for field in [
+        "country",
+        "shipping.city",
+        "shipping.zip",
+        "items.0.sku",
+        "items.0.qty",
+    ] {
         let missing = match value_at(&payload.values, field) {
             None | Some(Value::Null) => true,
             Some(Value::String(value)) => value.trim().is_empty(),
             _ => false,
         };
-        if missing { errors.push(FormError { path: Some(field.into()), kind: "server".into(), message: "Required by the Rust checkout service".into() }); }
+        if missing {
+            errors.push(FormError {
+                path: Some(field.into()),
+                kind: "server".into(),
+                message: "Required by the Rust checkout service".into(),
+            });
+        }
     }
-    if value_at(&payload.values, "shipping.zip").and_then(Value::as_str).is_some_and(|zip| zip.len() != 5 || !zip.chars().all(|c| c.is_ascii_digit())) {
-        errors.push(FormError { path: Some("shipping.zip".into()), kind: "server".into(), message: "ZIP must contain exactly 5 digits".into() });
+    if value_at(&payload.values, "shipping.zip")
+        .and_then(Value::as_str)
+        .is_some_and(|zip| zip.len() != 5 || !zip.chars().all(|c| c.is_ascii_digit()))
+    {
+        errors.push(FormError {
+            path: Some("shipping.zip".into()),
+            kind: "server".into(),
+            message: "ZIP must contain exactly 5 digits".into(),
+        });
     }
-    let coupon = value_at(&payload.values, "coupon").and_then(Value::as_str).unwrap_or("");
-    let country = value_at(&payload.values, "country").and_then(Value::as_str).unwrap_or("");
-    if !coupon.is_empty() && !matches!((country, coupon), ("IT", "ITALY10") | ("DE", "GERMANY10") | ("US", "USA10")) {
-        errors.push(FormError { path: Some("coupon".into()), kind: "server".into(), message: "Coupon not valid for your country".into() });
+    let coupon = value_at(&payload.values, "coupon")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let country = value_at(&payload.values, "country")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if !coupon.is_empty()
+        && !matches!(
+            (country, coupon),
+            ("IT", "ITALY10") | ("DE", "GERMANY10") | ("US", "USA10")
+        )
+    {
+        errors.push(FormError {
+            path: Some("coupon".into()),
+            kind: "server".into(),
+            message: "Coupon not valid for your country".into(),
+        });
     }
     if !errors.is_empty() {
-        return (StatusCode::UNPROCESSABLE_ENTITY, Json(SubmissionResponse { ok: false, submission_id: None, errors }));
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(SubmissionResponse {
+                ok: false,
+                submission_id: None,
+                errors,
+            }),
+        );
     }
-    (StatusCode::CREATED, Json(SubmissionResponse { ok: true, submission_id: Some("sub_rust_checkout_001".into()), errors: vec![] }))
+    (
+        StatusCode::CREATED,
+        Json(SubmissionResponse {
+            ok: true,
+            submission_id: Some("sub_rust_checkout_001".into()),
+            errors: vec![],
+        }),
+    )
 }
-
 
 /// How long a lease stands without being renewed. A client refreshes at a third of it, so two
 /// missed heartbeats are tolerated before it is considered gone.
@@ -200,7 +367,10 @@ struct Leases {
 
 impl Leases {
     fn new(linked: bool) -> Self {
-        Self { held: Arc::new(Mutex::new((BTreeMap::new(), false))), linked }
+        Self {
+            held: Arc::new(Mutex::new((BTreeMap::new(), false))),
+            linked,
+        }
     }
 
     /// Open or renew a named lease. Idempotent: the name is the identity.
@@ -259,7 +429,6 @@ async fn health(State(leases): State<Leases>) -> Json<Value> {
     }))
 }
 
-
 /// One value, checked where the answer lives.
 ///
 /// A VAT number is checked against a register the browser cannot reach, which is what makes this
@@ -287,9 +456,15 @@ async fn check_vat(Json(body): Json<VatCheck>) -> Json<Value> {
     let digits = &vat[prefix.len().min(vat.len())..];
 
     let errors: Vec<String> = if !body.country.is_empty() && prefix != body.country.to_uppercase() {
-        vec![format!("A {} VAT number starts with {}", body.country, body.country.to_uppercase())]
+        vec![format!(
+            "A {} VAT number starts with {}",
+            body.country,
+            body.country.to_uppercase()
+        )]
     } else if digits.len() != 11 || !digits.chars().all(|c| c.is_ascii_digit()) {
-        vec![format!("{prefix} VAT numbers carry eleven digits after the country code")]
+        vec![format!(
+            "{prefix} VAT numbers carry eleven digits after the country code"
+        )]
     } else if digits.starts_with('0') {
         // A register the page has no copy of: this is the check that cannot move to the browser.
         vec!["No company is registered under that number".into()]
@@ -304,10 +479,14 @@ fn app_with(leases: Leases) -> Router {
     // Every demo that talks to this server, by the port its launcher uses. Named rather than
     // opened to anything: a development server that answers the whole internet is a habit that
     // travels, and the list is three lines.
-    let origins = ["http://localhost:4200", "http://localhost:4303", "http://localhost:4307"]
-        .iter()
-        .map(|origin| origin.parse::<HeaderValue>().unwrap())
-        .collect::<Vec<_>>();
+    let origins = [
+        "http://localhost:4200",
+        "http://localhost:4303",
+        "http://localhost:4307",
+    ]
+    .iter()
+    .map(|origin| origin.parse::<HeaderValue>().unwrap())
+    .collect::<Vec<_>>();
     let cors = CorsLayer::new()
         .allow_origin(origins)
         .allow_methods([Method::GET, Method::POST])
@@ -382,7 +561,10 @@ mod tests {
     /// and fails on a loaded one.
     #[test]
     fn a_server_stands_down_only_when_all_three_conditions_hold() {
-        assert!(should_stand_down(true, true, 0), "linked, leased, and none left: this is the case");
+        assert!(
+            should_stand_down(true, true, 0),
+            "linked, leased, and none left: this is the case"
+        );
 
         assert!(
             !should_stand_down(false, true, 0),
@@ -407,7 +589,11 @@ mod tests {
         assert!(!leases.ever_held(), "nothing has been held yet");
         leases.renew("demo-angular", now);
         leases.renew("demo-angular", now);
-        assert_eq!(leases.live(now), vec!["demo-angular"], "one demo, one lease");
+        assert_eq!(
+            leases.live(now),
+            vec!["demo-angular"],
+            "one demo, one lease"
+        );
 
         leases.renew("demo-lit", now);
         assert_eq!(leases.live(now).len(), 2, "two demos, two leases");
@@ -415,22 +601,40 @@ mod tests {
         // Past every expiry: the holders are gone, but that they existed is not forgotten — which
         // is what tells a linked server it was started for something rather than started early.
         let later = now + LEASE_TTL + Duration::from_secs(1);
-        assert!(leases.live(later).is_empty(), "an unrenewed lease does not stand");
-        assert!(leases.ever_held(), "a server must remember it was once held");
-        assert!(should_stand_down(true, leases.ever_held(), leases.live(later).len()));
+        assert!(
+            leases.live(later).is_empty(),
+            "an unrenewed lease does not stand"
+        );
+        assert!(
+            leases.ever_held(),
+            "a server must remember it was once held"
+        );
+        assert!(should_stand_down(
+            true,
+            leases.ever_held(),
+            leases.live(later).len()
+        ));
     }
 
     #[tokio::test]
     async fn health_says_which_regime_it_is_in() {
         for (linked, expected) in [(true, "linked"), (false, "standalone")] {
             let response = app_with(Leases::new(linked))
-                .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+                .oneshot(
+                    Request::builder()
+                        .uri("/health")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
                 .await
                 .unwrap();
             assert_eq!(response.status(), StatusCode::OK);
             let bytes = response.into_body().collect().await.unwrap().to_bytes();
             let json: Value = serde_json::from_slice(&bytes).unwrap();
-            assert_eq!(json["mode"], expected, "the regime must be readable, not inferred");
+            assert_eq!(
+                json["mode"], expected,
+                "the regime must be readable, not inferred"
+            );
             assert_eq!(json["willExitWhenLeasesEnd"], linked);
         }
     }
@@ -464,11 +668,17 @@ mod tests {
             "the server served a document its own contract reader refuses: {:?}",
             verdict.diagnostics
         );
-        assert_eq!(json["version"], 5, "the demo serves the newest version the reader accepts");
+        assert_eq!(
+            json["version"], 5,
+            "the demo serves the newest version the reader accepts"
+        );
         assert_eq!(json["schema"]["node"], "group");
         assert_eq!(json["schema"]["children"]["shipping"]["node"], "group");
         assert_eq!(json["schema"]["children"]["items"]["node"], "array");
-        assert_eq!(json["schema"]["children"]["items"]["initialValue"][0]["qty"], 2);
+        assert_eq!(
+            json["schema"]["children"]["items"]["initialValue"][0]["qty"],
+            2
+        );
         assert!(json.get("fields").is_none());
         assert!(json["schema"]["children"]["coupon"]["field"]
             .get("validators")
