@@ -19,6 +19,8 @@
  * change) before it runs `devPreinstall`, so a purge prompt can appear before this check does, and
  * accepting it empties the directory the symlink points at — the other tree's install. Answer no.
  * `setup` runs this script before calling pnpm at all, which covers that path when it is the entry.
+ * An install that runs no root lifecycle scripts (`pnpm install --ignore-scripts`, or npm) never
+ * reaches this check either.
  *
  *   node scripts/guard-own-node-modules.mjs [<checkout dir>]
  *
