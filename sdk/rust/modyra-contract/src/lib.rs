@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 mod pattern_cost;
 
@@ -1629,7 +1629,7 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     let mut document = read_document(json)?;
     let mut d = Vec::new();
     judge_fields_as_written(&mut document, &mut d);
-    let form: DynamicFormV2 = serde_json::from_value(document)?;
+    let mut form: DynamicFormV2 = serde_json::from_value(document)?;
     // v3 is v2 plus per-slot placement: every other member is read the same way,
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
     // moment a layout places a slot per breakpoint, and refusing it outright made
@@ -1863,8 +1863,27 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
         }
     }
     let mut context_keys: Vec<String> = Vec::new();
+    let mut past_the_bound = false;
     if let Some(schema) = &form.schema {
+        let before = d.len();
         validate_node(schema, "/schema", &mut d, &mut context_keys);
+        // A finding about the tree's shape turns the document down whole, so its rows are not
+        // counted. A kind nobody declared is a finding about one field, and the walk still runs.
+        let shape_refused = d[before..]
+            .iter()
+            .any(|finding| finding.code != "MDY_DYNAMIC_UNKNOWN_KIND");
+        past_the_bound = !shape_refused && expands_past_the_bound(schema);
+    }
+    // Refused whole: the part of a tree a walk reaches first is not a form the document declared.
+    if past_the_bound {
+        d.push(diag(
+            "MDY_DYNAMIC_SCHEMA_LIMIT",
+            "/schema",
+            &format!(
+                "the schema's rows expand it by more than {SCHEMA_MAX_EXTRA_VISITS} nodes beyond those it declares, more than a reader carries."
+            ),
+        ));
+        form.schema = None;
     }
     // A rule the document's version predates: `integer` arrived with v5, and a v2 document carrying
     // it asks for a constraint no reader of that version emits.
@@ -2051,6 +2070,143 @@ fn validate_node(
             }
         }
     }
+}
+
+/// How many visits a flatten may make beyond the nodes the schema declares (ADR 0231).
+///
+/// A row that does not write a nested collection takes that collection's declared rows, so a reader
+/// that expands rows visits the product of the row counts down each branch and not the size of the
+/// document: a few kilobytes can name more nodes than a request can hold. This reader does not expand
+/// rows, but a document it accepts is one every reader of the contract must be able to take, so it
+/// applies the same bound to the same count.
+const SCHEMA_MAX_EXTRA_VISITS: u64 = 10_000;
+
+/// Whether a flatten of `schema` would visit more than its declared nodes plus
+/// [`SCHEMA_MAX_EXTRA_VISITS`].
+///
+/// The count is ADR 0231's: one visit per node a walk takes — the schema, each group child under a
+/// safe key, each row of a collection (the rows its enclosing row wrote for it when it wrote an array,
+/// an object for a record, else the rows it declares; a record's under safe keys only) — plus, for
+/// each collection's `item` the walk reaches, that item walked once more with no rows written, the
+/// row template. Declared is every node in the tree, unsafe keys included.
+///
+/// Computed rather than walked: the visits under a node depend only on the node and the value its
+/// row wrote for it, and a lent row is the same value in every enclosing row that takes it, so each
+/// pair is counted once and the product never materialises. Saturating, because the product is
+/// exactly what can overflow.
+fn expands_past_the_bound(schema: &DynamicNode) -> bool {
+    let mut declared: u64 = 0;
+    let mut items: Vec<&DynamicNode> = Vec::new();
+    let mut pending: Vec<(&DynamicNode, bool)> = vec![(schema, true)];
+    while let Some((node, reached)) = pending.pop() {
+        declared += 1;
+        match node {
+            DynamicNode::Field { .. } => {}
+            DynamicNode::Group { children, .. } => pending.extend(
+                children
+                    .iter()
+                    .map(|(name, child)| (child, reached && !is_unsafe_child_name(name))),
+            ),
+            DynamicNode::Array { item, .. } | DynamicNode::Record { item, .. } => {
+                if reached {
+                    items.push(item);
+                }
+                pending.push((item, reached));
+            }
+        }
+    }
+    let bound = declared.saturating_add(SCHEMA_MAX_EXTRA_VISITS);
+    let mut memo: HashMap<(*const DynamicNode, *const Value), u64> = HashMap::new();
+    let mut total = visits(schema, None, &mut memo);
+    for item in items {
+        if total > bound {
+            break;
+        }
+        total = total.saturating_add(visits(item, None, &mut memo));
+    }
+    total > bound
+}
+
+/// The visits a walk makes from `node`, given the value its enclosing row wrote for it, memoised by
+/// the pair. Over an explicit stack for the reason `validate_node` gives: each pair is entered, its
+/// children counted, then the pair summed from them.
+fn visits(
+    root: &DynamicNode,
+    written: Option<&Value>,
+    memo: &mut HashMap<(*const DynamicNode, *const Value), u64>,
+) -> u64 {
+    fn key(node: &DynamicNode, written: Option<&Value>) -> (*const DynamicNode, *const Value) {
+        (
+            node,
+            written.map_or(std::ptr::null(), |value| value as *const Value),
+        )
+    }
+    /// What a node passes to the walk: each child or row it visits, with the value written for it.
+    fn next<'a>(
+        node: &'a DynamicNode,
+        written: Option<&'a Value>,
+    ) -> Vec<(&'a DynamicNode, Option<&'a Value>)> {
+        match node {
+            DynamicNode::Field { .. } => Vec::new(),
+            DynamicNode::Group { children, .. } => {
+                let row = written.and_then(Value::as_object);
+                children
+                    .iter()
+                    .filter(|(name, _)| !is_unsafe_child_name(name))
+                    .map(|(name, child)| (child, row.and_then(|row| row.get(name))))
+                    .collect()
+            }
+            DynamicNode::Array {
+                item,
+                initial_value,
+                ..
+            } => match written.and_then(Value::as_array) {
+                Some(rows) => rows.iter().map(|row| (&**item, Some(row))).collect(),
+                None => initial_value
+                    .iter()
+                    .map(|row| (&**item, Some(row)))
+                    .collect(),
+            },
+            DynamicNode::Record {
+                item,
+                initial_value,
+                ..
+            } => match written.and_then(Value::as_object) {
+                Some(rows) => rows
+                    .iter()
+                    .filter(|(key, _)| !is_unsafe_child_name(key))
+                    .map(|(_, row)| (&**item, Some(row)))
+                    .collect(),
+                None => initial_value
+                    .iter()
+                    .filter(|(key, _)| !is_unsafe_child_name(key))
+                    .map(|(_, row)| (&**item, Some(row)))
+                    .collect(),
+            },
+        }
+    }
+
+    let mut pending: Vec<(&DynamicNode, Option<&Value>, bool)> = vec![(root, written, false)];
+    while let Some((node, written, entered)) = pending.pop() {
+        if memo.contains_key(&key(node, written)) {
+            continue;
+        }
+        let children = next(node, written);
+        if entered {
+            let sum = children.iter().fold(1u64, |sum, (child, value)| {
+                sum.saturating_add(memo[&key(child, *value)])
+            });
+            memo.insert(key(node, written), sum);
+        } else {
+            pending.push((node, written, true));
+            pending.extend(
+                children
+                    .into_iter()
+                    .map(|(child, value)| (child, value, false)),
+            );
+        }
+    }
+    memo[&key(root, written)]
 }
 
 /// A key as one segment of a diagnostic path, escaped as RFC 6901 escapes a JSON Pointer token.

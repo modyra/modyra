@@ -29,7 +29,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
-import { flattenDynamicForm } from "@modyra/core";
+import { MdyDynamicSchemaLimitError, flattenDynamicForm } from "@modyra/core";
 
 import { battle } from "../../harness/battle.mjs";
 import { expectClaim, expectEqual } from "../../harness/assertions.mjs";
@@ -167,7 +167,14 @@ battle(
     });
 
     for (const { where, schema } of documents) {
-      const flattened = flattenDynamicForm(schema);
+      let flattened;
+      try {
+        flattened = flattenDynamicForm(schema);
+      } catch (error) {
+        // A document refused for what its rows expand to has no flattened paths to classify.
+        if (error instanceof MdyDynamicSchemaLimitError) continue;
+        throw error;
+      }
       const bad = unreported(schema, flattened);
       ctx.log.note("a document flattened", {
         where,

@@ -20,9 +20,11 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -78,6 +80,19 @@ public final class MdyDynamicFormParser {
   /** The version {@code validators.integer} arrived with, as {@code MDY_DYNAMIC_MEMBER_ARRIVALS} records it. */
   private static final int INTEGER_ARRIVED_WITH = 5;
   private static final int SCHEMA_MAX_ARRAY_ROWS = 100;
+  /**
+   * How many visits one flatten may make beyond the nodes the schema declares (ADR 0231).
+   *
+   * <p>A row that does not write a nested collection takes that collection's declared rows, so what a
+   * flatten visits is the product of the row counts down each branch and not the size of the
+   * document: a few kilobytes can name more nodes than a heap can hold. Every visit counts — a group,
+   * a collection, a leaf, a row template's nodes, a leaf refused on the walk — because a branch that
+   * ends in no field costs the same walk as one that ends in a field. Measured beyond the declared
+   * nodes rather than as a total, so a document the size of what it declares is never refused for
+   * its size. The TypeScript reader applies the same count, and the corpus pair at the bound holds
+   * the two to it.
+   */
+  private static final int SCHEMA_MAX_EXTRA_VISITS = 10_000;
 
   /**
    * Unknown properties are reported, never silently dropped.
@@ -267,9 +282,20 @@ public final class MdyDynamicFormParser {
         // alone sees — a row's value a cell cannot hold, a path too long — and each such finding is
         // one leaf dropped.
         int before = diagnostics.size();
-        accepted = flattenSchema(root.get("schema"), diagnostics);
-        treeRejected = refused[0] + diagnostics.size() - before;
-        declaredLeaves = Math.max(declaredLeaves, accepted.size() + treeRejected);
+        List<MdyDynamicField> walked = flattenSchema(root.get("schema"), diagnostics);
+        if (walked == null) {
+          // What the walk said before it stopped is about a part of the tree, not the document.
+          diagnostics.subList(before, diagnostics.size()).clear();
+          diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, "/schema",
+              "the schema's rows expand it by more than " + SCHEMA_MAX_EXTRA_VISITS
+                  + " nodes beyond those it declares, more than a reader carries."));
+          accepted = List.of();
+          treeRejected = declaredLeaves;
+        } else {
+          accepted = walked;
+          treeRejected = refused[0] + diagnostics.size() - before;
+          declaredLeaves = Math.max(declaredLeaves, accepted.size() + treeRejected);
+        }
       } else {
         // A shape the walk cannot enter turns the document down whole, so everything it declared
         // was turned down.
@@ -1178,18 +1204,84 @@ public final class MdyDynamicFormParser {
    * <p>A collection's row template is read too, once per item node and whether or not a row exists:
    * the template is the shape every row the application adds will have. Templates are read after the
    * tree, the last one met first, which is the order the TypeScript reader reports them in.
+   *
+   * <p>Null when the walk exceeds {@link #SCHEMA_MAX_EXTRA_VISITS}: the part of a tree a walk
+   * happens to reach first is not a form the document declared, so there is no partial answer.
    */
   private List<MdyDynamicField> flattenSchema(JsonNode schema, List<MdyDynamicDiagnostic> diagnostics) {
     List<MdyDynamicField> out = new ArrayList<>();
-    Set<JsonNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-    List<Map.Entry<JsonNode, String>> templates = new ArrayList<>();
-    flattenSchemaInto(schema, "", "/schema", null, out, diagnostics, seen, templates);
-    while (!templates.isEmpty()) {
-      // A template's fields are the shape of a row and not fields of this form, so they are not kept.
-      Map.Entry<JsonNode, String> template = templates.remove(templates.size() - 1);
-      flattenSchemaInto(template.getKey(), "", template.getValue(), null, new ArrayList<>(), diagnostics, seen, templates);
+    // One budget for the whole flatten, templates included: a template walked separately is work
+    // all the same.
+    Walk walk = new Walk(diagnostics, declaredNodeCount(schema) + SCHEMA_MAX_EXTRA_VISITS);
+    try {
+      flattenSchemaInto(schema, "", "/schema", null, out, walk);
+      while (!walk.templates.isEmpty()) {
+        // A template's fields are the shape of a row and not fields of this form, so they are not kept.
+        Map.Entry<JsonNode, String> template = walk.templates.remove(walk.templates.size() - 1);
+        flattenSchemaInto(template.getKey(), "", template.getValue(), null, new ArrayList<>(), walk);
+      }
+    } catch (SchemaLimitExceeded exceeded) {
+      return null;
     }
     return out;
+  }
+
+  /**
+   * Every JSON object a schema declares through a group's {@code children} and a collection's
+   * {@code item}, without reading any row.
+   *
+   * <p>An upper bound on the first visit of each node, which is what the flatten budget is measured
+   * beyond. It counts what the walk skips as well — a child under an unsafe key, a member that is
+   * not a node — because the bound only has to be no smaller than what the document wrote.
+   */
+  private static int declaredNodeCount(JsonNode schema) {
+    int count = 0;
+    Deque<JsonNode> pending = new ArrayDeque<>();
+    pending.push(schema);
+    while (!pending.isEmpty()) {
+      JsonNode node = pending.pop();
+      if (!node.isObject()) continue;
+      count += 1;
+      String kind = node.path("node").asText("");
+      if (kind.equals("group") && node.path("children").isObject()) {
+        for (JsonNode child : node.get("children")) pending.push(child);
+      } else if ((kind.equals("array") || kind.equals("record")) && node.has("item")) {
+        pending.push(node.get("item"));
+      }
+    }
+    return count;
+  }
+
+  /** A row's value for one cell: why the cell's kind cannot hold it, or the value it holds. */
+  private record Cell(String mismatch, Object value) {}
+
+  /** Thrown out of the walk once the budget is spent; carries nothing, because it is never shown. */
+  private static final class SchemaLimitExceeded extends RuntimeException {
+    SchemaLimitExceeded() {
+      super(null, null, false, false);
+    }
+  }
+
+  /**
+   * What one flatten shares across its walks.
+   *
+   * <p>A lent row is the same document node in every enclosing row that takes it, so its cell is
+   * read once and the value shared, by identity: converted per row, a cell of a hundred kilobytes
+   * would cost its size once per visit under a visit count that looks small. A leaf declaration is
+   * judged once per node for the same reason.
+   */
+  private static final class Walk {
+    final List<MdyDynamicDiagnostic> diagnostics;
+    final Set<JsonNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+    final List<Map.Entry<JsonNode, String>> templates = new ArrayList<>();
+    final Map<JsonNode, Optional<MdyDynamicField>> leaves = new IdentityHashMap<>();
+    final Map<JsonNode, Map<JsonNode, Cell>> cells = new IdentityHashMap<>();
+    int left;
+
+    Walk(List<MdyDynamicDiagnostic> diagnostics, int budget) {
+      this.diagnostics = diagnostics;
+      this.left = budget;
+    }
   }
 
   /**
@@ -1198,7 +1290,10 @@ public final class MdyDynamicFormParser {
    * declared once under the collection's {@code item} and named once per row.
    */
   private void flattenSchemaInto(JsonNode node, String path, String at, JsonNode initial, List<MdyDynamicField> out,
-      List<MdyDynamicDiagnostic> diagnostics, Set<JsonNode> seen, List<Map.Entry<JsonNode, String>> templates) {
+      Walk walk) {
+    if (walk.left == 0) throw new SchemaLimitExceeded();
+    walk.left -= 1;
+    List<MdyDynamicDiagnostic> diagnostics = walk.diagnostics;
     String kind = node.path("node").asText("");
     if (kind.equals("field")) {
       // A path is the payload key, the draft key and the widget id. Measured here and not on the
@@ -1213,23 +1308,31 @@ public final class MdyDynamicFormParser {
       // The leaf is read by the flat reader under a placeholder name, because a generated dotted or
       // indexed path is structure the walk built and not a name the flat rule could accept; the path
       // is restored on what it keeps. Its findings were reported where the declaration was judged.
-      ObjectNode leaf = node.get("field").deepCopy();
-      leaf.put("name", "leaf");
-      List<MdyDynamicField> declared = parseFlatItems(mapper.createArrayNode().add(leaf)).accepted;
+      Optional<MdyDynamicField> declared = walk.leaves.computeIfAbsent(node, declaration -> {
+        ObjectNode leaf = declaration.get("field").deepCopy();
+        leaf.put("name", "leaf");
+        return parseFlatItems(mapper.createArrayNode().add(leaf)).accepted.stream().findFirst()
+            .map(parsed -> withNameAndInitial(parsed, parsed.name(), readOnly(parsed.initialValue())));
+      });
       if (declared.isEmpty()) return;
-      MdyDynamicField field = declared.get(0);
+      MdyDynamicField field = declared.get();
       if (!hasValue(initial)) {
         out.add(withNameAndInitial(field, path, field.initialValue()));
         return;
       }
-      // The value a row gave the cell, which the declaration never saw.
-      String mismatch = MdyValueContracts.explainMismatch(field.kind(), initial);
-      if (mismatch != null) {
+      // The value a row gave the cell, which the declaration never saw. Keyed by the declaration as
+      // well as the value: Jackson hands out one shared node for `true` or a small integer, and the
+      // same node read under another kind is another verdict.
+      Cell cell = walk.cells.computeIfAbsent(node, declaration -> new IdentityHashMap<>()).computeIfAbsent(initial, value -> {
+        String mismatch = MdyValueContracts.explainMismatch(field.kind(), value);
+        return mismatch != null ? new Cell(mismatch, null) : new Cell(null, readOnly(toObject(value)));
+      });
+      if (cell.mismatch() != null) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, at + "/field",
-            "Dropped dynamic field \"" + path + "\": initialValue does not match the kind — " + mismatch + "."));
+            "Dropped dynamic field \"" + path + "\": initialValue does not match the kind — " + cell.mismatch() + "."));
         return;
       }
-      out.add(withNameAndInitial(field, path, toObject(initial)));
+      out.add(withNameAndInitial(field, path, cell.value()));
       return;
     }
     if (kind.equals("group")) {
@@ -1240,13 +1343,13 @@ public final class MdyDynamicFormParser {
         if (!isSafeDynamicName(key) || !isSchemaNode(entry.getValue())) continue;
         JsonNode childInitial = value != null ? value.path(key) : null;
         flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key,
-            at + "/children/" + pointerSegment(key), childInitial, out, diagnostics, seen, templates);
+            at + "/children/" + pointerSegment(key), childInitial, out, walk);
       }
       return;
     }
     JsonNode item = node.get("item");
     String itemAt = at + "/item";
-    if (seen.add(item)) templates.add(Map.entry(item, itemAt));
+    if (walk.seen.add(item)) walk.templates.add(Map.entry(item, itemAt));
     if (kind.equals("record")) {
       // Which rows a record has is the application's word; a document can only declare the ones it
       // starts with, so those are the ones a flat view can name.
@@ -1256,7 +1359,7 @@ public final class MdyDynamicFormParser {
         for (var entry : declared.properties()) {
           if (!isSafeDynamicName(entry.getKey())) continue;
           String key = entry.getKey();
-          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, itemAt, entry.getValue(), out, diagnostics, seen, templates);
+          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, itemAt, entry.getValue(), out, walk);
         }
       }
       return;
@@ -1266,7 +1369,7 @@ public final class MdyDynamicFormParser {
         : node.path("initialValue").isArray() ? node.path("initialValue") : null;
     if (rows != null) {
       for (int i = 0; i < rows.size(); i++) {
-        flattenSchemaInto(item, path + "." + i, itemAt, rows.get(i), out, diagnostics, seen, templates);
+        flattenSchemaInto(item, path + "." + i, itemAt, rows.get(i), out, walk);
       }
     }
   }
@@ -1311,6 +1414,24 @@ public final class MdyDynamicFormParser {
 
   private Object toObject(JsonNode node) {
     return mapper.convertValue(node, Object.class);
+  }
+
+  /**
+   * {@code value} with every map and list in it made unmodifiable. A tree field's initial value is
+   * one instance for every row that takes it, so a write through one field would change them all.
+   */
+  private static Object readOnly(Object value) {
+    if (value instanceof Map<?, ?> map) {
+      Map<Object, Object> copy = new LinkedHashMap<>();
+      map.forEach((key, entry) -> copy.put(key, readOnly(entry)));
+      return Collections.unmodifiableMap(copy);
+    }
+    if (value instanceof List<?> list) {
+      List<Object> copy = new ArrayList<>(list.size());
+      for (Object entry : list) copy.add(readOnly(entry));
+      return Collections.unmodifiableList(copy);
+    }
+    return value;
   }
 
   /**
