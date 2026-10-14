@@ -26,8 +26,9 @@ TypeScript reader decides dates through `Date.UTC` and refuses years 0–99.
 **Migration for Rust consumers.** `parse_v2` used to return `Err` for a field whose `min`, `max` or
 `step` was not a number, whose option lacked a `label` or had a non-boolean `disabled`, and for any
 document holding a number past the double range; it now returns `Ok` with the diagnostic. Such a
-number in a member read as an integer (`version`, `minItems`, a layout column) still returns `Err`. Documents it used to accept with any of the defects above, including a tree
-option field with no options, now come back not valid. `OPTIONS_REQUIRED` and a bad `step` are
+number in a member read as an integer (`version`, `minItems`, a layout column) still returns `Err`.
+Documents it used to accept with any of the defects above, including a tree option field with no
+options, now come back not valid. `OPTIONS_REQUIRED` and a bad `step` are
 reported at the field (`/fields/N`) rather than at `/fields/N/options` and `/fields/N/step`. A
 `step`, `min` or `max` on a kind with no range is no longer read, so a text field's `step: 0` is not
 refused, as it is not in TypeScript. A number past the double range that the reader accepts as any

@@ -2,10 +2,10 @@
 "@modyra/core": patch
 ---
 
-The Java reader judges a field's initial value, range, calendar and options as TS does
+The Java reader judges a field's initial value, range, calendar, options and validators, and a schema's count, as TS does
 
-`sdk/java/modyra-contract` now gives the TypeScript reader's verdict, code, path and message on a
-field, flat or in a tree, for:
+`sdk/java/modyra-contract` now gives the TypeScript reader's verdict and codes on a field, flat or in
+a tree, as the shared corpus records them, and its path and message, for:
 
 - `initialValue` against what its kind holds (`MDY_DYNAMIC_INVALID_FIELD`; in a tree also at
   `…/field/initialValue`). `null` is accepted only on a kind that can hold nothing, and an empty
@@ -24,7 +24,8 @@ field, flat or in a tree, for:
 - a schema declaring more than the declarations the reader counts (`MDY_DYNAMIC_COUNT_INCOMPLETE`,
   a warning at `/schema`): the accepted and rejected counts are then a floor, not a total.
 
-**Migration for Java consumers.** A document with any of the defects above used to come back `ok`
-with the field as written. It now comes back not `ok`; a duplicate option or a misplaced validator
-keeps its field, every other defect drops it. The caller's document is not modified: a duplicate
-option is removed from the parsed field only.
+**Migration for Java consumers.** A document with any of the field defects above used to come back
+`ok` with the field as written. It now comes back not `ok`; a duplicate option or a misplaced
+validator keeps its field, every other field defect drops it. The caller's document is not modified:
+a duplicate option is removed from the parsed field only. `MDY_DYNAMIC_COUNT_INCOMPLETE` is new and
+a warning: it leaves `ok` as it was and drops nothing.
