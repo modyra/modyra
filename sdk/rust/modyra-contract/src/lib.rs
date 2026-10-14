@@ -743,9 +743,102 @@ const OPERATORS: &[&str] = &[
     "lessThanOrEqual",
 ];
 
+/// Why a field's members are refused for their JSON type, in the order and words of the TypeScript
+/// reader, or `None` when each carries the type the contract gives it.
+///
+/// Judged on the document as written: deserialization reads an explicit `null` as an absent member,
+/// so `integer: null` would be read as no rule where the contract refuses it. A present `null` is a
+/// value of the wrong type. An array passes the validators object test, as it does in JavaScript.
+fn member_type_refusal(field: &Value) -> Option<String> {
+    let wrong = |key: &str, is: fn(&Value) -> bool| field.get(key).is_some_and(|v| !is(v));
+    if wrong("label", Value::is_string) {
+        return Some("label must be a string.".into());
+    }
+    if wrong("sensitive", Value::is_boolean) {
+        return Some("sensitive must be a boolean.".into());
+    }
+    if wrong("placeholder", Value::is_string) {
+        return Some("placeholder must be a string.".into());
+    }
+    let validators = field.get("validators")?;
+    if !validators.is_object() && !validators.is_array() {
+        return Some("validators must be an object.".into());
+    }
+    for key in ["required", "email", "integer"] {
+        if validators.get(key).is_some_and(|v| !v.is_boolean()) {
+            return Some(format!("validators.{key} must be a boolean."));
+        }
+    }
+    for key in ["min", "max", "minLength", "maxLength"] {
+        if validators.get(key).is_some_and(|v| !v.is_number()) {
+            return Some(format!("validators.{key} must be a finite number."));
+        }
+    }
+    let length = |key: &str| validators.get(key).and_then(Value::as_f64);
+    if length("minLength").zip(length("maxLength")).is_some_and(|(min, max)| min > max) {
+        return Some("validators.minLength cannot exceed validators.maxLength.".into());
+    }
+    None
+}
+
+/// Refuses every field whose members have the wrong JSON type, flat or in a tree, and removes the
+/// members such a check reads from it.
+///
+/// The refused field is reported here; what remains of it is read only so that the rest of the
+/// document can be deserialized and judged, which a member of the wrong type would otherwise make
+/// impossible.
+fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
+    let mut pending: Vec<(&mut Value, String)> = Vec::new();
+    let mut nodes: Vec<(&mut Value, String)> = Vec::new();
+    let Value::Object(members) = document else { return };
+    for (key, value) in members.iter_mut() {
+        match (key.as_str(), value) {
+            ("fields", Value::Array(fields)) => pending
+                .extend(fields.iter_mut().enumerate().map(|(i, f)| (f, format!("/fields/{i}")))),
+            ("schema", schema) => nodes.push((schema, "/schema".to_string())),
+            _ => {}
+        }
+    }
+    while let Some((node, path)) = nodes.pop() {
+        let Some(node) = node.as_object_mut() else { continue };
+        match node.get("node").and_then(Value::as_str) {
+            Some("field") => {
+                if let Some(field) = node.get_mut("field") {
+                    pending.push((field, format!("{path}/field")));
+                }
+            }
+            Some("group") => {
+                if let Some(Value::Object(children)) = node.get_mut("children") {
+                    nodes.extend(children.iter_mut().map(|(name, child)| {
+                        (child, format!("{path}/children/{}", pointer_segment(name)))
+                    }));
+                }
+            }
+            Some("array" | "record") => {
+                if let Some(item) = node.get_mut("item") {
+                    nodes.push((item, format!("{path}/item")));
+                }
+            }
+            _ => {}
+        }
+    }
+    for (field, path) in pending {
+        if let Some(refusal) = member_type_refusal(field) {
+            d.push(diag("MDY_DYNAMIC_INVALID_FIELD", &path, &refusal));
+            if let Some(field) = field.as_object_mut() {
+                for key in ["label", "sensitive", "placeholder", "validators"] {
+                    field.remove(key);
+                }
+            }
+        }
+    }
+}
+
 pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, serde_json::Error> {
-    let form: DynamicFormV2 = serde_json::from_str(json)?;
+    let mut document: Value = serde_json::from_str(json)?;
     let mut d = Vec::new();
+    refuse_mistyped_members(&mut document, &mut d);
+    let form: DynamicFormV2 = serde_json::from_value(document)?;
     // v3 is v2 plus per-slot placement: every other member is read the same way,
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
     // moment a layout places a slot per breakpoint, and refusing it outright made
