@@ -802,16 +802,183 @@ fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>)
     named_badly || !kind.is_some_and(|kind| KINDS.contains(&kind))
 }
 
-/// Refuses every field whose members have the wrong JSON type, flat or in a tree, and removes the
-/// members such a check reads from it.
+/// What a field of each kind holds, mirroring `MDY_VALUE_CONTRACTS`: the shape of its value, and
+/// whether `null` is one of its values.
+fn value_contract(kind: &str) -> Option<(&'static str, bool)> {
+    Some(match kind {
+        "text" | "textarea" | "email" | "password" | "colors" => ("string", false),
+        "number" => ("number", true),
+        "slider" => ("number", false),
+        "checkbox" | "toggle" => ("boolean", false),
+        "select" | "radio" | "segmented" => ("option", true),
+        "multiselect" => ("option[]", false),
+        "datepicker" | "timepicker" => ("string", true),
+        "daterange" => ("dateRange", false),
+        "file" => ("file[]", false),
+        _ => return None,
+    })
+}
+
+/// Why `value` does not belong in a field of `kind`, or `None` when it does — the TypeScript
+/// reader's `explainValueMismatch`.
 ///
-/// The refused field is reported here; what remains of it is read only so that the rest of the
+/// An option's value is anything but `null`: which values are offered is the option list's word. A
+/// string with a form — a date, a time, a colour, a range's endpoints — is held to that form, and
+/// the empty string is how such a value writes absence, so it is accepted for every one of them.
+fn value_mismatch(kind: &str, value: &Value) -> Option<String> {
+    let (shape, nullable) = value_contract(kind)?;
+    if value.is_null() {
+        return (!nullable).then(|| format!("{kind} cannot hold null"));
+    }
+    let fits = match shape {
+        "string" => value.is_string(),
+        "number" => value.is_number(),
+        "boolean" => value.is_boolean(),
+        "option" => true,
+        "dateRange" => value
+            .as_object()
+            .is_some_and(|range| range.contains_key("start") && range.contains_key("end")),
+        _ => value.is_array(),
+    };
+    if !fits {
+        return Some(format!("{kind} holds {shape}, got {}", json_type(value)));
+    }
+    let text = value.as_str();
+    if text == Some("") {
+        return None;
+    }
+    let form = match kind {
+        "datepicker" => "an ISO date (yyyy-MM-dd)",
+        "timepicker" => "a time (HH:mm)",
+        "colors" => "a hex colour (#rgb or #rrggbb)",
+        "daterange" => {
+            return ["start", "end"].into_iter().find_map(|end| {
+                let held = &value[end];
+                (!held.is_null() && !held.as_str().is_some_and(is_iso_date))
+                    .then(|| format!("{kind} holds ISO dates, and {end} is {held}"))
+            })
+        }
+        _ => return None,
+    };
+    let text = text.unwrap_or_default();
+    let held = match kind {
+        "datepicker" => is_iso_date(text),
+        "timepicker" => is_clock_time(text),
+        _ => is_hex_colour(text),
+    };
+    (!held).then(|| format!("{kind} holds {form}, got {value}"))
+}
+
+/// The JSON type of `value` as JavaScript's `typeof` names it, which is how a mismatch is worded.
+fn json_type(value: &Value) -> String {
+    match value {
+        Value::Object(_) | Value::Array(_) => value.to_string(),
+        Value::String(_) => "string".into(),
+        Value::Number(_) => "number".into(),
+        Value::Bool(_) => "boolean".into(),
+        Value::Null => "null".into(),
+    }
+}
+
+/// `HH:mm` on a 24-hour clock.
+fn is_clock_time(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.len() == 5
+        && bytes[2] == b':'
+        && matches!(
+            (bytes[0], bytes[1]),
+            (b'0' | b'1', b'0'..=b'9') | (b'2', b'0'..=b'3')
+        )
+        && matches!((bytes[3], bytes[4]), (b'0'..=b'5', b'0'..=b'9'))
+}
+
+/// `#rgb` or `#rrggbb`, in either case.
+fn is_hex_colour(text: &str) -> bool {
+    text.strip_prefix('#').is_some_and(|digits| {
+        matches!(digits.len(), 3 | 6) && digits.bytes().all(|b| b.is_ascii_hexdigit())
+    })
+}
+
+/// A finding about a field as written: its code, the member it points into (empty for the field
+/// itself), and what it says.
+type FieldFinding = (&'static str, String, String);
+
+/// Judges a field as written, in the order the TypeScript reader judges it, and says whether the
+/// field is refused.
+///
+/// The first refusal ends the judgement, so a refused field carries one reason; a finding that does
+/// not refuse the field is collected on the way.
+fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
+    let mut refuse = |message: String| {
+        out.push(("MDY_DYNAMIC_INVALID_FIELD", String::new(), message));
+        true
+    };
+    if let Some(refusal) = member_type_refusal(field) {
+        return refuse(refusal);
+    }
+    let kind = field
+        .get("kind")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if let Some(mismatch) = field
+        .get("initialValue")
+        .and_then(|value| value_mismatch(kind, value))
+    {
+        return refuse(format!(
+            "initialValue does not match the kind — {mismatch}."
+        ));
+    }
+    false
+}
+
+/// Reports what `field_findings` finds at `at`, and removes from the field what deserialization
+/// cannot read.
+///
+/// A field in a tree takes every finding at the field itself, as the TypeScript reader reports a
+/// leaf; there, a declared initial value its kind cannot hold is also a finding about the document's
+/// shape, at the member.
+fn judge_field(field: &mut Value, at: Option<&str>, in_tree: bool, d: &mut Vec<Diagnostic>) {
+    let mut found = Vec::new();
+    let refused = field_findings(field, &mut found);
+    if let Some(at) = at {
+        let kind = field
+            .get("kind")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if let Some(mismatch) = field
+            .get("initialValue")
+            .filter(|_| in_tree)
+            .and_then(|value| value_mismatch(kind, value))
+        {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &format!("{at}/initialValue"),
+                &format!("initialValue does not match the kind — {mismatch}."),
+            ));
+        }
+        for (code, member, message) in found {
+            let member = if in_tree { "" } else { member.as_str() };
+            d.push(diag(code, &format!("{at}{member}"), &message));
+        }
+    }
+    if refused {
+        if let Some(field) = field.as_object_mut() {
+            for key in ["label", "sensitive", "placeholder", "validators"] {
+                field.remove(key);
+            }
+        }
+    }
+}
+
+/// Judges every field as written, flat or in a tree, before anything is deserialized.
+///
+/// A refused field is reported here; what remains of it is read only so that the rest of the
 /// document can be deserialized and judged, which a member of the wrong type would otherwise make
 /// impossible. A field already refused for its name or kind, or under a child key the tree walk
 /// does not enter, has its members removed the same way but is not reported again: its path is
 /// `None`.
-fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
-    let mut pending: Vec<(&mut Value, Option<String>)> = Vec::new();
+fn judge_fields_as_written(document: &mut Value, d: &mut Vec<Diagnostic>) {
+    let mut pending: Vec<(&mut Value, Option<String>, bool)> = Vec::new();
     let mut nodes: Vec<(&mut Value, Option<String>)> = Vec::new();
     let Value::Object(members) = document else {
         return;
@@ -823,7 +990,7 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
                 for (i, field) in fields.iter_mut().enumerate() {
                     let path = (!is_dropped_before_members(field, Some(&mut names)))
                         .then(|| format!("/fields/{i}"));
-                    pending.push((field, path));
+                    pending.push((field, path, false));
                 }
             }
             ("schema", schema) => nodes.push((schema, Some("/schema".to_string()))),
@@ -840,7 +1007,7 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
                     let path = path
                         .filter(|_| !is_dropped_before_members(field, None))
                         .map(|path| format!("{path}/field"));
-                    pending.push((field, path));
+                    pending.push((field, path, true));
                 }
             }
             Some("group") => {
@@ -861,24 +1028,15 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
             _ => {}
         }
     }
-    for (field, path) in pending {
-        if let Some(refusal) = member_type_refusal(field) {
-            if let Some(path) = path {
-                d.push(diag("MDY_DYNAMIC_INVALID_FIELD", &path, &refusal));
-            }
-            if let Some(field) = field.as_object_mut() {
-                for key in ["label", "sensitive", "placeholder", "validators"] {
-                    field.remove(key);
-                }
-            }
-        }
+    for (field, path, in_tree) in pending {
+        judge_field(field, path.as_deref(), in_tree, d);
     }
 }
 
 pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, serde_json::Error> {
     let mut document: Value = serde_json::from_str(json)?;
     let mut d = Vec::new();
-    refuse_mistyped_members(&mut document, &mut d);
+    judge_fields_as_written(&mut document, &mut d);
     let form: DynamicFormV2 = serde_json::from_value(document)?;
     // v3 is v2 plus per-slot placement: every other member is read the same way,
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the

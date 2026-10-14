@@ -588,3 +588,74 @@ fn a_finding_points_where_the_field_is_written() {
         Vec::<String>::new()
     );
 }
+
+/// Every finding a strict read gives, as code and path.
+fn findings(document: serde_json::Value) -> Vec<(&'static str, String)> {
+    let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+    result
+        .diagnostics
+        .into_iter()
+        .map(|d| (d.code, d.path))
+        .collect()
+}
+
+/// A document holding one field, written once as a tree leaf named `f` and once as a flat entry.
+fn as_leaf_and_entry(field: serde_json::Value) -> [serde_json::Value; 2] {
+    let mut entry = field.clone();
+    entry["name"] = "f".into();
+    [
+        serde_json::json!({ "version": 5, "schema": { "node": "group", "children": {
+            "f": { "node": "field", "field": field }
+        }}}),
+        serde_json::json!({ "version": 5, "fields": [entry] }),
+    ]
+}
+
+const LEAF: &str = "/schema/children/f/field";
+
+/// A declared initial value is held to what its kind holds. In a tree the member is also a finding
+/// about the document's shape, so a leaf carries two findings where a flat entry carries one.
+#[test]
+fn an_initial_value_is_held_to_its_kind() {
+    for field in [
+        serde_json::json!({ "kind": "text", "label": "F", "initialValue": 42 }),
+        serde_json::json!({ "kind": "text", "label": "F", "initialValue": null }),
+        serde_json::json!({ "kind": "checkbox", "label": "F", "initialValue": "yes" }),
+        serde_json::json!({ "kind": "multiselect", "label": "F", "options": [{ "value": "a", "label": "A" }], "initialValue": "a" }),
+        serde_json::json!({ "kind": "datepicker", "label": "F", "initialValue": "2026-02-30" }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "initialValue": "24:00" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "#12345" }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": "x", "end": null } }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": null } }),
+    ] {
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![
+                ("MDY_DYNAMIC_INVALID_FIELD", format!("{LEAF}/initialValue")),
+                ("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string()),
+            ],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    // The empty string is a formatted kind's absence, `null` is a nullable kind's, and an option is
+    // whatever the option list offers.
+    for field in [
+        serde_json::json!({ "kind": "datepicker", "label": "F", "initialValue": "" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "" }),
+        serde_json::json!({ "kind": "number", "label": "F", "initialValue": null }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "initialValue": "23:59" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "#AbC" }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": null, "end": "2026-02-28" } }),
+        serde_json::json!({ "kind": "select", "label": "F", "options": [{ "value": { "id": 1 }, "label": "A" }], "initialValue": { "id": 1 } }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}
