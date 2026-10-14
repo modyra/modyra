@@ -92,7 +92,12 @@ did not pay for.
 - The shared corpus pair at and past the bound runs in every reader's corpus test, so a reader
   whose count drifts by one from this definition turns red.
 - `node scripts/audit-type-surface.mjs`: the new export is in the baseline.
-- Java and Rust: not yet implemented; their checks are owed with them.
+- `sdk/java/modyra-contract/src/test/java/dev/modyra/contract/MdyDynamicExpansionLimitTest.java`:
+  the d=6 shape refused in both modes, leafless rows refused, the shared pair exact in both modes,
+  100×20 accepted, a 100 KB multiselect cell lent to 2,000 rows held as one value, and a shared
+  Jackson scalar judged under each cell's own kind. Moving the bound by one, converting the cell per
+  row, or keying the cell by value alone each turns one of them red.
+- Rust: not yet implemented; its check is owed with it.
 
 ## Security and privacy
 
