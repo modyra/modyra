@@ -63,7 +63,14 @@ did not pay for.
   now refuses: a document past the bound that parsed before is `ok: false`.
 - The TS reader does not yet refuse more than 100 written rows per collection, which Java and Rust
   do. Until it does, the bound also counts written rows, so 10,001 written empty rows are refused by
-  this rule in TS and by the row rule elsewhere.
+  this rule in TS and by the row rule elsewhere. Both rules report `MDY_DYNAMIC_SCHEMA_LIMIT`; they
+  differ in path (`/schema` here, the collection's `initialValue` there) and in what survives. The
+  row rule is not yet recorded by any ADR; it lands in TS before or with the release that ships this
+  bound.
+- `MDY_DYNAMIC_SCHEMA_LIMIT` is shared. Java still reports it, at the node reached, for the depth
+  (100) and node (500) caps ADR 0043 removed elsewhere; TS and Rust do not have those caps. A Java
+  finding with this code is therefore not necessarily this bound: only one at `/schema` with no
+  fields is. That difference is known and is not settled here.
 - Written rows count too. A document that writes, explicitly, more than 10,000 visits beyond its
   declarations is refused although it paid for them in bytes. With a hundred rows per collection,
   that takes a hundred written rows of a hundred written rows.
@@ -72,6 +79,9 @@ did not pay for.
   runtime, and stopping it would align the reader to the runtime rather than change what a form
   holds. It is kept here because it changes the flattened fields of valid documents; whether the
   reader keeps lending is a separate decision, open, not settled by this one.
+- This bound does not depend on that decision. Without lending, the visits beyond the declarations
+  are the written rows and the templates, and the bound still holds them; a record that stops
+  lending amends the consequences above, not this decision.
 
 ## Alternatives rejected
 
