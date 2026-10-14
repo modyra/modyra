@@ -152,6 +152,9 @@ public final class MdyDynamicFormParser {
   /** The kinds a field may declare: the names the field type dispatches on, read from its annotation. */
   static final Set<String> FIELD_KINDS = fieldKinds(null);
 
+  /** The kinds that draw a numeric range, and so the ones whose {@code min}, {@code max} and {@code step} are read. */
+  private static final Set<String> NUMBER_KINDS = fieldKinds(MdyDynamicNumberField.class);
+
   /** The kinds a choice is made from, and so the ones that must carry an options list. */
   static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
 
@@ -560,6 +563,7 @@ public final class MdyDynamicFormParser {
       if (!lengthsAreOrdered(item, name, diagnostics)) continue;
       if (!patternIsUsable(item, name, diagnostics)) continue;
       reportUnknownFieldMembers(item, name, path, diagnostics);
+      if (NUMBER_KINDS.contains(kind.asText()) && !rangeIsUsable(item, name, path, diagnostics)) continue;
       if (!initialValueFitsTheKind(item, name, kind.asText(), path, diagnostics)) continue;
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
@@ -653,6 +657,33 @@ public final class MdyDynamicFormParser {
     diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
         "Dropped dynamic field \"" + name + "\": validators.minLength cannot exceed validators.maxLength."));
     return false;
+  }
+
+  /**
+   * Whether a number field's range and step describe a control that can be drawn, dropping the field
+   * otherwise: each bound a finite number, the lower at most the upper, and the step a finite number
+   * above zero. A literal past the double range, such as 1e400, is Infinity to a JavaScript reader
+   * and so is not finite here either.
+   */
+  private static boolean rangeIsUsable(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode min = item.get("min");
+    JsonNode max = item.get("max");
+    JsonNode step = item.get("step");
+    String refusal = null;
+    if (min != null && !isFiniteNumber(min)) refusal = "min must be a finite number.";
+    else if (max != null && !isFiniteNumber(max)) refusal = "max must be a finite number.";
+    else if (min != null && max != null && min.doubleValue() > max.doubleValue()) refusal = "min cannot exceed max.";
+    else if (step != null && !isFiniteNumber(step)) refusal = "step must be a finite number.";
+    else if (step != null && step.doubleValue() <= 0) refusal = "step must be greater than zero.";
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /** A JSON number JavaScript reads as finite: {@code Number.isFinite} after {@code JSON.parse}. */
+  private static boolean isFiniteNumber(JsonNode value) {
+    return value.isNumber() && Double.isFinite(value.doubleValue());
   }
 
   /**

@@ -732,6 +732,11 @@ class MdyDynamicFormParserTest {
         new Case("{\"name\":\"o\",\"kind\":\"segmented\",\"options\":[{\"value\":\"a\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"segmented\" requires a valid options array."),
         new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":null,\"label\":\"A\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
         new Case("{\"name\":\"o\",\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\",\"disabled\":\"yes\"}]}", "MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/1", "Dropped dynamic field \"o\": kind \"select\" requires a valid options array."),
+        new Case("{\"name\":\"n\",\"kind\":\"number\",\"min\":\"1\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": min must be a finite number."),
+        new Case("{\"name\":\"n\",\"kind\":\"slider\",\"max\":1e400}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": max must be a finite number."),
+        new Case("{\"name\":\"n\",\"kind\":\"number\",\"min\":5,\"max\":4}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": min cannot exceed max."),
+        new Case("{\"name\":\"n\",\"kind\":\"number\",\"step\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": step must be a finite number."),
+        new Case("{\"name\":\"n\",\"kind\":\"slider\",\"step\":0}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": step must be greater than zero."),
         new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":42}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text holds string, got number."),
         new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text cannot hold null."),
         new Case("{\"name\":\"c\",\"kind\":\"checkbox\",\"initialValue\":\"yes\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"c\": initialValue does not match the kind — checkbox holds boolean, got string."),
@@ -1822,6 +1827,11 @@ class MdyDynamicFormParserTest {
               "rows":{"node":"array","initialValue":[{"t":5}],"item":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text"}}}}}}}}""",
             0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0",
                 "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "n":{"node":"field","field":{"kind":"number","min":5,"max":4}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/n/field", "Dropped dynamic field \"n\": min cannot exceed max."),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0", "Dropped dynamic field \"leaf\": min cannot exceed max."))),
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"s":{"node":"field","field":{"kind":"select","options":[]}},
               "rows":{"node":"array","item":{"node":"field","field":{"kind":"radio","options":[]}}}}}}""", 1, 1, 2, 0, List.of()));
