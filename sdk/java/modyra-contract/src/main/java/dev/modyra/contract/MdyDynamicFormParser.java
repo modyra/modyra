@@ -340,10 +340,26 @@ public final class MdyDynamicFormParser {
     // field would validate one way here and another wherever the declared version is honoured.
     // A bare array is version 1 and is held to the same arrival.
     if (version != null && version < INTEGER_ARRIVED_WITH) {
-      for (MdyDynamicField field : accepted) {
-        if (field.validators() == null || field.validators().integer() == null) continue;
+      // A tree is read declaration by declaration rather than from its accepted fields: a collection
+      // with no rows flattens to none, and its template is still what every row it gains is read from.
+      List<String> paths = new ArrayList<>();
+      if (root.isObject() && supportedVersion(root.path("version")) != -1 && root.has("schema")) {
+        for (Map.Entry<JsonNode, String> declared : fieldDeclarations(root.get("schema"))) {
+          JsonNode integer = declared.getKey().path("validators").path("integer");
+          if (!integer.isMissingNode() && !integer.isNull()) paths.add(declared.getValue());
+        }
+      } else {
+        JsonNode list = root.isArray() ? root : root.path("fields");
+        for (MdyDynamicField field : accepted) {
+          if (field.validators() == null || field.validators().integer() == null) continue;
+          String at = listEntryPath(list, field.name());
+          paths.add(at != null ? at : "/fields");
+        }
+      }
+      for (String at : paths) {
+        String path = at + "/validators/integer";
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSUPPORTED_VERSION", MdyDynamicDiagnostic.ERROR,
-            "/fields/" + field.name() + "/validators/integer",
+            path,
             "Unsupported dynamic form config version for \"integer\": it arrived with version "
                 + INTEGER_ARRIVED_WITH + ", and this document says " + version + ". Set \"version\": "
                 + INTEGER_ARRIVED_WITH + " to use it."));
@@ -421,6 +437,62 @@ public final class MdyDynamicFormParser {
 
   /** How many declarations the count walks before it stops: {@code MDY_MAX_DECLARATION_WALK} in the TS parser. */
   private static final int MAX_DECLARATION_WALK = 100_000;
+
+  /**
+   * A key as one segment of a diagnostic path, escaped as RFC 6901 escapes a JSON Pointer token.
+   *
+   * "/" and "~" are legal in a name, so a key written raw splits into segments that address something
+   * else: child {@code a/b} would read as child {@code a}, then {@code b}. "~" is escaped first, or the
+   * "~1" written for a "/" would itself be rewritten.
+   */
+  private static String pointerSegment(String key) {
+    return key.replace("~", "~0").replace("/", "~1");
+  }
+
+  /**
+   * Where a field list entry was written, as a diagnostic path, or null when the list does not hold
+   * it: the first object carrying the name. The reader claims a name before any other check, so a later
+   * entry with it is the refused duplicate.
+   */
+  private static String listEntryPath(JsonNode list, String name) {
+    if (!list.isArray()) return null;
+    for (int i = 0; i < list.size(); i++) {
+      JsonNode item = list.get(i);
+      if (item.isObject() && item.path("name").isTextual() && item.path("name").asText().equals(name)) return "/fields/" + i;
+    }
+    return null;
+  }
+
+  /**
+   * Every leaf a tree declares, as its {@code field} member and that member's path, in document order.
+   *
+   * A declaration, not a row: a collection's {@code item} is one template every row is read from, and
+   * it is declared — and so held to the document's version — whether the collection starts with three
+   * rows or none.
+   */
+  private static List<Map.Entry<JsonNode, String>> fieldDeclarations(JsonNode schema) {
+    List<Map.Entry<JsonNode, String>> out = new ArrayList<>();
+    Deque<Map.Entry<JsonNode, String>> pending = new ArrayDeque<>();
+    pending.push(Map.entry(schema, "/schema"));
+    while (!pending.isEmpty()) {
+      Map.Entry<JsonNode, String> next = pending.pop();
+      JsonNode node = next.getKey();
+      String path = next.getValue();
+      if (!node.isObject()) continue;
+      String kind = node.path("node").asText("");
+      if (kind.equals("field")) {
+        out.add(Map.entry(node.path("field"), path + "/field"));
+      } else if (kind.equals("group") && node.path("children").isObject()) {
+        List<Map.Entry<JsonNode, String>> children = new ArrayList<>();
+        node.path("children").fields().forEachRemaining(child ->
+            children.add(Map.entry(child.getValue(), path + "/children/" + pointerSegment(child.getKey()))));
+        for (int i = children.size() - 1; i >= 0; i--) pending.push(children.get(i));
+      } else if (kind.equals("array") || kind.equals("record")) {
+        pending.push(Map.entry(node.path("item"), path + "/item"));
+      }
+    }
+    return out;
+  }
 
   private record FlatResult(List<MdyDynamicField> accepted, List<MdyDynamicDiagnostic> diagnostics) {
   }
@@ -763,7 +835,7 @@ public final class MdyDynamicFormParser {
       children.fieldNames().forEachRemaining(here::add);
       for (var entry : children.properties()) {
         String key = entry.getKey();
-        String childPath = path + "/children/" + key;
+        String childPath = path + "/children/" + pointerSegment(key);
         if (!isSafeDynamicName(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {

@@ -44,7 +44,7 @@ test("a version that predates the word refuses it, and says which version has it
     assert.equal(parsed.ok, false, `v${version} must not silently accept a word it predates`);
     const refusal = parsed.diagnostics.find((d) => d.code === "MDY_DYNAMIC_UNSUPPORTED_VERSION");
     assert.ok(refusal, `v${version} reported no version finding`);
-    assert.equal(refusal.path, "/fields/n/validators/integer", "the refusal names where the word is");
+    assert.equal(refusal.path, "/fields/0/validators/integer", "the refusal names where the word is");
     assert.match(refusal.message, /it arrived with version 5/);
     assert.match(refusal.message, new RegExp(`this document says ${version}`));
   }

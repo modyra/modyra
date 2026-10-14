@@ -23,10 +23,10 @@ test("a finding on a tree field names the field by its whole key", () => {
       },
     },
   };
-  assert.deepEqual(findingsAt(document, "/schema/children/a/b/field"), [
+  assert.deepEqual(findingsAt(document, "/schema/children/a~1b/field"), [
     ["MDY_DYNAMIC_UNKNOWN_KIND", 'Dropped dynamic field "a/b" with unknown kind "nope".'],
   ]);
-  assert.deepEqual(findingsAt(document, "/schema/children/x//field"), []);
+  assert.deepEqual(findingsAt(document, "/schema/children/x~1/field"), []);
 });
 
 test("a collection's template field is named item", () => {

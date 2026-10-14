@@ -957,7 +957,15 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     // A rule the document's version predates: `integer` arrived with v5, and a v2 document carrying
     // it asks for a constraint no reader of that version emits.
     if form.version < 5 {
-        let flat = form.fields.iter().map(|field| (field, format!("/fields/{}", field.name)));
+        // The first entry claims a name and a later one is the refused duplicate, so only the first
+        // is a field this document has.
+        let mut claimed = HashSet::new();
+        let flat = form
+            .fields
+            .iter()
+            .enumerate()
+            .filter(|(_, field)| claimed.insert(field.name.as_str()))
+            .map(|(i, field)| (field, format!("/fields/{i}")));
         let mut leaves = Vec::new();
         if let Some(schema) = &form.schema {
             collect_fields(schema, "/schema", &mut leaves);
@@ -1055,7 +1063,7 @@ fn validate_node(
                             "unsafe group child name",
                         ));
                     } else {
-                        pending.push((child, format!("{path}/children/{name}"), here.clone()));
+                        pending.push((child, format!("{path}/children/{}", pointer_segment(name)), here.clone()));
                     }
                 }
             }
@@ -1116,17 +1124,26 @@ fn validate_node(
     }
 }
 
-/// Every field a schema declares, with its path, over an explicit stack for the reason
+/// A key as one segment of a diagnostic path, escaped as RFC 6901 escapes a JSON Pointer token.
+///
+/// "/" and "~" are legal in a name, so a key written raw splits into segments that address
+/// something else: child `a/b` would read as child `a`, then `b`. `~` is escaped first, or the `~1`
+/// written for a "/" would itself be rewritten.
+fn pointer_segment(key: &str) -> String {
+    key.replace('~', "~0").replace('/', "~1")
+}
+
+/// Every field a schema declares, with the path of its declaration, over an explicit stack for the reason
 /// `validate_node` gives.
 fn collect_fields<'a>(node: &'a DynamicNode, path: &str, out: &mut Vec<(&'a Field, String)>) {
     let mut pending: Vec<(&DynamicNode, String)> = vec![(node, path.to_string())];
     while let Some((node, path)) = pending.pop() {
         match node {
-            DynamicNode::Field { field, .. } => out.push((field, path)),
+            DynamicNode::Field { field, .. } => out.push((field, format!("{path}/field"))),
             DynamicNode::Group { children, .. } => pending.extend(
                 children
                     .iter()
-                    .map(|(name, child)| (child, format!("{path}/children/{name}"))),
+                    .map(|(name, child)| (child, format!("{path}/children/{}", pointer_segment(name)))),
             ),
             DynamicNode::Array { item, .. } | DynamicNode::Record { item, .. } => {
                 pending.push((item, format!("{path}/item")))
