@@ -160,7 +160,11 @@ export function explainValueMismatch(kind: MdyValueKind, value: unknown): string
     return contract.nullable ? null : `${kind} cannot hold ${String(value)}`;
   }
   if (!matchesValueShape(contract.shape, value)) {
-    return `${kind} holds ${contract.shape}, got ${typeof value === "object" ? JSON.stringify(value) : typeof value}`;
+    // NaN and the infinities are refused for their value, not their type, so naming the type would
+    // answer "got number" where a number is exactly what was asked for.
+    const got = typeof value === "object" ? JSON.stringify(value)
+      : typeof value === "number" && !Number.isFinite(value) ? String(value) : typeof value;
+    return `${kind} holds ${contract.shape}, got ${got}`;
   }
   return contentMismatch(kind, value);
 }

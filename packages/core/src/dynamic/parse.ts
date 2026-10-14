@@ -207,25 +207,25 @@ function hasValidCalendarOptions(field: Partial<MdyDynamicCalendarOptions>, name
       }
     }
     if (!usable) {
-      warnDev(`Dropped dynamic field "${name}": locale must be a valid BCP 47 tag, e.g. "it-IT".`);
+      warnDev(`Dropped dynamic field "${name}": locale must be a valid BCP 47 tag, e.g. "it-IT".`, undefined, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
   }
   if (field.firstDayOfWeek !== undefined) {
     const day = field.firstDayOfWeek;
     if (!isFiniteNumber(day) || !Number.isInteger(day) || day < 0 || day > 6) {
-      warnDev(`Dropped dynamic field "${name}": firstDayOfWeek must be an integer from 0 (Sunday) to 6.`);
+      warnDev(`Dropped dynamic field "${name}": firstDayOfWeek must be an integer from 0 (Sunday) to 6.`, undefined, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
   }
   for (const bound of ["minDate", "maxDate"] as const) {
     if (field[bound] !== undefined && !isIsoDate(field[bound])) {
-      warnDev(`Dropped dynamic field "${name}": ${bound} must be an ISO date, e.g. "2026-08-02".`);
+      warnDev(`Dropped dynamic field "${name}": ${bound} must be an ISO date, e.g. "2026-08-02".`, undefined, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
   }
   if (field.minDate !== undefined && field.maxDate !== undefined && field.minDate > field.maxDate) {
-    warnDev(`Dropped dynamic field "${name}": minDate cannot be later than maxDate.`);
+    warnDev(`Dropped dynamic field "${name}": minDate cannot be later than maxDate.`, undefined, MDY_DYNAMIC_INVALID_FIELD);
     return false;
   }
   return true;
@@ -239,6 +239,9 @@ function hasValidCalendarOptions(field: Partial<MdyDynamicCalendarOptions>, name
  * fixed order rather than the reference.
  */
 function optionValueKey(value: unknown): string {
+  // JSON spells both infinities `null`, which would make a value past a double's range in either
+  // direction a duplicate of the other.
+  if (typeof value === "number" && !Number.isFinite(value)) return String(value);
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? String(value);
   const entries = Object.entries(value as Record<string, unknown>)
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
@@ -283,9 +286,9 @@ function hasValidValidatorConfig(
   fieldName: string,
 ): validators is MdyDynamicValidators {
   if (validators === undefined) return true;
-  if (typeof validators !== "object" || validators === null) {
+  if (typeof validators !== "object" || validators === null || Array.isArray(validators)) {
     warnDev(
-      `Dropped dynamic field "${fieldName}": validators must be an object.`,
+      `Dropped dynamic field "${fieldName}": validators must be an object.`, undefined, MDY_DYNAMIC_INVALID_FIELD,
     );
     return false;
   }
@@ -295,7 +298,7 @@ function hasValidValidatorConfig(
     const value = config[key];
     if (value !== undefined && typeof value !== "boolean") {
       warnDev(
-        `Dropped dynamic field "${fieldName}": validators.${key} must be a boolean.`,
+        `Dropped dynamic field "${fieldName}": validators.${key} must be a boolean.`, undefined, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -305,7 +308,7 @@ function hasValidValidatorConfig(
     const value = config[key];
     if (value !== undefined && !isFiniteNumber(value)) {
       warnDev(
-        `Dropped dynamic field "${fieldName}": validators.${key} must be a finite number.`,
+        `Dropped dynamic field "${fieldName}": validators.${key} must be a finite number.`, undefined, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -315,21 +318,21 @@ function hasValidValidatorConfig(
   // to prevent.
   if (config.messages !== undefined) {
     if (!isRecordValue(config.messages)) {
-      warnDev(`Dropped dynamic field "${fieldName}": validators.messages must be an object.`);
+      warnDev(`Dropped dynamic field "${fieldName}": validators.messages must be an object.`, undefined, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
     for (const [key, said] of Object.entries(config.messages)) {
       if (!MDY_VALIDATOR_MESSAGE_KEYS.has(key)) {
         warnDev(
           `Dropped dynamic field "${fieldName}": validators.messages names "${key}", which is not a ` +
-          "rule a field declares.",
+          "rule a field declares.", undefined, MDY_DYNAMIC_INVALID_FIELD,
         );
         return false;
       }
       if (typeof said !== "string" || said.trim() === "") {
         warnDev(
           `Dropped dynamic field "${fieldName}": validators.messages.${key} must be a message a ` +
-          "person can read.",
+          "person can read.", undefined, MDY_DYNAMIC_INVALID_FIELD,
         );
         return false;
       }
@@ -341,20 +344,20 @@ function hasValidValidatorConfig(
     config.minLength > config.maxLength
   ) {
     warnDev(
-      `Dropped dynamic field "${fieldName}": validators.minLength cannot exceed validators.maxLength.`,
+      `Dropped dynamic field "${fieldName}": validators.minLength cannot exceed validators.maxLength.`, undefined, MDY_DYNAMIC_INVALID_FIELD,
     );
     return false;
   }
   if (config.pattern !== undefined) {
     if (typeof config.pattern !== "string") {
       warnDev(
-        `Dropped dynamic field "${fieldName}": validators.pattern must be a string.`,
+        `Dropped dynamic field "${fieldName}": validators.pattern must be a string.`, undefined, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
     if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
       warnDev(
-        `Dropped dynamic field "${fieldName}": validators.pattern length exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
+        `Dropped dynamic field "${fieldName}": validators.pattern length exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`, undefined, "MDY_DYNAMIC_PATTERN_TOO_LONG",
       );
       return false;
     }
@@ -365,7 +368,7 @@ function hasValidValidatorConfig(
     const refusal = dynamicPatternRefusal(config.pattern);
     if (refusal !== null) {
       warnDev(
-        `Dropped validators.pattern on dynamic field "${fieldName}": the pattern has ${refusal}.`,
+        `Dropped validators.pattern on dynamic field "${fieldName}": the pattern has ${refusal}.`, undefined, "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
       );
     } else {
       // And one the platform cannot compile at all. The cost gate above answers about a pattern that
@@ -377,7 +380,7 @@ function hasValidValidatorConfig(
       } catch {
         warnDev(
           `Dropped validators.pattern on dynamic field "${fieldName}": "${config.pattern}" is not a ` +
-          "regular expression this platform can compile, so the rule never runs.",
+          "regular expression this platform can compile, so the rule never runs.", undefined, MDY_DYNAMIC_INVALID_FIELD,
         );
       }
     }
@@ -505,7 +508,7 @@ function flattenNode(
           `Dropped a dynamic field whose path is ${path.length} characters, past the ` +
           `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
           "and the widget id, and every read of the value carries it.",
-          "/schema",
+          "/schema", "MDY_DYNAMIC_PATH_TOO_LONG",
         );
         continue;
       }
@@ -521,7 +524,10 @@ function flattenNode(
       const entries = Object.entries(node.children).filter(([key]) => isSafeDynamicName(key));
       for (let index = entries.length - 1; index >= 0; index -= 1) {
         const [key, child] = entries[index]!;
-        pending.push({ node: child, path: path ? `${path}.${key}` : key, initial: value[key] });
+        // Own members only: a child named `valueOf` reads the initial the document wrote for it, not
+        // the method every object inherits under that name.
+        const held = Object.hasOwn(value, key) ? value[key] : undefined;
+        pending.push({ node: child, path: path ? `${path}.${key}` : key, initial: held });
       }
       continue;
     }
@@ -792,14 +798,14 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         (envelope.version === 1
           ? ' Version 1 was read by this runtime alone and is no longer supported — set "version": 2, ' +
             "which reads the same fields."
-          : ""),
+          : ""), undefined, "MDY_DYNAMIC_UNSUPPORTED_VERSION",
       );
       return [];
     }
     items = envelope.fields;
   }
   if (!Array.isArray(items)) {
-    warnDev("Dynamic form config is neither a field array nor a config envelope.");
+    warnDev("Dynamic form config is neither a field array nor a config envelope.", undefined, MDY_DYNAMIC_INVALID_FIELD);
     return [];
   }
   const seenNames = new Set<string>();
@@ -817,18 +823,18 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     // the second is the one a reader has to change.
     const at = `/fields/${index}`;
     if (typeof item !== "object" || item === null) {
-      warnDev(`Dropped non-object dynamic field: ${JSON.stringify(item)}`, at);
+      warnDev(`Dropped non-object dynamic field: ${JSON.stringify(item)}`, at, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
     const f = item as Partial<MdyDynamicField>;
     if (typeof f.name !== "string" || f.name.length === 0) {
-      warnDev(`Dropped dynamic field without a name: ${JSON.stringify(item)}`, at);
+      warnDev(`Dropped dynamic field without a name: ${JSON.stringify(item)}`, at, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
     if (!isSafeDynamicSegment(f.name)) {
       warnDev(
         `Dropped dynamic field "${f.name}": name is reserved or contains forbidden path separators.`,
-      at,
+      at, "MDY_DYNAMIC_UNSAFE_NAME",
       );
       return false;
     }
@@ -839,7 +845,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dropped dynamic field ${JSON.stringify(f.name)}: the name carries a character that cannot ` +
         "be seen, so two names that read the same would be two different fields.",
-        at,
+        at, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -854,7 +860,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         `Dropped a dynamic field whose path is ${f.name.length} characters, past the ` +
           `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
           "and the widget id, and every read of the value carries it.",
-        at,
+        at, "MDY_DYNAMIC_PATH_TOO_LONG",
       );
       return false;
     }
@@ -866,7 +872,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dropped dynamic field "${f.name}": a form's value is an object, so this name shadows the ` +
           "method every string conversion of that value goes through, and `${value}` then throws.",
-        at,
+        at, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -874,7 +880,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dropped dynamic field "${f.name}": "${MDY_ID_DELIMITER}" separates the segments of a generated id, ` +
           `so this name would collide with another field's parts.`,
-      at,
+      at, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -887,31 +893,31 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         `Dropped dynamic field "${f.name}": a widget id is built from this name, and whitespace ` +
           `splits an id reference into several, each resolving to nothing — so the control would ` +
           `have no accessible name.`,
-      at,
+      at, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
     if (seenNames.has(f.name)) {
-      warnDev(`Dropped duplicate dynamic field name "${f.name}".`, at);
+      warnDev(`Dropped duplicate dynamic field name "${f.name}".`, at, "MDY_DYNAMIC_DUPLICATE_NAME");
       return false;
     }
     seenNames.add(f.name);
     if (!(MDY_DYNAMIC_FIELD_KINDS as readonly unknown[]).includes(f.kind)) {
-      warnDev(`Dropped dynamic field "${f.name}" with unknown kind "${String(f.kind)}".`, at);
+      warnDev(`Dropped dynamic field "${f.name}" with unknown kind "${String(f.kind)}".`, at, "MDY_DYNAMIC_UNKNOWN_KIND");
       return false;
     }
     if (f.label !== undefined && typeof f.label !== "string") {
-      warnDev(`Dropped dynamic field "${f.name}": label must be a string.`, at);
+      warnDev(`Dropped dynamic field "${f.name}": label must be a string.`, at, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
     if (f.sensitive !== undefined && typeof f.sensitive !== "boolean") {
-      warnDev(`Dropped dynamic field "${f.name}": sensitive must be a boolean.`, at);
+      warnDev(`Dropped dynamic field "${f.name}": sensitive must be a boolean.`, at, MDY_DYNAMIC_INVALID_FIELD);
       return false;
     }
     if (f.placeholder !== undefined && typeof f.placeholder !== "string") {
       warnDev(
         `Dropped dynamic field "${f.name}": placeholder must be a string.`,
-      at,
+      at, MDY_DYNAMIC_INVALID_FIELD,
       );
       return false;
     }
@@ -930,7 +936,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         warnDev(
           `${what} carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, which ` +
           "this contract does not declare, so nothing reads it.",
-          at,
+          at, "MDY_DYNAMIC_UNKNOWN_MEMBER",
         );
       }
     }
@@ -941,7 +947,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
           warnDev(
             `an option of "${f.name}" carries ${unknown.map((member) => JSON.stringify(member)).join(", ")}, ` +
             "which this contract does not declare, so nothing reads it.",
-            `${at}/options/${index}`,
+            `${at}/options/${index}`, "MDY_DYNAMIC_UNKNOWN_MEMBER",
           );
         }
       }
@@ -949,11 +955,11 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (f.kind === "number" || f.kind === "slider") {
       const numberField = f as Partial<MdyDynamicNumberField>;
       if (numberField.min !== undefined && !isFiniteNumber(numberField.min)) {
-        warnDev(`Dropped dynamic field "${f.name}": min must be a finite number.`, at);
+        warnDev(`Dropped dynamic field "${f.name}": min must be a finite number.`, at, MDY_DYNAMIC_INVALID_FIELD);
         return false;
       }
       if (numberField.max !== undefined && !isFiniteNumber(numberField.max)) {
-        warnDev(`Dropped dynamic field "${f.name}": max must be a finite number.`, at);
+        warnDev(`Dropped dynamic field "${f.name}": max must be a finite number.`, at, MDY_DYNAMIC_INVALID_FIELD);
         return false;
       }
       if (
@@ -961,16 +967,16 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         numberField.max !== undefined &&
         numberField.min > numberField.max
       ) {
-        warnDev(`Dropped dynamic field "${f.name}": min cannot exceed max.`, at);
+        warnDev(`Dropped dynamic field "${f.name}": min cannot exceed max.`, at, MDY_DYNAMIC_INVALID_FIELD);
         return false;
       }
       if (numberField.step !== undefined) {
         if (!isFiniteNumber(numberField.step)) {
-          warnDev(`Dropped dynamic field "${f.name}": step must be a finite number.`, at);
+          warnDev(`Dropped dynamic field "${f.name}": step must be a finite number.`, at, MDY_DYNAMIC_INVALID_FIELD);
           return false;
         }
         if (numberField.step <= 0) {
-          warnDev(`Dropped dynamic field "${f.name}": step must be greater than zero.`, at);
+          warnDev(`Dropped dynamic field "${f.name}": step must be greater than zero.`, at, MDY_DYNAMIC_INVALID_FIELD);
           return false;
         }
       }
@@ -990,7 +996,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
     if (f.initialValue !== undefined && (MDY_FIELD_KINDS as readonly unknown[]).includes(f.kind)) {
       const mismatch = explainValueMismatch(f.kind as MdyValueKind, f.initialValue);
       if (mismatch !== null) {
-        warnDev(`Dropped dynamic field "${f.name}": initialValue does not match the kind — ${mismatch}.`, at);
+        warnDev(`Dropped dynamic field "${f.name}": initialValue does not match the kind — ${mismatch}.`, at, MDY_DYNAMIC_INVALID_FIELD);
         return false;
       }
     }
@@ -1008,7 +1014,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dynamic field "${f.name}" declares "${misplaced}" on the field, and it belongs in "validators" — ` +
         `nothing reads it here, so the field has no such rule.`,
-        at,
+        at, "MDY_DYNAMIC_MISPLACED_VALIDATOR",
       );
     }
     // A constraint that cannot fail. A kind whose empty is a usable value — a slider, whose thumb is
@@ -1027,7 +1033,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       warnDev(
         `Dynamic field "${f.name}" declares "required", and a "${String(f.kind)}" starts at a value ` +
         `that satisfies it — the rule can never refuse anything, so the field is not compulsory.`,
-        at,
+        at, "MDY_DYNAMIC_CONSTRAINT_CANNOT_FAIL",
       );
     }
     // A granularity that cannot be honoured is refused where it is written. A step that does not
@@ -1041,11 +1047,14 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         ? validateTimeGranularity(declaredGranularity as MdyTimeGranularity)
           .map((problem) => explainGranularityProblem(problem)).join("; ")
         : `a "${String(f.kind)}" has no times to offer, which this contract does not declare`;
+      // On any kind but a timepicker the member is one the contract does not declare for that kind,
+      // so the finding is an unknown member, here and for format and viewMode below; only on a
+      // timepicker is it a value the picker cannot honour.
       if (said.length > 0) {
         warnDev(
           `Dynamic field "${f.name}" declares a granularity this reader cannot honour: ${said}. ` +
           "The field offers every time instead.",
-          at,
+          at, f.kind === "timepicker" ? "MDY_DYNAMIC_UNHONOURABLE_GRANULARITY" : "MDY_DYNAMIC_UNKNOWN_MEMBER",
         );
         // Recorded, not deleted: the document belongs to the caller, and a parser that edits it
         // leaves a second read of the same object answering differently from the first.
@@ -1068,7 +1077,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         warnDev(
           `Dynamic field "${f.name}" declares a format this reader cannot honour: ${said}. ` +
           "The field draws the 24-hour clock instead.",
-          at,
+          at, f.kind === "timepicker" ? "MDY_DYNAMIC_UNHONOURABLE_FORMAT" : "MDY_DYNAMIC_UNKNOWN_MEMBER",
         );
         droppedFormat.add(item);
       }
@@ -1088,7 +1097,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         warnDev(
           `Dynamic field "${f.name}" declares a view this reader cannot open: ${said}. ` +
           "The field opens on the dial instead.",
-          at,
+          at, f.kind === "timepicker" ? "MDY_DYNAMIC_UNOPENABLE_VIEW" : "MDY_DYNAMIC_UNKNOWN_MEMBER",
         );
         droppedViewMode.add(item);
       }
@@ -1100,7 +1109,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
       if (!hasValidOptions(options)) {
         warnDev(
           `Dropped dynamic field "${f.name}": kind "${String(f.kind)}" requires a valid options array.`,
-        at,
+        at, "MDY_DYNAMIC_OPTIONS_REQUIRED",
         );
         return false;
       }
@@ -1118,7 +1127,7 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         warnDev(
           `Dropped a duplicate option value ${key} on "${f.name}": an option's value is its identity, ` +
           "so two options sharing one leave a value naming both and a control able to reach only the first.",
-          at,
+          at, "MDY_DYNAMIC_DUPLICATE_OPTION",
         );
         return false;
       });
@@ -1157,10 +1166,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
  * inverts that — an edit to an English sentence silently renames a code somebody is matching on, and
  * nothing in a build objects.
  *
- * The table is the coupling made visible rather than removed: the phrases still have to appear in the
- * messages, and `dynamic-diagnostics.test.mjs` fails when one stops appearing. Removing the coupling
- * altogether means naming a code at each of the thirty sites that refuse something, which is the
- * right shape and a different change.
+ * Each site that refuses something here names its code, so the code does not depend on the prose.
+ * The phrases remain the recognisable part of each message — `dynamic-diagnostics.test.mjs` fails
+ * when one stops appearing — and the fallback for a finding whose site names no code.
  */
 export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
   readonly code: string;
@@ -1190,7 +1198,15 @@ export const MDY_DYNAMIC_DIAGNOSTICS: ReadonlyArray<{
 /** What a refusal is called when none of the named ones fits. */
 export const MDY_DYNAMIC_INVALID_FIELD = "MDY_DYNAMIC_INVALID_FIELD";
 
-function diagnosticCode(message: string): string {
+/**
+ * The code a finding is reported under: the one its site named, else the one its phrase identifies.
+ *
+ * Every refusal this reader makes names its code, because its messages quote what the document wrote
+ * and a quoted name may carry another code's phrase. The phrase is the answer only for a finding
+ * from a site that names none.
+ */
+function diagnosticCode(message: string, code?: string): string {
+  if (code !== undefined) return code;
   return MDY_DYNAMIC_DIAGNOSTICS.find((entry) => message.includes(entry.phrase))?.code
     ?? MDY_DYNAMIC_INVALID_FIELD;
 }
@@ -1547,8 +1563,8 @@ function validateDynamicSchema(input: unknown): {
       // of its own — the key is the name — and a key may hold "/", so the path cannot give it back:
       // `a/b` would read as `b`, and `x/` as a field without a name.
       collectingDiagnostics(
-        (message) => perField.push({
-          code: diagnosticCode(message),
+        (message, _path, code) => perField.push({
+          code: diagnosticCode(message, code),
           severity: "error",
           path: `${path}/field`,
           message,
@@ -1771,8 +1787,8 @@ export function parseDynamicForm(
   let fields: MdyDynamicField[] = collectingDiagnostics(
     // `/fields` only when the reporter did not say which entry: an envelope-level refusal is about
     // the list, and a field's own is about the field.
-    (message, path) => diagnostics.push({
-      code: diagnosticCode(message), severity: "error", path: path ?? "/fields", message,
+    (message, path, code) => diagnostics.push({
+      code: diagnosticCode(message, code), severity: "error", path: path ?? "/fields", message,
     }),
     () => isSupportedVersion(rawEnvelope?.version) && rawEnvelope.schema !== undefined
       ? []
@@ -1848,8 +1864,8 @@ export function parseDynamicForm(
       // counts a consumer reports with are about the document and not about what survived it.
       const before = diagnostics.length;
       const walked = collectingDiagnostics(
-        (message, path) => diagnostics.push({
-          code: diagnosticCode(message), severity: "error", path: path ?? "/schema", message,
+        (message, path, code) => diagnostics.push({
+          code: diagnosticCode(message, code), severity: "error", path: path ?? "/schema", message,
         }),
         () => flattenDynamicForm(envelope.schema as MdyDynamicGroupNode),
       );

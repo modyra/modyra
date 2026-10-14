@@ -780,7 +780,7 @@ const OPERATORS: &[&str] = &[
 ///
 /// Judged on the document as written: deserialization reads an explicit `null` as an absent member,
 /// so `integer: null` would be read as no rule where the contract refuses it. A present `null` is a
-/// value of the wrong type. An array passes the validators object test, as it does in JavaScript.
+/// value of the wrong type. An array is not a validators object.
 fn member_type_refusal(field: &Value) -> Option<String> {
     let wrong = |key: &str, is: fn(&Value) -> bool| field.get(key).is_some_and(|v| !is(v));
     if wrong("label", Value::is_string) {
@@ -793,7 +793,7 @@ fn member_type_refusal(field: &Value) -> Option<String> {
         return Some("placeholder must be a string.".into());
     }
     let validators = field.get("validators")?;
-    if !validators.is_object() && !validators.is_array() {
+    if !validators.is_object() {
         return Some("validators must be an object.".into());
     }
     for key in ["required", "email", "integer"] {

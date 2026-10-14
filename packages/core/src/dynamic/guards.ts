@@ -201,7 +201,7 @@ export function assertSafeDynamicFieldNames(
 }
 
 
-let diagnosticSink: ((message: string, path?: string) => void) | undefined;
+let diagnosticSink: ((message: string, path?: string, code?: string) => void) | undefined;
 
 /**
  * Runs `read` with every `warnDev` finding going to `sink` instead of the console.
@@ -218,7 +218,7 @@ let diagnosticSink: ((message: string, path?: string) => void) | undefined;
  * worth more than the console message.
  */
 export function collectingDiagnostics<T>(
-  sink: (message: string, path?: string) => void,
+  sink: (message: string, path?: string, code?: string) => void,
   read: () => T,
 ): T {
   const previous = diagnosticSink;
@@ -230,13 +230,19 @@ export function collectingDiagnostics<T>(
   }
 }
 
-export function warnDev(message: string, path?: string): void {
+/**
+ * Reports a finding: to the collecting sink when a reader holds one, else to the console.
+ *
+ * `code` is the diagnostic code the reader files the finding under. A message quotes what a document
+ * wrote, so a code read back out of the prose could be one the document spelled.
+ */
+export function warnDev(message: string, path?: string, code?: string): void {
   // A caller holding a sink is collecting these into a result it is about to read, so writing to the
   // console as well duplicates every finding into a channel it did not ask for — and a tool that
   // parses a document per keystroke turns that into a stream. With no sink the console is the only
   // way the finding reaches anyone, which is why it stays the fallback rather than an option.
   if (diagnosticSink) {
-    diagnosticSink(message, path);
+    diagnosticSink(message, path, code);
     return;
   }
   console.warn(`[modyra] ${message}`);
