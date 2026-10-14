@@ -1047,6 +1047,9 @@ export function parseDynamicFields(input: unknown): MdyDynamicField[] {
         ? validateTimeGranularity(declaredGranularity as MdyTimeGranularity)
           .map((problem) => explainGranularityProblem(problem)).join("; ")
         : `a "${String(f.kind)}" has no times to offer, which this contract does not declare`;
+      // On any kind but a timepicker the member is one the contract does not declare for that kind,
+      // so the finding is an unknown member, here and for format and viewMode below; only on a
+      // timepicker is it a value the picker cannot honour.
       if (said.length > 0) {
         warnDev(
           `Dynamic field "${f.name}" declares a granularity this reader cannot honour: ${said}. ` +

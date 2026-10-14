@@ -23,9 +23,11 @@ The dynamic reader judges what a document wrote, and files each finding under th
 - **`explainValueMismatch` names NaN and the infinities by value**: "number holds number, got
   Infinity" rather than "… got number".
 
-The Rust reader (`sdk/rust/modyra-contract`) refuses `validators: []` the same way. The Java reader
-still drops `-1e400` beside `1e400` as a duplicate; that disagreement is listed in its ledger
-(ADR 0228).
+The Rust and Java readers (`sdk/rust/modyra-contract`, `sdk/java/modyra-contract`) refuse
+`validators: []` the same way. The Java reader still drops `-1e400` beside `1e400` as a duplicate;
+that disagreement is listed in its ledger (ADR 0228). The Rust reader holds `1e400` and `1e401` as
+two distinct options where TypeScript, reading both as `Infinity`, keeps one: a limit of the
+JavaScript number, with no shared fixture.
 
 **Migration.** A document carrying `validators: []` used to parse `ok` and now drops that field: write
 `validators: {}`, or leave the member out. A consumer that keyed on a misfiled code for a document
