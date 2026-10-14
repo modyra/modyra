@@ -16,7 +16,8 @@ before anything is converted, and refuse the field with `MDY_DYNAMIC_INVALID_FIE
 An explicit `null` counts as a value of the wrong type, not as an absent member. Java reports at the
 TypeScript reader's paths with its full message; Rust reports at the field as written (`/fields/N`
 or `/schema/…/field`) with the rule alone, such as `label must be a string.`, in the style of its
-other messages.
+other messages. A field already refused for its name or its kind carries that diagnostic alone, in
+both, as it does in TypeScript.
 
 **Migration for Java consumers.** Such a document used to come back `ok`, with `null` read as no
 rule, `"3"` read as `3` and `"true"` read as `true`. It now comes back not `ok`.
