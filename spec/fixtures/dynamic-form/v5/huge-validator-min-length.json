@@ -1,0 +1,1 @@
+{"version":5,"schema":{"node":"group","children":{"f":{"node":"field","field":{"kind":"text","label":"F","validators":{"minLength":-1e400}}}}}}
