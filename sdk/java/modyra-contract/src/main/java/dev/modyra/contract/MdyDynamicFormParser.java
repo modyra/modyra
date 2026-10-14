@@ -625,7 +625,8 @@ public final class MdyDynamicFormParser {
       if (refusal == null) {
         for (String key : List.of("min", "max", "minLength", "maxLength")) {
           JsonNode value = validators.get(key);
-          if (value != null && !value.isNumber()) {
+          // A literal past the double range, such as 1e400, is Infinity to a JavaScript reader.
+          if (value != null && !(value.isNumber() && Double.isFinite(value.doubleValue()))) {
             refusal = "validators." + key + " must be a finite number.";
             break;
           }
