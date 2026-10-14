@@ -624,7 +624,8 @@ public final class MdyDynamicFormParser {
    * a number, a truthy string to {@code true} — so a document refused by the TypeScript reader would
    * be read here as a different, valid one.
    *
-   * <p>An array is refused as the validators object, as the TypeScript reader refuses it. Reported at {@code /fields}, where the TypeScript reader puts a validator's refusal.
+   * <p>An array is refused as the validators object, as the TypeScript reader refuses it. Reported at
+   * {@code /fields}, where the TypeScript reader puts a validator's refusal.
    */
   private static boolean validatorsHaveTheirTypes(
       JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
