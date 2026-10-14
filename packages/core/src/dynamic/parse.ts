@@ -614,9 +614,15 @@ function flattenNode(
   }
 }
 
-/** Whether a value is a node the walk can enter, judged by its `node` member alone. */
+/**
+ * Whether a value is a node the walk can enter, judged by its `node` member alone.
+ *
+ * The member must be the string itself: `["field"]` converts to `"field"`, and a node accepted on
+ * that reading is walked as whichever branch its other members happen to fit.
+ */
 function isDynamicNode(value: unknown): value is Record<string, unknown> {
-  return isRecordValue(value) && ["field", "group", "array", "record"].includes(String(value["node"]));
+  const kind = isRecordValue(value) ? value["node"] : undefined;
+  return typeof kind === "string" && ["field", "group", "array", "record"].includes(kind);
 }
 
 /**

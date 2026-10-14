@@ -13,7 +13,11 @@ import { parseDynamicForm } from "../dist/index.js";
 const tree = (children) => ({ version: 5, id: "t", schema: { node: "group", children } });
 const leaf = (field) => ({ node: "field", field: { label: "F", ...field } });
 
-for (const [what, malformed] of [["a bare value", "x"], ["an unknown node", { node: "nope" }]]) {
+for (const [what, malformed] of [
+  ["a bare value", "x"],
+  ["an unknown node", { node: "nope" }],
+  ["a node named by a list", { node: ["field"], field: { label: "F", kind: "text" } }],
+]) {
   test(`${what} beside a valid field drops alone in lenient mode and refuses the document in strict`, () => {
     const document = tree({ a: leaf({ kind: "text" }), v: malformed });
 
