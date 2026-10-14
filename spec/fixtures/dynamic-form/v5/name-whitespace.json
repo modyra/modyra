@@ -1,0 +1,1 @@
+{"version":5,"id":"name-whitespace","schema":{"node":"group","children":{"a b":{"node":"field","field":{"label":"F","kind":"text"}}}}}
