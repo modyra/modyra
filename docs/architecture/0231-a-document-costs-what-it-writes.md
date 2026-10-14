@@ -65,16 +65,13 @@ did not pay for.
   field cannot reach the others.
 - `MdyDynamicSchemaLimitError` is a new export (`minor`), and a parser that refused nothing here
   now refuses: a document past the bound that parsed before is `ok: false`.
-- The TS reader does not yet refuse more than 100 written rows per collection, which Java and Rust
-  do. Until it does, the bound also counts written rows, so 10,001 written empty rows are refused by
-  this rule in TS and by the row rule elsewhere. Both rules report `MDY_DYNAMIC_SCHEMA_LIMIT`; they
-  differ in path (`/schema` here, the collection's `initialValue` there) and in what survives. The
-  row rule is not yet recorded by any ADR; it lands in TS before or with the release that ships this
-  bound.
-  *Amendment, 2026-10-14:* [ADR 0232](0232-a-collection-writes-at-most-a-hundred-rows.md) records
-  the row rule and TS applies it, at the collection's `initialValue` in every reader. More than 100
-  written rows in one collection are now refused by that rule alone, as a finding about the shape,
-  so this bound is never reached by written rows of a single collection.
+- Every reader refuses more than 100 rows written in a collection's own `initialValue`
+  ([ADR 0232](0232-a-collection-writes-at-most-a-hundred-rows.md)), as a finding about the shape at
+  that `initialValue`. Rows one collection writes in its own `initialValue` therefore never reach
+  this bound on their own: 10,001 of them are refused by the row rule, not here. Rows written inside
+  an enclosing row's `initialValue` are not capped by that rule, and they count here like any other
+  written row. Both rules report `MDY_DYNAMIC_SCHEMA_LIMIT`;
+  they differ in path (`/schema` here, the collection's `initialValue` there) and in what survives.
 - `MDY_DYNAMIC_SCHEMA_LIMIT` is shared. Java still reports it, at the node reached, for the depth
   (100) and node (500) caps ADR 0043 removed elsewhere; TS and Rust do not have those caps. A Java
   finding with this code is therefore not necessarily this bound: only one at `/schema` with no
