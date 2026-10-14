@@ -737,6 +737,13 @@ class MdyDynamicFormParserTest {
         new Case("{\"name\":\"n\",\"kind\":\"number\",\"min\":5,\"max\":4}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": min cannot exceed max."),
         new Case("{\"name\":\"n\",\"kind\":\"number\",\"step\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": step must be a finite number."),
         new Case("{\"name\":\"n\",\"kind\":\"slider\",\"step\":0}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"n\": step must be greater than zero."),
+        new Case("{\"name\":\"d\",\"kind\":\"datepicker\",\"locale\":\"en_US\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"timepicker\",\"locale\":7}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"daterange\",\"firstDayOfWeek\":7}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": firstDayOfWeek must be an integer from 0 (Sunday) to 6."),
+        new Case("{\"name\":\"d\",\"kind\":\"datepicker\",\"firstDayOfWeek\":1.5}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": firstDayOfWeek must be an integer from 0 (Sunday) to 6."),
+        new Case("{\"name\":\"d\",\"kind\":\"datepicker\",\"firstDayOfWeek\":6.0,\"minDate\":\"0099-01-01\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": minDate must be an ISO date, e.g. \"2026-08-02\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"datepicker\",\"maxDate\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": maxDate must be an ISO date, e.g. \"2026-08-02\"."),
+        new Case("{\"name\":\"d\",\"kind\":\"daterange\",\"minDate\":\"2026-08-02\",\"maxDate\":\"2026-08-01\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields", "Dropped dynamic field \"d\": minDate cannot be later than maxDate."),
         new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":42}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text holds string, got number."),
         new Case("{\"name\":\"t\",\"kind\":\"text\",\"initialValue\":null}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"t\": initialValue does not match the kind — text cannot hold null."),
         new Case("{\"name\":\"c\",\"kind\":\"checkbox\",\"initialValue\":\"yes\"}", "MDY_DYNAMIC_INVALID_FIELD", "/fields/1", "Dropped dynamic field \"c\": initialValue does not match the kind — checkbox holds boolean, got string."),
@@ -1829,6 +1836,11 @@ class MdyDynamicFormParserTest {
                 "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "d":{"node":"field","field":{"kind":"datepicker","locale":"en_US"}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/d/field", "Dropped dynamic field \"d\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."))),
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "n":{"node":"field","field":{"kind":"number","min":5,"max":4}}}}}""", 0, 1, 1, 1, List.of(
             new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/n/field", "Dropped dynamic field \"n\": min cannot exceed max."),
             new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0", "Dropped dynamic field \"leaf\": min cannot exceed max."))),
@@ -1874,6 +1886,26 @@ class MdyDynamicFormParserTest {
     assertEquals(tsList(parse, "const MDY_VALIDATOR_MESSAGE_KEYS: ReadonlySet<string> = new Set(["), MdyDynamicFormParser.VALIDATOR_MESSAGE_KEYS, "messages");
     assertEquals(tsList(parse, "const needsOptions = ["), MdyDynamicFormParser.OPTIONS_KINDS, "the kinds that need options");
     assertEquals(tsList(core.resolve("field-kinds.ts"), "export const MDY_FIELD_KINDS = Object.freeze(["), MdyDynamicFormParser.FIELD_KINDS, "kinds");
+  }
+
+  /**
+   * A calendar's locale is read where {@code Intl.getCanonicalLocales} draws the line, not where
+   * RFC 5646 does: each verdict below is the one Node 24 gives. Grandfathered, extlang and
+   * private-use-only tags, a repeated variant or singleton, an underscore and a character outside
+   * ASCII are refused; a tag with any case and well-formed extensions is accepted.
+   */
+  @Test
+  void aCalendarLocaleIsATagJavaScriptAccepts() {
+    Map<String, Boolean> verdicts = new TreeMap<>(Map.ofEntries(
+        Map.entry("it-IT", true), Map.entry("EN-us", true), Map.entry("en-x-foo", true), Map.entry("en-US-x-a-b-c", true),
+        Map.entry("en-u-ca", true), Map.entry("en-u-attr-ca-gregory", true), Map.entry("en-t-it-m0-xxx", true),
+        Map.entry("art-lojban", true),
+        Map.entry("en_US", false), Map.entry("not a tag!", false), Map.entry("", false), Map.entry("root", false),
+        Map.entry("i-klingon", false), Map.entry("x-foo", false), Map.entry("zh-yue", false), Map.entry("abcd", false),
+        Map.entry("Latn-US", false), Map.entry("de-DE-1996-1996", false), Map.entry("en-a-xx-a-yy", false),
+        Map.entry("en-a-b", false), Map.entry("en-t-m0", false), Map.entry("en-t-it-latn-1996-1996", false),
+        Map.entry("en-u-ab-123456789", false), Map.entry("en-K", false)));
+    verdicts.forEach((tag, valid) -> assertEquals(valid, MdyLanguageTags.isStructurallyValid(tag), tag));
   }
 
   /**

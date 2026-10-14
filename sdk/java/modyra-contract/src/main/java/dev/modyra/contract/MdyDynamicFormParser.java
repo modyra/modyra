@@ -155,6 +155,9 @@ public final class MdyDynamicFormParser {
   /** The kinds that draw a numeric range, and so the ones whose {@code min}, {@code max} and {@code step} are read. */
   private static final Set<String> NUMBER_KINDS = fieldKinds(MdyDynamicNumberField.class);
 
+  /** The kinds that draw a calendar, and so the ones whose locale, first weekday and date bounds are read. */
+  private static final Set<String> CALENDAR_KINDS = Set.of("datepicker", "timepicker", "daterange");
+
   /** The kinds a choice is made from, and so the ones that must carry an options list. */
   static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
 
@@ -564,6 +567,7 @@ public final class MdyDynamicFormParser {
       if (!patternIsUsable(item, name, diagnostics)) continue;
       reportUnknownFieldMembers(item, name, path, diagnostics);
       if (NUMBER_KINDS.contains(kind.asText()) && !rangeIsUsable(item, name, path, diagnostics)) continue;
+      if (CALENDAR_KINDS.contains(kind.asText()) && !calendarIsUsable(item, name, diagnostics)) continue;
       if (!initialValueFitsTheKind(item, name, kind.asText(), path, diagnostics)) continue;
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
@@ -677,6 +681,38 @@ public final class MdyDynamicFormParser {
     else if (step != null && step.doubleValue() <= 0) refusal = "step must be greater than zero.";
     if (refusal == null) return true;
     diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /**
+   * Whether a calendar's presentation can be drawn, dropping the field otherwise: a locale a
+   * JavaScript {@code Intl} accepts, since a malformed one throws at mount rather than degrading; a
+   * first day of the week that is a whole number from 0 (Sunday) to 6; and each date bound an ISO
+   * date, the lower not later than the upper.
+   *
+   * <p>Reported at {@code /fields}, where the TypeScript reader puts a calendar's refusal.
+   */
+  private static boolean calendarIsUsable(JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode locale = item.get("locale");
+    JsonNode firstDay = item.get("firstDayOfWeek");
+    JsonNode minDate = item.get("minDate");
+    JsonNode maxDate = item.get("maxDate");
+    String refusal = null;
+    if (locale != null && !(locale.isTextual() && MdyLanguageTags.isStructurallyValid(locale.asText()))) {
+      refusal = "locale must be a valid BCP 47 tag, e.g. \"it-IT\".";
+    } else if (firstDay != null && !(isFiniteNumber(firstDay) && firstDay.doubleValue() == Math.rint(firstDay.doubleValue())
+        && firstDay.doubleValue() >= 0 && firstDay.doubleValue() <= 6)) {
+      refusal = "firstDayOfWeek must be an integer from 0 (Sunday) to 6.";
+    } else if (minDate != null && !(minDate.isTextual() && isIsoDate(minDate.asText()))) {
+      refusal = "minDate must be an ISO date, e.g. \"2026-08-02\".";
+    } else if (maxDate != null && !(maxDate.isTextual() && isIsoDate(maxDate.asText()))) {
+      refusal = "maxDate must be an ISO date, e.g. \"2026-08-02\".";
+    } else if (minDate != null && maxDate != null && minDate.asText().compareTo(maxDate.asText()) > 0) {
+      refusal = "minDate cannot be later than maxDate.";
+    }
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
         "Dropped dynamic field \"" + name + "\": " + refusal));
     return false;
   }
