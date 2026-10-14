@@ -24,7 +24,9 @@ So two defects of the same size, one declaration the reader cannot use, got answ
 and the counts disagreed with ADR 0071. A bare value was not counted as a declaration at all, so a
 document holding only one reported nothing entered and nothing refused.
 
-The Java reader shares this behaviour; the Rust reader does not report counts.
+The Java reader shares this behaviour. The Rust reader does not reach a verdict at all: it
+deserialises the tree into typed nodes, so a bare value, an unknown `node`, or a `node` written as a
+list is a deserialisation error in either mode, with no diagnostic and no form.
 
 ## Decision
 
@@ -56,6 +58,11 @@ reader that can render a collection without its template would reopen the second
 
 Every reader that reports counts must follow this. A reader that keeps the old whole-document
 refusal disagrees with the others on any document holding a stray value.
+
+The Rust reader does not follow it yet, and the shared corpus cannot carry a document with a
+malformed child until it does: that corpus treats a reader that fails to produce a result as a
+broken test, not as a refusal. Until Rust reads such a child as a diagnostic, the decision is held
+by the TypeScript and Java suites alone.
 
 ## Alternatives rejected
 
