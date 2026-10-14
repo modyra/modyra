@@ -17,6 +17,8 @@ A tree document's malformed child is refused alone, and the counts count declara
   nothing, so a document holding only one reported nothing entered and nothing refused.
 - **A refused tree field is reported once**, at its declaration and under its own name. A second
   copy used to follow it, naming the field `"leaf"` at `/fields/0` or `/schema`.
+- **A node is named by a string.** `node: ["field"]` converted to `"field"` and was read as a node,
+  walked as whichever branch its other members fitted. It is now a malformed child like any other.
 - **A row value its cell cannot hold** is reported at the cell's declaration under
   `…/item/field`, naming the row, for example `"items.0"`.
 

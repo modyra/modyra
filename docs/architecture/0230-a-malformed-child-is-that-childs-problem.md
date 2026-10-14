@@ -43,8 +43,13 @@ them there is no tree, or no row shape, to read the rest against.
 kept with a finding, such as a select that loses a duplicate option, is accepted. A field refused for
 one reason is reported once, at its declaration and under its own name.
 
-Decided by TypeSafe on 2026-10-14: option B, with 99% confidence. The alternative it rejected is
-below.
+**What only the walk sees is reported at the cell's declaration.** A row's initial value that the
+cell's kind cannot hold drops that row's cell, is reported at `…/item/field` under the row's dotted
+name (`"items.0"`), and counts as one refused. The declaration itself is judged once, not once per
+row.
+
+Decided by TypeSafe on 2026-10-14, with 99% confidence, against keeping the whole-document refusal,
+which is the first alternative below.
 
 ## Consequences
 
@@ -82,7 +87,8 @@ and the counts would have to invent a rule for what that collection is.
   node beside a valid field leave that field in lenient and nothing in strict, at 1 accepted and 1
   refused. A bare value alone counts as one refused. A non-node schema and a non-node collection
   item still refuse the document. A refused leaf is reported once, under its own name. A field kept
-  with a duplicate-option finding counts as accepted.
+  with a duplicate-option finding counts as accepted. A row value its cell cannot hold is reported
+  once, at `/schema/children/items/item/field`, naming `"items.0"`.
 - A mutation that walks non-node children again turns three of those cases red.
 - The shared corpus pins strict validity and code sets only (ADR 0186), so it cannot tell this
   decision from the old one. Each SDK that reports counts holds the same cases in its own suite.
