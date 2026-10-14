@@ -1,0 +1,1 @@
+{"version":5,"id":"iv-checkbox-string","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"checkbox","initialValue":"true"}}}}}

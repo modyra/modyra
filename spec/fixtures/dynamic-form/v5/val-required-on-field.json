@@ -1,0 +1,1 @@
+{"version":5,"id":"val-required-on-field","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"text","required":true}}}}}

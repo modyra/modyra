@@ -1,0 +1,1 @@
+{"version":5,"id":"cal-min-date-bad","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"datepicker","minDate":"2026-02-30"}}}}}

@@ -1,0 +1,1 @@
+{"version":5,"id":"num-max-huge","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"number","max":1e+308}}}}}

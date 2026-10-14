@@ -1,0 +1,1 @@
+{"version":5,"id":"iv-multiselect-scalar","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"multiselect","options":[{"value":"a","label":"A"}],"initialValue":"a"}}}}}

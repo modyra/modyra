@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-value-array","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"radio","options":[{"value":[1],"label":"A"}]}}}}}

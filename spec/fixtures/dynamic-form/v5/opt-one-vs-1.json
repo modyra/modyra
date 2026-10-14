@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-one-vs-1","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"select","options":[{"value":1,"label":"A"},{"value":"1","label":"B"}]}}}}}
