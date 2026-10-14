@@ -1065,3 +1065,38 @@ fn a_number_past_the_double_range_is_refused_where_it_is_written() {
         assert!(parse_v2(json, ValidationMode::Strict).is_err(), "{json}");
     }
 }
+
+/// Every character ECMAScript's `\s` matches is refused in a flat field name and in a group child
+/// key. U+FEFF is in `\s` and not in Unicode `White_Space`, which is why it is listed. U+0085 is the
+/// other way round: it is not whitespace by this rule, and this test does not cover it.
+#[test]
+fn a_name_holding_any_whitespace_is_refused() {
+    let characters = [
+        '\u{9}', '\u{a}', '\u{b}', '\u{c}', '\u{d}', ' ', '\u{a0}', '\u{1680}', '\u{2000}',
+        '\u{200a}', '\u{2028}', '\u{2029}', '\u{202f}', '\u{205f}', '\u{3000}', '\u{feff}',
+    ];
+    for character in characters {
+        let name = format!("a{character}b");
+        let flat = serde_json::json!({
+            "version": 5, "id": "t",
+            "fields": [{ "name": name, "kind": "text", "label": "F" }],
+        });
+        let tree = serde_json::json!({
+            "version": 5, "id": "t",
+            "schema": { "node": "group", "children": { name.clone(): { "node": "field", "field": { "kind": "text", "label": "F" } } } },
+        });
+        for (shape, document, code) in [
+            ("flat name", flat, "MDY_DYNAMIC_INVALID_FIELD"),
+            ("child key", tree, "MDY_DYNAMIC_UNSAFE_NAME"),
+        ] {
+            let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+            let codes: Vec<&str> = result.diagnostics.iter().map(|d| &*d.code).collect();
+            assert!(
+                !result.valid && codes == [code],
+                "U+{:04X} in a {shape}: valid={} codes={codes:?}",
+                character as u32,
+                result.valid
+            );
+        }
+    }
+}
