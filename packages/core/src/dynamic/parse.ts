@@ -415,7 +415,10 @@ function declaredFieldCount(schema: unknown): { count: number; complete: boolean
   for (let steps = 0; stack.length > 0; steps += 1) {
     if (steps >= MDY_MAX_DECLARATION_WALK) { complete = false; break; }
     const node = stack.pop();
-    if (!isRecordValue(node)) continue;
+    // Absent is a collection with no item, which declared nothing; anything else written where a
+    // node goes is a declaration this reader cannot use, and is counted as one.
+    if (node === undefined) continue;
+    if (!isRecordValue(node)) { count += 1; continue; }
     const kind = node["node"];
     if (kind === "field") { count += 1; continue; }
     if (kind === "group") {
@@ -448,6 +451,22 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
   readonly fields: MdyDynamicField[];
   readonly collections: MdyDynamicCollection[];
 } {
+  return flattenTree(schema, true);
+}
+
+/**
+ * The flatten, told whether the declarations have already been judged.
+ *
+ * A caller that validated the tree first has already reported every field that declares something
+ * unusable, at the path of its declaration and under its own name. Reporting it again from here
+ * names it by the stand-in the leaf is checked under and points at a list the document never wrote,
+ * so the second finding reads as a second defect. What only the walk can see is still reported: a
+ * row's initial value that the cell's kind cannot hold, and a path too long to carry.
+ */
+function flattenTree(schema: MdyDynamicGroupNode, judgeDeclarations: boolean): {
+  readonly fields: MdyDynamicField[];
+  readonly collections: MdyDynamicCollection[];
+} {
   const fields: MdyDynamicField[] = [];
   const collections: MdyDynamicCollection[] = [];
   /**
@@ -460,33 +479,40 @@ export function flattenDynamicForm(schema: MdyDynamicGroupNode): {
    * iterative walk below exists to protect.
    */
   const templates = new Map<MdyDynamicNode, { fields: MdyDynamicField[]; collections: MdyDynamicCollection[] }>();
-  const queue: MdyDynamicNode[] = [];
-  const templateOf = (item: MdyDynamicNode): MdyDynamicFlatForm => {
+  const queue: Array<{ item: MdyDynamicNode; at: string }> = [];
+  const templateOf = (item: MdyDynamicNode, at: string): MdyDynamicFlatForm => {
     const held = templates.get(item);
     if (held) return held;
     // Handed out empty and filled when the queue reaches it: a template is a row's shape, and an
     // item that reaches itself is answered rather than followed forever.
     const fresh = { fields: [] as MdyDynamicField[], collections: [] as MdyDynamicCollection[] };
     templates.set(item, fresh);
-    queue.push(item);
+    queue.push({ item, at });
     return fresh;
   };
 
-  flattenNode(schema, fields, collections, templateOf);
+  flattenNode(schema, "/schema", fields, collections, templateOf, judgeDeclarations);
   while (queue.length > 0) {
-    const item = queue.pop()!;
+    const { item, at } = queue.pop()!;
     const held = templates.get(item)!;
-    flattenNode(item, held.fields, held.collections, templateOf);
+    flattenNode(item, at, held.fields, held.collections, templateOf, judgeDeclarations);
   }
   return { fields, collections };
 }
 
-/** The walk itself: one node's subtree into the flat pair, with row templates asked for by node. */
+/**
+ * The walk itself: one node's subtree into the flat pair, with row templates asked for by node.
+ *
+ * `at` is the JSON Pointer of the node in the document, carried beside the dotted path because the
+ * two diverge: a row's cell is declared once under the collection's `item` and named once per row.
+ */
 function flattenNode(
   root: MdyDynamicNode,
+  rootAt: string,
   out: MdyDynamicField[],
   collections: MdyDynamicCollection[],
-  templateOf: (item: MdyDynamicNode) => MdyDynamicFlatForm,
+  templateOf: (item: MdyDynamicNode, at: string) => MdyDynamicFlatForm,
+  judgeDeclarations: boolean,
 ): void {
   /**
    * An explicit stack, for the reason the validator has one: a document is untrusted and its nesting
@@ -497,42 +523,75 @@ function flattenNode(
    * Children are pushed in reverse so they come off in the order the document declares them: the
    * flat list a consumer reads is in document order, and a form built from it renders in that order.
    */
-  const pending: Array<{ node: MdyDynamicNode; path: string; initial: unknown }> = [
-    { node: root, path: "", initial: undefined },
+  const pending: Array<{ node: MdyDynamicNode; path: string; at: string; initial: unknown }> = [
+    { node: root, path: "", at: rootAt, initial: undefined },
   ];
   while (pending.length > 0) {
-    const { node, path, initial } = pending.pop()!;
+    const { node, path, at, initial } = pending.pop()!;
     if (node.node === "field") {
       if (path.length > MDY_MAX_DYNAMIC_PATH_LENGTH) {
         warnDev(
           `Dropped a dynamic field whose path is ${path.length} characters, past the ` +
           `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
           "and the widget id, and every read of the value carries it.",
-          "/schema", "MDY_DYNAMIC_PATH_TOO_LONG",
+          `${at}/field`, "MDY_DYNAMIC_PATH_TOO_LONG",
         );
         continue;
       }
-      const candidate = { ...node.field, name: path, initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
       // Generated dotted/index paths are trusted structure; validate the leaf with
       // a temporary safe name, then restore the generated path.
-      const parsed = parseDynamicFields([{ ...candidate, name: "leaf" }]);
-      if (parsed[0]) out.push({ ...parsed[0], name: path } as MdyDynamicField);
+      if (judgeDeclarations) {
+        const candidate = { ...node.field, name: "leaf", initialValue: initial ?? node.field.initialValue } as MdyDynamicField;
+        const parsed = parseDynamicFields([candidate]);
+        if (parsed[0]) out.push({ ...parsed[0], name: path } as MdyDynamicField);
+        continue;
+      }
+      // The declaration has been judged and reported; what is left is the value a row gave the cell,
+      // which the declaration never saw.
+      const rowInitial = initial ?? undefined;
+      const declared = collectingDiagnostics(
+        () => undefined,
+        () => parseDynamicFields([{ ...node.field, name: "leaf" } as MdyDynamicField]),
+      )[0];
+      if (!declared) continue;
+      if (rowInitial === undefined) {
+        out.push({ ...declared, name: path } as MdyDynamicField);
+        continue;
+      }
+      const mismatch = (MDY_FIELD_KINDS as readonly unknown[]).includes(declared.kind)
+        ? explainValueMismatch(declared.kind as MdyValueKind, rowInitial)
+        : null;
+      if (mismatch !== null) {
+        warnDev(
+          `Dropped dynamic field "${path}": initialValue does not match the kind — ${mismatch}.`,
+          `${at}/field`, MDY_DYNAMIC_INVALID_FIELD,
+        );
+        continue;
+      }
+      out.push({ ...declared, name: path, initialValue: rowInitial } as MdyDynamicField);
       continue;
     }
     if (node.node === "group") {
       const value = isRecordValue(initial) ? initial : {};
-      const entries = Object.entries(node.children).filter(([key]) => isSafeDynamicName(key));
+      // A child that is not a node was reported where the tree was judged, and has nothing to walk.
+      const entries = Object.entries(node.children)
+        .filter(([key, child]) => isSafeDynamicName(key) && isDynamicNode(child));
       for (let index = entries.length - 1; index >= 0; index -= 1) {
         const [key, child] = entries[index]!;
         // Own members only: a child named `valueOf` reads the initial the document wrote for it, not
         // the method every object inherits under that name.
         const held = Object.hasOwn(value, key) ? value[key] : undefined;
-        pending.push({ node: child, path: path ? `${path}.${key}` : key, initial: held });
+        pending.push({
+          node: child,
+          path: path ? `${path}.${key}` : key,
+          at: `${at}/children/${pointerSegment(key)}`,
+          initial: held,
+        });
       }
       continue;
     }
     if (node.node === "record") {
-      collections.push({ path, kind: "record", item: templateOf(node.item) });
+      collections.push({ path, kind: "record", item: templateOf(node.item, `${at}/item`) });
       const declared = isRecordValue(initial)
         ? initial
         : isRecordValue(node.initialValue) ? node.initialValue : {};
@@ -543,16 +602,21 @@ function flattenNode(
       const rows = Object.entries(declared).filter(([key]) => isSafeDynamicName(key));
       for (let index = rows.length - 1; index >= 0; index -= 1) {
         const [key, row] = rows[index]!;
-        pending.push({ node: node.item, path: path ? `${path}.${key}` : key, initial: row });
+        pending.push({ node: node.item, path: path ? `${path}.${key}` : key, at: `${at}/item`, initial: row });
       }
       continue;
     }
-    collections.push({ path, kind: "array", item: templateOf(node.item) });
+    collections.push({ path, kind: "array", item: templateOf(node.item, `${at}/item`) });
     const rows = Array.isArray(initial) ? initial : Array.isArray(node.initialValue) ? node.initialValue : [];
     for (let index = rows.length - 1; index >= 0; index -= 1) {
-      pending.push({ node: node.item, path: `${path}.${index}`, initial: rows[index] });
+      pending.push({ node: node.item, path: `${path}.${index}`, at: `${at}/item`, initial: rows[index] });
     }
   }
+}
+
+/** Whether a value is a node the walk can enter, judged by its `node` member alone. */
+function isDynamicNode(value: unknown): value is Record<string, unknown> {
+  return isRecordValue(value) && ["field", "group", "array", "record"].includes(String(value["node"]));
 }
 
 /**
@@ -1468,22 +1532,29 @@ function validPlacement(at: unknown, trackCount: number): boolean {
 /**
  * What is wrong with a document's tree, in two kinds.
  *
- * `structural` is about the shape the walk needs — a node that is not an object, a group with no
+ * `structural` is about the shape the walk needs — a root that is not a node, a group with no
  * children, an item a collection does not have. Any of them and there is nothing to walk, so the
  * document is turned down whole.
  *
- * `perField` is about what one field declares: a kind nobody named, a validator of the wrong shape.
- * The walk still runs and every other field survives, which is what makes the counts mean what they
- * say — one field refused out of three is not three fields lost.
+ * `perField` is about one declaration: a kind nobody named, a validator of the wrong shape, or a
+ * group's child that is not a node at all. The walk still runs and every other field survives, which
+ * is what makes the counts mean what they say — one field refused out of three is not three fields
+ * lost. A malformed child is a sibling's problem no more than an unknown kind is: the group around it
+ * is still a group, and the walk skips what it cannot read.
+ *
+ * `rejected` counts declarations, not findings: a field kept with a finding about an option it
+ * dropped is still accepted, and a field refused for two reasons is still one field.
  */
 function validateDynamicSchema(input: unknown): {
   readonly structural: MdyDynamicDiagnostic[];
   readonly perField: MdyDynamicDiagnostic[];
+  readonly rejected: number;
   /** The context keys the document's conditions read. */
   readonly contextRead: readonly string[];
 } {
   const out: MdyDynamicDiagnostic[] = [];
   const perField: MdyDynamicDiagnostic[] = [];
+  let rejected = 0;
   /** Every context key the document's conditions read, for the envelope's declaration to match. */
   const contextRead = new Set<string>();
 
@@ -1502,18 +1573,26 @@ function validateDynamicSchema(input: unknown): {
    * the whole reason a template can condition one of them without naming a key that does not exist
    * yet.
    */
-  const stack: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }> = [
+  /** `child` marks a frame a group named, the one place a node can be dropped and leave a shape. */
+  interface Frame { raw: unknown; path: string; name: string; scope: ReadonlySet<string>; child?: true }
+  const stack: Frame[] = [
     { raw: input, path: "/schema", name: "schema", scope: new Set() },
   ];
-  const push = (frames: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }>): void => {
+  const push = (frames: Frame[]): void => {
     for (let index = frames.length - 1; index >= 0; index -= 1) stack.push(frames[index]!);
   };
 
   while (stack.length > 0) {
-    const { raw, path, name, scope } = stack.pop()!;
+    const { raw, path, name, scope, child } = stack.pop()!;
 
-    if (!isRecordValue(raw) || !["field", "group", "array", "record"].includes(String(raw["node"]))) {
-      out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." });
+    if (!isDynamicNode(raw)) {
+      const finding: MdyDynamicDiagnostic = { code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." };
+      if (child) {
+        perField.push(finding);
+        rejected += 1;
+      } else {
+        out.push(finding);
+      }
       continue;
     }
 
@@ -1562,7 +1641,7 @@ function validateDynamicSchema(input: unknown): {
       // Named by the key its parent gave it, which the frame carries. A field in a tree has no `name`
       // of its own — the key is the name — and a key may hold "/", so the path cannot give it back:
       // `a/b` would read as `b`, and `x/` as a field without a name.
-      collectingDiagnostics(
+      const kept = collectingDiagnostics(
         (message, _path, code) => perField.push({
           code: diagnosticCode(message, code),
           severity: "error",
@@ -1571,6 +1650,7 @@ function validateDynamicSchema(input: unknown): {
         }),
         () => parseDynamicFields([{ ...(raw["field"] as object), name } as MdyDynamicField]),
       );
+      if (kept.length === 0) rejected += 1;
       // The initial the document declares, against the shape the kind holds. A record's initial is
       // measured against its own shape and an array's against its own; a field's was measured
       // against nothing, so a text field declaring `42` passed in the strictest mode there is and
@@ -1596,12 +1676,12 @@ function validateDynamicSchema(input: unknown): {
 
     if (raw["node"] === "group") {
       if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); continue; }
-      const children: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }> = [];
+      const children: Frame[] = [];
       const here = new Set(Object.keys(raw["children"]));
       for (const [key, child] of Object.entries(raw["children"])) {
         const at = `${path}/children/${pointerSegment(key)}`;
         if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: at, message: "unsafe child name." });
-        else children.push({ raw: child, path: at, name: key, scope: here });
+        else children.push({ raw: child, path: at, name: key, scope: here, child: true });
       }
       push(children);
       continue;
@@ -1626,7 +1706,7 @@ function validateDynamicSchema(input: unknown): {
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
   }
 
-  return { structural: out, perField, contextRead: [...contextRead] };
+  return { structural: out, perField, rejected, contextRead: [...contextRead] };
 }
 
 /** Parses v1/v2 untrusted input with structured diagnostics. */
@@ -1815,7 +1895,7 @@ export function parseDynamicForm(
   // layout validator is told which vocabulary the document is entitled to use.
   const structured = version !== null && version !== 1;
   if (structured && envelope?.schema !== undefined) {
-    const { structural, perField, contextRead } = validateDynamicSchema(envelope.schema);
+    const { structural, perField, rejected, contextRead } = validateDynamicSchema(envelope.schema);
     diagnostics.push(...structural, ...perField);
     // What the document said it had, counted before anything is refused. A schema the validator
     // turns down wholesale never reaches the walk, so without this a document declaring three
@@ -1855,23 +1935,22 @@ export function parseDynamicForm(
     }
     // A shape the walk cannot enter turns the document down whole; a field that declares something
     // nobody can render is one field, and the count says so.
-    treeRejected = structural.length > 0 ? declaredLeaves : perField.length;
+    treeRejected = structural.length > 0 ? declaredLeaves : rejected;
     if (structural.length === 0) {
-      // The walk reports the way the flat list does. Without this it ran outside the collector, so a
-      // leaf `parseDynamicFields` refused was dropped and nothing said it — the same defect written
-      // as a tree instead of a list received silence where the list received a diagnostic, and a
-      // tree is the shape a CMS sends. `declaredLeaves` is what a document said it had, so the
-      // counts a consumer reports with are about the document and not about what survived it.
+      // The walk reports what only it can see — a row's value a cell cannot hold, a path too long —
+      // under the collector, so a leaf dropped there is said and counted. Each such finding is one
+      // leaf dropped. `declaredLeaves` is what a document said it had, so the counts a consumer
+      // reports with are about the document and not about what survived it.
       const before = diagnostics.length;
       const walked = collectingDiagnostics(
         (message, path, code) => diagnostics.push({
           code: diagnosticCode(message, code), severity: "error", path: path ?? "/schema", message,
         }),
-        () => flattenDynamicForm(envelope.schema as MdyDynamicGroupNode),
+        () => flattenTree(envelope.schema as MdyDynamicGroupNode, false),
       );
       fields = walked.fields;
       collections = walked.collections;
-      treeRejected = diagnostics.length - before;
+      treeRejected = rejected + diagnostics.length - before;
       declaredLeaves = Math.max(declaredLeaves ?? 0, walked.fields.length + treeRejected);
     }
   }
