@@ -1438,15 +1438,15 @@ function validateDynamicSchema(input: unknown): {
    * the whole reason a template can condition one of them without naming a key that does not exist
    * yet.
    */
-  const stack: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }> = [
-    { raw: input, path: "/schema", scope: new Set() },
+  const stack: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }> = [
+    { raw: input, path: "/schema", name: "schema", scope: new Set() },
   ];
-  const push = (frames: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }>): void => {
+  const push = (frames: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }>): void => {
     for (let index = frames.length - 1; index >= 0; index -= 1) stack.push(frames[index]!);
   };
 
   while (stack.length > 0) {
-    const { raw, path, scope } = stack.pop()!;
+    const { raw, path, name, scope } = stack.pop()!;
 
     if (!isRecordValue(raw) || !["field", "group", "array", "record"].includes(String(raw["node"]))) {
       out.push({ code: "MDY_DYNAMIC_INVALID_NODE", severity: "error", path, message: "node must be field, group, array, or record." });
@@ -1495,10 +1495,9 @@ function validateDynamicSchema(input: unknown): {
       // inside a collection: a `kind` nobody declared, or a `validators.pattern` that is a number,
       // parsed clean at any depth below a row and then met the engine — where a person is already
       // waiting — or produced a control nobody asked for.
-      // Named by the key its parent gave it. A field in a tree carries no `name` of its own — the
-      // key is the name — so every finding below one read `Dynamic field "leaf"`, and a document
-      // with two bad fields produced two identical sentences distinguished only by their path.
-      const named = path.slice(path.lastIndexOf("/") + 1);
+      // Named by the key its parent gave it, which the frame carries. A field in a tree has no `name`
+      // of its own — the key is the name — and a key may hold "/", so the path cannot give it back:
+      // `a/b` would read as `b`, and `x/` as a field without a name.
       collectingDiagnostics(
         (message) => perField.push({
           code: diagnosticCode(message),
@@ -1506,7 +1505,7 @@ function validateDynamicSchema(input: unknown): {
           path: `${path}/field`,
           message,
         }),
-        () => parseDynamicFields([{ ...(raw["field"] as object), name: named } as MdyDynamicField]),
+        () => parseDynamicFields([{ ...(raw["field"] as object), name } as MdyDynamicField]),
       );
       // The initial the document declares, against the shape the kind holds. A record's initial is
       // measured against its own shape and an array's against its own; a field's was measured
@@ -1533,11 +1532,11 @@ function validateDynamicSchema(input: unknown): {
 
     if (raw["node"] === "group") {
       if (!isRecordValue(raw["children"])) { out.push({ code: "MDY_DYNAMIC_INVALID_GROUP", severity: "error", path, message: "group requires children." }); continue; }
-      const children: Array<{ raw: unknown; path: string; scope: ReadonlySet<string> }> = [];
+      const children: Array<{ raw: unknown; path: string; name: string; scope: ReadonlySet<string> }> = [];
       const here = new Set(Object.keys(raw["children"]));
       for (const [key, child] of Object.entries(raw["children"])) {
         if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/children/${key}`, message: "unsafe child name." });
-        else children.push({ raw: child, path: `${path}/children/${key}`, scope: here });
+        else children.push({ raw: child, path: `${path}/children/${key}`, name: key, scope: here });
       }
       push(children);
       continue;
@@ -1545,7 +1544,7 @@ function validateDynamicSchema(input: unknown): {
 
     if (raw["node"] === "record") {
       if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path, message: "record requires an item node." });
-      else push([{ raw: raw["item"], path: `${path}/item`, scope: new Set() }]);
+      else push([{ raw: raw["item"], path: `${path}/item`, name: "item", scope: new Set() }]);
       const initial = raw["initialValue"];
       if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
       else if (isRecordValue(initial)) {
@@ -1558,7 +1557,7 @@ function validateDynamicSchema(input: unknown): {
     }
 
     if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
-    else push([{ raw: raw["item"], path: `${path}/item`, scope: new Set() }]);
+    else push([{ raw: raw["item"], path: `${path}/item`, name: "item", scope: new Set() }]);
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
   }
 

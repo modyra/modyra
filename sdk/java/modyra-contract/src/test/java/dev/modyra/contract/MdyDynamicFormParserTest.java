@@ -1649,8 +1649,7 @@ class MdyDynamicFormParserTest {
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"nope\"}},\"a\":" + leaf + "}}}", false, 0, 0, 2),
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}},\"layout\":[5],\"rules\":[null],\"validations\":[1]}", false, 0, 0, 5),
         new Case("{\"version\":2,\"schema\":[" + leaf + "," + leaf + "]}", false, 0, 0, 0),
-        new Case("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}}}", false, 0, 0, 2),
-        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"field\",\"field\":{\"kind\":\"nope\"}}}}}", true, 1, 1, 1));
+        new Case("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}}}", false, 0, 0, 2));
     for (Case c : cases) {
       for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
         MdyDynamicFormParseResult result = parser.parse(c.document(), mode);
@@ -1671,6 +1670,80 @@ class MdyDynamicFormParserTest {
     assertFalse(refused.ok());
     assertEquals(0, refused.acceptedCount());
     assertEquals(2, refused.rejectedCount(), "a tree turned down whole turned down what it declared");
+  }
+
+  /**
+   * A leaf in a tree is held to every rule a field in a flat list is, the way the TypeScript reader
+   * holds it: once where it is written, under the key its parent gave it, and once more for each time
+   * the walk reads it — every declared row, and the row template once even when no row exists, the
+   * templates after the tree and the last one met first. A walk finding stays at the entry the flat
+   * reader names; a path longer than a path may be is refused at the schema. Each walk finding is one
+   * leaf turned down, and a leaf turned down never makes the document {@code ok}.
+   */
+  @Test
+  void aTreeLeafIsHeldToTheFlatRules() {
+    record Finding(String code, String path, String message) {}
+    record Case(String document, int strictFields, int lenientFields, int accepted, int rejected, List<Finding> findings) {}
+    Finding unknownLeaf = new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"nope\".");
+    String key = "k".repeat(510);
+    List<Case> cases = List.of(
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "bad":{"node":"field","field":{"kind":"nope"}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/bad/field", "Dropped dynamic field \"bad\" with unknown kind \"nope\"."),
+            unknownLeaf)),
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{
+              "first":{"node":"array","item":{"node":"field","field":{"kind":"nope"}}},
+              "rows":{"node":"array","initialValue":[{},{}],"item":{"node":"group","children":{"b":{"node":"field","field":{"kind":"other"}}}}}}}}""",
+            0, 0, 0, 4, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/first/item/field", "Dropped dynamic field \"item\" with unknown kind \"nope\"."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/rows/item/children/b/field", "Dropped dynamic field \"b\" with unknown kind \"other\"."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
+            unknownLeaf)),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"" + key + "\":{\"node\":\"array\","
+            + "\"initialValue\":[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"],\"item\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}}",
+            0, 10, 10, 1, List.of(new Finding("MDY_DYNAMIC_PATH_TOO_LONG", "/schema",
+                "Dropped a dynamic field whose path is 513 characters, past the 512 a path may be: a path is the payload key, "
+                    + "the draft key and the widget id, and every read of the value carries it."))),
+        // A walk finding the flat reader places on its list as a whole is placed on the schema.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
+              "b":{"node":"field","field":{"kind":"text","validators":{"pattern":12}}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/b/field", "Dropped dynamic field \"b\": validators.pattern must be a string."),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": validators.pattern must be a string."))),
+        // A field is named by its whole key: a key may hold "/", and the path cannot give it back.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a/b":{"node":"field","field":{"kind":"nope"}},
+              "x/":{"node":"field","field":{"kind":"text"}}}}}""", 0, 1, 1, 1, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a/b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."),
+            unknownLeaf)),
+        // A leaf kept despite a member nothing reads still counts each finding as a leaf turned down.
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text","bogus":1}},
+              "b":{"node":"field","field":{"kind":"text"}}}}}""", 0, 2, 2, 1, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/schema/children/a/field",
+                "dynamic field \"a\" carries \"bogus\", which this contract does not declare, so nothing reads it."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
+                "dynamic field \"leaf\" carries \"bogus\", which this contract does not declare, so nothing reads it."))),
+        new Case("""
+            {"version":2,"schema":{"node":"group","children":{"s":{"node":"field","field":{"kind":"select","options":[]}},
+              "rows":{"node":"array","item":{"node":"field","field":{"kind":"radio","options":[]}}}}}}""", 1, 1, 2, 0, List.of()));
+    for (Case c : cases) {
+      for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+        MdyDynamicFormParseResult result = parser.parse(c.document(), mode);
+        List<Finding> findings = result.diagnostics().stream()
+            .map(d -> new Finding(d.code(), d.path(), d.message())).toList();
+        assertEquals(c.findings(), findings, () -> c.document() + " in " + mode);
+        assertEquals(c.findings().isEmpty(), result.ok(), () -> c.document() + " in " + mode);
+        assertEquals(mode == MdyDynamicFormParser.Mode.STRICT ? c.strictFields() : c.lenientFields(), result.fields().size(),
+            () -> c.document() + " in " + mode);
+        assertEquals(c.accepted(), result.acceptedCount(), () -> c.document() + " in " + mode);
+        assertEquals(c.rejected(), result.rejectedCount(), () -> c.document() + " in " + mode);
+      }
+    }
   }
 
   /**
