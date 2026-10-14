@@ -7,15 +7,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 
-const GUARD = new URL("./guard-own-node-modules.mjs", import.meta.url).pathname;
+const GUARD = fileURLToPath(new URL("./guard-own-node-modules.mjs", import.meta.url));
 const work = mkdtempSync(join(tmpdir(), "modyra-guard-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 
 const run = (dir, env = {}) => {
-  const { MODYRA_ALLOW_SHARED_NODE_MODULES: _, ...rest } = process.env;
+  const inherited = { ...process.env };
+  delete inherited.MODYRA_ALLOW_SHARED_NODE_MODULES;
   try {
-    execFileSync(process.execPath, [GUARD, dir], { env: { ...rest, ...env }, stdio: "pipe" });
+    execFileSync(process.execPath, [GUARD, dir], { env: { ...inherited, ...env }, stdio: "pipe" });
     return 0;
   } catch (error) {
     return error.status;
