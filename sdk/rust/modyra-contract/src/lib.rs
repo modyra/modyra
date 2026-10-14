@@ -929,6 +929,178 @@ fn range_refusal(field: &Value, kind: &str) -> Option<&'static str> {
     }
 }
 
+/// Why a date or time field's calendar cannot be drawn, or `None` when it can.
+///
+/// A locale is a tag the platform's `Intl` would take, because a malformed one throws when the
+/// calendar is drawn rather than degrading; the first day of the week is a weekday's index; the
+/// bounds are ISO dates, the earlier one first.
+fn calendar_refusal(field: &Value, kind: &str) -> Option<&'static str> {
+    if !matches!(kind, "datepicker" | "timepicker" | "daterange") {
+        return None;
+    }
+    if field
+        .get("locale")
+        .is_some_and(|locale| !locale.as_str().is_some_and(is_language_tag))
+    {
+        return Some("locale must be a valid BCP 47 tag, e.g. \"it-IT\".");
+    }
+    if field.get("firstDayOfWeek").is_some_and(|day| {
+        !day.as_f64()
+            .is_some_and(|day| day.fract() == 0.0 && (0.0..=6.0).contains(&day))
+    }) {
+        return Some("firstDayOfWeek must be an integer from 0 (Sunday) to 6.");
+    }
+    let bound = |key: &str| {
+        field
+            .get(key)
+            .map(|date| date.as_str().filter(|date| is_iso_date(date)))
+    };
+    let (min, max) = (bound("minDate"), bound("maxDate"));
+    if min == Some(None) {
+        return Some("minDate must be an ISO date, e.g. \"2026-08-02\".");
+    }
+    if max == Some(None) {
+        return Some("maxDate must be an ISO date, e.g. \"2026-08-02\".");
+    }
+    if min
+        .flatten()
+        .zip(max.flatten())
+        .is_some_and(|(min, max)| min > max)
+    {
+        return Some("minDate cannot be later than maxDate.");
+    }
+    None
+}
+
+/// Whether `tag` is a locale `Intl.getCanonicalLocales` accepts: a structurally valid Unicode BCP 47
+/// locale identifier, as ECMA-402 defines one.
+///
+/// A language subtag first, then an optional script, region and variants; then extensions, each a
+/// singleton not repeated, and a private use part last. Subtags are ASCII letters and digits joined
+/// by `-` and compared without case. Whether a subtag is registered is not asked, as `Intl` does not
+/// ask it.
+fn is_language_tag(tag: &str) -> bool {
+    let lower = tag.to_ascii_lowercase();
+    let mut rest = Subtags(lower.split('-').collect(), 0);
+    if !rest.take_if(is_language_subtag) || !language_tail(&mut rest) {
+        return false;
+    }
+    let mut singletons = HashSet::new();
+    while let Some(singleton) = rest.next() {
+        let one = singleton.len() == 1 && alphanumeric(singleton, 1, 1);
+        if !one || !singletons.insert(singleton) {
+            return false;
+        }
+        let well_formed = match singleton {
+            "x" => return rest.count_while(|part| alphanumeric(part, 1, 8)) > 0 && rest.done(),
+            "u" => unicode_extension(&mut rest),
+            "t" => transformed_extension(&mut rest),
+            _ => rest.count_while(|part| alphanumeric(part, 2, 8)) > 0,
+        };
+        if !well_formed {
+            return false;
+        }
+    }
+    true
+}
+
+/// The subtags of a locale, and how many have been read.
+struct Subtags<'a>(Vec<&'a str>, usize);
+
+impl<'a> Subtags<'a> {
+    fn next(&mut self) -> Option<&'a str> {
+        let part = self.0.get(self.1).copied();
+        self.1 += usize::from(part.is_some());
+        part
+    }
+
+    /// Reads the next subtag when it is one `is` accepts.
+    fn take_if(&mut self, is: impl Fn(&str) -> bool) -> bool {
+        let taken = self.0.get(self.1).is_some_and(|part| is(part));
+        self.1 += usize::from(taken);
+        taken
+    }
+
+    fn count_while(&mut self, is: impl Fn(&str) -> bool) -> usize {
+        let mut count = 0;
+        while self.take_if(&is) {
+            count += 1;
+        }
+        count
+    }
+
+    fn done(&self) -> bool {
+        self.1 == self.0.len()
+    }
+}
+
+/// Between `min` and `max` ASCII letters and digits.
+fn alphanumeric(part: &str, min: usize, max: usize) -> bool {
+    (min..=max).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_alphanumeric())
+}
+
+/// Between `min` and `max` ASCII letters.
+fn alphabetic(part: &str, min: usize, max: usize) -> bool {
+    (min..=max).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_alphabetic())
+}
+
+fn is_language_subtag(part: &str) -> bool {
+    alphabetic(part, 2, 3) || alphabetic(part, 5, 8)
+}
+
+/// The script, region and variants after a language subtag, with no variant repeated.
+fn language_tail(rest: &mut Subtags) -> bool {
+    rest.take_if(|part| alphabetic(part, 4, 4));
+    rest.take_if(|part| {
+        alphabetic(part, 2, 2) || (part.len() == 3 && part.bytes().all(|b| b.is_ascii_digit()))
+    });
+    let mut variants = HashSet::new();
+    let is_variant = |part: &str| {
+        alphanumeric(part, 5, 8)
+            || (alphanumeric(part, 4, 4) && part.as_bytes()[0].is_ascii_digit())
+    };
+    while let Some(variant) = rest.0.get(rest.1).copied().filter(|part| is_variant(part)) {
+        rest.1 += 1;
+        if !variants.insert(variant) {
+            return false;
+        }
+    }
+    true
+}
+
+/// `-u-`: attributes, then keywords — a key of a letter or digit and a letter, and its type.
+fn unicode_extension(rest: &mut Subtags) -> bool {
+    let is_key = |part: &str| alphanumeric(part, 2, 2) && part.as_bytes()[1].is_ascii_alphabetic();
+    let mut count = rest.count_while(|part| alphanumeric(part, 3, 8));
+    while rest.take_if(is_key) {
+        count += 1;
+        rest.count_while(|part| alphanumeric(part, 3, 8));
+    }
+    count > 0
+}
+
+/// `-t-`: an optional source language, then fields — a letter and a digit, and their values.
+fn transformed_extension(rest: &mut Subtags) -> bool {
+    let is_key = |part: &str| {
+        let bytes = part.as_bytes();
+        bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1].is_ascii_digit()
+    };
+    let mut count = 0;
+    if rest.take_if(is_language_subtag) {
+        if !language_tail(rest) {
+            return false;
+        }
+        count += 1;
+    }
+    while rest.take_if(is_key) {
+        if rest.count_while(|part| alphanumeric(part, 3, 8)) == 0 {
+            return false;
+        }
+        count += 1;
+    }
+    count > 0
+}
+
 /// A finding about a field as written: its code, the member it points into (empty for the field
 /// itself), and what it says.
 type FieldFinding = (&'static str, String, String);
@@ -951,6 +1123,9 @@ fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
         .and_then(Value::as_str)
         .unwrap_or_default();
     if let Some(refusal) = range_refusal(field, kind) {
+        return refuse(refusal.into());
+    }
+    if let Some(refusal) = calendar_refusal(field, kind) {
         return refuse(refusal.into());
     }
     if let Some(mismatch) = field
@@ -1487,7 +1662,11 @@ fn rule_value_refusal(operator: &str, value: Option<&Value>, kind: Option<&str>)
     }
 }
 
-/// `yyyy-MM-dd` naming a day the calendar has.
+/// `yyyy-MM-dd` naming a day the calendar has, in a year from 0100 on.
+///
+/// The TypeScript reader decides a date through `Date.UTC`, which reads a year below 100 as one in
+/// the twentieth century, so `0099-01-01` does not name the day it spells there and is refused. The
+/// same years are refused here, so both readers give one verdict on one document.
 fn is_iso_date(text: &str) -> bool {
     let bytes = text.as_bytes();
     if bytes.len() != 10
@@ -1502,6 +1681,9 @@ fn is_iso_date(text: &str) -> bool {
     }
     let number = |range: std::ops::Range<usize>| text[range].parse::<u32>().unwrap_or(0);
     let (year, month, day) = (number(0..4), number(5..7), number(8..10));
+    if year < 100 {
+        return false;
+    }
     let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
     let days = match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,

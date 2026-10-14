@@ -699,3 +699,57 @@ fn a_number_field_has_a_range_it_can_draw() {
         }
     }
 }
+
+/// A date or time field's calendar: a locale `Intl` takes, a weekday index for the first day, and ISO
+/// bounds in order. The field is refused at the field as written.
+#[test]
+fn a_calendar_field_has_a_calendar_it_can_draw() {
+    for (kind, calendar) in [
+        ("datepicker", serde_json::json!({ "locale": "not a tag!" })),
+        ("datepicker", serde_json::json!({ "locale": "en_US" })),
+        (
+            "timepicker",
+            serde_json::json!({ "locale": "en-US-1994-1994" }),
+        ),
+        ("daterange", serde_json::json!({ "locale": null })),
+        ("datepicker", serde_json::json!({ "firstDayOfWeek": 7 })),
+        ("datepicker", serde_json::json!({ "firstDayOfWeek": -1 })),
+        ("daterange", serde_json::json!({ "firstDayOfWeek": 1.5 })),
+        ("datepicker", serde_json::json!({ "minDate": "2026-13-01" })),
+        ("datepicker", serde_json::json!({ "maxDate": "2026-02-29" })),
+        ("datepicker", serde_json::json!({ "minDate": "0099-01-01" })),
+        (
+            "daterange",
+            serde_json::json!({ "minDate": "2026-08-02", "maxDate": "2026-08-01" }),
+        ),
+    ] {
+        let mut field = serde_json::json!({ "kind": kind, "label": "F" });
+        field
+            .as_object_mut()
+            .unwrap()
+            .extend(calendar.as_object().unwrap().clone());
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for field in [
+        serde_json::json!({ "kind": "datepicker", "label": "F", "locale": "zh-Hant-TW", "firstDayOfWeek": 0 }),
+        serde_json::json!({ "kind": "datepicker", "label": "F", "locale": "de-DE-u-co-phonebk", "firstDayOfWeek": 6.0 }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "locale": "und", "minDate": "2028-02-29", "maxDate": "2028-02-29" }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "minDate": "0100-01-01" }),
+        // A kind with no calendar does not read these members.
+        serde_json::json!({ "kind": "text", "label": "F", "locale": "en_US", "firstDayOfWeek": 9 }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}
