@@ -37,7 +37,7 @@ did not pay for.
   schema is dropped from the form in both modes.
 - Rows are counted only once the tree's shape is sound, in every reader: a document whose shape is
   refused reports that, and not the bound as well. A kind nobody declared is a finding about one
-  field and does not stop the count. `rows-lent-past-the-bound-beside-an-unsafe-child.json` pins it.
+  field and does not stop the count. `rows-lent-past-the-bound-beside-an-unsafe-row-key.json` pins it.
 - Every reader applies the same count, defined as follows. A reader that does not expand rows
   computes it from its memo, saturating at the bound.
   - **Declared** is the number of JSON objects reached from `schema` through a group's `children`
