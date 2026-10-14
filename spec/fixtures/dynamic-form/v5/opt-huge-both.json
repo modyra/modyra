@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-huge-both","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"select","options":[{"value":1e400,"label":"Big"},{"value":-1e400,"label":"Small"}]}}}}}

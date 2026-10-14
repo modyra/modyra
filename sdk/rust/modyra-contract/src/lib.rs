@@ -793,7 +793,7 @@ fn member_type_refusal(field: &Value) -> Option<String> {
         return Some("placeholder must be a string.".into());
     }
     let validators = field.get("validators")?;
-    if !validators.is_object() && !validators.is_array() {
+    if !validators.is_object() {
         return Some("validators must be an object.".into());
     }
     for key in ["required", "email", "integer"] {
