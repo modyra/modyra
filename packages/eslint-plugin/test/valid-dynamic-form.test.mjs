@@ -45,10 +45,10 @@ const fixtures = readdirSync(CORPUS).flatMap((version) =>
     // alone, so the corpus gaining a second kind of companion turned this into two failures about a
     // file that is not a document. A rule that names the shape holds for the third kind too.
     .filter((file) => file.endsWith(".json") && !file.slice(0, -".json".length).includes("."))
-    .map((file) => ({
-    name: `${version}/${file}`,
-    document: JSON.parse(readFileSync(join(CORPUS, version, file), "utf8")),
-  })),
+    .map((file) => {
+      const text = readFileSync(join(CORPUS, version, file), "utf8");
+      return { name: `${version}/${file}`, text, document: JSON.parse(text) };
+    }),
 );
 
 test("the corpus has fixtures on both sides of the verdict", () => {
@@ -60,12 +60,13 @@ test("the corpus has fixtures on both sides of the verdict", () => {
   );
 });
 
-for (const { name, document } of fixtures) {
+for (const { name, text, document } of fixtures) {
   test(`reports exactly what the parser reports: ${name}`, () => {
     const expected = parseDynamicForm(document).diagnostics;
-    // JSON is a subset of JavaScript expression syntax, so the document round-trips into source
-    // without being described a second time.
-    const messages = lint(`const form = ${JSON.stringify(document, null, 2)};`);
+    // JSON is a subset of JavaScript expression syntax, so the file's own text is the source. It is
+    // the text and not a re-serialisation of the parsed document: `1e400` parses to Infinity, which
+    // JSON.stringify writes as `null`, and the rule would be linting a different document.
+    const messages = lint(`const form = ${text.trim()};`);
 
     assert.deepEqual(codesOf(messages), expected.map((d) => d.code));
   });
