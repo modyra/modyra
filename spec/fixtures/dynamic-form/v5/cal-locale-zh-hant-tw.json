@@ -1,0 +1,1 @@
+{"version":5,"id":"cal-locale-zh-hant-tw","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"datepicker","locale":"zh-Hant-TW"}}}}}

@@ -1,0 +1,1 @@
+{"version":5,"id":"cal-first-day-minus-1","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"datepicker","firstDayOfWeek":-1}}}}}

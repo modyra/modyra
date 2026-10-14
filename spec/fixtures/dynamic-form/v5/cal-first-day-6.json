@@ -1,0 +1,1 @@
+{"version":5,"id":"cal-first-day-6","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"datepicker","firstDayOfWeek":6}}}}}
