@@ -1013,6 +1013,15 @@ fn a_number_past_the_double_range_is_refused_where_it_is_written() {
             r#"{"kind":"text","label":"F","validators":{"maxLength":1e400}}"#,
             "validators.maxLength must be a finite number.",
         ),
+        // The object a huge number is held as, written by hand, is no number either.
+        (
+            r#"{"kind":"number","label":"F","max":{"nonFiniteNumber":"1e400"}}"#,
+            "max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"min":{"nonFiniteNumber":"x"}}}"#,
+            "validators.min must be a finite number.",
+        ),
     ] {
         let [leaf, entry] = read(field);
         assert_eq!(
