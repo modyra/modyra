@@ -34,8 +34,10 @@ did not pay for.
 - Lending is kept. The bound alone closes the cost; stopping it would change the initial values of
   valid documents.
 - In Rust, whose result carries the typed document rather than flattened fields, past the bound the
-  schema is dropped from the form in both modes. Rust has no walk to stop, so the limit is reported
-  beside whatever else validation found, where TS reports it only once the tree's shape is sound.
+  schema is dropped from the form in both modes.
+- Rows are counted only once the tree's shape is sound, in every reader: a document whose shape is
+  refused reports that, and not the bound as well. A kind nobody declared is a finding about one
+  field and does not stop the count. `rows-lent-past-the-bound-beside-an-unsafe-child.json` pins it.
 - Every reader applies the same count, defined as follows. A reader that does not expand rows
   computes it from its memo, saturating at the bound.
   - **Declared** is the number of JSON objects reached from `schema` through a group's `children`

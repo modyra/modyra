@@ -1865,8 +1865,14 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
     let mut context_keys: Vec<String> = Vec::new();
     let mut past_the_bound = false;
     if let Some(schema) = &form.schema {
+        let before = d.len();
         validate_node(schema, "/schema", &mut d, &mut context_keys);
-        past_the_bound = expands_past_the_bound(schema);
+        // A finding about the tree's shape turns the document down whole, so its rows are not
+        // counted. A kind nobody declared is a finding about one field, and the walk still runs.
+        let shape_refused = d[before..]
+            .iter()
+            .any(|finding| finding.code != "MDY_DYNAMIC_UNKNOWN_KIND");
+        past_the_bound = !shape_refused && expands_past_the_bound(schema);
     }
     // Refused whole: the part of a tree a walk reaches first is not a form the document declared.
     if past_the_bound {
