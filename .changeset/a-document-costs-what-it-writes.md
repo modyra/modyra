@@ -18,5 +18,9 @@ Migration: a document that parsed before and is now refused declares its rows wh
 instead of relying on a nested collection's own `initialValue` for every enclosing row. A table of a
 hundred rows and a couple of dozen cells is well inside the bound.
 
+Migration, Java: the initial value of every field the Java reader produces from a tree is now an
+unmodifiable map or list, lent or not, because one value may back many fields. Code that edited such
+a value in place copies it first. Initial values of a flat field list stay modifiable.
+
 `contract:diff` reports `patch` because it reads the widget contract only; the type surface audit
 classifies the new export as `minor`, which is the level declared here.
