@@ -14,7 +14,7 @@ shape, `d` levels deep:
 | TS `parseDynamicForm`, lenient | 3 | 1,240 B | 1,000,000 fields, 1.9 s |
 | TS, the same shape ending in an empty group | 3 | 1,218 B | 0 fields, 0.4 s |
 | Java `parse`, lenient, `-Xmx1g` | 4 | 1,616 B | `OutOfMemoryError` in the flatten |
-| Rust | any | — | no row expansion; bounded by a memo |
+| Rust | any | — | does not expand rows, so it is not exposed; it accepted documents the others cannot carry |
 
 ADR 0043 removed depth and node caps on the grounds that an explicit stack makes nesting cost what it
 writes. Row lending breaks that premise: a document of a few kilobytes names more nodes than a
@@ -33,6 +33,9 @@ did not pay for.
   `MdyDynamicSchemaLimitError`, carrying `code`, `path` and `limit`.
 - Lending is kept. The bound alone closes the cost; stopping it would change the initial values of
   valid documents.
+- In Rust, whose result carries the typed document rather than flattened fields, past the bound the
+  schema is dropped from the form in both modes. Rust has no walk to stop, so the limit is reported
+  beside whatever else validation found, where TS reports it only once the tree's shape is sound.
 - Every reader applies the same count, defined as follows. A reader that does not expand rows
   computes it from its memo, saturating at the bound.
   - **Declared** is the number of JSON objects reached from `schema` through a group's `children`
@@ -97,7 +100,13 @@ did not pay for.
   100×20 accepted, a 100 KB multiselect cell lent to 2,000 rows held as one value, and a shared
   Jackson scalar judged under each cell's own kind. Moving the bound by one, converting the cell per
   row, or keying the cell by value alone each turns one of them red.
-- Rust: not yet implemented; its check is owed with it.
+- `sdk/rust/modyra-contract/tests/expansion_limit.rs`: the d=6 shape refused in both modes with the
+  schema dropped, d=40 (a product past `u64`) refused by saturation, leafless rows refused, a hundred
+  written rows of a hundred written rows refused, 100×20 accepted. The corpus test holds Rust to the
+  shared pair by exact code set; moving the bound by one, dropping the template term, or ignoring
+  written rows each turns it red.
+- `a-path-cannot-say-which-it-came-from` flattens every corpus document directly; it skips the one
+  refused for its expansion, which has no paths to classify.
 
 ## Security and privacy
 
