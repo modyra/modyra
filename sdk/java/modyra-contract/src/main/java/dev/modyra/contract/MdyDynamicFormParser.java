@@ -152,6 +152,12 @@ public final class MdyDynamicFormParser {
   /** The kinds a field may declare: the names the field type dispatches on, read from its annotation. */
   static final Set<String> FIELD_KINDS = fieldKinds(null);
 
+  /** The kinds that draw a numeric range, and so the ones whose {@code min}, {@code max} and {@code step} are read. */
+  private static final Set<String> NUMBER_KINDS = fieldKinds(MdyDynamicNumberField.class);
+
+  /** The kinds that draw a calendar, and so the ones whose locale, first weekday and date bounds are read. */
+  private static final Set<String> CALENDAR_KINDS = Set.of("datepicker", "timepicker", "daterange");
+
   /** The kinds a choice is made from, and so the ones that must carry an options list. */
   static final Set<String> OPTIONS_KINDS = fieldKinds(MdyDynamicOptionsField.class);
 
@@ -231,6 +237,16 @@ public final class MdyDynamicFormParser {
       validateSchema(root.get("schema"), "/schema", "schema", 0, schemaDiagnostics, perField, new int[]{0}, contextKeys, Set.of());
       diagnostics.addAll(schemaDiagnostics);
       diagnostics.addAll(perField);
+      // What the document said it had, counted before anything is refused: a schema turned down
+      // whole never reaches the walk, and without the count a document declaring three children
+      // would report none accepted and none rejected — three entered and nothing came out.
+      DeclaredCount declaration = declaredFieldCount(root.get("schema"));
+      declaredLeaves = declaration.count();
+      if (!declaration.complete()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_COUNT_INCOMPLETE", MdyDynamicDiagnostic.WARNING, "/schema",
+            "The document declares more than the " + MAX_DECLARATION_WALK + " declarations this reader counts, "
+                + "so what it accepted and what it turned down are a floor and not a total."));
+      }
       // A key a condition reads and the document does not declare. `requiresContext` is the whole of
       // what tells a host which values to supply, so a key missing from it is one no host would think
       // to pass — and a condition that cannot be read decides false, hiding the fields it guards. The
@@ -245,10 +261,6 @@ public final class MdyDynamicFormParser {
             "conditions read context " + quoted(undeclared) + ", which this document does not declare in "
                 + "\"requiresContext\" — a host cannot supply what it is not told about."));
       }
-      // What the document said it had, counted before anything is refused: a schema turned down
-      // whole never reaches the walk, and without the count a document declaring three children
-      // would report none accepted and none rejected — three entered and nothing came out.
-      declaredLeaves = declaredFieldCount(root.get("schema"));
       if (schemaDiagnostics.isEmpty()) {
         // Every finding the walk reports is one leaf turned down, so the walk's count replaces the
         // per-field one: the walk sees each row a template is repeated into, the check above sees
@@ -410,9 +422,9 @@ public final class MdyDynamicFormParser {
    * that do not exist yet.
    *
    * <p>The walk stops after {@link #MAX_DECLARATION_WALK} steps, so a shape nothing has validated
-   * cannot make it run without end; the count is then a floor rather than a total.
+   * cannot make it run without end; the count is then a floor rather than a total, and says so.
    */
-  private static int declaredFieldCount(JsonNode schema) {
+  private static DeclaredCount declaredFieldCount(JsonNode schema) {
     int count = 0;
     Deque<JsonNode> stack = new ArrayDeque<>();
     stack.push(schema);
@@ -432,8 +444,11 @@ public final class MdyDynamicFormParser {
         count++;
       }
     }
-    return count;
+    return new DeclaredCount(count, stack.isEmpty());
   }
+
+  /** How many declarations a schema holds, and whether the walk reached all of them. */
+  private record DeclaredCount(int count, boolean complete) {}
 
   /** How many declarations the count walks before it stops: {@code MDY_MAX_DECLARATION_WALK} in the TS parser. */
   private static final int MAX_DECLARATION_WALK = 100_000;
@@ -560,14 +575,19 @@ public final class MdyDynamicFormParser {
       if (!lengthsAreOrdered(item, name, diagnostics)) continue;
       if (!patternIsUsable(item, name, diagnostics)) continue;
       reportUnknownFieldMembers(item, name, path, diagnostics);
+      if (NUMBER_KINDS.contains(kind.asText()) && !rangeIsUsable(item, name, path, diagnostics)) continue;
+      if (CALENDAR_KINDS.contains(kind.asText()) && !calendarIsUsable(item, name, diagnostics)) continue;
+      if (!initialValueFitsTheKind(item, name, kind.asText(), path, diagnostics)) continue;
+      reportMisplacedValidators(item, name, path, diagnostics);
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
         continue;
       }
+      JsonNode read = OPTIONS_KINDS.contains(kind.asText()) ? withoutDuplicateOptions(item, name, path, diagnostics) : item;
       MdyDynamicField field;
       try {
-        field = mapper.treeToValue(item, MdyDynamicField.class);
+        field = mapper.treeToValue(read, MdyDynamicField.class);
       } catch (JsonProcessingException e) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": " + e.getOriginalMessage()));
@@ -653,6 +673,101 @@ public final class MdyDynamicFormParser {
         "Dropped dynamic field \"" + name + "\": validators.minLength cannot exceed validators.maxLength."));
     return false;
   }
+
+  /**
+   * Whether a number field's range and step describe a control that can be drawn, dropping the field
+   * otherwise: each bound a finite number, the lower at most the upper, and the step a finite number
+   * above zero. A literal past the double range, such as 1e400, is Infinity to a JavaScript reader
+   * and so is not finite here either.
+   */
+  private static boolean rangeIsUsable(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode min = item.get("min");
+    JsonNode max = item.get("max");
+    JsonNode step = item.get("step");
+    String refusal = null;
+    if (min != null && !isFiniteNumber(min)) refusal = "min must be a finite number.";
+    else if (max != null && !isFiniteNumber(max)) refusal = "max must be a finite number.";
+    else if (min != null && max != null && min.doubleValue() > max.doubleValue()) refusal = "min cannot exceed max.";
+    else if (step != null && !isFiniteNumber(step)) refusal = "step must be a finite number.";
+    else if (step != null && step.doubleValue() <= 0) refusal = "step must be greater than zero.";
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /**
+   * Whether a calendar's presentation can be drawn, dropping the field otherwise: a locale a
+   * JavaScript {@code Intl} accepts, since a malformed one throws at mount rather than degrading; a
+   * first day of the week that is a whole number from 0 (Sunday) to 6; and each date bound an ISO
+   * date, the lower not later than the upper.
+   *
+   * <p>Reported at {@code /fields}, where the TypeScript reader puts a calendar's refusal.
+   */
+  private static boolean calendarIsUsable(JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode locale = item.get("locale");
+    JsonNode firstDay = item.get("firstDayOfWeek");
+    JsonNode minDate = item.get("minDate");
+    JsonNode maxDate = item.get("maxDate");
+    String refusal = null;
+    if (locale != null && !(locale.isTextual() && MdyLanguageTags.isStructurallyValid(locale.asText()))) {
+      refusal = "locale must be a valid BCP 47 tag, e.g. \"it-IT\".";
+    } else if (firstDay != null && !(isFiniteNumber(firstDay) && firstDay.doubleValue() == Math.rint(firstDay.doubleValue())
+        && firstDay.doubleValue() >= 0 && firstDay.doubleValue() <= 6)) {
+      refusal = "firstDayOfWeek must be an integer from 0 (Sunday) to 6.";
+    } else if (minDate != null && !(minDate.isTextual() && isIsoDate(minDate.asText()))) {
+      refusal = "minDate must be an ISO date, e.g. \"2026-08-02\".";
+    } else if (maxDate != null && !(maxDate.isTextual() && isIsoDate(maxDate.asText()))) {
+      refusal = "maxDate must be an ISO date, e.g. \"2026-08-02\".";
+    } else if (minDate != null && maxDate != null && minDate.asText().compareTo(maxDate.asText()) > 0) {
+      refusal = "minDate cannot be later than maxDate.";
+    }
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /** A JSON number JavaScript reads as finite: {@code Number.isFinite} after {@code JSON.parse}. */
+  private static boolean isFiniteNumber(JsonNode value) {
+    return value.isNumber() && Double.isFinite(value.doubleValue());
+  }
+
+  /**
+   * Whether the initial value the field declares is one its kind can hold, dropping the field
+   * otherwise. A declared initial is the value the form starts from, so one its kind cannot hold is a
+   * form invalid before anybody touches it. JSON {@code null} is judged: it is a value the author
+   * wrote, and only a nullable kind may hold it.
+   */
+  private static boolean initialValueFitsTheKind(
+      JsonNode item, String name, String kind, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode initial = item.get("initialValue");
+    if (initial == null) return true;
+    String mismatch = MdyValueContracts.explainMismatch(kind, initial);
+    if (mismatch == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": initialValue does not match the kind — " + mismatch + "."));
+    return false;
+  }
+
+  /**
+   * The rules a field writes on itself rather than in {@code validators}. Nothing reads them there, so
+   * the field has no rule where its author believes it has one; the field is kept, and the finding is
+   * an error, because a form missing a rule its document appears to state accepts what it should
+   * refuse. {@code min} and {@code max} are not among them: on a number field they are the range of
+   * the control, so the same word means two things by design.
+   */
+  private static void reportMisplacedValidators(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    for (String misplaced : MISPLACED_VALIDATORS) {
+      if (!item.has(misplaced)) continue;
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_MISPLACED_VALIDATOR", MdyDynamicDiagnostic.ERROR, path,
+          "Dynamic field \"" + name + "\" declares \"" + misplaced + "\" on the field, and it belongs in \"validators\" — "
+              + "nothing reads it here, so the field has no such rule."));
+    }
+  }
+
+  /** The validator names an author writes on the field itself, in the order they are reported. */
+  private static final List<String> MISPLACED_VALIDATORS = List.of("required", "email", "minLength", "maxLength", "pattern");
 
   /**
    * Whether the words a field wrote for its own rules can be read, dropping the field otherwise.
@@ -801,6 +916,58 @@ public final class MdyDynamicFormParser {
   }
 
   /**
+   * The field with every option whose value an earlier option already holds left out, each one
+   * reported. An option's value is its identity — it builds the option's id and names the choice in
+   * the submission — so a second option holding it is unreachable and the value names two things.
+   * The field is kept, as the first of two fields sharing a name is. The document is not edited: a
+   * copy is returned when anything is left out.
+   */
+  private static JsonNode withoutDuplicateOptions(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode options = item.path("options");
+    Set<String> seen = new HashSet<>();
+    ArrayNode kept = JsonNodeFactory.instance.arrayNode();
+    for (JsonNode option : options) {
+      String key = optionValueKey(option.get("value"));
+      if (seen.add(key)) {
+        kept.add(option);
+        continue;
+      }
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_DUPLICATE_OPTION", MdyDynamicDiagnostic.ERROR, path,
+          "Dropped a duplicate option value " + key + " on \"" + name + "\": an option's value is its identity, "
+              + "so two options sharing one leave a value naming both and a control able to reach only the first."));
+    }
+    if (kept.size() == options.size()) return item;
+    ObjectNode copy = item.deepCopy();
+    copy.set("options", kept);
+    return copy;
+  }
+
+  /**
+   * A comparable spelling of an option's value: {@code optionValueKey} in the TypeScript reader. A
+   * scalar is its JSON text, so {@code 1} and {@code 1.0} are one value and {@code 1} and {@code "1"}
+   * are two. An object is its members sorted by name, so two objects declaring the same members are
+   * the same option however they were written; an array is the object JavaScript sees, keyed by
+   * index.
+   */
+  static String optionValueKey(JsonNode value) {
+    if (!value.isObject() && !value.isArray()) return jsonText(value);
+    List<Map.Entry<String, JsonNode>> entries = new ArrayList<>();
+    if (value.isArray()) {
+      for (int i = 0; i < value.size(); i++) entries.add(Map.entry(String.valueOf(i), value.get(i)));
+    } else {
+      value.properties().forEach(entries::add);
+    }
+    entries.sort(Map.Entry.comparingByKey());
+    StringBuilder out = new StringBuilder("{");
+    for (Map.Entry<String, JsonNode> entry : entries) {
+      if (out.length() > 1) out.append(',');
+      writeString(entry.getKey(), out);
+      out.append(':').append(optionValueKey(entry.getValue()));
+    }
+    return out.append('}').toString();
+  }
+
+  /**
    * Whether a field's {@code validators.pattern} lets the field be read, reporting what is wrong
    * with it either way.
    *
@@ -901,6 +1068,17 @@ public final class MdyDynamicFormParser {
       named.put("name", name);
       for (MdyDynamicDiagnostic finding : parseFlatItems(mapper.createArrayNode().add(named)).diagnostics) {
         perField.add(new MdyDynamicDiagnostic(finding.code(), MdyDynamicDiagnostic.ERROR, path + "/field", finding.message()));
+      }
+      // The declared initial is also a statement about the tree, as a collection's initial is: a
+      // value the leaf's kind cannot hold is refused where it is written, and the document with it.
+      JsonNode declaredKind = node.get("field").path("kind");
+      JsonNode initial = node.get("field").get("initialValue");
+      if (initial != null && declaredKind.isTextual()) {
+        String mismatch = MdyValueContracts.explainMismatch(declaredKind.asText(), initial);
+        if (mismatch != null) {
+          out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path + "/field/initialValue",
+              "field initialValue does not match the kind — " + mismatch + "."));
+        }
       }
       return;
     }
@@ -1355,7 +1533,7 @@ public final class MdyDynamicFormParser {
    * the TS reader uses: {@code 7.0} reads {@code 7}, {@code 1e21} reads {@code 1e+21}, a number past
    * double precision reads the double it parses to, and object keys follow ECMAScript property order.
    */
-  private static String jsonText(JsonNode value) {
+  static String jsonText(JsonNode value) {
     StringBuilder out = new StringBuilder();
     writeJson(value, out);
     return out.toString();
@@ -1608,7 +1786,7 @@ public final class MdyDynamicFormParser {
    * reader builds the date through {@code Date.UTC}, which reads such a year as 19xx and then finds
    * it does not round-trip, so both readers refuse it.
    */
-  private static boolean isIsoDate(String value) {
+  static boolean isIsoDate(String value) {
     if (!ISO_DATE.matcher(value).matches()) return false;
     int year = Integer.parseInt(value.substring(0, 4));
     if (year < 100) return false;
