@@ -33,8 +33,20 @@ did not pay for.
   `MdyDynamicSchemaLimitError`, carrying `code`, `path` and `limit`.
 - Lending is kept. The bound alone closes the cost; stopping it would change the initial values of
   valid documents.
-- Every reader applies the same count. A reader that does not expand rows computes it from its
-  memo, saturating at the bound.
+- Every reader applies the same count, defined as follows. A reader that does not expand rows
+  computes it from its memo, saturating at the bound.
+  - **Declared** is the number of JSON objects reached from `schema` through a group's `children`
+    values and a collection's `item`, rows not read. A child under an unsafe key and a child that is
+    not a node still count: they are objects the document wrote.
+  - **Visits** is one per node taken off the walk: the schema, every child a group passes on (safe
+    key, a node), every row of a collection (the rows its enclosing row wrote for it when that is an
+    array, an object for a record, else the rows it declares; for a record, safe keys only), and a field the walk drops for its path or value.
+  - **Templates share the budget.** Each distinct `item` is also walked once on its own, with no
+    initial value, the first time its collection is reached; those visits count against the same
+    budget, and a template's nested collections lend their declared rows there too.
+  - Refused when visits exceed declared + 10,000. Visits equal to it are accepted.
+  - `spec/fixtures/dynamic-form/v5/rows-lent-at-the-bound.json` is exactly at the bound and
+    `spec/fixtures/dynamic-form/v5/rows-lent-past-the-bound.json` one past it, both within a hundred rows per collection.
 
 ## Consequences
 
@@ -49,9 +61,14 @@ did not pay for.
 - The TS reader does not yet refuse more than 100 written rows per collection, which Java and Rust
   do. Until it does, the bound also counts written rows, so 10,001 written empty rows are refused by
   this rule in TS and by the row rule elsewhere.
+- Written rows count too. A document that writes, explicitly, more than 10,000 visits beyond its
+  declarations is refused although it paid for them in bytes. With a hundred rows per collection,
+  that takes a hundred written rows of a hundred written rows.
 - The runtime builder (`buildDynamicFormSchema` then `createForm`) does not lend: an outer row's
-  nested collection starts empty. The parser and the runtime therefore disagree on what a lent row
-  holds. That disagreement predates this decision and is not settled by it.
+  nested collection starts empty. Lending is therefore a property of the reader and not of the
+  runtime, and stopping it would align the reader to the runtime rather than change what a form
+  holds. It is kept here because it changes the flattened fields of valid documents; whether the
+  reader keeps lending is a separate decision, open, not settled by this one.
 
 ## Alternatives rejected
 
@@ -72,6 +89,8 @@ did not pay for.
   flat fields accepted, the typed error from the direct flatten. Removing the budget makes the suite
   hang; moving the comparison by one turns the boundary test red.
 - `battle-tests/adversarial/dynamic-contract`: the 99,999-field document stays accepted.
+- The shared corpus pair at and past the bound runs in every reader's corpus test, so a reader
+  whose count drifts by one from this definition turns red.
 - `node scripts/audit-type-surface.mjs`: the new export is in the baseline.
 - Java and Rust: not yet implemented; their checks are owed with them.
 
