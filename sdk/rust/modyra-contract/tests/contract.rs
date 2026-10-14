@@ -671,3 +671,397 @@ fn a_finding_points_where_the_field_is_written() {
         Vec::<String>::new()
     );
 }
+
+/// Every finding a strict read gives, as code and path.
+fn findings(document: serde_json::Value) -> Vec<(&'static str, String)> {
+    let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+    result
+        .diagnostics
+        .into_iter()
+        .map(|d| (d.code, d.path))
+        .collect()
+}
+
+/// A document holding one field, written once as a tree leaf named `f` and once as a flat entry.
+fn as_leaf_and_entry(field: serde_json::Value) -> [serde_json::Value; 2] {
+    let mut entry = field.clone();
+    entry["name"] = "f".into();
+    [
+        serde_json::json!({ "version": 5, "schema": { "node": "group", "children": {
+            "f": { "node": "field", "field": field }
+        }}}),
+        serde_json::json!({ "version": 5, "fields": [entry] }),
+    ]
+}
+
+const LEAF: &str = "/schema/children/f/field";
+
+/// A declared initial value is held to what its kind holds. In a tree the member is also a finding
+/// about the document's shape, so a leaf carries two findings where a flat entry carries one.
+#[test]
+fn an_initial_value_is_held_to_its_kind() {
+    for field in [
+        serde_json::json!({ "kind": "text", "label": "F", "initialValue": 42 }),
+        serde_json::json!({ "kind": "text", "label": "F", "initialValue": null }),
+        serde_json::json!({ "kind": "checkbox", "label": "F", "initialValue": "yes" }),
+        serde_json::json!({ "kind": "multiselect", "label": "F", "options": [{ "value": "a", "label": "A" }], "initialValue": "a" }),
+        serde_json::json!({ "kind": "datepicker", "label": "F", "initialValue": "2026-02-30" }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "initialValue": "24:00" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "#12345" }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": "x", "end": null } }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": null } }),
+    ] {
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![
+                ("MDY_DYNAMIC_INVALID_FIELD", format!("{LEAF}/initialValue")),
+                ("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string()),
+            ],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    // The empty string is a formatted kind's absence, `null` is a nullable kind's, and an option is
+    // whatever the option list offers.
+    for field in [
+        serde_json::json!({ "kind": "datepicker", "label": "F", "initialValue": "" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "" }),
+        serde_json::json!({ "kind": "number", "label": "F", "initialValue": null }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "initialValue": "23:59" }),
+        serde_json::json!({ "kind": "colors", "label": "F", "initialValue": "#AbC" }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "initialValue": { "start": null, "end": "2026-02-28" } }),
+        serde_json::json!({ "kind": "select", "label": "F", "options": [{ "value": { "id": 1 }, "label": "A" }], "initialValue": { "id": 1 } }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}
+
+/// A number or slider field's range is two numbers in order and a step that moves the value. The
+/// field is refused at the field as written, flat or in a tree; a kind with no range does not read
+/// these members at all.
+#[test]
+fn a_number_field_has_a_range_it_can_draw() {
+    for (kind, range) in [
+        ("number", serde_json::json!({ "min": "3" })),
+        ("number", serde_json::json!({ "max": null })),
+        ("slider", serde_json::json!({ "min": 5, "max": 4 })),
+        ("number", serde_json::json!({ "step": "1" })),
+        ("slider", serde_json::json!({ "step": 0 })),
+        ("number", serde_json::json!({ "step": -0.5 })),
+    ] {
+        let mut field = serde_json::json!({ "kind": kind, "label": "F" });
+        field
+            .as_object_mut()
+            .unwrap()
+            .extend(range.as_object().unwrap().clone());
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for field in [
+        serde_json::json!({ "kind": "number", "label": "F", "min": 4, "max": 4, "step": 0.5 }),
+        serde_json::json!({ "kind": "text", "label": "F", "min": "3", "max": null, "step": 0 }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}
+
+/// A date or time field's calendar: a locale `Intl` takes, a weekday index for the first day, and ISO
+/// bounds in order. The field is refused at the field as written.
+#[test]
+fn a_calendar_field_has_a_calendar_it_can_draw() {
+    for (kind, calendar) in [
+        ("datepicker", serde_json::json!({ "locale": "not a tag!" })),
+        ("datepicker", serde_json::json!({ "locale": "en_US" })),
+        (
+            "timepicker",
+            serde_json::json!({ "locale": "en-US-1994-1994" }),
+        ),
+        ("daterange", serde_json::json!({ "locale": null })),
+        ("datepicker", serde_json::json!({ "firstDayOfWeek": 7 })),
+        ("datepicker", serde_json::json!({ "firstDayOfWeek": -1 })),
+        ("daterange", serde_json::json!({ "firstDayOfWeek": 1.5 })),
+        ("datepicker", serde_json::json!({ "minDate": "2026-13-01" })),
+        ("datepicker", serde_json::json!({ "maxDate": "2026-02-29" })),
+        ("datepicker", serde_json::json!({ "minDate": "0099-01-01" })),
+        (
+            "daterange",
+            serde_json::json!({ "minDate": "2026-08-02", "maxDate": "2026-08-01" }),
+        ),
+    ] {
+        let mut field = serde_json::json!({ "kind": kind, "label": "F" });
+        field
+            .as_object_mut()
+            .unwrap()
+            .extend(calendar.as_object().unwrap().clone());
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for field in [
+        serde_json::json!({ "kind": "datepicker", "label": "F", "locale": "zh-Hant-TW", "firstDayOfWeek": 0 }),
+        serde_json::json!({ "kind": "datepicker", "label": "F", "locale": "de-DE-u-co-phonebk", "firstDayOfWeek": 6.0 }),
+        serde_json::json!({ "kind": "daterange", "label": "F", "locale": "und", "minDate": "2028-02-29", "maxDate": "2028-02-29" }),
+        serde_json::json!({ "kind": "timepicker", "label": "F", "minDate": "0100-01-01" }),
+        // A kind with no calendar does not read these members.
+        serde_json::json!({ "kind": "text", "label": "F", "locale": "en_US", "firstDayOfWeek": 9 }),
+    ] {
+        for document in as_leaf_and_entry(field.clone()) {
+            assert_eq!(findings(document), vec![], "{field}");
+        }
+    }
+}
+
+/// An option field needs a list of options as the contract writes one, and an option's value is
+/// its identity: the later of two options with one value is a finding, and is not carried.
+#[test]
+fn an_option_field_has_options_it_can_offer() {
+    let option = |value: serde_json::Value| serde_json::json!({ "value": value, "label": "L" });
+    for options in [
+        None,
+        Some(serde_json::json!("a")),
+        Some(serde_json::json!([option(serde_json::Value::Null)])),
+        Some(serde_json::json!([option(serde_json::json!([1]))])),
+        Some(serde_json::json!([{ "value": "a" }])),
+        Some(serde_json::json!([{ "value": "a", "label": "A", "disabled": "yes" }])),
+        Some(serde_json::json!(["a"])),
+    ] {
+        let mut field = serde_json::json!({ "kind": "radio", "label": "F" });
+        if let Some(options) = options {
+            field["options"] = options;
+        }
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_OPTIONS_REQUIRED", LEAF.to_string())],
+            "{field}"
+        );
+        assert_eq!(
+            findings(entry),
+            vec![("MDY_DYNAMIC_OPTIONS_REQUIRED", "/fields/0".to_string())],
+            "{field}"
+        );
+    }
+    for (values, repeats) in [
+        (serde_json::json!(["x", "x", "x"]), 2),
+        (serde_json::json!([1, 1.0]), 1),
+        (serde_json::json!([0, -0]), 1),
+        (
+            serde_json::json!([{ "a": 1, "b": 2 }, { "b": 2, "a": 1 }]),
+            1,
+        ),
+        (serde_json::json!(["1", 1, true, "true"]), 0),
+    ] {
+        let options: Vec<_> = values
+            .as_array()
+            .unwrap()
+            .iter()
+            .cloned()
+            .map(option)
+            .collect();
+        let field = serde_json::json!({ "kind": "select", "label": "F", "options": options });
+        let [leaf, entry] = as_leaf_and_entry(field.clone());
+        assert_eq!(
+            findings(leaf),
+            vec![("MDY_DYNAMIC_DUPLICATE_OPTION", LEAF.to_string()); repeats],
+            "{field}"
+        );
+        let result = parse_v2(&entry.to_string(), ValidationMode::Lenient).unwrap();
+        let kept = result.form.unwrap().fields[0]
+            .options
+            .as_ref()
+            .unwrap()
+            .len();
+        assert_eq!(kept, options.len() - repeats, "{field}");
+    }
+    // A kind that offers no options does not read them.
+    let field = serde_json::json!({ "kind": "text", "label": "F", "options": [{ "value": null }] });
+    for document in as_leaf_and_entry(field) {
+        assert_eq!(findings(document), vec![]);
+    }
+}
+
+/// A rule written on the field rather than in `validators` is reported where it is written, with the
+/// member nobody declares; so is any member a field, its validators or an option does not declare.
+/// Neither refuses the field, so a field refused for another reason still carries the first and not
+/// the second.
+#[test]
+fn a_member_nobody_reads_is_reported() {
+    let [leaf, entry] =
+        as_leaf_and_entry(serde_json::json!({ "kind": "text", "label": "F", "required": true }));
+    assert_eq!(
+        findings(leaf),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", LEAF.to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", LEAF.to_string()),
+        ]
+    );
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+        ]
+    );
+    let [_, entry] = as_leaf_and_entry(serde_json::json!({
+        "kind": "select", "label": "F", "email": null, "pattern": "x", "validators": { "requird": true },
+        "options": [{ "value": 1, "label": "A", "color": "red" }]
+    }));
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            (
+                "MDY_DYNAMIC_UNKNOWN_MEMBER",
+                "/fields/0/options/0".to_string()
+            ),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0".to_string()),
+        ]
+    );
+    let [_, entry] = as_leaf_and_entry(
+        serde_json::json!({ "kind": "number", "label": "F", "required": true, "min": "3" }),
+    );
+    assert_eq!(
+        findings(entry),
+        vec![
+            ("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0".to_string()),
+            ("MDY_DYNAMIC_INVALID_FIELD", "/fields/0".to_string()),
+        ]
+    );
+    // A number field's range is its own, not a misplaced rule.
+    for document in
+        as_leaf_and_entry(serde_json::json!({ "kind": "number", "label": "F", "min": 1, "max": 2 }))
+    {
+        assert_eq!(findings(document), vec![]);
+    }
+}
+
+/// A number past the double range is a value the document holds, refused where a finite number is
+/// asked for, and not a reason the document cannot be read.
+#[test]
+fn a_number_past_the_double_range_is_refused_where_it_is_written() {
+    let read = |field: &str| {
+        let leaf = format!(
+            r#"{{"version":5,"schema":{{"node":"group","children":{{"f":{{"node":"field","field":{field}}}}}}}}}"#
+        );
+        let entry = format!(
+            r#"{{"version":5,"fields":[{}]}}"#,
+            field.replacen('{', r#"{"name":"f","#, 1)
+        );
+        [leaf, entry].map(|json| {
+            parse_v2(&json, ValidationMode::Strict)
+                .unwrap_or_else(|error| panic!("{json}: {error}"))
+                .diagnostics
+                .into_iter()
+                .map(|d| (d.code, d.path, d.message))
+                .collect::<Vec<_>>()
+        })
+    };
+    for (field, message) in [
+        (
+            r#"{"kind":"number","label":"\"-1e400","max":1e400}"#,
+            "max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"slider","label":"F","min":-1e400}"#,
+            "min must be a finite number.",
+        ),
+        (
+            r#"{"kind":"number","label":"F","step":1E+999}"#,
+            "step must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"min":1e400}}"#,
+            "validators.min must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"max":-1e400}}"#,
+            "validators.max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"minLength":-1e400}}"#,
+            "validators.minLength must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"maxLength":1e400}}"#,
+            "validators.maxLength must be a finite number.",
+        ),
+        // The object a huge number is held as, written by hand, is no number either.
+        (
+            r#"{"kind":"number","label":"F","max":{"nonFiniteNumber":"1e400"}}"#,
+            "max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"min":{"nonFiniteNumber":"x"}}}"#,
+            "validators.min must be a finite number.",
+        ),
+    ] {
+        let [leaf, entry] = read(field);
+        assert_eq!(
+            leaf,
+            vec![(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                LEAF.to_string(),
+                message.to_string()
+            )],
+            "{field}"
+        );
+        assert_eq!(
+            entry,
+            vec![(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                "/fields/0".to_string(),
+                message.to_string()
+            )],
+            "{field}"
+        );
+    }
+    // Held as a value, it is not a string a text field can take.
+    let [_, entry] = read(r#"{"kind":"text","label":"F","initialValue":1e400}"#);
+    assert_eq!(
+        entry
+            .iter()
+            .map(|(code, path, _)| (*code, path.as_str()))
+            .collect::<Vec<_>>(),
+        vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0")]
+    );
+    // The largest double is a number, and text that spells a huge one is text.
+    assert_eq!(
+        read(r#"{"kind":"number","label":"1e400 \"-1e400","max":1.7976931348623157e308}"#),
+        [vec![], vec![]]
+    );
+    // A literal JSON does not have stays an error, huge or not.
+    for json in [
+        r#"{"version":5,"fields":[{"name":"f","kind":"number","max":01e400}]}"#,
+        r#"{"version":5,"x":1e400"#,
+    ] {
+        assert!(parse_v2(json, ValidationMode::Strict).is_err(), "{json}");
+    }
+}

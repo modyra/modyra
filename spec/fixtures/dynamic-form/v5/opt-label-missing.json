@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-label-missing","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"select","options":[{"value":"a"}]}}}}}

@@ -1,0 +1,1 @@
+{"version":5,"id":"num-step-string","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"number","step":"1"}}}}}

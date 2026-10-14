@@ -1,0 +1,1 @@
+{"version":5,"id":"iv-range-nulls","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"daterange","initialValue":{"start":null,"end":null}}}}}}

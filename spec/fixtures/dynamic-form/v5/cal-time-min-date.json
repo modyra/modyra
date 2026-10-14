@@ -1,0 +1,1 @@
+{"version":5,"id":"cal-time-min-date","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"timepicker","minDate":"2026-08-01"}}}}}

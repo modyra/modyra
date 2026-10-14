@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-duplicate-object-order","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"select","options":[{"value":{"a":1,"b":2},"label":"A"},{"value":{"b":2,"a":1},"label":"B"}]}}}}}

@@ -1,0 +1,7 @@
+{
+  "valid": false,
+  "diagnostics": [
+    "MDY_DYNAMIC_MISPLACED_VALIDATOR",
+    "MDY_DYNAMIC_UNKNOWN_MEMBER"
+  ]
+}

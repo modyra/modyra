@@ -1,0 +1,1 @@
+{"version":5,"id":"num-min-exceeds-max","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"number","min":5,"max":1}}}}}

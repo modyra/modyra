@@ -834,16 +834,593 @@ fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>)
     named_badly || !kind.is_some_and(|kind| KINDS.contains(&kind))
 }
 
-/// Refuses every field whose members have the wrong JSON type, flat or in a tree, and removes the
-/// members such a check reads from it.
+/// The members a field declares, whatever its kind, mirroring `MDY_DYNAMIC_MEMBERS.field`.
+const FIELD_MEMBERS: &[&str] = &[
+    "name",
+    "kind",
+    "label",
+    "ariaLabel",
+    "placeholder",
+    "supportingText",
+    "initialValue",
+    "validators",
+    "sensitive",
+    "prefix",
+    "suffix",
+    "min",
+    "max",
+    "step",
+    "options",
+    "mode",
+    "searchable",
+    "reorderable",
+    "loading",
+    "locale",
+    "firstDayOfWeek",
+    "minDate",
+    "maxDate",
+    "format",
+    "viewMode",
+    "granularity",
+    "animateHand",
+    "showUnavailable",
+    "accept",
+    "multiple",
+    "presets",
+];
+
+/// The members a field's validators declare, mirroring `MDY_DYNAMIC_MEMBERS.validators`.
+const VALIDATOR_MEMBERS: &[&str] = &[
+    "required",
+    "email",
+    "integer",
+    "min",
+    "max",
+    "minLength",
+    "maxLength",
+    "pattern",
+    "messages",
+];
+
+/// The members an option declares, mirroring `MDY_DYNAMIC_MEMBERS.option`.
+const OPTION_MEMBERS: &[&str] = &["value", "label", "disabled"];
+
+/// What a field of each kind holds, mirroring `MDY_VALUE_CONTRACTS`: the shape of its value, and
+/// whether `null` is one of its values.
+fn value_contract(kind: &str) -> Option<(&'static str, bool)> {
+    Some(match kind {
+        "text" | "textarea" | "email" | "password" | "colors" => ("string", false),
+        "number" => ("number", true),
+        "slider" => ("number", false),
+        "checkbox" | "toggle" => ("boolean", false),
+        "select" | "radio" | "segmented" => ("option", true),
+        "multiselect" => ("option[]", false),
+        "datepicker" | "timepicker" => ("string", true),
+        "daterange" => ("dateRange", false),
+        "file" => ("file[]", false),
+        _ => return None,
+    })
+}
+
+/// Why `value` does not belong in a field of `kind`, or `None` when it does — the TypeScript
+/// reader's `explainValueMismatch`.
 ///
-/// The refused field is reported here; what remains of it is read only so that the rest of the
+/// An option's value is anything but `null`: which values are offered is the option list's word. A
+/// string with a form — a date, a time, a colour, a range's endpoints — is held to that form, and
+/// the empty string is how such a value writes absence, so it is accepted for every one of them.
+fn value_mismatch(kind: &str, value: &Value) -> Option<String> {
+    let (shape, nullable) = value_contract(kind)?;
+    if value.is_null() {
+        return (!nullable).then(|| format!("{kind} cannot hold null"));
+    }
+    let fits = match shape {
+        "string" => value.is_string(),
+        "number" => value.is_number(),
+        "boolean" => value.is_boolean(),
+        "option" => true,
+        "dateRange" => value
+            .as_object()
+            .is_some_and(|range| range.contains_key("start") && range.contains_key("end")),
+        _ => value.is_array(),
+    };
+    if !fits {
+        return Some(format!("{kind} holds {shape}, got {}", json_type(value)));
+    }
+    let text = value.as_str();
+    if text == Some("") {
+        return None;
+    }
+    let form = match kind {
+        "datepicker" => "an ISO date (yyyy-MM-dd)",
+        "timepicker" => "a time (HH:mm)",
+        "colors" => "a hex colour (#rgb or #rrggbb)",
+        "daterange" => {
+            return ["start", "end"].into_iter().find_map(|end| {
+                let held = &value[end];
+                (!held.is_null() && !held.as_str().is_some_and(is_iso_date))
+                    .then(|| format!("{kind} holds ISO dates, and {end} is {held}"))
+            })
+        }
+        _ => return None,
+    };
+    let text = text.unwrap_or_default();
+    let held = match kind {
+        "datepicker" => is_iso_date(text),
+        "timepicker" => is_clock_time(text),
+        _ => is_hex_colour(text),
+    };
+    (!held).then(|| format!("{kind} holds {form}, got {value}"))
+}
+
+/// The JSON type of `value` as JavaScript's `typeof` names it, which is how a mismatch is worded.
+fn json_type(value: &Value) -> String {
+    match value {
+        Value::Object(_) | Value::Array(_) => value.to_string(),
+        Value::String(_) => "string".into(),
+        Value::Number(_) => "number".into(),
+        Value::Bool(_) => "boolean".into(),
+        Value::Null => "null".into(),
+    }
+}
+
+/// `HH:mm` on a 24-hour clock.
+fn is_clock_time(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    bytes.len() == 5
+        && bytes[2] == b':'
+        && matches!(
+            (bytes[0], bytes[1]),
+            (b'0' | b'1', b'0'..=b'9') | (b'2', b'0'..=b'3')
+        )
+        && matches!((bytes[3], bytes[4]), (b'0'..=b'5', b'0'..=b'9'))
+}
+
+/// `#rgb` or `#rrggbb`, in either case.
+fn is_hex_colour(text: &str) -> bool {
+    text.strip_prefix('#').is_some_and(|digits| {
+        matches!(digits.len(), 3 | 6) && digits.bytes().all(|b| b.is_ascii_hexdigit())
+    })
+}
+
+/// Why a number or slider field's range cannot be drawn, or `None` when it can.
+///
+/// A bound or a step is a number, the lower bound is not above the upper, and a step moves the
+/// value. Other kinds have no range, so their `min`, `max` and `step` are not read.
+fn range_refusal(field: &Value, kind: &str) -> Option<&'static str> {
+    if !matches!(kind, "number" | "slider") {
+        return None;
+    }
+    let member = |key: &str| field.get(key).map(Value::as_f64);
+    let (min, max, step) = (member("min"), member("max"), member("step"));
+    if min == Some(None) {
+        return Some("min must be a finite number.");
+    }
+    if max == Some(None) {
+        return Some("max must be a finite number.");
+    }
+    if min
+        .flatten()
+        .zip(max.flatten())
+        .is_some_and(|(min, max)| min > max)
+    {
+        return Some("min cannot exceed max.");
+    }
+    match step {
+        Some(None) => Some("step must be a finite number."),
+        Some(Some(step)) if step <= 0.0 => Some("step must be greater than zero."),
+        _ => None,
+    }
+}
+
+/// Why a date or time field's calendar cannot be drawn, or `None` when it can.
+///
+/// A locale is a tag the platform's `Intl` would take, because a malformed one throws when the
+/// calendar is drawn rather than degrading; the first day of the week is a weekday's index; the
+/// bounds are ISO dates, the earlier one first.
+fn calendar_refusal(field: &Value, kind: &str) -> Option<&'static str> {
+    if !matches!(kind, "datepicker" | "timepicker" | "daterange") {
+        return None;
+    }
+    if field
+        .get("locale")
+        .is_some_and(|locale| !locale.as_str().is_some_and(is_language_tag))
+    {
+        return Some("locale must be a valid BCP 47 tag, e.g. \"it-IT\".");
+    }
+    if field.get("firstDayOfWeek").is_some_and(|day| {
+        !day.as_f64()
+            .is_some_and(|day| day.fract() == 0.0 && (0.0..=6.0).contains(&day))
+    }) {
+        return Some("firstDayOfWeek must be an integer from 0 (Sunday) to 6.");
+    }
+    let bound = |key: &str| {
+        field
+            .get(key)
+            .map(|date| date.as_str().filter(|date| is_iso_date(date)))
+    };
+    let (min, max) = (bound("minDate"), bound("maxDate"));
+    if min == Some(None) {
+        return Some("minDate must be an ISO date, e.g. \"2026-08-02\".");
+    }
+    if max == Some(None) {
+        return Some("maxDate must be an ISO date, e.g. \"2026-08-02\".");
+    }
+    if min
+        .flatten()
+        .zip(max.flatten())
+        .is_some_and(|(min, max)| min > max)
+    {
+        return Some("minDate cannot be later than maxDate.");
+    }
+    None
+}
+
+/// Whether `tag` is a locale `Intl.getCanonicalLocales` accepts: a structurally valid Unicode BCP 47
+/// locale identifier, as ECMA-402 defines one.
+///
+/// A language subtag first, then an optional script, region and variants; then extensions, each a
+/// singleton not repeated, and a private use part last. Subtags are ASCII letters and digits joined
+/// by `-` and compared without case. Whether a subtag is registered is not asked, as `Intl` does not
+/// ask it.
+fn is_language_tag(tag: &str) -> bool {
+    let lower = tag.to_ascii_lowercase();
+    let mut rest = Subtags(lower.split('-').collect(), 0);
+    if !rest.take_if(is_language_subtag) || !language_tail(&mut rest) {
+        return false;
+    }
+    let mut singletons = HashSet::new();
+    while let Some(singleton) = rest.next() {
+        let one = singleton.len() == 1 && alphanumeric(singleton, 1, 1);
+        if !one || !singletons.insert(singleton) {
+            return false;
+        }
+        let well_formed = match singleton {
+            "x" => return rest.count_while(|part| alphanumeric(part, 1, 8)) > 0 && rest.done(),
+            "u" => unicode_extension(&mut rest),
+            "t" => transformed_extension(&mut rest),
+            _ => rest.count_while(|part| alphanumeric(part, 2, 8)) > 0,
+        };
+        if !well_formed {
+            return false;
+        }
+    }
+    true
+}
+
+/// The subtags of a locale, and how many have been read.
+struct Subtags<'a>(Vec<&'a str>, usize);
+
+impl<'a> Subtags<'a> {
+    fn next(&mut self) -> Option<&'a str> {
+        let part = self.0.get(self.1).copied();
+        self.1 += usize::from(part.is_some());
+        part
+    }
+
+    /// Reads the next subtag when it is one `is` accepts.
+    fn take_if(&mut self, is: impl Fn(&str) -> bool) -> bool {
+        let taken = self.0.get(self.1).is_some_and(|part| is(part));
+        self.1 += usize::from(taken);
+        taken
+    }
+
+    fn count_while(&mut self, is: impl Fn(&str) -> bool) -> usize {
+        let mut count = 0;
+        while self.take_if(&is) {
+            count += 1;
+        }
+        count
+    }
+
+    fn done(&self) -> bool {
+        self.1 == self.0.len()
+    }
+}
+
+/// Between `min` and `max` ASCII letters and digits.
+fn alphanumeric(part: &str, min: usize, max: usize) -> bool {
+    (min..=max).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_alphanumeric())
+}
+
+/// Between `min` and `max` ASCII letters.
+fn alphabetic(part: &str, min: usize, max: usize) -> bool {
+    (min..=max).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_alphabetic())
+}
+
+fn is_language_subtag(part: &str) -> bool {
+    alphabetic(part, 2, 3) || alphabetic(part, 5, 8)
+}
+
+/// The script, region and variants after a language subtag, with no variant repeated.
+fn language_tail(rest: &mut Subtags) -> bool {
+    rest.take_if(|part| alphabetic(part, 4, 4));
+    rest.take_if(|part| {
+        alphabetic(part, 2, 2) || (part.len() == 3 && part.bytes().all(|b| b.is_ascii_digit()))
+    });
+    let mut variants = HashSet::new();
+    let is_variant = |part: &str| {
+        alphanumeric(part, 5, 8)
+            || (alphanumeric(part, 4, 4) && part.as_bytes()[0].is_ascii_digit())
+    };
+    while let Some(variant) = rest.0.get(rest.1).copied().filter(|part| is_variant(part)) {
+        rest.1 += 1;
+        if !variants.insert(variant) {
+            return false;
+        }
+    }
+    true
+}
+
+/// `-u-`: attributes, then keywords — a key of a letter or digit and a letter, and its type.
+fn unicode_extension(rest: &mut Subtags) -> bool {
+    let is_key = |part: &str| alphanumeric(part, 2, 2) && part.as_bytes()[1].is_ascii_alphabetic();
+    let mut count = rest.count_while(|part| alphanumeric(part, 3, 8));
+    while rest.take_if(is_key) {
+        count += 1;
+        rest.count_while(|part| alphanumeric(part, 3, 8));
+    }
+    count > 0
+}
+
+/// `-t-`: an optional source language, then fields — a letter and a digit, and their values.
+fn transformed_extension(rest: &mut Subtags) -> bool {
+    let is_key = |part: &str| {
+        let bytes = part.as_bytes();
+        bytes.len() == 2 && bytes[0].is_ascii_alphabetic() && bytes[1].is_ascii_digit()
+    };
+    let mut count = 0;
+    if rest.take_if(is_language_subtag) {
+        if !language_tail(rest) {
+            return false;
+        }
+        count += 1;
+    }
+    while rest.take_if(is_key) {
+        if rest.count_while(|part| alphanumeric(part, 3, 8)) == 0 {
+            return false;
+        }
+        count += 1;
+    }
+    count > 0
+}
+
+/// A finding about a field as written: its code, the member it points into (empty for the field
+/// itself), and what it says.
+type FieldFinding = (&'static str, String, String);
+
+/// Judges a field as written, in the order the TypeScript reader judges it, and says whether the
+/// field is refused.
+///
+/// The first refusal ends the judgement, so a refused field carries one reason; a finding that does
+/// not refuse the field is collected on the way.
+fn field_findings(field: &Value, out: &mut Vec<FieldFinding>) -> bool {
+    fn refuse(out: &mut Vec<FieldFinding>, message: String) -> bool {
+        out.push(("MDY_DYNAMIC_INVALID_FIELD", String::new(), message));
+        true
+    }
+    if let Some(refusal) = member_type_refusal(field) {
+        return refuse(out, refusal);
+    }
+    // A member nobody declared is reported and the field kept: a document may be written against a
+    // contract this reader predates.
+    let options = field.get("options").and_then(Value::as_array);
+    for (owner, member, declared) in [(Some(field), String::new(), FIELD_MEMBERS)]
+        .into_iter()
+        .chain([(field.get("validators"), String::new(), VALIDATOR_MEMBERS)])
+        .chain(
+            options
+                .into_iter()
+                .flatten()
+                .enumerate()
+                .map(|(i, option)| (Some(option), format!("/options/{i}"), OPTION_MEMBERS)),
+        )
+    {
+        let unknown: Vec<String> = owner
+            .and_then(Value::as_object)
+            .into_iter()
+            .flat_map(|object| object.keys())
+            .filter(|key| !declared.contains(&key.as_str()))
+            .map(|key| Value::from(key.as_str()).to_string())
+            .collect();
+        if !unknown.is_empty() {
+            out.push((
+                "MDY_DYNAMIC_UNKNOWN_MEMBER",
+                member,
+                format!(
+                    "carries {}, which this contract does not declare, so nothing reads it.",
+                    unknown.join(", ")
+                ),
+            ));
+        }
+    }
+    let kind = field
+        .get("kind")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if let Some(refusal) = range_refusal(field, kind) {
+        return refuse(out, refusal.into());
+    }
+    if let Some(refusal) = calendar_refusal(field, kind) {
+        return refuse(out, refusal.into());
+    }
+    if let Some(mismatch) = field
+        .get("initialValue")
+        .and_then(|value| value_mismatch(kind, value))
+    {
+        return refuse(
+            out,
+            format!("initialValue does not match the kind — {mismatch}."),
+        );
+    }
+    // A rule written one level too high: the contract's own name for a rule, on the field, where
+    // nothing reads it, so the field has no such rule while its author believes it has. `min` and
+    // `max` are not among them, being a number field's range.
+    for misplaced in ["required", "email", "minLength", "maxLength", "pattern"] {
+        if field.get(misplaced).is_some() {
+            out.push((
+                "MDY_DYNAMIC_MISPLACED_VALIDATOR",
+                String::new(),
+                format!(
+                    "\"{misplaced}\" belongs in \"validators\"; nothing reads it on the field."
+                ),
+            ));
+        }
+    }
+    if matches!(kind, "select" | "radio" | "multiselect" | "segmented") {
+        let Some(options) = field
+            .get("options")
+            .filter(|options| has_valid_options(options))
+        else {
+            out.push((
+                "MDY_DYNAMIC_OPTIONS_REQUIRED",
+                String::new(),
+                format!("kind \"{kind}\" requires a valid options array."),
+            ));
+            return true;
+        };
+        for key in repeated_option_values(options) {
+            out.push((
+                "MDY_DYNAMIC_DUPLICATE_OPTION",
+                String::new(),
+                format!("duplicate option value {key}: an option's value is its identity."),
+            ));
+        }
+    }
+    false
+}
+
+/// Whether `options` is a list of options as the contract writes one: each an object with a `value`
+/// that is neither `null` — the empty value of half the kinds — nor a list, a string `label`, and a
+/// `disabled` that is a boolean when present.
+fn has_valid_options(options: &Value) -> bool {
+    options.as_array().is_some_and(|options| {
+        options.iter().all(|option| {
+            option
+                .get("value")
+                .is_some_and(|value| !value.is_null() && !value.is_array())
+                && option.get("label").is_some_and(Value::is_string)
+                && option.get("disabled").is_none_or(Value::is_boolean)
+        })
+    })
+}
+
+/// The comparable spelling of each option value written after an earlier option with the same
+/// value, in order; an option's value is its identity, so the later of two is unreachable.
+fn repeated_option_values(options: &Value) -> Vec<String> {
+    let mut seen = HashSet::new();
+    options
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|option| option_value_key(&option["value"]))
+        .filter(|key| !seen.insert(key.clone()))
+        .collect()
+}
+
+/// A comparable spelling of an option's value, the TypeScript reader's `optionValueKey`.
+///
+/// Two objects declaring the same members are the same value however they were written, so an
+/// object's members are spelled in key order. A number is spelled by the double it reads as, so
+/// `1` and `1.0` are one value as they are in JavaScript, and `-0` is `0`. A list inside an object
+/// is spelled as JavaScript enumerates it, as an object keyed by index.
+fn option_value_key(value: &Value) -> String {
+    let mut members: Vec<(String, &Value)> = match value {
+        Value::Object(object) => object
+            .iter()
+            .map(|(key, held)| (key.clone(), held))
+            .collect(),
+        Value::Array(list) => list
+            .iter()
+            .enumerate()
+            .map(|(i, held)| (i.to_string(), held))
+            .collect(),
+        Value::Number(number) => {
+            let number = number.as_f64().unwrap_or_default();
+            return format!("{:?}", if number == 0.0 { 0.0 } else { number });
+        }
+        _ => return value.to_string(),
+    };
+    members.sort_by(|(left, _), (right, _)| left.cmp(right));
+    let spelled: Vec<String> = members
+        .into_iter()
+        .map(|(key, held)| format!("{}:{}", Value::from(key), option_value_key(held)))
+        .collect();
+    format!("{{{}}}", spelled.join(","))
+}
+
+/// Reports what `field_findings` finds at `at`, and removes from the field what deserialization
+/// cannot read.
+///
+/// A field in a tree takes every finding at the field itself, as the TypeScript reader reports a
+/// leaf; there, a declared initial value its kind cannot hold is also a finding about the document's
+/// shape, at the member.
+fn judge_field(field: &mut Value, at: Option<&str>, in_tree: bool, d: &mut Vec<Diagnostic>) {
+    let mut found = Vec::new();
+    let refused = field_findings(field, &mut found);
+    if let Some(at) = at {
+        let kind = field
+            .get("kind")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if let Some(mismatch) = field
+            .get("initialValue")
+            .filter(|_| in_tree)
+            .and_then(|value| value_mismatch(kind, value))
+        {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &format!("{at}/initialValue"),
+                &format!("initialValue does not match the kind — {mismatch}."),
+            ));
+        }
+        for (code, member, message) in found {
+            let member = if in_tree { "" } else { member.as_str() };
+            d.push(diag(code, &format!("{at}{member}"), &message));
+        }
+    }
+    let Some(field) = field.as_object_mut() else {
+        return;
+    };
+    if refused {
+        for key in [
+            "label",
+            "sensitive",
+            "placeholder",
+            "validators",
+            "min",
+            "max",
+            "step",
+            "options",
+        ] {
+            field.remove(key);
+        }
+    }
+    // A kind with no options does not read them, so a list that is not one is not carried either.
+    if field
+        .get("options")
+        .is_some_and(|options| !has_valid_options(options))
+    {
+        field.remove("options");
+    }
+    // The later of two options with one value is unreachable, so it is not carried.
+    if let Some(Value::Array(options)) = field.get_mut("options") {
+        let mut seen = HashSet::new();
+        options.retain(|option| seen.insert(option_value_key(&option["value"])));
+    }
+    // A kind with no range does not read these, so one that is not a number is no finding and is
+    // not carried either.
+    field.retain(|key, value| !matches!(key.as_str(), "min" | "max" | "step") || value.is_number());
+}
+
+/// Judges every field as written, flat or in a tree, before anything is deserialized.
+///
+/// A refused field is reported here; what remains of it is read only so that the rest of the
 /// document can be deserialized and judged, which a member of the wrong type would otherwise make
 /// impossible. A field already refused for its name or kind, or under a child key the tree walk
 /// does not enter, has its members removed the same way but is not reported again: its path is
 /// `None`.
-fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
-    let mut pending: Vec<(&mut Value, Option<String>)> = Vec::new();
+fn judge_fields_as_written(document: &mut Value, d: &mut Vec<Diagnostic>) {
+    let mut pending: Vec<(&mut Value, Option<String>, bool)> = Vec::new();
     let mut nodes: Vec<(&mut Value, Option<String>)> = Vec::new();
     let Value::Object(members) = document else {
         return;
@@ -855,7 +1432,7 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
                 for (i, field) in fields.iter_mut().enumerate() {
                     let path = (!is_dropped_before_members(field, Some(&mut names)))
                         .then(|| format!("/fields/{i}"));
-                    pending.push((field, path));
+                    pending.push((field, path, false));
                 }
             }
             ("schema", schema) => nodes.push((schema, Some("/schema".to_string()))),
@@ -872,7 +1449,7 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
                     let path = path
                         .filter(|_| !is_dropped_before_members(field, None))
                         .map(|path| format!("{path}/field"));
-                    pending.push((field, path));
+                    pending.push((field, path, true));
                 }
             }
             Some("group") => {
@@ -893,24 +1470,98 @@ fn refuse_mistyped_members(document: &mut Value, d: &mut Vec<Diagnostic>) {
             _ => {}
         }
     }
-    for (field, path) in pending {
-        if let Some(refusal) = member_type_refusal(field) {
-            if let Some(path) = path {
-                d.push(diag("MDY_DYNAMIC_INVALID_FIELD", &path, &refusal));
-            }
-            if let Some(field) = field.as_object_mut() {
-                for key in ["label", "sensitive", "placeholder", "validators"] {
-                    field.remove(key);
-                }
-            }
-        }
+    for (field, path, in_tree) in pending {
+        judge_field(field, path.as_deref(), in_tree, d);
     }
 }
 
+/// The member of the object that stands for a number past the double range.
+const NON_FINITE_NUMBER: &str = "nonFiniteNumber";
+
+/// Reads `json` as a document, where a number past the double range is a value and not an error.
+///
+/// JSON has no bound on a number's size, and a reader on doubles reads `1e400` as infinity; that is
+/// a value the document holds, and it is refused where a finite number is asked for — a field's
+/// range, a validator's bound — rather than making the whole document unreadable. serde_json refuses
+/// such a number outright, so when it does, each one is rewritten as the object
+/// `{"nonFiniteNumber": "<literal>"}` and the document read again. No check accepts that object as a
+/// number, and wherever any value is accepted it is carried as written. Any other error, or one the
+/// rewrite does not cure, is the reader's error as before.
+fn read_document(json: &str) -> Result<Value, serde_json::Error> {
+    serde_json::from_str(json).or_else(|error| match hold_non_finite_numbers(json) {
+        Some(held) => serde_json::from_str(&held).map_err(|_| error),
+        None => Err(error),
+    })
+}
+
+/// `json` with every number literal past the double range held as an object, or `None` when it has
+/// none.
+///
+/// Outside a string, a JSON number is the only token that starts with `-` or a digit, so a scan that
+/// steps over strings finds every one; a literal is held only when it is a JSON number by the
+/// grammar, so a malformed document stays malformed.
+fn hold_non_finite_numbers(json: &str) -> Option<String> {
+    let bytes = json.as_bytes();
+    let mut held = String::with_capacity(json.len());
+    let (mut i, mut copied) = (0, 0);
+    while i < bytes.len() {
+        match bytes[i] {
+            b'"' => {
+                i += 1;
+                while i < bytes.len() && bytes[i] != b'"' {
+                    i += if bytes[i] == b'\\' { 2 } else { 1 };
+                }
+                i += 1;
+            }
+            b'-' | b'0'..=b'9' => {
+                let start = i;
+                while i < bytes.len()
+                    && matches!(bytes[i], b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9')
+                {
+                    i += 1;
+                }
+                let literal = &json[start..i];
+                if is_json_number(literal) && literal.parse::<f64>().is_ok_and(f64::is_infinite) {
+                    held.push_str(&json[copied..start]);
+                    held.push_str(&format!("{{\"{NON_FINITE_NUMBER}\":\"{literal}\"}}"));
+                    copied = i;
+                }
+            }
+            _ => i += 1,
+        }
+    }
+    (copied > 0).then(|| held + &json[copied..])
+}
+
+/// Whether `literal` is a number as JSON writes one: `-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?`.
+fn is_json_number(literal: &str) -> bool {
+    let digits =
+        |text: &str| text.len() - text.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+    let rest = literal.strip_prefix('-').unwrap_or(literal);
+    let whole = digits(rest);
+    if whole == 0 || (whole > 1 && rest.starts_with('0')) {
+        return false;
+    }
+    let mut rest = &rest[whole..];
+    if let Some(fraction) = rest.strip_prefix('.') {
+        let count = digits(fraction);
+        if count == 0 {
+            return false;
+        }
+        rest = &fraction[count..];
+    }
+    if let Some(exponent) = rest.strip_prefix(['e', 'E']) {
+        let exponent = exponent.strip_prefix(['+', '-']).unwrap_or(exponent);
+        let count = digits(exponent);
+        return count > 0 && count == exponent.len();
+    }
+    rest.is_empty()
+}
+
 pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, serde_json::Error> {
-    let mut document: Value = serde_json::from_str(json)?;
+    let mut document = read_document(json)?;
     let mut d = Vec::new();
-    refuse_mistyped_members(&mut document, &mut d);
+    judge_fields_as_written(&mut document, &mut d);
     let form: DynamicFormV2 = serde_json::from_value(document)?;
     // v3 is v2 plus per-slot placement: every other member is read the same way,
     // so a v3 document parses here exactly as a v2 one does. Studio emits v3 the
@@ -972,31 +1623,6 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                     "mode is meaningful only on multiselect",
                 ));
             }
-        }
-        if matches!(
-            field.kind.as_str(),
-            "select" | "radio" | "multiselect" | "segmented"
-        ) && field.options.is_none()
-        {
-            d.push(diag(
-                "MDY_DYNAMIC_OPTIONS_REQUIRED",
-                &format!("{path}/options"),
-                "option field requires options",
-            ));
-        }
-        if field.step.is_some_and(|v| !v.is_finite() || v <= 0.0) {
-            d.push(diag(
-                "MDY_DYNAMIC_INVALID_FIELD",
-                &format!("{path}/step"),
-                "step must be finite and greater than zero",
-            ));
-        }
-        if field.min.zip(field.max).is_some_and(|(a, b)| a > b) {
-            d.push(diag(
-                "MDY_DYNAMIC_INVALID_FIELD",
-                path.as_str(),
-                "min cannot exceed max",
-            ));
         }
         if let Some(pattern) = field.validators.as_ref().and_then(|v| v.pattern.as_ref()) {
             let at = format!("{path}/validators/pattern");
@@ -1360,7 +1986,11 @@ fn rule_value_refusal(
     }
 }
 
-/// `yyyy-MM-dd` naming a day the calendar has.
+/// `yyyy-MM-dd` naming a day the calendar has, in a year from 0100 on.
+///
+/// The TypeScript reader decides a date through `Date.UTC`, which reads a year below 100 as one in
+/// the twentieth century, so `0099-01-01` does not name the day it spells there and is refused. The
+/// same years are refused here, so both readers give one verdict on one document.
 fn is_iso_date(text: &str) -> bool {
     let bytes = text.as_bytes();
     if bytes.len() != 10
@@ -1375,6 +2005,9 @@ fn is_iso_date(text: &str) -> bool {
     }
     let number = |range: std::ops::Range<usize>| text[range].parse::<u32>().unwrap_or(0);
     let (year, month, day) = (number(0..4), number(5..7), number(8..10));
+    if year < 100 {
+        return false;
+    }
     let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
     let days = match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,

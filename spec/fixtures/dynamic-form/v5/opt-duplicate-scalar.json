@@ -1,0 +1,1 @@
+{"version":5,"id":"opt-duplicate-scalar","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"select","options":[{"value":"a","label":"A"},{"value":"a","label":"A2"}]}}}}}

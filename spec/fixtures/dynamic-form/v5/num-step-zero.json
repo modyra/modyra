@@ -1,0 +1,1 @@
+{"version":5,"id":"num-step-zero","schema":{"node":"group","children":{"f":{"node":"field","field":{"label":"F","kind":"slider","step":0}}}}}
