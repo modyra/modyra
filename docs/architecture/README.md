@@ -246,6 +246,7 @@ absent section reads as an oversight, and "no security impact" is a finding.
 - [ADR 0229: A diagnostic path is a JSON Pointer into the document as written](0229-a-diagnostic-path-is-a-json-pointer.md) — key segments are escaped per RFC 6901, and a field's finding points at its list entry by index or its tree declaration, once per collection template
 - [ADR 0230: A malformed child is that child's problem](0230-a-malformed-child-is-that-childs-problem.md) — a group's child that is not a node is refused alone and counted once; its siblings survive in lenient, and a rejection counts declarations, not findings
 - [ADR 0231: A document costs what it writes, not what its rows expand to](0231-a-document-costs-what-it-writes.md) — a flatten may visit at most 10,000 nodes beyond those the schema declares; past it the schema is refused whole with `MDY_DYNAMIC_SCHEMA_LIMIT` at `/schema`
+- [ADR 0232: A collection writes at most a hundred rows](0232-a-collection-writes-at-most-a-hundred-rows.md) — every reader refuses a collection whose own `initialValue` writes more than 100 rows, with `MDY_DYNAMIC_SCHEMA_LIMIT` at its `initialValue`, as a finding about the tree's shape
 - [ADR 0092: A condition travels with the form](0092-a-condition-travels-with-the-form.md) — `when` and `asyncWhen` were closures, so a schema carrying one was not data and the document half could not say what the typed half said
 
 ## Security-relevant records

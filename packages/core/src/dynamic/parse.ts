@@ -464,6 +464,22 @@ const MDY_MAX_DECLARATION_WALK = 100_000;
 const MDY_MAX_DYNAMIC_SCHEMA_VISITS = 10_000;
 
 /**
+ * How many rows a collection's own `initialValue` may write.
+ *
+ * The published JSON Schema states it as `maxItems` on an array's and `maxProperties` on a record's
+ * `initialValue`, and every reader refuses past it. A document that writes more is not a form the
+ * contract describes, so the whole schema is refused, like any other finding about the tree's shape.
+ */
+const MDY_MAX_DYNAMIC_WRITTEN_ROWS = 100;
+
+const writtenRowsLimit = (path: string, kind: "array" | "record"): MdyDynamicDiagnostic => ({
+  code: "MDY_DYNAMIC_SCHEMA_LIMIT",
+  severity: "error",
+  path: `${path}/initialValue`,
+  message: `${kind} initialValue exceeds ${MDY_MAX_DYNAMIC_WRITTEN_ROWS} rows.`,
+});
+
+/**
  * Every node object a schema declares, through `children` and `item`, without reading any row.
  *
  * An upper bound on the first visit of each node, which is what the flatten budget is measured
@@ -1761,6 +1777,7 @@ function validateDynamicSchema(input: unknown): {
       const initial = raw["initialValue"];
       if (initial !== undefined && !isRecordValue(initial)) out.push({ code: "MDY_DYNAMIC_INVALID_RECORD", severity: "error", path: `${path}/initialValue`, message: "record initialValue must be an object keyed by row key." });
       else if (isRecordValue(initial)) {
+        if (Object.keys(initial).length > MDY_MAX_DYNAMIC_WRITTEN_ROWS) out.push(writtenRowsLimit(path, "record"));
         for (const key of Object.keys(initial)) {
           // A key that cannot be a path segment names a row nothing can address.
           if (!isSafeDynamicName(key)) out.push({ code: "MDY_DYNAMIC_UNSAFE_NAME", severity: "error", path: `${path}/initialValue/${key}`, message: "unsafe row key." });
@@ -1772,6 +1789,7 @@ function validateDynamicSchema(input: unknown): {
     if (!isRecordValue(raw["item"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path, message: "array requires an item node." });
     else push([{ raw: raw["item"], path: `${path}/item`, name: "item", scope: new Set() }]);
     if (raw["initialValue"] !== undefined && !Array.isArray(raw["initialValue"])) out.push({ code: "MDY_DYNAMIC_INVALID_ARRAY", severity: "error", path: `${path}/initialValue`, message: "array initialValue must be an array." });
+    else if (Array.isArray(raw["initialValue"]) && raw["initialValue"].length > MDY_MAX_DYNAMIC_WRITTEN_ROWS) out.push(writtenRowsLimit(path, "array"));
   }
 
   return { structural: out, perField, rejected, contextRead: [...contextRead] };

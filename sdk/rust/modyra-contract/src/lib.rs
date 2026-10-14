@@ -2025,7 +2025,7 @@ fn validate_node(
                 if initial_value.len() > 100 {
                     out.push(diag(
                         "MDY_DYNAMIC_SCHEMA_LIMIT",
-                        &path,
+                        &format!("{path}/initialValue"),
                         "array initial value exceeds 100 rows",
                     ));
                 }
@@ -2049,7 +2049,7 @@ fn validate_node(
                 if initial_value.len() > 100 {
                     out.push(diag(
                         "MDY_DYNAMIC_SCHEMA_LIMIT",
-                        &path,
+                        &format!("{path}/initialValue"),
                         "record initial value exceeds 100 rows",
                     ));
                 }

@@ -71,6 +71,10 @@ did not pay for.
   differ in path (`/schema` here, the collection's `initialValue` there) and in what survives. The
   row rule is not yet recorded by any ADR; it lands in TS before or with the release that ships this
   bound.
+  *Amendment, 2026-10-14:* [ADR 0232](0232-a-collection-writes-at-most-a-hundred-rows.md) records
+  the row rule and TS applies it, at the collection's `initialValue` in every reader. More than 100
+  written rows in one collection are now refused by that rule alone, as a finding about the shape,
+  so this bound is never reached by written rows of a single collection.
 - `MDY_DYNAMIC_SCHEMA_LIMIT` is shared. Java still reports it, at the node reached, for the depth
   (100) and node (500) caps ADR 0043 removed elsewhere; TS and Rust do not have those caps. A Java
   finding with this code is therefore not necessarily this bound: only one at `/schema` with no

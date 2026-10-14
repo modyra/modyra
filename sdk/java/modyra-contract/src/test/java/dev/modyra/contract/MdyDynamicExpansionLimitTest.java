@@ -68,6 +68,22 @@ class MdyDynamicExpansionLimitTest {
   }
 
   @Test
+  void aCollectionWritesAtMostAHundredRows() throws IOException {
+    // ADR 0232: the cap is on what a collection writes, refused at its initialValue.
+    for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
+      MdyDynamicFormParseResult at =
+          parser.parse(Files.readString(SPEC_FIXTURES_V5.resolve("rows-written-at-the-cap.json")), mode);
+      assertTrue(at.ok(), () -> mode + " at the cap: " + at.diagnostics());
+      MdyDynamicFormParseResult past =
+          parser.parse(Files.readString(SPEC_FIXTURES_V5.resolve("rows-written-past-the-cap.json")), mode);
+      assertEquals(List.of(), past.fields(), mode.name());
+      assertEquals(
+          List.of(List.of("MDY_DYNAMIC_SCHEMA_LIMIT", "error", "/schema/children/rows/initialValue")),
+          findings(past), mode.name());
+    }
+  }
+
+  @Test
   void theBoundIsExactOnTheSharedPair() throws IOException {
     for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
       MdyDynamicFormParseResult at =
