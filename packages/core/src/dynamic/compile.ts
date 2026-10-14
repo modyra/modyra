@@ -88,6 +88,7 @@ export function buildDynamicValidators(
     if (config.pattern.length > MDY_MAX_DYNAMIC_PATTERN_LENGTH) {
       warnDev(
         `Skipped dynamic pattern validator: pattern length ${config.pattern.length} exceeds max ${MDY_MAX_DYNAMIC_PATTERN_LENGTH}.`,
+        undefined, "MDY_DYNAMIC_PATTERN_TOO_LONG",
       );
     } else {
       // Cost, on the same terms as syntax: a pattern whose shape backtracks exponentially stops the
@@ -98,6 +99,7 @@ export function buildDynamicValidators(
       if (refusal !== null) {
         warnDev(
           `Skipped dynamic pattern validator: "${config.pattern}" has ${refusal}.`,
+          undefined, "MDY_DYNAMIC_PATTERN_TOO_COSTLY",
         );
       } else {
         try {
@@ -105,6 +107,7 @@ export function buildDynamicValidators(
         } catch {
           warnDev(
             `Skipped dynamic pattern validator: invalid RegExp source "${config.pattern}".`,
+            undefined, "MDY_DYNAMIC_INVALID_FIELD",
           );
         }
       }
@@ -395,7 +398,7 @@ export function buildDynamicFormSchema(
         `Dropped a dynamic field whose path is ${path.length} characters, past the ` +
         `${MDY_MAX_DYNAMIC_PATH_LENGTH} a path may be: a path is the payload key, the draft key ` +
         "and the widget id, and every read of the value carries it.",
-        "/schema",
+        "/schema", "MDY_DYNAMIC_PATH_TOO_LONG",
       );
       return OVER_THE_LIMIT;
     }
