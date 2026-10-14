@@ -47,3 +47,15 @@ test("a real node_modules whose .bin is a symlink to another tree is refused", (
   symlinkSync(join(shared, ".bin"), join(root, "node_modules/.bin"), "dir");
   assert.equal(run(root), 1);
 });
+
+test("a real node_modules whose .pnpm is a symlink to another tree is refused", () => {
+  const root = tree("store", "node_modules/.bin");
+  symlinkSync(join(shared, ".pnpm"), join(root, "node_modules/.pnpm"), "dir");
+  assert.equal(run(root), 1);
+});
+
+test("a node_modules symlink whose target is gone is refused", () => {
+  const root = tree("dangling");
+  symlinkSync(join(work, "removed"), join(root, "node_modules"), "dir");
+  assert.equal(run(root), 1);
+});
