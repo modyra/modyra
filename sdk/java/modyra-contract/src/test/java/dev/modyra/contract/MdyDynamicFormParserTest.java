@@ -1813,6 +1813,28 @@ class MdyDynamicFormParserTest {
   }
 
   /**
+   * A count the walk had to stop short of says so: a schema with more declarations than the count
+   * walks gets one warning at {@code /schema}, in the TypeScript reader's words, and one the walk
+   * finishes gets none. The root and 99,999 children are exactly the walk's 100,000 steps; one more
+   * child is past it. A warning refuses nothing, so it is not what makes these documents not
+   * {@code ok}.
+   */
+  @Test
+  void aCountTheWalkStoppedShortOfIsAFloorAndSaysSo() {
+    MdyDynamicDiagnostic incomplete = new MdyDynamicDiagnostic("MDY_DYNAMIC_COUNT_INCOMPLETE", MdyDynamicDiagnostic.WARNING, "/schema",
+        "The document declares more than the 100000 declarations this reader counts, so what it accepted and what it "
+            + "turned down are a floor and not a total.");
+    for (int children : new int[] {99_999, 100_000}) {
+      StringBuilder json = new StringBuilder("{\"version\":5,\"schema\":{\"node\":\"group\",\"children\":{");
+      for (int i = 0; i < children; i++) json.append(i == 0 ? "" : ",").append("\"k").append(i).append("\":0");
+      MdyDynamicFormParseResult result = parser.parse(json.append("}}}").toString(), MdyDynamicFormParser.Mode.LENIENT);
+      List<MdyDynamicDiagnostic> warnings = result.diagnostics().stream()
+          .filter(d -> MdyDynamicDiagnostic.WARNING.equals(d.severity())).toList();
+      assertEquals(children == 100_000 ? List.of(incomplete) : List.of(), warnings, children + " children");
+    }
+  }
+
+  /**
    * A leaf in a tree is held to every rule a field in a flat list is, the way the TypeScript reader
    * holds it: once where it is written, under the key its parent gave it, and once more for each time
    * the walk reads it — every declared row, and the row template once even when no row exists, the

@@ -237,6 +237,16 @@ public final class MdyDynamicFormParser {
       validateSchema(root.get("schema"), "/schema", "schema", 0, schemaDiagnostics, perField, new int[]{0}, contextKeys, Set.of());
       diagnostics.addAll(schemaDiagnostics);
       diagnostics.addAll(perField);
+      // What the document said it had, counted before anything is refused: a schema turned down
+      // whole never reaches the walk, and without the count a document declaring three children
+      // would report none accepted and none rejected — three entered and nothing came out.
+      DeclaredCount declaration = declaredFieldCount(root.get("schema"));
+      declaredLeaves = declaration.count();
+      if (!declaration.complete()) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_COUNT_INCOMPLETE", MdyDynamicDiagnostic.WARNING, "/schema",
+            "The document declares more than the " + MAX_DECLARATION_WALK + " declarations this reader counts, "
+                + "so what it accepted and what it turned down are a floor and not a total."));
+      }
       // A key a condition reads and the document does not declare. `requiresContext` is the whole of
       // what tells a host which values to supply, so a key missing from it is one no host would think
       // to pass — and a condition that cannot be read decides false, hiding the fields it guards. The
@@ -251,10 +261,6 @@ public final class MdyDynamicFormParser {
             "conditions read context " + quoted(undeclared) + ", which this document does not declare in "
                 + "\"requiresContext\" — a host cannot supply what it is not told about."));
       }
-      // What the document said it had, counted before anything is refused: a schema turned down
-      // whole never reaches the walk, and without the count a document declaring three children
-      // would report none accepted and none rejected — three entered and nothing came out.
-      declaredLeaves = declaredFieldCount(root.get("schema"));
       if (schemaDiagnostics.isEmpty()) {
         // Every finding the walk reports is one leaf turned down, so the walk's count replaces the
         // per-field one: the walk sees each row a template is repeated into, the check above sees
@@ -416,9 +422,9 @@ public final class MdyDynamicFormParser {
    * that do not exist yet.
    *
    * <p>The walk stops after {@link #MAX_DECLARATION_WALK} steps, so a shape nothing has validated
-   * cannot make it run without end; the count is then a floor rather than a total.
+   * cannot make it run without end; the count is then a floor rather than a total, and says so.
    */
-  private static int declaredFieldCount(JsonNode schema) {
+  private static DeclaredCount declaredFieldCount(JsonNode schema) {
     int count = 0;
     Deque<JsonNode> stack = new ArrayDeque<>();
     stack.push(schema);
@@ -438,8 +444,11 @@ public final class MdyDynamicFormParser {
         count++;
       }
     }
-    return count;
+    return new DeclaredCount(count, stack.isEmpty());
   }
+
+  /** How many declarations a schema holds, and whether the walk reached all of them. */
+  private record DeclaredCount(int count, boolean complete) {}
 
   /** How many declarations the count walks before it stops: {@code MDY_MAX_DECLARATION_WALK} in the TS parser. */
   private static final int MAX_DECLARATION_WALK = 100_000;
