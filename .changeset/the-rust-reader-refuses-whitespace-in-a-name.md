@@ -15,5 +15,5 @@ differ only by one of these read the same and would be two fields. U+0085 is one
 `\s` whitespace, and the Rust reader used to accept a name holding it.
 
 **Migration for Rust consumers.** A document whose field names or child keys hold whitespace or an
-invisible character was accepted and is now refused. Rename the field. The `@modyra/core` header carries the note into a
-release; the npm package itself does not change.
+invisible character was accepted and is now refused. Rename the field. The `@modyra/core` header
+carries the note into a release; the npm package itself does not change.
