@@ -790,7 +790,12 @@ class MdyDynamicFormParserTest {
         new Case("{\"name\":\"o\",\"kind\":\"radio\",\"options\":[{\"value\":{\"a\":1,\"b\":[2,3]},\"label\":\"A\"},"
             + "{\"value\":{\"b\":{\"0\":2,\"1\":3},\"a\":1},\"label\":\"B\"}]}", List.of(
             new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "Dropped a duplicate option value {\"a\":1,\"b\":{\"0\":2,\"1\":3}} on \"o\": " + duplicate)),
-            List.of("A")));
+            List.of("A")),
+        new Case("{\"name\":\"t\",\"kind\":\"text\",\"required\":true,\"pattern\":\"x\"}", List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "dynamic field \"t\" carries \"required\", \"pattern\", which this contract does not declare, so nothing reads it."),
+            new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "Dynamic field \"t\" declares \"required\" on the field, and it belongs in \"validators\" — nothing reads it here, so the field has no such rule."),
+            new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "Dynamic field \"t\" declares \"pattern\" on the field, and it belongs in \"validators\" — nothing reads it here, so the field has no such rule.")),
+            null));
     for (Case c : cases) {
       for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
         MdyDynamicFormParseResult result = parser.parse("[" + c.entry() + "]", mode);
@@ -1877,6 +1882,16 @@ class MdyDynamicFormParserTest {
               "rows":{"node":"array","initialValue":[{"t":5}],"item":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text"}}}}}}}}""",
             0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0",
                 "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
+        new Case("""
+            {"version":5,"schema":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text","email":true}}}}}""", 0, 1, 1, 2, List.of(
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/schema/children/t/field",
+                "dynamic field \"t\" carries \"email\", which this contract does not declare, so nothing reads it."),
+            new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/schema/children/t/field", "Dynamic field \"t\" declares \"email\" on the field, "
+                + "and it belongs in \"validators\" — nothing reads it here, so the field has no such rule."),
+            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
+                "dynamic field \"leaf\" carries \"email\", which this contract does not declare, so nothing reads it."),
+            new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0", "Dynamic field \"leaf\" declares \"email\" on the field, "
+                + "and it belongs in \"validators\" — nothing reads it here, so the field has no such rule."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"o":{"node":"field","field":{"kind":"segmented",
               "options":[{"value":true,"label":"A"},{"value":true,"label":"B"}]}}}}}""", 0, 1, 1, 1, List.of(

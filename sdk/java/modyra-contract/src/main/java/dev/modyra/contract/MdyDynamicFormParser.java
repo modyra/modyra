@@ -569,6 +569,7 @@ public final class MdyDynamicFormParser {
       if (NUMBER_KINDS.contains(kind.asText()) && !rangeIsUsable(item, name, path, diagnostics)) continue;
       if (CALENDAR_KINDS.contains(kind.asText()) && !calendarIsUsable(item, name, diagnostics)) continue;
       if (!initialValueFitsTheKind(item, name, kind.asText(), path, diagnostics)) continue;
+      reportMisplacedValidators(item, name, path, diagnostics);
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
         diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_OPTIONS_REQUIRED", MdyDynamicDiagnostic.ERROR, path,
             "Dropped dynamic field \"" + name + "\": kind \"" + kind.asText() + "\" requires a valid options array."));
@@ -739,6 +740,25 @@ public final class MdyDynamicFormParser {
         "Dropped dynamic field \"" + name + "\": initialValue does not match the kind — " + mismatch + "."));
     return false;
   }
+
+  /**
+   * The rules a field writes on itself rather than in {@code validators}. Nothing reads them there, so
+   * the field has no rule where its author believes it has one; the field is kept, and the finding is
+   * an error, because a form missing a rule its document appears to state accepts what it should
+   * refuse. {@code min} and {@code max} are not among them: on a number field they are the range of
+   * the control, so the same word means two things by design.
+   */
+  private static void reportMisplacedValidators(JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    for (String misplaced : MISPLACED_VALIDATORS) {
+      if (!item.has(misplaced)) continue;
+      diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_MISPLACED_VALIDATOR", MdyDynamicDiagnostic.ERROR, path,
+          "Dynamic field \"" + name + "\" declares \"" + misplaced + "\" on the field, and it belongs in \"validators\" — "
+              + "nothing reads it here, so the field has no such rule."));
+    }
+  }
+
+  /** The validator names an author writes on the field itself, in the order they are reported. */
+  private static final List<String> MISPLACED_VALIDATORS = List.of("required", "email", "minLength", "maxLength", "pattern");
 
   /**
    * Whether the words a field wrote for its own rules can be read, dropping the field otherwise.
