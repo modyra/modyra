@@ -833,9 +833,29 @@ fn has_js_whitespace(name: &str) -> bool {
         .any(|c| (c.is_whitespace() && c != '\u{85}') || c == '\u{feff}')
 }
 
-/// Whether `name` is refused as a group child key: unsafe, or carrying whitespace.
+/// Whether `name` holds a character that cannot be seen: a control character, a zero-width one, a
+/// bidirectional override or isolate, or U+FEFF. Two names that differ only by one of these read the
+/// same and are two different fields, so the duplicate check would not see the collision. The class
+/// is the one the value sanitizer strips.
+fn has_invisible_character(name: &str) -> bool {
+    name.chars().any(|c| {
+        matches!(c,
+            '\u{0}'..='\u{8}'
+            | '\u{b}'
+            | '\u{c}'
+            | '\u{e}'..='\u{1f}'
+            | '\u{7f}'..='\u{9f}'
+            | '\u{200b}'..='\u{200d}'
+            | '\u{2028}'..='\u{202e}'
+            | '\u{2066}'..='\u{2069}'
+            | '\u{feff}')
+    })
+}
+
+/// Whether `name` is refused as a group child key: unsafe, or carrying whitespace or a character
+/// that cannot be seen.
 fn is_unsafe_child_name(name: &str) -> bool {
-    is_unsafe_name(name) || has_js_whitespace(name)
+    is_unsafe_name(name) || has_js_whitespace(name) || has_invisible_character(name)
 }
 
 /// Whether a field is refused for its name or kind, which the TypeScript reader judges before its
@@ -844,7 +864,10 @@ fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>)
     let kind = field.get("kind").and_then(Value::as_str);
     let named_badly = names.is_some_and(|names| match field.get("name").and_then(Value::as_str) {
         Some(name) => {
-            is_unsafe_name(name) || has_js_whitespace(name) || !names.insert(name.to_string())
+            is_unsafe_name(name)
+                || has_invisible_character(name)
+                || has_js_whitespace(name)
+                || !names.insert(name.to_string())
         }
         None => true,
     });
@@ -1609,6 +1632,16 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 "MDY_DYNAMIC_UNSAFE_NAME",
                 &format!("{path}/name"),
                 "field name is empty, reserved, or contains a dot",
+            ));
+        } else if has_invisible_character(&field.name) {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &path,
+                &format!(
+                    "Dropped dynamic field {}: the name carries a character that cannot be seen, \
+                     so two names that read the same would be two different fields.",
+                    serde_json::Value::String(field.name.clone())
+                ),
             ));
         } else if has_js_whitespace(&field.name) {
             d.push(diag(

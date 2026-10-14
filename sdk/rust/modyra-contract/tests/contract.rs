@@ -1065,3 +1065,77 @@ fn a_number_past_the_double_range_is_refused_where_it_is_written() {
         assert!(parse_v2(json, ValidationMode::Strict).is_err(), "{json}");
     }
 }
+
+/// The codes a strict read gives a document whose one field, flat and then as a group child, is named
+/// `a<character>b`.
+fn codes_for_name_holding(character: char) -> [(bool, Vec<&'static str>); 2] {
+    let name = format!("a{character}b");
+    let flat = serde_json::json!({
+        "version": 5,
+        "fields": [{ "name": name, "kind": "text", "label": "F" }],
+    });
+    let tree = serde_json::json!({
+        "version": 5,
+        "schema": { "node": "group", "children": { name.clone(): { "node": "field", "field": { "kind": "text", "label": "F" } } } },
+    });
+    [flat, tree].map(|document| {
+        let result = parse_v2(&document.to_string(), ValidationMode::Strict).unwrap();
+        (
+            result.valid,
+            result.diagnostics.iter().map(|d| d.code).collect(),
+        )
+    })
+}
+
+/// Every character ECMAScript's `\s` matches is refused in a flat field name and in a group child
+/// key. U+FEFF is in `\s` and not in Unicode `White_Space`, which is why it is listed; U+0085 is the
+/// other way round, and is refused as a character that cannot be seen.
+#[test]
+fn a_name_holding_any_whitespace_is_refused() {
+    let characters = [
+        '\u{9}', '\u{a}', '\u{b}', '\u{c}', '\u{d}', ' ', '\u{a0}', '\u{1680}',
+    ]
+    .into_iter()
+    .chain('\u{2000}'..='\u{200a}')
+    .chain([
+        '\u{2028}', '\u{2029}', '\u{202f}', '\u{205f}', '\u{3000}', '\u{feff}',
+    ]);
+    for character in characters {
+        let [flat, tree] = codes_for_name_holding(character);
+        let at = format!("U+{:04X}", character as u32);
+        assert_eq!(
+            flat,
+            (false, vec!["MDY_DYNAMIC_INVALID_FIELD"]),
+            "{at} in a flat name"
+        );
+        assert_eq!(
+            tree,
+            (false, vec!["MDY_DYNAMIC_UNSAFE_NAME"]),
+            "{at} in a child key"
+        );
+    }
+}
+
+/// A name holding a character that cannot be seen is refused, so two names that read the same are
+/// never two fields. Each range of the class is tried at both ends.
+#[test]
+fn a_name_holding_a_character_that_cannot_be_seen_is_refused() {
+    let characters = [
+        '\u{0}', '\u{8}', '\u{e}', '\u{1f}', '\u{7f}', '\u{85}', '\u{9f}', '\u{200b}', '\u{200d}',
+        '\u{202a}', '\u{202e}', '\u{2066}', '\u{2069}',
+    ];
+    for character in characters {
+        let [flat, tree] = codes_for_name_holding(character);
+        let at = format!("U+{:04X}", character as u32);
+        assert_eq!(
+            flat,
+            (false, vec!["MDY_DYNAMIC_INVALID_FIELD"]),
+            "{at} in a flat name"
+        );
+        assert_eq!(
+            tree,
+            (false, vec!["MDY_DYNAMIC_UNSAFE_NAME"]),
+            "{at} in a child key"
+        );
+    }
+}
