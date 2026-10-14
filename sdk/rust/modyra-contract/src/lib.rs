@@ -823,12 +823,29 @@ fn is_unsafe_name(name: &str) -> bool {
         || matches!(name, "__proto__" | "prototype" | "constructor")
 }
 
+/// Whether `name` holds a character ECMAScript's `\s` matches, which no field name or group child
+/// key may: a widget id is built from the name and reaches `aria-describedby`, a space-separated
+/// list of ids, where whitespace splits one reference into several that resolve to nothing.
+/// `char::is_whitespace` is Unicode `White_Space`, which counts U+0085 and not U+FEFF; `\s` is the
+/// other way round, and the TypeScript reader decides with `\s`.
+fn has_js_whitespace(name: &str) -> bool {
+    name.chars()
+        .any(|c| (c.is_whitespace() && c != '\u{85}') || c == '\u{feff}')
+}
+
+/// Whether `name` is refused as a group child key: unsafe, or carrying whitespace.
+fn is_unsafe_child_name(name: &str) -> bool {
+    is_unsafe_name(name) || has_js_whitespace(name)
+}
+
 /// Whether a field is refused for its name or kind, which the TypeScript reader judges before its
 /// members: such a field carries one diagnostic for that, and none for its members.
 fn is_dropped_before_members(field: &Value, names: Option<&mut HashSet<String>>) -> bool {
     let kind = field.get("kind").and_then(Value::as_str);
     let named_badly = names.is_some_and(|names| match field.get("name").and_then(Value::as_str) {
-        Some(name) => is_unsafe_name(name) || !names.insert(name.to_string()),
+        Some(name) => {
+            is_unsafe_name(name) || has_js_whitespace(name) || !names.insert(name.to_string())
+        }
         None => true,
     });
     named_badly || !kind.is_some_and(|kind| KINDS.contains(&kind))
@@ -1455,7 +1472,7 @@ fn judge_fields_as_written(document: &mut Value, d: &mut Vec<Diagnostic>) {
             Some("group") => {
                 if let Some(Value::Object(children)) = node.get_mut("children") {
                     nodes.extend(children.iter_mut().map(|(name, child)| {
-                        let path = path.as_ref().filter(|_| !is_unsafe_name(name));
+                        let path = path.as_ref().filter(|_| !is_unsafe_child_name(name));
                         let path =
                             path.map(|path| format!("{path}/children/{}", pointer_segment(name)));
                         (child, path)
@@ -1592,6 +1609,17 @@ pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, se
                 "MDY_DYNAMIC_UNSAFE_NAME",
                 &format!("{path}/name"),
                 "field name is empty, reserved, or contains a dot",
+            ));
+        } else if has_js_whitespace(&field.name) {
+            d.push(diag(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                &path,
+                &format!(
+                    "Dropped dynamic field \"{}\": a widget id is built from this name, and \
+                     whitespace splits an id reference into several, each resolving to nothing \
+                     — so the control would have no accessible name.",
+                    field.name
+                ),
             ));
         } else if !names.insert(field.name.clone()) {
             d.push(diag(
@@ -1861,7 +1889,7 @@ fn validate_node(
             DynamicNode::Group { children, .. } => {
                 let here: HashSet<String> = children.keys().cloned().collect();
                 for (name, child) in children {
-                    if is_unsafe_name(name) {
+                    if is_unsafe_child_name(name) {
                         out.push(diag(
                             "MDY_DYNAMIC_UNSAFE_NAME",
                             &path,

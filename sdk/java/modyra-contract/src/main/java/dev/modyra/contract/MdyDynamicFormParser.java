@@ -234,7 +234,8 @@ public final class MdyDynamicFormParser {
       // so it does not turn the document down whole the way a structural finding does.
       List<MdyDynamicDiagnostic> perField = new ArrayList<>();
       Set<String> contextKeys = new LinkedHashSet<>();
-      validateSchema(root.get("schema"), "/schema", "schema", 0, schemaDiagnostics, perField, new int[]{0}, contextKeys, Set.of());
+      int[] refused = {0};
+      validateSchema(root.get("schema"), "/schema", "schema", false, 0, schemaDiagnostics, perField, new int[]{0}, refused, contextKeys, Set.of());
       diagnostics.addAll(schemaDiagnostics);
       diagnostics.addAll(perField);
       // What the document said it had, counted before anything is refused: a schema turned down
@@ -262,12 +263,12 @@ public final class MdyDynamicFormParser {
                 + "\"requiresContext\" — a host cannot supply what it is not told about."));
       }
       if (schemaDiagnostics.isEmpty()) {
-        // Every finding the walk reports is one leaf turned down, so the walk's count replaces the
-        // per-field one: the walk sees each row a template is repeated into, the check above sees
-        // the template once.
+        // The declarations were judged above and are counted there. The walk reports only what it
+        // alone sees — a row's value a cell cannot hold, a path too long — and each such finding is
+        // one leaf dropped.
         int before = diagnostics.size();
         accepted = flattenSchema(root.get("schema"), diagnostics);
-        treeRejected = diagnostics.size() - before;
+        treeRejected = refused[0] + diagnostics.size() - before;
         declaredLeaves = Math.max(declaredLeaves, accepted.size() + treeRejected);
       } else {
         // A shape the walk cannot enter turns the document down whole, so everything it declared
@@ -430,7 +431,13 @@ public final class MdyDynamicFormParser {
     stack.push(schema);
     for (int steps = 0; !stack.isEmpty() && steps < MAX_DECLARATION_WALK; steps++) {
       JsonNode node = stack.pop();
-      if (!node.isObject()) continue;
+      // Absent is a collection with no item, which declared nothing; anything else written where a
+      // node goes is a declaration this reader cannot use, and is counted as one.
+      if (node.isMissingNode()) continue;
+      if (!node.isObject()) {
+        count++;
+        continue;
+      }
       String kind = node.path("node").isTextual() ? node.path("node").asText() : null;
       if ("field".equals(kind)) {
         count++;
@@ -947,9 +954,11 @@ public final class MdyDynamicFormParser {
    * scalar is its JSON text, so {@code 1} and {@code 1.0} are one value and {@code 1} and {@code "1"}
    * are two. An object is its members sorted by name, so two objects declaring the same members are
    * the same option however they were written; an array is the object JavaScript sees, keyed by
-   * index.
+   * index. A number past a double's range is spelled {@code Infinity} or {@code -Infinity}: JSON
+   * spells both {@code null}, which would make the two infinities one option.
    */
   static String optionValueKey(JsonNode value) {
+    if (value.isNumber() && Double.isInfinite(value.doubleValue())) return value.doubleValue() > 0 ? "Infinity" : "-Infinity";
     if (!value.isObject() && !value.isArray()) return jsonText(value);
     List<Map.Entry<String, JsonNode>> entries = new ArrayList<>();
     if (value.isArray()) {
@@ -1021,19 +1030,32 @@ public final class MdyDynamicFormParser {
    * collection's {@code item} that is the row's own cells, which is what lets a template condition
    * one of them without naming a key that does not exist yet. {@code { "root": true }} is how a
    * clause reaches the whole form.
+   *
+   * <p>{@code child} marks a node a group named, the one place a node can be refused and leave a
+   * shape to walk. {@code perField} collects what one declaration gets wrong and {@code rejected}
+   * counts the declarations refused, not the findings: a field kept with a finding is accepted.
    */
-  private void validateSchema(JsonNode node, String path, String name, int depth, List<MdyDynamicDiagnostic> out,
-      List<MdyDynamicDiagnostic> perField, int[] count, Set<String> contextKeys, Set<String> scope) {
+  private void validateSchema(JsonNode node, String path, String name, boolean child, int depth, List<MdyDynamicDiagnostic> out,
+      List<MdyDynamicDiagnostic> perField, int[] count, int[] rejected, Set<String> contextKeys, Set<String> scope) {
     count[0]++;
     if (depth > SCHEMA_MAX_DEPTH || count[0] > SCHEMA_MAX_NODES) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_SCHEMA_LIMIT", MdyDynamicDiagnostic.ERROR, path, "schema exceeds depth/node limits."));
       return;
     }
-    String kind = node.isObject() && node.path("node").isTextual() ? node.path("node").asText() : null;
-    if (!node.isObject() || kind == null || !SCHEMA_NODE_KINDS.contains(kind)) {
-      out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_NODE", MdyDynamicDiagnostic.ERROR, path, "node must be field, group, array, or record."));
+    if (!isSchemaNode(node)) {
+      MdyDynamicDiagnostic finding = new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_NODE", MdyDynamicDiagnostic.ERROR, path, "node must be field, group, array, or record.");
+      // A group's child is one declaration, and the group around it is still a group the walk can
+      // enter, so it is refused alone. The root and a collection's item have no such enclosing shape:
+      // without them there is nothing to walk, or no row shape, and the document is refused whole.
+      if (child) {
+        perField.add(finding);
+        rejected[0]++;
+      } else {
+        out.add(finding);
+      }
       return;
     }
+    String kind = node.path("node").asText();
     for (String member : List.of("when", "asyncWhen")) {
       JsonNode clause = node.path(member);
       if (clause.isMissingNode()) continue;
@@ -1066,9 +1088,13 @@ public final class MdyDynamicFormParser {
       // because a key may hold "/": "a/b" would read as "b", and "x/" as a field without a name.
       ObjectNode named = node.get("field").deepCopy();
       named.put("name", name);
-      for (MdyDynamicDiagnostic finding : parseFlatItems(mapper.createArrayNode().add(named)).diagnostics) {
+      FlatResult judged = parseFlatItems(mapper.createArrayNode().add(named));
+      for (MdyDynamicDiagnostic finding : judged.diagnostics) {
         perField.add(new MdyDynamicDiagnostic(finding.code(), MdyDynamicDiagnostic.ERROR, path + "/field", finding.message()));
       }
+      // A declaration is counted once, as refused only when nothing of it was kept: a field kept with
+      // a finding about an option it dropped is accepted, and a field refused for two reasons is one.
+      if (judged.accepted.isEmpty()) rejected[0]++;
       // The declared initial is also a statement about the tree, as a collection's initial is: a
       // value the leaf's kind cannot hold is refused where it is written, and the document with it.
       JsonNode declaredKind = node.get("field").path("kind");
@@ -1096,7 +1122,7 @@ public final class MdyDynamicFormParser {
         if (!isSafeDynamicName(key)) {
           out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_UNSAFE_NAME", MdyDynamicDiagnostic.ERROR, childPath, "unsafe child name."));
         } else {
-          validateSchema(entry.getValue(), childPath, key, depth + 1, out, perField, count, contextKeys, here);
+          validateSchema(entry.getValue(), childPath, key, true, depth + 1, out, perField, count, rejected, contextKeys, here);
         }
       }
       return;
@@ -1106,7 +1132,7 @@ public final class MdyDynamicFormParser {
       if (!item.isObject()) {
         out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_RECORD", MdyDynamicDiagnostic.ERROR, path, "record requires an item node."));
       } else {
-        validateSchema(item, path + "/item", "item", depth + 1, out, perField, count, contextKeys, Set.of());
+        validateSchema(item, path + "/item", "item", false, depth + 1, out, perField, count, rejected, contextKeys, Set.of());
       }
       JsonNode rows = node.path("initialValue");
       if (!rows.isMissingNode() && !rows.isObject()) {
@@ -1128,7 +1154,7 @@ public final class MdyDynamicFormParser {
     if (!item.isObject()) {
       out.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_ARRAY", MdyDynamicDiagnostic.ERROR, path, "array requires an item node."));
     } else {
-      validateSchema(item, path + "/item", "item", depth + 1, out, perField, count, contextKeys, Set.of());
+      validateSchema(item, path + "/item", "item", false, depth + 1, out, perField, count, rejected, contextKeys, Set.of());
     }
     JsonNode initialValue = node.path("initialValue");
     if (!initialValue.isMissingNode() && !initialValue.isArray()) {
@@ -1142,31 +1168,43 @@ public final class MdyDynamicFormParser {
    * The flat fields of a validated schema, reporting into {@code diagnostics} each leaf it turns
    * down — one finding per leaf, which is what the caller counts.
    *
+   * <p>Every declaration has already been judged and reported by {@link #validateSchema}, at the path
+   * of its declaration and under its own name. Reporting it again from here would name it by the
+   * placeholder the leaf is read under and point at a list the document never wrote, so the second
+   * finding would read as a second defect. What only the walk can see is reported: a row's initial
+   * value that the cell's kind cannot hold, and a path too long to carry, both at the cell's
+   * declaration.
+   *
    * <p>A collection's row template is read too, once per item node and whether or not a row exists:
-   * the template is the shape every row the application adds will have, so a leaf in it that cannot
-   * be read is reported now rather than when the first row is added. Templates are read after the
+   * the template is the shape every row the application adds will have. Templates are read after the
    * tree, the last one met first, which is the order the TypeScript reader reports them in.
    */
   private List<MdyDynamicField> flattenSchema(JsonNode schema, List<MdyDynamicDiagnostic> diagnostics) {
     List<MdyDynamicField> out = new ArrayList<>();
     Set<JsonNode> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-    List<JsonNode> templates = new ArrayList<>();
-    flattenSchemaInto(schema, "", null, out, diagnostics, seen, templates);
+    List<Map.Entry<JsonNode, String>> templates = new ArrayList<>();
+    flattenSchemaInto(schema, "", "/schema", null, out, diagnostics, seen, templates);
     while (!templates.isEmpty()) {
       // A template's fields are the shape of a row and not fields of this form, so they are not kept.
-      flattenSchemaInto(templates.remove(templates.size() - 1), "", null, new ArrayList<>(), diagnostics, seen, templates);
+      Map.Entry<JsonNode, String> template = templates.remove(templates.size() - 1);
+      flattenSchemaInto(template.getKey(), "", template.getValue(), null, new ArrayList<>(), diagnostics, seen, templates);
     }
     return out;
   }
 
-  private void flattenSchemaInto(JsonNode node, String path, JsonNode initial, List<MdyDynamicField> out,
-      List<MdyDynamicDiagnostic> diagnostics, Set<JsonNode> seen, List<JsonNode> templates) {
+  /**
+   * One node's subtree into the flat list. {@code path} is the dotted name the walk builds and
+   * {@code at} the JSON Pointer of the node in the document; the two diverge because a row's cell is
+   * declared once under the collection's {@code item} and named once per row.
+   */
+  private void flattenSchemaInto(JsonNode node, String path, String at, JsonNode initial, List<MdyDynamicField> out,
+      List<MdyDynamicDiagnostic> diagnostics, Set<JsonNode> seen, List<Map.Entry<JsonNode, String>> templates) {
     String kind = node.path("node").asText("");
     if (kind.equals("field")) {
       // A path is the payload key, the draft key and the widget id. Measured here and not on the
       // names, because a row index or key lengthens it and the rows are only known once walked.
       if (path.length() > MAX_PATH_LENGTH) {
-        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_PATH_TOO_LONG", MdyDynamicDiagnostic.ERROR, "/schema",
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_PATH_TOO_LONG", MdyDynamicDiagnostic.ERROR, at + "/field",
             "Dropped a dynamic field whose path is " + path.length() + " characters, past the " + MAX_PATH_LENGTH
                 + " a path may be: a path is the payload key, the draft key and the widget id, and every read "
                 + "of the value carries it."));
@@ -1174,33 +1212,41 @@ public final class MdyDynamicFormParser {
       }
       // The leaf is read by the flat reader under a placeholder name, because a generated dotted or
       // indexed path is structure the walk built and not a name the flat rule could accept; the path
-      // is restored on what it keeps. A finding the flat reader places at an entry stays there; one
-      // it places on the list as a whole names a list this document does not have, so it is placed
-      // on the schema, as the TypeScript reader places it.
+      // is restored on what it keeps. Its findings were reported where the declaration was judged.
       ObjectNode leaf = node.get("field").deepCopy();
       leaf.put("name", "leaf");
-      if (hasValue(initial)) leaf.set("initialValue", initial);
-      FlatResult parsed = parseFlatItems(mapper.createArrayNode().add(leaf));
-      for (MdyDynamicDiagnostic finding : parsed.diagnostics) {
-        diagnostics.add(finding.path().equals("/fields")
-            ? new MdyDynamicDiagnostic(finding.code(), finding.severity(), "/schema", finding.message())
-            : finding);
+      List<MdyDynamicField> declared = parseFlatItems(mapper.createArrayNode().add(leaf)).accepted;
+      if (declared.isEmpty()) return;
+      MdyDynamicField field = declared.get(0);
+      if (!hasValue(initial)) {
+        out.add(withNameAndInitial(field, path, field.initialValue()));
+        return;
       }
-      for (MdyDynamicField field : parsed.accepted) out.add(withNameAndInitial(field, path, field.initialValue()));
+      // The value a row gave the cell, which the declaration never saw.
+      String mismatch = MdyValueContracts.explainMismatch(field.kind(), initial);
+      if (mismatch != null) {
+        diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, at + "/field",
+            "Dropped dynamic field \"" + path + "\": initialValue does not match the kind — " + mismatch + "."));
+        return;
+      }
+      out.add(withNameAndInitial(field, path, toObject(initial)));
       return;
     }
     if (kind.equals("group")) {
       JsonNode value = hasValue(initial) && initial.isObject() ? initial : null;
       for (var entry : node.path("children").properties()) {
         String key = entry.getKey();
-        if (!isSafeDynamicName(key)) continue;
+        // A child that is not a node was reported where the tree was judged, and has nothing to walk.
+        if (!isSafeDynamicName(key) || !isSchemaNode(entry.getValue())) continue;
         JsonNode childInitial = value != null ? value.path(key) : null;
-        flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key, childInitial, out, diagnostics, seen, templates);
+        flattenSchemaInto(entry.getValue(), path.isEmpty() ? key : path + "." + key,
+            at + "/children/" + pointerSegment(key), childInitial, out, diagnostics, seen, templates);
       }
       return;
     }
     JsonNode item = node.get("item");
-    if (seen.add(item)) templates.add(item);
+    String itemAt = at + "/item";
+    if (seen.add(item)) templates.add(Map.entry(item, itemAt));
     if (kind.equals("record")) {
       // Which rows a record has is the application's word; a document can only declare the ones it
       // starts with, so those are the ones a flat view can name.
@@ -1210,7 +1256,7 @@ public final class MdyDynamicFormParser {
         for (var entry : declared.properties()) {
           if (!isSafeDynamicName(entry.getKey())) continue;
           String key = entry.getKey();
-          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, entry.getValue(), out, diagnostics, seen, templates);
+          flattenSchemaInto(item, path.isEmpty() ? key : path + "." + key, itemAt, entry.getValue(), out, diagnostics, seen, templates);
         }
       }
       return;
@@ -1220,9 +1266,15 @@ public final class MdyDynamicFormParser {
         : node.path("initialValue").isArray() ? node.path("initialValue") : null;
     if (rows != null) {
       for (int i = 0; i < rows.size(); i++) {
-        flattenSchemaInto(item, path + "." + i, rows.get(i), out, diagnostics, seen, templates);
+        flattenSchemaInto(item, path + "." + i, itemAt, rows.get(i), out, diagnostics, seen, templates);
       }
     }
+  }
+
+  /** Whether a value is a node the walk can enter, judged by its {@code node} member alone. */
+  private static boolean isSchemaNode(JsonNode value) {
+    return value != null && value.isObject() && value.path("node").isTextual()
+        && SCHEMA_NODE_KINDS.contains(value.path("node").asText());
   }
 
   private static MdyDynamicField withNameAndInitial(MdyDynamicField field, String name, Object initialValue) {

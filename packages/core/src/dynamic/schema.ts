@@ -360,6 +360,7 @@ export function mdyEmptyValueFor(field: MdyDynamicField): unknown {
       warnDev(
         `Field "${field.name}" declares an initialValue its kind cannot hold (${mismatch}); ` +
         "the field starts empty instead.",
+        undefined, "MDY_DYNAMIC_INVALID_FIELD",
       );
       return emptyForKind(field);
     }

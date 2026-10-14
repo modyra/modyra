@@ -24,8 +24,8 @@ The dynamic reader judges what a document wrote, and files each finding under th
   Infinity" rather than "… got number".
 
 The Rust and Java readers (`sdk/rust/modyra-contract`, `sdk/java/modyra-contract`) refuse
-`validators: []` the same way. The Java reader still drops `-1e400` beside `1e400` as a duplicate;
-that disagreement is listed in its ledger (ADR 0228). The Rust reader holds `1e400` and `1e401` as
+`validators: []` the same way, and the Java reader also keeps `1e400` and `-1e400` as two options.
+The Rust reader holds `1e400` and `1e401` as
 two distinct options where TypeScript, reading both as `Infinity`, keeps one: a limit of the
 JavaScript number, with no shared fixture.
 

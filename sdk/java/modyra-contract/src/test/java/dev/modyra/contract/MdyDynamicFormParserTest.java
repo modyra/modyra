@@ -1770,9 +1770,11 @@ class MdyDynamicFormParserTest {
    * A tree document's counts are about what the document declared, not about what survived it. A
    * declaration is a field node wherever it sits — inside a collection's row template too, where it
    * never becomes a flat field — or a node that is neither a field nor a container the walk can
-   * descend; a schema turned down whole turned down every one of them; a leaf the walk refuses is one
+   * descend; a schema turned down whole turned down every one of them; a group's child that is not
+   * a node is one rejection and its siblings stand in lenient mode; a leaf the walk refuses is one
    * rejection; and a row-template field read once per declared row is counted as many times as it
-   * was read.
+   * was read. {@code fields} is what lenient mode keeps; strict keeps nothing from a document that
+   * is not {@code ok}.
    */
   @Test
   void aTreeDocumentCountsWhatItDeclared() throws IOException {
@@ -1783,18 +1785,19 @@ class MdyDynamicFormParserTest {
             + ",\"inner\":{\"node\":\"record\",\"item\":" + leaf + "}}}},\"keyed\":{\"node\":\"record\",\"item\":" + leaf + "}}}}", true, 1, 4, 0),
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\",\"initialValue\":[{\"b\":1},{\"b\":2},{}],"
             + "\"item\":{\"node\":\"group\",\"children\":{\"b\":{\"node\":\"field\",\"field\":{\"kind\":\"number\"}},\"c\":" + leaf + "}}}}}}", true, 6, 6, 0),
-        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"},\"c\":" + leaf + "}}}", false, 0, 0, 3),
-        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"children\":{}},\"worse\":5,\"s\":\"x\"}}}", false, 0, 0, 2),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"},\"c\":" + leaf + "}}}", false, 2, 2, 1),
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"children\":{}},\"worse\":5,\"s\":\"x\"}}}", false, 1, 1, 3),
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"group\",\"children\":[" + leaf + "," + leaf + "]}}}}", false, 0, 0, 2),
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"nope\"}},\"a\":" + leaf + "}}}", false, 0, 0, 2),
-        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}},\"layout\":[5],\"rules\":[null],\"validations\":[1]}", false, 0, 0, 5),
-        new Case("{\"version\":2,\"schema\":[" + leaf + "," + leaf + "]}", false, 0, 0, 0),
-        new Case("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}}}", false, 0, 0, 2));
+        new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}},\"layout\":[5],\"rules\":[null],\"validations\":[1]}", false, 1, 0, 4),
+        new Case("{\"version\":2,\"schema\":[" + leaf + "," + leaf + "]}", false, 0, 0, 1),
+        new Case("{\"version\":2,\"fields\":[{\"name\":\"ok\",\"kind\":\"text\"}],\"schema\":{\"node\":\"group\",\"children\":{\"a\":" + leaf + ",\"bad\":{\"node\":\"nope\"}}}}", false, 1, 1, 1));
     for (Case c : cases) {
       for (MdyDynamicFormParser.Mode mode : MdyDynamicFormParser.Mode.values()) {
         MdyDynamicFormParseResult result = parser.parse(c.document(), mode);
         assertEquals(c.ok(), result.ok(), () -> c.document() + " in " + mode + ": " + result.diagnostics());
-        assertEquals(c.fields(), result.fields().size(), () -> c.document() + " in " + mode);
+        int kept = mode == MdyDynamicFormParser.Mode.STRICT && !c.ok() ? 0 : c.fields();
+        assertEquals(kept, result.fields().size(), () -> c.document() + " in " + mode);
         assertEquals(c.accepted(), result.acceptedCount(), () -> c.document() + " in " + mode);
         assertEquals(c.rejected(), result.rejectedCount(), () -> c.document() + " in " + mode);
       }
@@ -1836,60 +1839,49 @@ class MdyDynamicFormParserTest {
 
   /**
    * A leaf in a tree is held to every rule a field in a flat list is, the way the TypeScript reader
-   * holds it: once where it is written, under the key its parent gave it, and once more for each time
-   * the walk reads it — every declared row, and the row template once even when no row exists, the
-   * templates after the tree and the last one met first. A walk finding stays at the entry the flat
-   * reader names; a path longer than a path may be is refused at the schema. Each walk finding is one
-   * leaf turned down, and a leaf turned down never makes the document {@code ok}.
+   * holds it: once, where it is written, under the key its parent gave it — a row template included,
+   * whether or not a row exists, and however many rows repeat it. What only the walk sees is reported
+   * at the cell's declaration and names the row: a row's value the cell's kind cannot hold, and a path
+   * longer than a path may be. A declaration refused is one rejection however many findings it has; a
+   * leaf kept with a finding is accepted; and a finding never leaves the document {@code ok}.
    */
   @Test
   void aTreeLeafIsHeldToTheFlatRules() {
     record Finding(String code, String path, String message) {}
     record Case(String document, int strictFields, int lenientFields, int accepted, int rejected, List<Finding> findings) {}
-    Finding unknownLeaf = new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"nope\".");
     String key = "k".repeat(510);
     List<Case> cases = List.of(
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "bad":{"node":"field","field":{"kind":"nope"}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/bad/field", "Dropped dynamic field \"bad\" with unknown kind \"nope\"."),
-            unknownLeaf)),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/bad/field", "Dropped dynamic field \"bad\" with unknown kind \"nope\"."))),
         new Case("""
             {"version":2,"schema":{"node":"group","children":{
               "first":{"node":"array","item":{"node":"field","field":{"kind":"nope"}}},
               "rows":{"node":"array","initialValue":[{},{}],"item":{"node":"group","children":{"b":{"node":"field","field":{"kind":"other"}}}}}}}}""",
-            0, 0, 0, 4, List.of(
+            0, 0, 0, 2, List.of(
             new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/first/item/field", "Dropped dynamic field \"item\" with unknown kind \"nope\"."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/rows/item/children/b/field", "Dropped dynamic field \"b\" with unknown kind \"other\"."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/fields/0", "Dropped dynamic field \"leaf\" with unknown kind \"other\"."),
-            unknownLeaf)),
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/rows/item/children/b/field", "Dropped dynamic field \"b\" with unknown kind \"other\"."))),
         new Case("{\"version\":2,\"schema\":{\"node\":\"group\",\"children\":{\"" + key + "\":{\"node\":\"array\","
             + "\"initialValue\":[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"],\"item\":{\"node\":\"field\",\"field\":{\"kind\":\"text\"}}}}}}",
-            0, 10, 10, 1, List.of(new Finding("MDY_DYNAMIC_PATH_TOO_LONG", "/schema",
+            0, 10, 10, 1, List.of(new Finding("MDY_DYNAMIC_PATH_TOO_LONG", "/schema/children/" + key + "/item/field",
                 "Dropped a dynamic field whose path is 513 characters, past the 512 a path may be: a path is the payload key, "
                     + "the draft key and the widget id, and every read of the value carries it."))),
-        // A walk finding the flat reader places on its list as a whole is placed on the schema.
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "b":{"node":"field","field":{"kind":"text","validators":{"pattern":12}}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/b/field", "Dropped dynamic field \"b\": validators.pattern must be a string."),
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": validators.pattern must be a string."))),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/b/field", "Dropped dynamic field \"b\": validators.pattern must be a string."))),
         // A field is named by its whole key: a key may hold "/", which its path segment escapes as "~1".
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a/b":{"node":"field","field":{"kind":"nope"}},
               "x/":{"node":"field","field":{"kind":"text"}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a~1b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."),
-            unknownLeaf)),
-        // A leaf kept despite a member nothing reads still counts each finding as a leaf turned down.
+            new Finding("MDY_DYNAMIC_UNKNOWN_KIND", "/schema/children/a~1b/field", "Dropped dynamic field \"a/b\" with unknown kind \"nope\"."))),
+        // A leaf kept despite a member nothing reads is accepted: the finding refuses no field.
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text","bogus":1}},
-              "b":{"node":"field","field":{"kind":"text"}}}}}""", 0, 2, 2, 1, List.of(
+              "b":{"node":"field","field":{"kind":"text"}}}}}""", 0, 2, 2, 0, List.of(
             new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/schema/children/a/field",
-                "dynamic field \"a\" carries \"bogus\", which this contract does not declare, so nothing reads it."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
-                "dynamic field \"leaf\" carries \"bogus\", which this contract does not declare, so nothing reads it."))),
+                "dynamic field \"a\" carries \"bogus\", which this contract does not declare, so nothing reads it."))),
         // A declared initial the kind cannot hold is refused where it is written, which turns the
         // tree down whole; a row's value is the leaf's initial, and the walk judges it there.
         new Case("""
@@ -1902,35 +1894,27 @@ class MdyDynamicFormParserTest {
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "rows":{"node":"array","initialValue":[{"t":5}],"item":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text"}}}}}}}}""",
-            0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0",
-                "Dropped dynamic field \"leaf\": initialValue does not match the kind — text holds string, got number."))),
+            0, 1, 1, 1, List.of(new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/rows/item/children/t/field",
+                "Dropped dynamic field \"rows.0.t\": initialValue does not match the kind — text holds string, got number."))),
         new Case("""
-            {"version":5,"schema":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text","email":true}}}}}""", 0, 1, 1, 2, List.of(
+            {"version":5,"schema":{"node":"group","children":{"t":{"node":"field","field":{"kind":"text","email":true}}}}}""", 0, 1, 1, 0, List.of(
             new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/schema/children/t/field",
                 "dynamic field \"t\" carries \"email\", which this contract does not declare, so nothing reads it."),
             new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/schema/children/t/field", "Dynamic field \"t\" declares \"email\" on the field, "
-                + "and it belongs in \"validators\" — nothing reads it here, so the field has no such rule."),
-            new Finding("MDY_DYNAMIC_UNKNOWN_MEMBER", "/fields/0",
-                "dynamic field \"leaf\" carries \"email\", which this contract does not declare, so nothing reads it."),
-            new Finding("MDY_DYNAMIC_MISPLACED_VALIDATOR", "/fields/0", "Dynamic field \"leaf\" declares \"email\" on the field, "
                 + "and it belongs in \"validators\" — nothing reads it here, so the field has no such rule."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"o":{"node":"field","field":{"kind":"segmented",
-              "options":[{"value":true,"label":"A"},{"value":true,"label":"B"}]}}}}}""", 0, 1, 1, 1, List.of(
+              "options":[{"value":true,"label":"A"},{"value":true,"label":"B"}]}}}}}""", 0, 1, 1, 0, List.of(
             new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "/schema/children/o/field", "Dropped a duplicate option value true on \"o\": an option's value "
-                + "is its identity, so two options sharing one leave a value naming both and a control able to reach only the first."),
-            new Finding("MDY_DYNAMIC_DUPLICATE_OPTION", "/fields/0", "Dropped a duplicate option value true on \"leaf\": an option's value "
                 + "is its identity, so two options sharing one leave a value naming both and a control able to reach only the first."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "d":{"node":"field","field":{"kind":"datepicker","locale":"en_US"}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/d/field", "Dropped dynamic field \"d\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."),
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema", "Dropped dynamic field \"leaf\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."))),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/d/field", "Dropped dynamic field \"d\": locale must be a valid BCP 47 tag, e.g. \"it-IT\"."))),
         new Case("""
             {"version":5,"schema":{"node":"group","children":{"a":{"node":"field","field":{"kind":"text"}},
               "n":{"node":"field","field":{"kind":"number","min":5,"max":4}}}}}""", 0, 1, 1, 1, List.of(
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/n/field", "Dropped dynamic field \"n\": min cannot exceed max."),
-            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/fields/0", "Dropped dynamic field \"leaf\": min cannot exceed max."))),
+            new Finding("MDY_DYNAMIC_INVALID_FIELD", "/schema/children/n/field", "Dropped dynamic field \"n\": min cannot exceed max."))),
         new Case("""
             {"version":2,"schema":{"node":"group","children":{"s":{"node":"field","field":{"kind":"select","options":[]}},
               "rows":{"node":"array","item":{"node":"field","field":{"kind":"radio","options":[]}}}}}}""", 1, 1, 2, 0, List.of()));
@@ -1947,6 +1931,142 @@ class MdyDynamicFormParserTest {
         assertEquals(c.rejected(), result.rejectedCount(), () -> c.document() + " in " + mode);
       }
     }
+  }
+
+  /** A version 5 tree whose root group holds {@code children}, written as JSON members. */
+  private static String tree(String children) {
+    return "{\"version\":5,\"id\":\"t\",\"schema\":{\"node\":\"group\",\"children\":{" + children + "}}}";
+  }
+
+  /** A field node declaring {@code label} and the given members. */
+  private static String treeLeaf(String members) {
+    return "{\"node\":\"field\",\"field\":{\"label\":\"F\"," + members + "}}";
+  }
+
+  private static List<String> codesAndPaths(MdyDynamicFormParseResult result) {
+    return result.diagnostics().stream().map(d -> d.code() + " " + d.path()).toList();
+  }
+
+  /**
+   * A group's child that is not a node — a bare value, or an object whose {@code node} nobody
+   * declared — is that child's problem, as an unknown kind is that field's: in lenient mode its
+   * sibling survives, the finding sits at the child, and the counts say one of two was refused.
+   * Strict refuses the document, with the same counts.
+   */
+  @Test
+  void aMalformedChildIsRefusedAloneAndItsSiblingStands() {
+    for (String malformed : List.of("\"x\"", "{\"node\":\"nope\"}")) {
+      String document = tree("\"a\":" + treeLeaf("\"kind\":\"text\"") + ",\"v\":" + malformed);
+
+      MdyDynamicFormParseResult lenient = parser.parse(document, MdyDynamicFormParser.Mode.LENIENT);
+      assertFalse(lenient.ok(), document);
+      assertEquals(List.of("a"), lenient.fields().stream().map(MdyDynamicField::name).toList(), document);
+      assertEquals(List.of("MDY_DYNAMIC_INVALID_NODE /schema/children/v"), codesAndPaths(lenient), document);
+      assertEquals(1, lenient.acceptedCount(), document);
+      assertEquals(1, lenient.rejectedCount(), document);
+
+      MdyDynamicFormParseResult strict = parser.parse(document, MdyDynamicFormParser.Mode.STRICT);
+      assertFalse(strict.ok(), document);
+      assertEquals(List.of(), strict.fields(), document);
+      assertEquals(1, strict.acceptedCount(), document);
+      assertEquals(1, strict.rejectedCount(), document);
+    }
+  }
+
+  /** A bare value is something written where a node goes, so it is the one declaration refused. */
+  @Test
+  void aBareValueOnItsOwnIsCountedAsTheOneDeclarationRefused() {
+    MdyDynamicFormParseResult result = parser.parse(tree("\"v\":\"x\""), MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(0, result.acceptedCount());
+    assertEquals(1, result.rejectedCount());
+  }
+
+  /**
+   * The root and a collection's item have no enclosing group to stand in: a schema that is not a
+   * node leaves nothing to walk, and an item that is not one leaves a collection without a row
+   * shape, so either refuses the document whole, siblings included.
+   */
+  @Test
+  void aSchemaOrACollectionItemThatIsNotANodeStillRefusesTheDocumentWhole() {
+    MdyDynamicFormParseResult root = parser.parse("{\"version\":5,\"id\":\"t\",\"schema\":\"x\"}", MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(root.ok());
+    assertEquals(List.of(), root.fields());
+
+    MdyDynamicFormParseResult item = parser.parse(
+        tree("\"a\":" + treeLeaf("\"kind\":\"text\"") + ",\"rows\":{\"node\":\"array\",\"item\":{\"node\":\"nope\"}}"),
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertFalse(item.ok());
+    assertEquals(List.of(), item.fields());
+    assertEquals(List.of("/schema/children/rows/item"), item.diagnostics().stream().map(MdyDynamicDiagnostic::path).toList());
+  }
+
+  /** A refused leaf is said once, at its declaration and under the key the document gave it. */
+  @Test
+  void aRefusedLeafIsReportedOnceAtItsDeclarationAndByItsOwnName() {
+    MdyDynamicFormParseResult result = parser.parse(
+        tree("\"f\":" + treeLeaf("\"kind\":\"number\",\"validators\":{\"min\":\"x\"}")), MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(1, result.diagnostics().size(), () -> String.valueOf(result.diagnostics()));
+    MdyDynamicDiagnostic only = result.diagnostics().get(0);
+    assertEquals("/schema/children/f/field", only.path());
+    assertTrue(only.message().contains("\"f\""), only.message());
+    assertFalse(only.message().contains("\"leaf\""), only.message());
+    assertEquals(1, result.rejectedCount());
+  }
+
+  /** A finding about an option a field dropped refuses no field: the field is counted as accepted. */
+  @Test
+  void aFieldKeptWithAFindingIsCountedAsAccepted() {
+    MdyDynamicFormParseResult result = parser.parse(tree(
+        "\"s\":" + treeLeaf("\"kind\":\"select\",\"options\":[{\"value\":\"a\",\"label\":\"A\"},{\"value\":\"a\",\"label\":\"Again\"}]")
+            + ",\"t\":" + treeLeaf("\"kind\":\"text\"")), MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("s", "t"), result.fields().stream().map(MdyDynamicField::name).toList());
+    assertEquals(List.of("MDY_DYNAMIC_DUPLICATE_OPTION"), result.diagnostics().stream().map(MdyDynamicDiagnostic::code).toList());
+    assertEquals(2, result.acceptedCount());
+    assertEquals(0, result.rejectedCount());
+  }
+
+  /**
+   * A row's value the cell's kind cannot hold is reported once, at the cell's declaration under the
+   * collection's item, naming the row it was written for; the other row keeps its value.
+   */
+  @Test
+  void aRowValueTheCellsKindCannotHoldIsReportedAtTheCellsDeclarationNamingTheRow() {
+    MdyDynamicFormParseResult result = parser.parse(tree(
+        "\"items\":{\"node\":\"array\",\"item\":" + treeLeaf("\"kind\":\"number\"") + ",\"initialValue\":[\"x\",2]}"),
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(1, result.fields().size());
+    assertEquals("items.1", result.fields().get(0).name());
+    assertEquals(2, ((Number) result.fields().get(0).initialValue()).intValue());
+    assertEquals(1, result.diagnostics().size(), () -> String.valueOf(result.diagnostics()));
+    MdyDynamicDiagnostic only = result.diagnostics().get(0);
+    assertEquals("MDY_DYNAMIC_INVALID_FIELD", only.code());
+    assertEquals("/schema/children/items/item/field", only.path());
+    assertTrue(only.message().contains("\"items.0\""), only.message());
+    assertEquals(1, result.acceptedCount());
+    assertEquals(1, result.rejectedCount());
+  }
+
+  /**
+   * A number past a double's range in either direction is an infinity, and the two infinities are two
+   * values: options holding {@code 1e400} and {@code -1e400} are two options. Two positive ones are
+   * one value, and the second is dropped as a duplicate spelled {@code Infinity}, as the TypeScript
+   * reader spells it.
+   */
+  @Test
+  void theTwoInfinitiesAreTwoOptionValues() {
+    MdyDynamicFormParseResult both = parser.parse(tree("\"f\":" + treeLeaf(
+        "\"kind\":\"select\",\"options\":[{\"value\":1e400,\"label\":\"Big\"},{\"value\":-1e400,\"label\":\"Small\"}]")),
+        MdyDynamicFormParser.Mode.STRICT);
+    assertTrue(both.ok(), () -> String.valueOf(both.diagnostics()));
+
+    MdyDynamicFormParseResult twice = parser.parse(tree("\"f\":" + treeLeaf(
+        "\"kind\":\"select\",\"options\":[{\"value\":1e400,\"label\":\"Big\"},{\"value\":2e400,\"label\":\"Again\"}]")),
+        MdyDynamicFormParser.Mode.LENIENT);
+    assertEquals(List.of("MDY_DYNAMIC_DUPLICATE_OPTION /schema/children/f/field"), codesAndPaths(twice));
+    assertTrue(twice.diagnostics().get(0).message().startsWith("Dropped a duplicate option value Infinity on \"f\""),
+        twice.diagnostics().get(0).message());
+    assertEquals(1, twice.acceptedCount());
+    assertEquals(0, twice.rejectedCount());
   }
 
   /**
