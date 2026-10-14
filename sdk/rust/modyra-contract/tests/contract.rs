@@ -879,3 +879,97 @@ fn a_member_nobody_reads_is_reported() {
         assert_eq!(findings(document), vec![]);
     }
 }
+
+/// A number past the double range is a value the document holds, refused where a finite number is
+/// asked for, and not a reason the document cannot be read.
+#[test]
+fn a_number_past_the_double_range_is_refused_where_it_is_written() {
+    let read = |field: &str| {
+        let leaf = format!(
+            r#"{{"version":5,"schema":{{"node":"group","children":{{"f":{{"node":"field","field":{field}}}}}}}}}"#
+        );
+        let entry = format!(
+            r#"{{"version":5,"fields":[{}]}}"#,
+            field.replacen('{', r#"{"name":"f","#, 1)
+        );
+        [leaf, entry].map(|json| {
+            parse_v2(&json, ValidationMode::Strict)
+                .unwrap_or_else(|error| panic!("{json}: {error}"))
+                .diagnostics
+                .into_iter()
+                .map(|d| (d.code, d.path, d.message))
+                .collect::<Vec<_>>()
+        })
+    };
+    for (field, message) in [
+        (
+            r#"{"kind":"number","label":"\"-1e400","max":1e400}"#,
+            "max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"slider","label":"F","min":-1e400}"#,
+            "min must be a finite number.",
+        ),
+        (
+            r#"{"kind":"number","label":"F","step":1E+999}"#,
+            "step must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"min":1e400}}"#,
+            "validators.min must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"max":-1e400}}"#,
+            "validators.max must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"minLength":-1e400}}"#,
+            "validators.minLength must be a finite number.",
+        ),
+        (
+            r#"{"kind":"text","label":"F","validators":{"maxLength":1e400}}"#,
+            "validators.maxLength must be a finite number.",
+        ),
+    ] {
+        let [leaf, entry] = read(field);
+        assert_eq!(
+            leaf,
+            vec![(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                LEAF.to_string(),
+                message.to_string()
+            )],
+            "{field}"
+        );
+        assert_eq!(
+            entry,
+            vec![(
+                "MDY_DYNAMIC_INVALID_FIELD",
+                "/fields/0".to_string(),
+                message.to_string()
+            )],
+            "{field}"
+        );
+    }
+    // Held as a value, it is not a string a text field can take.
+    let [_, entry] = read(r#"{"kind":"text","label":"F","initialValue":1e400}"#);
+    assert_eq!(
+        entry
+            .iter()
+            .map(|(code, path, _)| (*code, path.as_str()))
+            .collect::<Vec<_>>(),
+        vec![("MDY_DYNAMIC_INVALID_FIELD", "/fields/0")]
+    );
+    // The largest double is a number, and text that spells a huge one is text.
+    assert_eq!(
+        read(r#"{"kind":"number","label":"1e400 \"-1e400","max":1.7976931348623157e308}"#),
+        [vec![], vec![]]
+    );
+    // A literal JSON does not have stays an error, huge or not.
+    for json in [
+        r#"{"version":5,"fields":[{"name":"f","kind":"number","max":01e400}]}"#,
+        r#"{"version":5,"x":1e400"#,
+    ] {
+        assert!(parse_v2(json, ValidationMode::Strict).is_err(), "{json}");
+    }
+}

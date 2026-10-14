@@ -1443,8 +1443,91 @@ fn judge_fields_as_written(document: &mut Value, d: &mut Vec<Diagnostic>) {
     }
 }
 
+/// The member of the object that stands for a number past the double range.
+const NON_FINITE_NUMBER: &str = "nonFiniteNumber";
+
+/// Reads `json` as a document, where a number past the double range is a value and not an error.
+///
+/// JSON has no bound on a number's size, and a reader on doubles reads `1e400` as infinity; that is
+/// a value the document holds, and it is refused where a finite number is asked for — a field's
+/// range, a validator's bound — rather than making the whole document unreadable. serde_json refuses
+/// such a number outright, so when it does, each one is rewritten as the object
+/// `{"nonFiniteNumber": "<literal>"}` and the document read again. No check accepts that object as a
+/// number, and wherever any value is accepted it is carried as written. Any other error, or one the
+/// rewrite does not cure, is the reader's error as before.
+fn read_document(json: &str) -> Result<Value, serde_json::Error> {
+    serde_json::from_str(json).or_else(|error| match hold_non_finite_numbers(json) {
+        Some(held) => serde_json::from_str(&held).map_err(|_| error),
+        None => Err(error),
+    })
+}
+
+/// `json` with every number literal past the double range held as an object, or `None` when it has
+/// none.
+///
+/// Outside a string, a JSON number is the only token that starts with `-` or a digit, so a scan that
+/// steps over strings finds every one; a literal is held only when it is a JSON number by the
+/// grammar, so a malformed document stays malformed.
+fn hold_non_finite_numbers(json: &str) -> Option<String> {
+    let bytes = json.as_bytes();
+    let mut held = String::with_capacity(json.len());
+    let (mut i, mut copied) = (0, 0);
+    while i < bytes.len() {
+        match bytes[i] {
+            b'"' => {
+                i += 1;
+                while i < bytes.len() && bytes[i] != b'"' {
+                    i += if bytes[i] == b'\\' { 2 } else { 1 };
+                }
+                i += 1;
+            }
+            b'-' | b'0'..=b'9' => {
+                let start = i;
+                while i < bytes.len()
+                    && matches!(bytes[i], b'-' | b'+' | b'.' | b'e' | b'E' | b'0'..=b'9')
+                {
+                    i += 1;
+                }
+                let literal = &json[start..i];
+                if is_json_number(literal) && literal.parse::<f64>().is_ok_and(f64::is_infinite) {
+                    held.push_str(&json[copied..start]);
+                    held.push_str(&format!("{{\"{NON_FINITE_NUMBER}\":\"{literal}\"}}"));
+                    copied = i;
+                }
+            }
+            _ => i += 1,
+        }
+    }
+    (copied > 0).then(|| held + &json[copied..])
+}
+
+/// Whether `literal` is a number as JSON writes one: `-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?`.
+fn is_json_number(literal: &str) -> bool {
+    let digits =
+        |text: &str| text.len() - text.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+    let rest = literal.strip_prefix('-').unwrap_or(literal);
+    let whole = digits(rest);
+    if whole == 0 || (whole > 1 && rest.starts_with('0')) {
+        return false;
+    }
+    let mut rest = &rest[whole..];
+    if let Some(fraction) = rest.strip_prefix('.') {
+        let count = digits(fraction);
+        if count == 0 {
+            return false;
+        }
+        rest = &fraction[count..];
+    }
+    if let Some(exponent) = rest.strip_prefix(['e', 'E']) {
+        let exponent = exponent.strip_prefix(['+', '-']).unwrap_or(exponent);
+        let count = digits(exponent);
+        return count > 0 && count == exponent.len();
+    }
+    rest.is_empty()
+}
+
 pub fn parse_v2(json: &str, mode: ValidationMode) -> Result<ValidationResult, serde_json::Error> {
-    let mut document: Value = serde_json::from_str(json)?;
+    let mut document = read_document(json)?;
     let mut d = Vec::new();
     judge_fields_as_written(&mut document, &mut d);
     let form: DynamicFormV2 = serde_json::from_value(document)?;
