@@ -1,0 +1,1 @@
+{"version":5,"id":"p-required-rule-is-a-string","schema":{"node":"group","children":{"seats":{"node":"field","field":{"kind":"number","label":"Seats","validators":{"required":"yes"}}}}}}

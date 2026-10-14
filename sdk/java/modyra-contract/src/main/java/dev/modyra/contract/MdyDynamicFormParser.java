@@ -554,7 +554,10 @@ public final class MdyDynamicFormParser {
       // The document is judged as written, in the order the TypeScript reader judges it, before the
       // mapper builds anything from it: the mapper coerces and ignores where the contract refuses,
       // and a refusal it does produce describes a Java type rather than the document.
+      if (!membersHaveTheirTypes(item, name, path, diagnostics)) continue;
+      if (!validatorsHaveTheirTypes(item, name, diagnostics)) continue;
       if (!messagesAreReadable(item, name, diagnostics)) continue;
+      if (!lengthsAreOrdered(item, name, diagnostics)) continue;
       if (!patternIsUsable(item, name, diagnostics)) continue;
       reportUnknownFieldMembers(item, name, path, diagnostics);
       if (OPTIONS_KINDS.contains(kind.asText()) && !hasValidOptions(item.path("options"))) {
@@ -573,6 +576,82 @@ public final class MdyDynamicFormParser {
       accepted.add(field);
     }
     return new FlatResult(accepted, diagnostics);
+  }
+
+  /**
+   * Whether the field's own members carry the JSON type the contract gives them, dropping the field
+   * otherwise. A member that is present is judged even when it is {@code null}: JSON {@code null} is
+   * a value the author wrote, and the mapper would otherwise read it as the member being absent.
+   */
+  private static boolean membersHaveTheirTypes(
+      JsonNode item, String name, String path, List<MdyDynamicDiagnostic> diagnostics) {
+    String refusal = null;
+    JsonNode label = item.get("label");
+    JsonNode sensitive = item.get("sensitive");
+    JsonNode placeholder = item.get("placeholder");
+    if (label != null && !label.isTextual()) refusal = "label must be a string.";
+    else if (sensitive != null && !sensitive.isBoolean()) refusal = "sensitive must be a boolean.";
+    else if (placeholder != null && !placeholder.isTextual()) refusal = "placeholder must be a string.";
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, path,
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /**
+   * Whether the validators object and its rules carry the JSON type the contract gives them, dropping
+   * the field otherwise. The mapper alone would coerce: {@code null} to an absent rule, {@code "3"} to
+   * a number, a truthy string to {@code true} — so a document refused by the TypeScript reader would
+   * be read here as a different, valid one.
+   *
+   * <p>An array passes the object test, as it does in JavaScript, and is left to the mapper.
+   * Reported at {@code /fields}, where the TypeScript reader puts a validator's refusal.
+   */
+  private static boolean validatorsHaveTheirTypes(
+      JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode validators = item.get("validators");
+    if (validators == null) return true;
+    String refusal = null;
+    if (!validators.isObject() && !validators.isArray()) {
+      refusal = "validators must be an object.";
+    } else {
+      for (String key : List.of("required", "email", "integer")) {
+        JsonNode value = validators.get(key);
+        if (value != null && !value.isBoolean()) {
+          refusal = "validators." + key + " must be a boolean.";
+          break;
+        }
+      }
+      if (refusal == null) {
+        for (String key : List.of("min", "max", "minLength", "maxLength")) {
+          JsonNode value = validators.get(key);
+          // A literal past the double range, such as 1e400, is Infinity to a JavaScript reader.
+          if (value != null && !(value.isNumber() && Double.isFinite(value.doubleValue()))) {
+            refusal = "validators." + key + " must be a finite number.";
+            break;
+          }
+        }
+      }
+    }
+    if (refusal == null) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+        "Dropped dynamic field \"" + name + "\": " + refusal));
+    return false;
+  }
+
+  /**
+   * Whether a length rule's lower bound is at most its upper bound, dropping the field otherwise: a
+   * value no text can satisfy is a field nobody can submit. Runs after the types are checked, so both
+   * bounds, when present, are numbers.
+   */
+  private static boolean lengthsAreOrdered(JsonNode item, String name, List<MdyDynamicDiagnostic> diagnostics) {
+    JsonNode validators = item.path("validators");
+    JsonNode minLength = validators.get("minLength");
+    JsonNode maxLength = validators.get("maxLength");
+    if (minLength == null || maxLength == null || minLength.asDouble() <= maxLength.asDouble()) return true;
+    diagnostics.add(new MdyDynamicDiagnostic("MDY_DYNAMIC_INVALID_FIELD", MdyDynamicDiagnostic.ERROR, "/fields",
+        "Dropped dynamic field \"" + name + "\": validators.minLength cannot exceed validators.maxLength."));
+    return false;
   }
 
   /**

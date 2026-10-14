@@ -1,0 +1,6 @@
+{
+  "valid": false,
+  "diagnostics": [
+    "MDY_DYNAMIC_DUPLICATE_NAME"
+  ]
+}

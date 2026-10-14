@@ -168,6 +168,20 @@ class MdyDynamicFormParserTest {
     assertInstanceOf(MdyDynamicTextField.class, vatNumber);
   }
 
+  /** A rule past the double range is no finite number, as it is not to a JavaScript reader. */
+  @Test
+  void refusesARuleThatOverflowsTheDoubleRange() {
+    String json = "{\"version\":2,\"id\":\"f\",\"fields\":"
+        + "[{\"name\":\"seats\",\"kind\":\"number\",\"validators\":{\"min\":1e400}}]}";
+    MdyDynamicFormParseResult result = parser.parse(json, MdyDynamicFormParser.Mode.STRICT);
+
+    assertEquals(1, result.diagnostics().size(), () -> result.diagnostics().toString());
+    MdyDynamicDiagnostic refusal = result.diagnostics().get(0);
+    assertEquals("MDY_DYNAMIC_INVALID_FIELD", refusal.code());
+    assertEquals("/fields", refusal.path());
+    assertEquals("Dropped dynamic field \"seats\": validators.min must be a finite number.", refusal.message());
+  }
+
   /**
    * Same shared fixture Rust rejects (tests/contract.rs): its {@code rules}
    * array references an unknown field ("missing"). Now that layout/rules
