@@ -98,6 +98,35 @@ fn written_rows_count_as_lent_ones_do() {
 }
 
 #[test]
+fn a_collection_writes_at_most_a_hundred_rows() {
+    let cell = json!({ "node": "field", "field": { "kind": "text", "label": "Cell" } });
+    let array = |count: usize| json!({ "node": "array", "initialValue": vec![json!(""); count], "item": cell });
+    let record = |count: usize| {
+        let rows: serde_json::Map<String, Value> = (0..count)
+            .map(|index| (format!("r{index}"), json!("")))
+            .collect();
+        json!({ "node": "record", "initialValue": rows, "item": cell })
+    };
+    for collection in [&array as &dyn Fn(usize) -> Value, &record] {
+        let document = |count| {
+            json!({ "version": 5, "schema": { "node": "group", "children": { "rows": collection(count) } } })
+                .to_string()
+        };
+        let (valid, _, codes) = findings(&document(100), ValidationMode::Strict);
+        assert!(valid, "{codes:?}");
+        let (valid, _, codes) = findings(&document(101), ValidationMode::Strict);
+        assert!(!valid);
+        assert_eq!(
+            codes,
+            vec![(
+                "MDY_DYNAMIC_SCHEMA_LIMIT".to_string(),
+                "/schema/children/rows/initialValue".to_string(),
+            )]
+        );
+    }
+}
+
+#[test]
 fn a_table_of_a_hundred_rows_and_twenty_cells_is_accepted() {
     let cells: serde_json::Map<String, Value> =
         (0..20).map(|index| (format!("c{index}"), text())).collect();

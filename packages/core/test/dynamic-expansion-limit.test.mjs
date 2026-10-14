@@ -7,6 +7,7 @@
  * both modes.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { MdyDynamicSchemaLimitError, flattenDynamicForm, parseDynamicForm } from "../dist/index.js";
 
@@ -51,12 +52,37 @@ test("a branch that ends in no field is bounded too", () => {
 });
 
 test("the bound is exact: the last visit it allows is accepted and the next is refused", () => {
-  // Declared: the root group, the collection and its row group. Each row is one visit beyond them.
-  const at = parse({ node: "group", children: { rows: rowsOf(EXTRA, {}) } }, "strict");
+  // The shared pair, which every reader runs, reaches the bound within a hundred rows per collection.
+  const corpus = (name) =>
+    JSON.parse(readFileSync(new URL(`../../../spec/fixtures/dynamic-form/v5/${name}.json`, import.meta.url), "utf8"));
+  const at = parseDynamicForm(corpus("rows-lent-at-the-bound"), { mode: "strict" });
   assert.equal(at.ok, true, JSON.stringify(at.diagnostics));
-  const past = parse({ node: "group", children: { rows: rowsOf(EXTRA + 1, {}) } }, "strict");
-  assert.deepEqual(past.diagnostics.map((d) => d.code), ["MDY_DYNAMIC_SCHEMA_LIMIT"]);
+  const past = parseDynamicForm(corpus("rows-lent-past-the-bound"), { mode: "strict" });
+  assert.deepEqual(past.diagnostics.map((d) => [d.code, d.path]), [["MDY_DYNAMIC_SCHEMA_LIMIT", "/schema"]]);
 });
+
+for (const [kind, collection] of [
+  ["array", (count) => ({ node: "array", initialValue: Array.from({ length: count }, () => ""), item: text })],
+  ["record", (count) => ({
+    node: "record",
+    initialValue: Object.fromEntries(Array.from({ length: count }, (_, index) => [`r${index}`, ""])),
+    item: text,
+  })],
+]) {
+  test(`${kind}: a collection writes at most a hundred rows, and past them the schema is refused`, () => {
+    const at = parse({ node: "group", children: { rows: collection(100) } }, "strict");
+    assert.equal(at.ok, true, JSON.stringify(at.diagnostics));
+    for (const mode of ["lenient", "strict"]) {
+      const past = parse({ node: "group", children: { rows: collection(101) } }, mode);
+      assert.equal(past.ok, false);
+      assert.deepEqual(past.fields, []);
+      assert.deepEqual(
+        past.diagnostics.map((d) => [d.code, d.path]),
+        [["MDY_DYNAMIC_SCHEMA_LIMIT", "/schema/children/rows/initialValue"]],
+      );
+    }
+  });
+}
 
 test("a table of a hundred rows and twenty cells is accepted", () => {
   const cells = Object.fromEntries(Array.from({ length: 20 }, (_, index) => [`c${index}`, text]));
